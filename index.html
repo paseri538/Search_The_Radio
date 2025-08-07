@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>さーち・ざ・らじお！</title>
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" />
+  <link href="style.css" rel="stylesheet" />
+</head>
+<body>
+  <div id="rcModal" style="display:none; position:fixed; z-index:3000; left:0; top:0; width:100vw; height:100vh; background:rgba(0,0,0,0.22); backdrop-filter:blur(2px); align-items:center; justify-content:center;">
+    <div style="background:#f09110; color:#222; border-radius:15px; box-shadow:0 6px 22px -6px #3335; max-width:88vw; width:320px; padding:30px 18px 22px 18px; margin:auto; text-align:center; position:relative;">
+      <div style="font-size:1.1em; margin-top:10px;">お前の事、ちゃんと見てるからな。</div>
+      <button id="rcOk" style="margin-top:22px; background:#fa01fa; color:#fff; border:none; border-radius:8px; padding:8px 20px; font-size:1em; cursor:pointer;">完全に目をつけられてる…</button>
+    </div>
+  </div>
+  <div id="loading-screen" style="position:fixed;z-index:9999;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+    <img src="logo.png" alt="logo" id="loading-logo" style="width:330px;max-width:70vw;opacity:0;transition:opacity 1.2s;">
+    <div id="spinner" style="margin-top:38px;">
+      <div class="spinner-border" style="width:60px;height:60px;" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+    </div>
+  </div>
+  <button id="toTopBtn" aria-label="トップへ戻る" style="position:fixed;right:18px;bottom:18px;z-index:999;display:none;border-radius:50%;width:44px;height:44px;font-size:22px;background:#fff;border:1.5px solid #aaa;box-shadow:0 2px 8px #0001;cursor:pointer;transition:opacity .2s;">↑</button>
+  <button id="darkModeBtn" aria-label="ダークモード切替" style="position:fixed;left:18px;bottom:18px;z-index:999;border-radius:50%;width:44px;height:44px;font-size:22px;background:#222;color:#fff;border:none;box-shadow:0 2px 8px #0002;cursor:pointer;transition:background .2s;">🌙</button>
+  <div class="sticky-search-area" aria-label="検索とフィルター">
+    <div class="search-card">
+      <div class="search-row search-row-keyword">
+        <input type="text" id="searchBox" class="form-control searchbox-input"
+          placeholder="キーワード入力"
+          onkeydown="if(event.key==='Enter'){search(); event.preventDefault();}" 
+          aria-label="検索キーワード" autocomplete="off" />
+      </div>
+      <div class="search-row search-row-controls">
+        <button class="btn" id="filterToggleBtn" type="button" aria-expanded="false" aria-pressed="false" tabindex="0" title="フィルター条件を選択">
+          <i class="fa fa-filter"></i>
+        </button>
+        <button class="reset-btn" onclick="resetSearch()" title="すべてリセット" tabindex="0">リセット</button>
+        <span class="sort-wrapper">
+          <select id="sortSelect" class="form-select searchbox-select" onchange="search()" aria-label="並び替え" title="並び替え">
+            <option value="newest">公開日時が新しい順</option>
+            <option value="oldest">公開日時が古い順</option>
+            <option value="longest">動画時間が長い順</option>
+            <option value="shortest">動画時間が短い順</option>
+          </select>
+        </span>
+      </div>
+    </div>
+    <div class="results-count-under-bar" id="fixedResultsCount">表示数：0件</div>
+    <div class="filters-bar" id="filtersBar" aria-label="選択中のフィルター"></div>
+  </div>
+  <div class="drawer-backdrop" id="drawerBackdrop"></div>
+  <div id="filterDrawer" aria-modal="true" role="dialog" aria-label="詳細フィルタ">
+    <div class="filter-section">
+      <div class="filter-title">🎙️ 出演者検索</div>
+      <div class="guest-button-group filter-grid" role="group" aria-label="出演者フィルタ">
+        <button class="guest-button" data-guest="青山吉能" aria-pressed="false">青山吉能(ソロ回)</button>
+        <button class="guest-button" data-guest="鈴代紗弓" aria-pressed="false">鈴代紗弓</button>
+        <button class="guest-button" data-guest="水野朔" aria-pressed="false">水野朔</button>
+        <button class="guest-button" data-guest="長谷川育美" aria-pressed="false">長谷川育美</button>
+        <button class="guest-button" data-guest="内田真礼" aria-pressed="false">内田真礼</button>
+        <button class="guest-button" data-guest="千本木彩花" aria-pressed="false">千本木彩花</button>
+        <button class="guest-button" data-guest="和多田美咲" aria-pressed="false">和多田美咲</button>
+        <button class="guest-button" data-guest="小岩井ことり" aria-pressed="false">小岩井ことり</button>
+        <button class="guest-button" data-guest="結束バンド" aria-pressed="false">結束バンド(全員回)</button>
+        <button class="guest-button" data-guest="その他" aria-pressed="false">その他</button>
+      </div>
+    </div>
+    <div class="filter-section">
+      <div class="filter-title">📅 投稿年検索</div>
+      <div id="yearButtonGroup" class="filter-grid" role="group" aria-label="投稿年フィルタ">
+        <button class="btn-year" data-year="2022" aria-pressed="false">2022年</button>
+        <button class="btn-year" data-year="2023" aria-pressed="false">2023年</button>
+        <button class="btn-year" data-year="2024" aria-pressed="false">2024年</button>
+        <button class="btn-year" data-year="2025" aria-pressed="false">2025年</button>
+      </div>
+    </div>
+    <div class="filter-section">
+      <div class="filter-title">📻 コーナー検索</div>
+      <div id="cornerButtonGroup" class="filter-grid" role="group" aria-label="コーナーフィルタ">
+        <button class="btn-corner" data-corner="ぼっち共感" aria-pressed="false">ぼっち共感</button>
+        <button class="btn-corner" data-corner="ウソ陽キャ辞典" aria-pressed="false">ウソ陽キャ辞典</button>
+        <button class="btn-corner" data-corner="ぼっち・ざ・おーでぃしょん！" aria-pressed="false">ぼっち・ざ・おーでぃしょん！</button>
+        <button class="btn-corner" data-corner="ぼっち予想テスト" aria-pressed="false">ぼっち予想テスト</button>
+        <button class="btn-corner" data-corner="イキり懺悔室" aria-pressed="false">イキり懺悔室</button>
+        <button class="btn-corner" data-corner="本日のテーマ" aria-pressed="false">本日のテーマ</button>
+        <button class="btn-corner" data-corner="結束バンドと私" aria-pressed="false">結束バンドと私</button>
+        <button class="btn-corner" data-corner="ラッキーボタン" aria-pressed="false">ラッキーボタン</button>
+      </div>
+    </div>
+    <div class="filter-section">
+      <div class="filter-title">🔎 その他</div>
+      <div id="otherButtonGroup" class="filter-grid" role="group" aria-label="その他フィルタ">
+        <button class="btn-corner" data-other="生配信・公録" aria-pressed="false">生配信・公録</button>
+        <button class="btn-corner" data-other="特別編" aria-pressed="false">特別編</button>
+      </div>
+    </div>
+  </div>
+  <div class="main-content" id="mainContent">
+    <ul id="results" class="list-unstyled"></ul>
+    <div class="pagination-area" id="paginationArea"></div>
+    <div id="aboutSiteArea" style="text-align:center; margin:24px 0 8px;">
+      <a href="#" id="aboutSiteLink" style="color:#6654e8; text-decoration:underline; cursor:pointer; font-weight:500;">このサイトについて</a>
+    </div>
+    <div id="aboutModal" style="display:none; position:fixed; z-index:2055; left:0; top:0; width:100vw; height:100vh; background:rgba(30,29,52,0.18); backdrop-filter: blur(2px); align-items:center; justify-content:center;">
+      <div id="aboutModalContent" style="background:#fff; color:#222; border-radius:16px; box-shadow:0 6px 30px -6px #7c3aed35; max-width:95vw; width:360px; padding:32px 22px 22px 22px; margin:auto; text-align:center; position:relative; display:flex; flex-direction:column; align-items:center;">
+        <button id="aboutCloseBtn" style="position:absolute; right:17px; top:13px; border:none; background:none; font-size:1.5em; color:#6654e8; cursor:pointer;">×</button>
+        <img src="logo.png" alt="logo" style="width:100px; margin-bottom:10px; display:block; margin-left:auto; margin-right:auto;"/>
+        <div style="font-size:1.16em; font-weight:bold; margin-bottom:9px;">このサイトについて</div>
+        <div style="font-size:1em; line-height:1.75; text-align:left;">
+          <br>
+          <b>「さーち・ざ・らじお！」</b>は<br>
+          <a href="https://youtube.com/playlist?list=PLUH30mfo5wJy45vXf-Dk4i2Q9VY7oObm4&si=ier4jo03BAD2YOtJ" target="_blank" rel="noopener">ぼっち・ざ・らじお！（公式YouTube）</a>
+          の<br>エピソード情報を簡単・高速に検索できる非公式サイトです。<br>
+          <br>
+          <b>出演者やコーナー名、投稿年などで<br>絞り込み・キーワード検索が可能</b>です。<br>
+          <br>
+          ※本サイトはファンによる個人制作です。<br>
+          著作権は各権利者様に帰属します。
+        </div>
+      </div>
+    </div>
+    <footer>
+      ©はまじあき／芳文社・アニプレックス<br>
+      <a href="https://x.com/paseri_538" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;">Developed by paseri_538</a>
+    </footer>
+  </div>
+  <script src="main.js"></script>
+</body>
+</html>
