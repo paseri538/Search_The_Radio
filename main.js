@@ -58,7 +58,7 @@
       { episode:"29", title:"#29　ゲスト：鈴代紗弓", guest:"鈴代紗弓", date:"2023-07-05", link:"https://www.youtube.com/watch?v=Xg1ozrPAwDI", keywords:["鈴代紗弓","さゆみん","おさゆ","みんみん","さゆちゃん","おすず","すずちゃん","鈴代ちゃん","すずしろさゆみ"], duration:"1:04:08" },
       { episode:"28", title:"#28　", guest:"青山吉能", date:"2023-06-21", link:"https://www.youtube.com/watch?v=_SUn0OWQo2k", keywords:["青山吉能","よぴ","よしの","よっぴー","あおやまよしの"], duration:"1:11:00" },
       { episode:"27", title:"#27　ゲスト：水野朔", guest:"水野朔", date:"2023-06-07", link:"https://www.youtube.com/watch?v=HqKaV7V4L7A", keywords:["水野朔","さくぴ","さくさくちゃん","ﾐｽﾞﾉｻｸﾃﾞｼｭ","みずのさく",], duration:"1:02:45" },
-      { episode:"26", title:"#26　ゲスト：長谷川育美", guest:"長谷川育美", date:"2023-05-24", link:"https://www.youtube.com/watch?v=OL8SskfX6eA", keywords:["長谷川育美","いくみ","はせみ","はせちゃん","いくちゃん","はっせー","はせがわいくみ","よぴいく","ypik","結束バンドLIVE恒星","恒星","こうせい",], duration:"1:07:08" },
+      { episode:"26", title:"#26　ゲスト：長谷川育美", guest:"長谷川育美", date:"2023-05-24", link:"https://www.youtube.com/watch?v=L8mHUOlAw64", keywords:["長谷川育美","いくみ","はせみ","はせちゃん","いくちゃん","はっせー","はせがわいくみ","よぴいく","ypik","結束バンドLIVE恒星","恒星","こうせい",], duration:"1:07:08" },
       { episode:"25", title:"#25　ゲスト：鈴代紗弓", guest:"鈴代紗弓", date:"2023-05-10", link:"https://www.youtube.com/watch?v=WsfRhqaLO_k", keywords:["鈴代紗弓","さゆみん","おさゆ","みんみん","さゆちゃん","おすず","すずちゃん","鈴代ちゃん","すずしろさゆみ"], duration:"1:10:38" },
       { episode:"24", title:"#24　", guest:"青山吉能", date:"2023-04-26", link:"https://www.youtube.com/watch?v=efXr9X648so", keywords:["青山吉能","よぴ","よしの","よっぴー","あおやまよしの","ぼっち・ざ・ろっく！です。","ぼざろです"], duration:"54:09" },
       { episode:"23", title:"#23　", guest:"青山吉能", date:"2023-04-12", link:"https://www.youtube.com/watch?v=_8-sk4OwB78", keywords:["青山吉能","よぴ","よしの","よっぴー","あおやまよしの","エロ女上司","えろおんなじょうし"], duration:"1:11:46" },
@@ -94,6 +94,25 @@
     let currentPage = 1;
     const pageSize = 20;
     let lastResults = [];
+
+// === Favorites ===
+const FAV_KEY = 'str_favs_v1';
+let favorites = loadFavs();
+let showFavoritesOnly = false;
+
+function getVideoId(link) {
+  const m = (link || '').match(/(?:v=|be\/)([\w-]{11})/);
+  return m ? m[1] : link;
+}
+function loadFavs() {
+  try { return new Set(JSON.parse(localStorage.getItem(FAV_KEY) || '[]')); }
+  catch { return new Set(); }
+}
+function saveFavs() { localStorage.setItem(FAV_KEY, JSON.stringify([...favorites])); }
+function isFavorite(id) { return favorites.has(id); }
+function toggleFavorite(id) { favorites.has(id) ? favorites.delete(id) : favorites.add(id); saveFavs(); }
+
+
     const guestColorMap = {
       "青山吉能": "#fa01fa", "鈴代紗弓": "#fdfe0f", "水野朔": "#15f4f3", "長谷川育美": "#f93e07",
       "内田真礼": "#f09110", "千本木彩花": "#bbc3b8", "和多田美咲": "#a8eef4", "小岩井ことり": "#494386"
@@ -232,6 +251,13 @@ if (g === "結束バンド") {
           return selectedYears.includes(String(year));
         });
       }
+      
+      // お気に入りだけ表示（トグル時）
+if (showFavoritesOnly) {
+  res = res.filter(it => isFavorite(getVideoId(it.link)));
+}
+
+      
       // 並び替え
       if (sort === "newest") {
         res.sort((a, b) => {
@@ -296,12 +322,20 @@ function fitGuestLines() {
     function renderResults(arr, page=1) {
       const ul = $("#results");
       ul.empty();
-      if (!arr.length) {
-        ul.html(`<li class="episode-item no-results">
-          <div>ﾉ°(6ᯅ9)「な、何も表示されない...」</div>
-        </li>`);
-        return;
-      }
+
+      if (!Array.isArray(arr) || arr.length === 0) {
+  $("#results").html(
+    `<li class="no-results">${
+      showFavoritesOnly
+        ? "お気に入りはまだありません。<br>★を押して登録してください。"
+        : "該当する回が見つかりません。"
+    }</li>`
+  );
+  return;
+}
+
+
+      
       const startIdx = (page-1)*pageSize, endIdx = page*pageSize;
       arr.slice(startIdx, endIdx).forEach(it => {
         const thumb = getThumbnail(it.link);
@@ -328,6 +362,21 @@ function fitGuestLines() {
           </a>
         </li>`);
       });
+      
+      // 各カードに★ボタンを付与（重複防止）
+$('#results .episode-item').each(function(i){
+  if ($(this).find('.fav-btn').length) return;
+  const link = $(this).find('a').attr('href') || '';
+  const id = getVideoId(link);
+  const active = isFavorite(id);
+  $(this).append(
+    `<button class="fav-btn ${active?'active':''}" data-id="${id}" aria-label="お気に入り" title="お気に入り">
+       <i class="${active?'fa-solid':'fa-regular'} fa-star"></i>
+     </button>`
+  );
+});
+
+
     }
     function resetFilters() {
       selectedGuests = [];
@@ -340,11 +389,30 @@ function fitGuestLines() {
       updateYearStyles();
       search();
     }
-    function resetSearch() {
-      $("#searchBox").val("");
-      $("#sortSelect").val("newest");
-      resetFilters();
-    }
+function resetSearch() {
+  // 入力と並び替えを初期化
+  $("#searchBox").val("");
+  $("#sortSelect").val("newest");
+
+  // 「お気に入りだけ表示」中なら、★を全解除してトグルもOFF
+  if (typeof showFavoritesOnly !== "undefined" && showFavoritesOnly) {
+    clearAllFavorites();
+
+    showFavoritesOnly = false;
+    $("#favOnlyToggleBtn")
+      .removeClass("active")
+      .attr("aria-pressed", "false");
+
+    // 画面に出ている星の見た目も即時反映（安全のため）
+    $("#results .fav-btn.active")
+      .removeClass("active")
+      .find("i").removeClass("fa-solid").addClass("fa-regular");
+  }
+
+  // 既存のフィルタ初期化（この中で search() が呼ばれて初期表示に戻る想定）
+  resetFilters();
+}
+
     function updateGuestButtonStyles() {
       $(".guest-button").each(function() {
         const guest = $(this).data("guest");
@@ -518,6 +586,34 @@ function fitGuestLines() {
       updateCornerStyles();
       updateOtherStyles();
       updateYearStyles();
+
+
+      // ★ボタン（委任）
+$('#results').on('click', '.fav-btn', function(e){
+  e.preventDefault(); e.stopPropagation();
+  const id = $(this).data('id');
+  toggleFavorite(id);
+  $(this).toggleClass('active')
+         .find('i').toggleClass('fa-regular fa-solid');
+  if (showFavoritesOnly) search({ gotoPage: currentPage || 1 });
+});
+
+// 「お気に入りだけ」トグル（index.htmlで #favOnlyToggleBtn を用意）
+$('#favOnlyToggleBtn').on('click', function(){
+  showFavoritesOnly = !showFavoritesOnly;
+  $(this).attr('aria-pressed', showFavoritesOnly)
+         .toggleClass('active', showFavoritesOnly);
+  search({ gotoPage: 1 });
+});
+
+// ランダム（現在の検索結果から。なければ全データ）
+$('#randomBtn').on('click', function(){
+  const pool = (Array.isArray(lastResults) && lastResults.length) ? lastResults : data;
+  if (!pool.length) return;
+  const pick = pool[Math.floor(Math.random() * pool.length)];
+  window.open(pick.link, '_blank', 'noopener');
+});
+
     });
 
     // トップへ戻るボタンの表示制御
@@ -832,17 +928,38 @@ window.__updateHeaderOffset && window.__updateHeaderOffset();
   $('#aboutCloseBtn').off('click').on('click', function(){ $('#aboutModal').hide(); updateScrollLock(); });
   $('#aboutModal').off('click').on('click', function(e){ if (e.target === this) { $(this).hide(); updateScrollLock(); } });
 
-  // Ensure reset closes drawer and unlocks scroll
-  window.resetSearch = (function(orig){
-    return function(){
-      if ($('#searchBox').length) $('#searchBox').val('');
-      if ($('#sortSelect').length) $('#sortSelect').val('newest');
-      if (typeof resetFilters === 'function') resetFilters();
-      closeDrawer();
-      updateScrollLock();
-      if (typeof search === 'function') search();
-    };
-  })(window.resetSearch);
+// Ensure reset really resets everything (favorites included) and tidy UI
+window.resetSearch = (function (orig) {
+  return function () {
+    if (typeof orig === "function") {
+      // ← ここで前に定義した resetSearch()（★全解除など）を実行
+      orig();
+    } else {
+      // フォールバック：最小限の完全リセット
+      if ($("#searchBox").length) $("#searchBox").val("");
+      if ($("#sortSelect").length) $("#sortSelect").val("newest");
+
+      // お気に入りだけ表示中なら、★を全解除してトグルもOFF
+      if (window.showFavoritesOnly) {
+        if (typeof clearAllFavorites === "function") clearAllFavorites();
+        window.showFavoritesOnly = false;
+        $("#favOnlyToggleBtn").removeClass("active").attr("aria-pressed", "false");
+        $("#results .fav-btn.active")
+          .removeClass("active")
+          .find("i").removeClass("fa-solid").addClass("fa-regular");
+      }
+
+      if (typeof resetFilters === "function") resetFilters();
+      else if (typeof search === "function") search();
+    }
+
+    // UI後処理
+    if (typeof closeDrawer === "function") closeDrawer();
+    if (typeof updateScrollLock === "function") updateScrollLock();
+  };
+})(window.resetSearch);
+
+
 
   // Dev helper: warn on duplicate YouTube IDs in data
   try {
@@ -852,4 +969,56 @@ window.__updateHeaderOffset && window.__updateHeaderOffset();
     Object.keys(seen).forEach(id => { if (seen[id] > 1) console.warn('[SearchTheRadio] Duplicate video id:', id, 'x'+seen[id]); });
   } catch(e){}
   updateScrollLock();
+})();
+
+
+// ===== スマホ時は並び替えラベルを短くする =====
+(function(){
+  const MAP = {
+    newest : {full:'公開日時が新しい順', short:'新しい順'},
+    oldest : {full:'公開日時が古い順',   short:'古い順'},
+    longest: {full:'動画時間が長い順',   short:'長い順'},
+    shortest:{full:'動画時間が短い順',   short:'短い順'}
+  };
+  function applySortLabels(){
+    const sel = document.getElementById('sortSelect');
+    if(!sel) return;
+    const isSmall = window.matchMedia('(max-width:600px)').matches;
+    Object.entries(MAP).forEach(([val,labels])=>{
+      const opt = sel.querySelector(`option[value="${val}"]`);
+      if(opt) opt.textContent = isSmall ? labels.short : labels.full;
+    });
+  }
+  // 初期化とリサイズで反映
+  document.addEventListener('DOMContentLoaded', applySortLabels);
+  window.addEventListener('resize', applySortLabels);
+  window.addEventListener('orientationchange', applySortLabels);
+})();
+
+
+// 全お気に入りを解除して保存
+function clearAllFavorites(){
+  if (typeof favorites !== "undefined" && favorites instanceof Set) {
+    favorites = new Set();    // もしくは favorites.clear();
+    if (typeof saveFavs === "function") saveFavs();
+    else if (typeof FAV_KEY !== "undefined") localStorage.setItem(FAV_KEY, "[]");
+  } else if (typeof FAV_KEY !== "undefined") {
+    localStorage.setItem(FAV_KEY, "[]");
+  }
+}
+
+
+// === モバイルのズーム操作を抑止（iOS対策） ===
+(function () {
+  const opts = { passive: false };
+  ["gesturestart","gesturechange","gestureend"].forEach(ev=>{
+    document.addEventListener(ev, e => e.preventDefault(), opts);
+  });
+  // ダブルタップの拡大抑止
+  let last = 0;
+  document.addEventListener("touchend", e => {
+    const now = Date.now();
+    if (now - last < 350) e.preventDefault();
+    last = now;
+  }, opts);
 })();

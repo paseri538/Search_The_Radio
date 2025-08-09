@@ -738,3 +738,91 @@ body.dark-mode #loading-screen {
   white-space: nowrap;
   vertical-align: top;
 }
+
+
+
+/* ヘッダーの小さめ操作ボタン */
+.icon-btn, #favOnlyToggleBtn, #randomBtn{
+  height:2.5em;border-radius:.63em;padding:0 .9em;
+  background:#fff;border:1.3px solid #dad4ff;color:var(--btn-main);
+  font-weight:500;cursor:pointer;transition:all var(--transition);
+}
+#favOnlyToggleBtn.active,
+#favOnlyToggleBtn[aria-pressed="true"]{
+  background:#fff7d1;border-color:#f5b301;color:#b88400;
+}
+#randomBtn:hover{ transform:translateY(-1px); box-shadow:0 6px 18px -6px #978df644; }
+
+/* 各カードに★ボタン */
+.episode-item{ position:relative; } /* 既存に追加でOK */
+.fav-btn{
+  position:absolute;right:10px;top:10px;width:34px;height:34px;border-radius:50%;
+  background:#fff;border:1px solid #e6e6f3;box-shadow:0 2px 10px -6px #0002;
+  display:flex;align-items:center;justify-content:center;cursor:pointer;
+  transition:transform .12s, box-shadow .12s, background .12s;
+}
+.fav-btn i{ font-size:16px; }
+.fav-btn:hover{ transform:scale(1.06); }
+.fav-btn.active{ background:#fff3c4; border-color:#f5b301; }
+.fav-btn.active i{ color:#f5b301; }
+
+/* ”0件”のときは .no-results が使われる（既存） */
+
+/* 全体に少し動き：カードのフェードアップ */
+@keyframes rise{ from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:translateY(0)} }
+#results .episode-item{ animation:rise .24s ease both; }
+
+/* ダークモード調整 */
+body.dark-mode .icon-btn, body.dark-mode #favOnlyToggleBtn, body.dark-mode #randomBtn{
+  background:#2f3640;border-color:#49686a;color:#96e5c4;
+}
+body.dark-mode #favOnlyToggleBtn.active{ background:#2b3a27; border-color:#8bb558; color:#e3f6c2; }
+body.dark-mode .fav-btn{ background:#2d333b;border-color:#394150; }
+
+
+/* ===== Favorite button (dark mode) ===== */
+body.dark-mode .fav-btn{
+  background:#2a2f37 !important;
+  border:1px solid #41505f !important;
+  color:#e7eef6 !important;       /* 非アクティブ時の星色 */
+}
+body.dark-mode .fav-btn i{ color:#e7eef6 !important; }
+
+/* アクティブ時は明るい背景＋濃い星（色反転で視認性アップ） */
+body.dark-mode .fav-btn.active{
+  background:#ffd24e !important;
+  border-color:#ffd24e !important;
+  color:#2b2b2b !important;
+}
+body.dark-mode .fav-btn.active i{ color:#2b2b2b !important; }
+
+
+
+/* 0件カードをグリッド1行いっぱいにして中央へ */
+#results .no-results{
+  grid-column: 1 / -1;      /* 2カラム時も横いっぱい */
+  max-width: 760px;          /* 広すぎ防止 */
+  margin: 6px auto;          /* 中央寄せ */
+}
+
+/* ダークモード配色 */
+body.dark-mode .no-results{
+  background:#2d333b !important;
+  color:#bcd6ea !important;
+  border:1px solid #394150 !important;
+  box-shadow: 0 1px 10px -6px #000a !important;
+}
+
+/* ★を右下に配置（既存の right/top 指定を上書き） */
+#results .episode-item { position: relative; }           /* 念のため */
+
+
+/* （必要なら）重なり防止でカード内に少し余白を作る */
+#results .episode-item { padding-right: 52px; }
+@media (max-width: 900px){
+  #results .episode-item { padding-right: 48px; }
+}
+
+
+/* ===== 端末でのダブルタップ拡大を抑止 ===== */
+button, a, select, input, label { touch-action: manipulation; }

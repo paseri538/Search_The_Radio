@@ -31,7 +31,8 @@
 
 
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+
   <title>さーち・ざ・らじお！</title>
 
 <link rel="preload" as="image" href="logo.png">
@@ -74,6 +75,16 @@
         <button class="btn" id="filterToggleBtn" type="button" aria-expanded="false" aria-pressed="false" tabindex="0" title="フィルター条件を選択">
           <i class="fa fa-filter"></i>
         </button>
+        
+        <button class="icon-btn" id="favOnlyToggleBtn" aria-pressed="false" title="お気に入りだけ表示">
+  <i class="fa-regular fa-star"></i><span class="d-none d-md-inline"> お気に入り</span>
+</button>
+
+<button class="icon-btn" id="randomBtn" title="ランダムで1本開く">
+  <i class="fa fa-shuffle"></i><span class="d-none d-md-inline"> ランダム</span>
+</button>
+
+
         <button class="reset-btn" onclick="resetSearch()" title="すべてリセット" tabindex="0">リセット</button>
         <span class="sort-wrapper">
           <select id="sortSelect" class="form-select searchbox-select" onchange="search()" aria-label="並び替え" title="並び替え">
