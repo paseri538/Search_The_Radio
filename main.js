@@ -1,6 +1,6 @@
 // --- データ・状態 ---
     const data = [
-      { episode:"83", title:"#83　ゲスト：水野朔", guest:"水野朔", date:"2025-07-30", link:"https://www.youtube.com/watch?v=LcPFWQ5JdoU", keywords:["水野朔","さくぴ","さくさくちゃん","ﾐｽﾞﾉｻｸﾃﾞｼｭ","みずのさく","本日のテーマ","結束バンドと私"], duration:"1:08:26" },
+      { episode:"83", title:"#83　ゲスト：水野朔", guest:"水野朔", date:"2025-07-30", link:"https://www.youtube.com/watch?v=LcPFWQ5JdoU", keywords:["水野朔","さくぴ","さくさくちゃん","ﾐｽﾞﾉｻｸﾃﾞｼｭ","みずのさく","本日のテーマ","結束バンドと私","夏フェス@01:23"], duration:"1:08:26" },
       { episode:"82", title:"#82　ゲスト：長谷川育美", guest:"長谷川育美", date:"2025-07-16", link:"https://www.youtube.com/watch?v=IdEStksoFaM", keywords:["長谷川育美","いくみ","はせみ","はせちゃん","いくちゃん","はっせー","はせがわいくみ","よぴいく","ypik"], duration:"1:12:20" },
       { episode:"81", title:"#81　ゲスト：鈴代紗弓", guest:"鈴代紗弓", date:"2025-07-02", link:"https://www.youtube.com/watch?v=FA7BqhR_AkQ", keywords:["鈴代紗弓","さゆみん","おさゆ","みんみん","さゆちゃん","おすず","すずちゃん","鈴代ちゃん","すずしろさゆみ"], duration:"1:08:01" },
       { episode:"80", title:"#80　", guest:"青山吉能", date:"2025-06-18", link:"https://www.youtube.com/watch?v=saAS_RHRhDI", keywords:["青山吉能","よぴ","よしの","よっぴー","あおやまよしの"], duration:"1:04:09" },
@@ -62,7 +62,7 @@
       { episode:"25", title:"#25　ゲスト：鈴代紗弓", guest:"鈴代紗弓", date:"2023-05-10", link:"https://www.youtube.com/watch?v=WsfRhqaLO_k", keywords:["鈴代紗弓","さゆみん","おさゆ","みんみん","さゆちゃん","おすず","すずちゃん","鈴代ちゃん","すずしろさゆみ"], duration:"1:10:38" },
       { episode:"24", title:"#24　", guest:"青山吉能", date:"2023-04-26", link:"https://www.youtube.com/watch?v=efXr9X648so", keywords:["青山吉能","よぴ","よしの","よっぴー","あおやまよしの","ぼっち・ざ・ろっく！です。","ぼざろです"], duration:"54:09" },
       { episode:"23", title:"#23　", guest:"青山吉能", date:"2023-04-12", link:"https://www.youtube.com/watch?v=_8-sk4OwB78", keywords:["青山吉能","よぴ","よしの","よっぴー","あおやまよしの","エロ女上司","えろおんなじょうし"], duration:"1:11:46" },
-      { episode:"22", title:"#22　ゲスト：鈴代紗弓、水野朔、長谷川育美", guest:["鈴代紗弓","水野朔","長谷川育美"], date:"2023-03-29", link:"https://www.youtube.com/watch?v=mwJeACqV2Oc", keywords:["鈴代紗弓","さゆみん","おさゆ","みんみん","さゆちゃん","おすず","すずちゃん","鈴代ちゃん","すずしろさゆみ","水野朔","さくぴ","さくさくちゃん","ﾐｽﾞﾉｻｸﾃﾞｼｭ","みずのさく","長谷川育美","いくみ","はせみ","はせちゃん","いくちゃん","はっせー","はせがわいくみ","生配信・公録","ラッキーボタン","藤田亜紀子","ふじたあきこ","ｵﾓｼﾛｲｯ!","ダジャレ","匂わせ"], duration:"1:27:48" },
+      { episode:"22", title:"#22　ゲスト：鈴代紗弓、水野朔、長谷川育美", guest:["鈴代紗弓","水野朔","長谷川育美"], date:"2023-03-29", link:"https://www.youtube.com/watch?v=mwJeACqV2Oc", keywords:["鈴代紗弓","さゆみん","おさゆ","みんみん","さゆちゃん","おすず","すずちゃん","鈴代ちゃん","すずしろさゆみ","水野朔","さくぴ","さくさくちゃん","ﾐｽﾞﾉｻｸﾃﾞｼｭ","みずのさく","長谷川育美","いくみ","はせみ","はせちゃん","いくちゃん","はっせー","はせがわいくみ","生配信・公録","ラッキーボタン@45:15","藤田亜紀子@45:15","ふじたあきこ@45:15","ｵﾓｼﾛｲｯ!","ダジャレ","匂わせ"], duration:"1:27:48" },
       { episode:"21", title:"#21　", guest:"青山吉能", date:"2023-03-15", link:"https://www.youtube.com/watch?v=kUbnGEpkT6E", keywords:["青山吉能","よぴ","よしの","よっぴー","あおやまよしの","エロ女上司","えろおんなじょうし"], duration:"56:46" },
       { episode:"20", title:"#20　ゲスト：長谷川育美", guest:"長谷川育美", date:"2023-03-01", link:"https://www.youtube.com/watch?v=VN95H7KjuL0", keywords:["長谷川育美","いくみ","はせみ","はせちゃん","いくちゃん","はっせー","はせがわいくみ","よぴいく","ypik","優しさで言ってない","やさしさでいってない",], duration:"1:02:01" },
       { episode:"19", title:"#19　ゲスト：水野朔", guest:"水野朔", date:"2023-02-15", link:"https://www.youtube.com/watch?v=cAx6-HQejSI", keywords:["水野朔","さくぴ","さくさくちゃん","ﾐｽﾞﾉｻｸﾃﾞｼｭ","みずのさく",], duration:"1:03:29" },
@@ -138,6 +138,57 @@ function toggleFavorite(id) { favorites.has(id) ? favorites.delete(id) : favorit
     function normalize(s){
       return toHiragana(s.normalize("NFKC").toLowerCase().replace(/\s+/g,""));
     }
+
+    // --- keyword に付けた @mm:ss / @hh:mm:ss を読む ---
+function parseKeywordTime(kw) {
+  if (typeof kw !== "string") return null;
+  const m = kw.match(/^(.*)@(\d{1,2}:\d{2}(?::\d{2})?)$/);
+  if (!m) return null;
+  const base = m[1].trim();
+  const label = m[2];
+  const parts = label.split(":").map(n => parseInt(n,10));
+  const seconds = parts.length === 3
+    ? parts[0]*3600 + parts[1]*60 + parts[2]
+    : parts[0]*60 + parts[1];
+  return { base, label, seconds };
+}
+
+// --- YouTube の URL に t=sec を付ける（既存 t は付け替え） ---
+function withTimeParam(url, seconds) {
+  if (!seconds) return url;
+  try {
+    const u = new URL(url);
+    u.searchParams.delete("t");
+    u.searchParams.set("t", String(seconds));    // 例: &t=83
+    return u.toString();
+  } catch {
+    const cleaned = url.replace(/([?&])t=\d+s?(?=&|$)/, "$1").replace(/[?&]$/, "");
+    return cleaned + (cleaned.includes("?") ? "&" : "?") + "t=" + seconds;
+  }
+}
+
+// --- 検索語と keyword@time を“部分一致”で探して 1件返す ---
+// 例: keywords に「ラッキーボタン@45:15」登録、検索語が「らっきー」でもヒット
+function findHitTime(item, rawQuery) {
+  if (!rawQuery) return null;
+  const qn = normalize(rawQuery);             // ひらがな・小文字・空白除去
+  if (!qn) return null;
+
+  for (const kw of (item.keywords || [])) {
+    const p = parseKeywordTime(kw);
+    if (!p) continue;
+    const baseN = normalize(p.base);
+
+    // ★ 部分一致（双方向）：検索語 ⊂ キーワード名 も キーワード名 ⊂ 検索語 もOK
+    if (baseN.includes(qn) || qn.includes(baseN)) {
+      return p;  // 最初に見つかったものを返す（複数あれば一番上）
+    }
+  }
+  return null;
+}
+
+
+    
     function getEpisodeNumber(episode) {
       if (/^\d+$/.test(episode)) return parseInt(episode, 10);
       if (episode === "緊急" || episode === "特別編") return -1;
@@ -316,68 +367,95 @@ function fitGuestLines() {
     }
   });
 }
+function renderResults(arr, page = 1) {
+  const ul = $("#results");
+  ul.empty();
 
+  if (!Array.isArray(arr) || arr.length === 0) {
+    $("#results").html(
+      `<li class="no-results">${
+        showFavoritesOnly
+          ? "お気に入りはまだありません。<br>★を押して登録してください。"
+          : "該当する回が見つかりません。"
+      }</li>`
+    );
+    return;
+  }
 
-    
-    function renderResults(arr, page=1) {
-      const ul = $("#results");
-      ul.empty();
+  const startIdx = (page - 1) * pageSize, endIdx = page * pageSize;
+  const qRaw = $("#searchBox").val().trim(); // 検索語
+  // コーナーフィルタが1つだけ選ばれている時は、そのコーナー名も時刻探索に使う
+  const cornerTarget =
+    Array.isArray(selectedCorners) && selectedCorners.length === 1
+      ? selectedCorners[0]
+      : null;
 
-      if (!Array.isArray(arr) || arr.length === 0) {
-  $("#results").html(
-    `<li class="no-results">${
-      showFavoritesOnly
-        ? "お気に入りはまだありません。<br>★を押して登録してください。"
-        : "該当する回が見つかりません。"
-    }</li>`
-  );
-  return;
+  arr.slice(startIdx, endIdx).forEach(it => {
+    const thumb = getThumbnail(it.link);
+    const hashOnly = getHashNumber(it.title);
+
+    // 1) 検索語で keyword@mm:ss を探す → 2) ダメならコーナー名で探す
+    let hit = findHitTime(it, qRaw);
+    if (!hit && cornerTarget) hit = findHitTime(it, cornerTarget);
+
+    // ヒットしていたら &t=sec を付与したURLに差し替え
+    const finalLink = hit ? withTimeParam(it.link, hit.seconds) : it.link;
+
+    let guestText = "";
+    if (Array.isArray(it.guest)) guestText = "ゲスト：" + it.guest.join("、");
+    else if (it.guest === "青山吉能") guestText = "パーソナリティ：青山吉能";
+    else if (it.guest && it.guest !== "その他") guestText = `ゲスト：${it.guest}`;
+
+    ul.append(`
+      <li class="episode-item" role="link" tabindex="0">
+        <a href="${finalLink}" target="_blank" rel="noopener"
+           style="display:flex;gap:13px;text-decoration:none;color:inherit;align-items:center;min-width:0;">
+          <div class="thumb-col">
+            <img src="${thumb}" class="thumbnail" alt="サムネイル：${hashOnly}">
+            ${hit ? `
+              <div class="ts-buttons">
+                <button class="ts-btn" data-url="${it.link}" data-ts="${hit.seconds}"
+                        aria-label="${hit.label} から再生">${hit.label}</button>
+              </div>` : ``}
+          </div>
+          <div style="min-width:0;">
+            <div class="d-flex align-items-start justify-content-between" style="min-width:0;">
+              <h5 class="mb-1">
+                ${hashOnly}${/\u3000/.test(it.title) ? "<br>" : ""}
+                <span class="guest-one-line" aria-label="${guestText}">${guestText}</span>
+              </h5>
+            </div>
+            <p class="episode-meta">公開日時：${it.date}<br>動画時間：${it.duration || "?"}</p>
+          </div>
+        </a>
+      </li>
+    `);
+  });
+
+  // サムネ下の時刻ボタン（委任）
+  ul.off('click', '.ts-btn').on('click', '.ts-btn', function (e) {
+    e.preventDefault(); e.stopPropagation();
+    const sec = Number(this.dataset.ts) || 0;
+    const base = this.dataset.url || '';
+    window.open(withTimeParam(base, sec), '_blank', 'noopener');
+  });
+
+  // ★ボタン付与（既存）
+  $('#results .episode-item').each(function () {
+    if ($(this).find('.fav-btn').length) return;
+    const link = $(this).find('a').attr('href') || '';
+    const id = getVideoId(link);
+    const active = isFavorite(id);
+    $(this).append(
+      `<button class="fav-btn ${active ? 'active' : ''}" data-id="${id}" aria-label="お気に入り" title="お気に入り">
+         <i class="${active ? 'fa-solid' : 'fa-regular'} fa-star"></i>
+       </button>`
+    );
+  });
 }
 
 
-      
-      const startIdx = (page-1)*pageSize, endIdx = page*pageSize;
-      arr.slice(startIdx, endIdx).forEach(it => {
-        const thumb = getThumbnail(it.link);
-        const hashOnly = getHashNumber(it.title);
-        let guestText = "";
-        if (Array.isArray(it.guest)) guestText = "ゲスト：" + it.guest.join("、");
-        else if (it.guest === "青山吉能") guestText = "パーソナリティ：青山吉能";
-        else if (it.guest && it.guest !== "その他") guestText = `ゲスト：${it.guest}`;
-        ul.append(`<li class="episode-item" role="link" tabindex="0">
-          <a href="${it.link}" target="_blank" rel="noopener" style="display:flex;gap:13px;text-decoration:none;color:inherit;align-items:center;min-width:0;">
-            <img src="${thumb}" class="thumbnail" alt="サムネイル：${hashOnly}">
-            <div style="min-width:0;">
-              <div class="d-flex align-items-start justify-content-between" style="min-width:0;">
-               
-              <h5 class="mb-1">
-  ${hashOnly}${/\u3000/.test(it.title) ? "<br>" : ""}
-  <span class="guest-one-line" aria-label="${guestText}">${guestText}</span>
-</h5>
 
-
-              </div>
-              <p class="episode-meta">公開日時：${it.date}<br>動画時間：${it.duration || "?"}</p>
-            </div>
-          </a>
-        </li>`);
-      });
-      
-      // 各カードに★ボタンを付与（重複防止）
-$('#results .episode-item').each(function(i){
-  if ($(this).find('.fav-btn').length) return;
-  const link = $(this).find('a').attr('href') || '';
-  const id = getVideoId(link);
-  const active = isFavorite(id);
-  $(this).append(
-    `<button class="fav-btn ${active?'active':''}" data-id="${id}" aria-label="お気に入り" title="お気に入り">
-       <i class="${active?'fa-solid':'fa-regular'} fa-star"></i>
-     </button>`
-  );
-});
-
-
-    }
     function resetFilters() {
       selectedGuests = [];
       selectedCorners = [];
@@ -1006,19 +1084,3 @@ function clearAllFavorites(){
     localStorage.setItem(FAV_KEY, "[]");
   }
 }
-
-
-// === モバイルのズーム操作を抑止（iOS対策） ===
-(function () {
-  const opts = { passive: false };
-  ["gesturestart","gesturechange","gestureend"].forEach(ev=>{
-    document.addEventListener(ev, e => e.preventDefault(), opts);
-  });
-  // ダブルタップの拡大抑止
-  let last = 0;
-  document.addEventListener("touchend", e => {
-    const now = Date.now();
-    if (now - last < 350) e.preventDefault();
-    last = now;
-  }, opts);
-})();

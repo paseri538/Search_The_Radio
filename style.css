@@ -910,3 +910,13 @@ body:not(.dark-mode) .reset-btn:focus {
   background: #eaf6ff !important;
   color: #5744D8 !important; /* 可読性を少し上げる */
 }
+
+/* サムネ + タイムスタンプ表示 */
+.thumb-col { width:120px; flex-shrink:0; display:flex; flex-direction:column; }
+.ts-buttons { margin-top:6px; display:flex; flex-wrap:wrap; gap:6px; }
+.ts-btn {
+  display:inline-block; padding:3px 8px; border-radius:999px; font-size:.85em;
+  background:#ebeafd; color:#463d94; border:1px solid #dad4ff; line-height:1.2;
+}
+/* ダークモード */
+body.dark-mode .ts-btn { background:#25323c; color:#a6e1fa; border-color:#415766; }
