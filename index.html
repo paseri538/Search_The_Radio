@@ -3,6 +3,28 @@
 
 
 <head>
+
+<!-- ★最初の描画前にダーク背景を強制 -->
+<script>
+(function () {
+  try {
+    var ls = localStorage.getItem("theme");
+    var prefers = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+    var isDark = (ls === "dark") || (!ls && prefers);
+    if (isDark) {
+      var st = document.createElement("style");
+      st.id = "early-dark-style";
+      st.textContent =
+        "html,body{background:#22272e!important;color:#e5ecec!important}" +
+        "#loading-screen{background:#22272e!important}";
+      document.head.appendChild(st);
+      // 早期にダークであることを示すフラグ（任意）
+      document.documentElement.setAttribute("data-theme","dark");
+    }
+  } catch(e){}
+})();
+</script>
+
 <meta name="color-scheme" content="dark light">
 <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#22272e">
 <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f9fafe">
@@ -11,8 +33,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>さーち・ざ・らじお！</title>
-  
-<link rel="icon" type="image/png" href="logo.png">
+
 <link rel="preload" as="image" href="logo.png">
   
   <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
@@ -54,9 +75,6 @@
           <i class="fa fa-filter"></i>
         </button>
         <button class="reset-btn" onclick="resetSearch()" title="すべてリセット" tabindex="0">リセット</button>
-        <button class="icon-btn" id="randomBtn" type="button" title="いまの条件からランダムで開く" aria-label="ランダム回">🎲</button>
-        <button class="icon-btn" id="favOnlyBtn" type="button" title="お気に入りのみ表示" aria-pressed="false" aria-label="お気に入りのみ">★</button>
-        <button class="icon-btn" id="shareBtn" type="button" title="現在の検索条件のリンクをコピー" aria-label="条件のURLをコピー"><i class="fa fa-link"></i></button>
         <span class="sort-wrapper">
           <select id="sortSelect" class="form-select searchbox-select" onchange="search()" aria-label="並び替え" title="並び替え">
             <option value="newest">公開日時が新しい順</option>
@@ -119,15 +137,6 @@
   </div>
   <div class="main-content" id="mainContent">
     <ul id="results" class="list-unstyled"></ul>
-
-    <!-- お気に入り一括シェア（一覧の下） -->
-<div id="favShareArea" style="display:none; text-align:center; margin:14px 0 8px;">
-  <button id="favShareMainBtn" class="fav-share-main-btn" type="button">
-    お気に入り回をXでシェア
-  </button>
-</div>
-
-
     <div class="pagination-area" id="paginationArea"></div>
     <div id="aboutSiteArea" style="text-align:center; margin:24px 0 8px;">
       <a href="#" id="aboutSiteLink" style="color:#6654e8; text-decoration:underline; cursor:pointer; font-weight:500;">このサイトについて</a>

@@ -87,68 +87,7 @@
       { episode:"01", title:"#01　", guest:"青山吉能", date:"2022-09-07", link:"https://www.youtube.com/watch?v=__P57MTTjyw", keywords:["青山吉能","よぴ","よしの","よっぴー","あおやまよしの"], duration:"55:53" },
 
     ];
-    
-// --- お気に入り・共有URL・ランダム回 追加 ---
-let favorites = new Set(JSON.parse(localStorage.getItem('favorites_v1') || '[]'));
-let favOnly = false;
-
-function saveFavorites(){
-  localStorage.setItem('favorites_v1', JSON.stringify(Array.from(favorites)));
-}
-function toggleFavorite(ep){
-  if(favorites.has(ep)){ favorites.delete(ep); } else { favorites.add(ep); }
-  saveFavorites();
-}
-function isFavorite(ep){ return favorites.has(ep); }
-
-function stateToQuery(){
-  const params = new URLSearchParams();
-  const q = $("#searchBox").val().trim();
-  if(q) params.set('q', q);
-  const sort = $("#sortSelect").val();
-  if(sort && sort!=='newest') params.set('sort', sort);
-  if(selectedGuests.length) params.set('guests', selectedGuests.join(','));
-  if(selectedCorners.length) params.set('corners', selectedCorners.join(','));
-  if(selectedOthers.length) params.set('others', selectedOthers.join(','));
-  if(selectedYears.length) params.set('years', selectedYears.join(','));
-  if(favOnly) params.set('fav','1');
-  if(currentPage>1) params.set('page', String(currentPage));
-  const qs = params.toString();
-  const next = location.pathname + (qs ? ('?' + qs) : '');
-  history.replaceState(null,'',next);
-}
-function applyStateFromQuery(){
-  const p = new URLSearchParams(location.search);
-  const q = p.get('q')||'';
-  if(q) $("#searchBox").val(q);
-  const sort = p.get('sort'); if(sort) $("#sortSelect").val(sort);
-  const parseList = (key)=> (p.get(key)||'').split(',').filter(Boolean);
-  selectedGuests = parseList('guests');
-  selectedCorners = parseList('corners');
-  selectedOthers = parseList('others');
-  selectedYears = parseList('years');
-  favOnly = p.get('fav') === '1';
-  if(favOnly) $('#favOnlyBtn').attr('aria-pressed','true');
-}
-function attachFavButtonsForCurrentPage(){
-  const startIdx = (currentPage-1)*pageSize, endIdx = currentPage*pageSize;
-  const slice = lastResults.slice(startIdx,endIdx);
-  const $items = $("#results .episode-item");
-  $items.each(function(i){
-    const it = slice[i];
-    if(!it) return;
-    const ep = String(it.episode);
-    $(this).attr('data-ep', ep);
-    if($(this).find('.fav-btn').length===0){
-      const pressed = isFavorite(ep) ? 'true' : 'false';
-      const btn = $('<button class="fav-btn" aria-label="お気に入りに追加" aria-pressed="'+pressed+'">★</button>');
-      $(this).append(btn);
-    }else{
-      $(this).find('.fav-btn').attr('aria-pressed', isFavorite(ep) ? 'true' : 'false');
-    }
-  });
-}
-let selectedGuests = [];
+    let selectedGuests = [];
     let selectedCorners = [];
     let selectedOthers = [];
     let selectedYears = [];
@@ -159,22 +98,6 @@ let selectedGuests = [];
       "青山吉能": "#fa01fa", "鈴代紗弓": "#fdfe0f", "水野朔": "#15f4f3", "長谷川育美": "#f93e07",
       "内田真礼": "#f09110", "千本木彩花": "#bbc3b8", "和多田美咲": "#a8eef4", "小岩井ことり": "#494386"
     };
-
-    // ===== 0件メッセージ（「このサイトについて」の直前に表示） =====
-function showNoResultsGlobal(text = 'ﾉ°(6ᯅ9)「な、何も表示されない...」') {
-  hideNoResultsGlobal();
-  const $msg = $('<div id="noResultsGlobal" role="status" aria-live="polite"></div>').text(text);
-  const $about = $('#aboutSiteArea');
-  if ($about.length) {
-    $about.before($msg);
-  } else {
-    $('main, .main-content, body').first().append($msg);
-  }
-}
-function hideNoResultsGlobal(){
-  $('#noResultsGlobal').remove();
-}
-
 
     // タイトル整形（全角スペースで改行）
     function formatTitle(title) {
@@ -253,30 +176,45 @@ if (g === "結束バンド") {
           return kwWords.every(w => text.includes(w));
         });
       }
-      if (selectedGuests.length) {
+// --- 出演者フィルタ（「結束バンド」「その他」を OR に統一）---
+if (selectedGuests.length) {
   res = res.filter(it => {
-    let guestArr = [];
-    if (Array.isArray(it.guest)) guestArr = it.guest;
-    else if (typeof it.guest === "string") guestArr = [it.guest];
-    else guestArr = [];
-    // 「結束バンド」選択時（すでに導入済み）
-    if (selectedGuests.includes("結束バンド")) {
+    const guestArr =
+      Array.isArray(it.guest) ? it.guest :
+      (typeof it.guest === "string" ? [it.guest] : []);
+
+    const hasKessoku = selectedGuests.includes("結束バンド");
+    const hasOthers  = selectedGuests.includes("その他");
+    const indivGuests = selectedGuests.filter(g => g !== "結束バンド" && g !== "その他");
+
+    let match = false;
+
+    // 個別ゲストは OR
+    if (indivGuests.length) {
+      match = indivGuests.some(sel => guestArr.includes(sel));
+    }
+
+    // 結束バンド（全員回）は OR で加算
+    if (hasKessoku) {
       const kessokuMembers = ["鈴代紗弓", "水野朔", "長谷川育美"];
-      return kessokuMembers.every(member => guestArr.includes(member));
+      const isKessoku = kessokuMembers.every(m => guestArr.includes(m));
+      match = match || isKessoku;
     }
-    // ★ここから追加！「その他」選択時
-    if (selectedGuests.includes("その他")) {
+
+    // 「その他」も OR で加算
+    if (hasOthers) {
       const mainGuests = [
-        "青山吉能", "鈴代紗弓", "水野朔", "長谷川育美",
-        "内田真礼", "千本木彩花", "和多田美咲", "小岩井ことり"
+        "青山吉能","鈴代紗弓","水野朔","長谷川育美",
+        "内田真礼","千本木彩花","和多田美咲","小岩井ことり"
       ];
-      // mainGuests に含まれない名前が一人でもいればヒット
-      return guestArr.some(name => !mainGuests.includes(name));
+      const isOther = guestArr.some(name => !mainGuests.includes(name));
+      match = match || isOther;
     }
-    // それ以外は従来通り
-    return selectedGuests.some(sel => guestArr.includes(sel));
+
+    return match;
   });
 }
+
 
       if (selectedOthers.length) res = res.filter(it => {
         const combined = [it.title, it.guest, it.keywords.join(" ")].join(" ");
@@ -324,15 +262,12 @@ if (g === "結束バンド") {
           else return da - db;
         });
       }
-      if(favOnly){ res = res.filter(it => favorites.has(String(it.episode))); }
       lastResults = res;
       $("#fixedResultsCount").text(`表示数：${res.length}件`);
       currentPage = opts.gotoPage || 1;
     
       renderResults(res, currentPage);
-      attachFavButtonsForCurrentPage();
-      fitGuestLines();
-      stateToQuery(); // ゲスト行の幅調整
+      fitGuestLines(); // ゲスト行の幅調整
       window.addEventListener('resize', () => setTimeout(fitGuestLines, 30));
       window.addEventListener('orientationchange', () => setTimeout(fitGuestLines, 120));
       renderPagination(res.length);
@@ -364,12 +299,11 @@ function fitGuestLines() {
       const ul = $("#results");
       ul.empty();
       if (!arr.length) {
-  ul.empty();
-  showNoResultsGlobal('ﾉ°(6ᯅ9)「な、何も表示されない...」');
-  return;
-}
-hideNoResultsGlobal();
-
+        ul.html(`<li class="episode-item no-results">
+          <div>ﾉ°(6ᯅ9)「な、何も表示されない...」</div>
+        </li>`);
+        return;
+      }
       const startIdx = (page-1)*pageSize, endIdx = page*pageSize;
       arr.slice(startIdx, endIdx).forEach(it => {
         const thumb = getThumbnail(it.link);
@@ -408,7 +342,11 @@ hideNoResultsGlobal();
       updateYearStyles();
       search();
     }
-    
+    function resetSearch() {
+      $("#searchBox").val("");
+      $("#sortSelect").val("newest");
+      resetFilters();
+    }
     function updateGuestButtonStyles() {
       $(".guest-button").each(function() {
         const guest = $(this).data("guest");
@@ -541,10 +479,8 @@ hideNoResultsGlobal();
         if(e.type==="click"||(e.type==="keypress"&&(e.key==="Enter"||e.key===" "))) {
           currentPage = parseInt($(this).data("page"));
           renderResults(lastResults, currentPage);
-          attachFavButtonsForCurrentPage();
           renderPagination(lastResults.length);
-          setTimeout(fitGuestLines, 0);
-          stateToQuery(); // ← ここを追加：描画後にゲスト名を再フィット
+          setTimeout(fitGuestLines, 0); // ← ここを追加：描画後にゲスト名を再フィット
           $("html,body").animate({scrollTop: $(".main-content").offset().top-24}, 180);
         }
       });
@@ -823,142 +759,92 @@ window.__updateHeaderOffset && window.__updateHeaderOffset();
 
 
 
-// お気に入りトグル
-$(document).on('click', '#results .fav-btn', function () {
-  const $item = $(this).closest('.episode-item');
-  const ep = $item.attr('data-ep');
-  const wasFav = isFavorite(ep);
-
-  toggleFavorite(ep);
-  $(this).attr('aria-pressed', isFavorite(ep) ? 'true' : 'false');
-
-  // 「お気に入りのみ」表示中に外したら即非表示＋件数更新
-  if (favOnly && wasFav && !isFavorite(ep)) {
-    $item.slideUp(120, function () {
-      $(this).remove();
-
-      // いま画面に出ている件数をその場で更新
-      const newCount = $('#results .episode-item').length;
-      $('#fixedResultsCount').text(`表示数：${newCount}件`);
-
-      // ページネーション再描画（総数が変わるため）
-      renderPagination(newCount);
-
-      // ページが空になったら前ページへ寄せて再描画
-      if (newCount === 0) {
-        if (typeof currentPage !== 'undefined' && currentPage > 1) currentPage--;
-        search();
-      }
-    });
+// ===== unified scroll-lock & drawer handlers (hotfix) =====
+(function () {
+  let __scrollY = 0;
+  function lockScroll() {
+    if (document.body.classList.contains('scroll-lock')) return;
+    __scrollY = window.scrollY || document.documentElement.scrollTop || 0;
+    document.body.style.top = `-${__scrollY}px`;
+    document.body.classList.add('scroll-lock');
   }
-});
-
-$('#favOnlyBtn').on('click keypress', function(e){
-  if(e.type==='click'||(e.type==='keypress'&&(e.key==='Enter'||e.key===' '))){
-    favOnly = !favOnly;
-    $(this).attr('aria-pressed', favOnly?'true':'false');
-    search();
+  function unlockScroll() {
+    if (!document.body.classList.contains('scroll-lock')) return;
+    document.body.classList.remove('scroll-lock');
+    document.body.style.top = '';
+    window.scrollTo(0, __scrollY);
   }
-});
-
-$('#randomBtn').on('click', function(){
-  const arr = lastResults;
-  if(!arr.length){ alert('該当がありません'); return; }
-  const it = arr[Math.floor(Math.random()*arr.length)];
-  window.open(it.link, '_blank', 'noopener');
-});
-
-$('#shareBtn').on('click', async function(){
-  stateToQuery();
-  try{
-    await navigator.clipboard.writeText(location.href);
-    showToast('条件付きリンクをコピーしました');
-  }catch(e){
-    // Fallback
-    const ta = $('<textarea>').val(location.href).appendTo('body').select();
-    document.execCommand('copy'); ta.remove();
-    showToast('条件付きリンクをコピーしました');
+  function updateScrollLock() {
+    const isFilterOpen = $('#filterDrawer').is(':visible');
+    const isAboutOpen  = $('#aboutModal').is(':visible');
+    (isFilterOpen || isAboutOpen) ? lockScroll() : unlockScroll();
   }
-});
 
-function showToast(msg){
-  let $t = $('.share-toast');
-  if(!$t.length){ $t = $('<div class="share-toast" role="status" aria-live="polite"></div>').appendTo('body'); }
-  $t.text(msg).addClass('show');
-  setTimeout(()=> $t.removeClass('show'), 1400);
-}
+  // --- helper: open/close drawer ---
+  function openDrawer() {
+    // 位置を更新してから表示
+    const sbar = document.querySelector('.sticky-search-area');
+    const drawer = document.getElementById('filterDrawer');
+    if (sbar && drawer) {
+      const rect = sbar.getBoundingClientRect();
+      drawer.style.position = 'fixed';
+      drawer.style.left = '50%';
+      drawer.style.transform = 'translateX(-50%)';
+      drawer.style.right = '';
+      drawer.style.top = (rect.top + rect.height + 8) + 'px';
+    }
+    $('#filterDrawer').show();
+    $('#drawerBackdrop').addClass('show');
+    $('#filterToggleBtn').attr({ 'aria-expanded': true, 'aria-pressed': true });
+    updateScrollLock();
+  }
+  function closeDrawer() {
+    $('#filterDrawer').hide();
+    $('#drawerBackdrop').removeClass('show');
+    $('#filterToggleBtn').attr({ 'aria-expanded': false, 'aria-pressed': false });
+    updateScrollLock();
+  }
 
-// apply state from URL once on load
-$(function(){
-  applyStateFromQuery();
-  // after initial filters applied, trigger a search
-  setTimeout(()=>search(), 0);
-});
+  // --- 既存の重複ハンドラを解除してから統一バインド ---
+  $('#filterToggleBtn').off('click keypress').on('click keypress', function (e) {
+    if (e.type === 'click' || (e.type === 'keypress' && (e.key === 'Enter' || e.key === ' '))) {
+      $('#filterDrawer').is(':visible') ? closeDrawer() : openDrawer();
+    }
+  });
+  $('#drawerBackdrop').off('click').on('click', closeDrawer);
+  // 「ドロワーの外をクリックで閉じる」も一応統一
+  $(document).off('click.__drawer').on('click.__drawer', function(e){
+    if ($('#filterDrawer').is(':visible') && !$(e.target).closest('#filterDrawer,#filterToggleBtn').length) {
+      closeDrawer();
+    }
+  });
 
+  // --- About モーダルも scroll-lock と連動させる ---
+  $('#aboutSiteLink').off('click').on('click', function(e){
+    e.preventDefault();
+    $('#aboutModal').css('display','flex');
+    updateScrollLock();
+  });
+  $('#aboutCloseBtn').off('click').on('click', function(){ $('#aboutModal').hide(); updateScrollLock(); });
+  $('#aboutModal').off('click').on('click', function(e){ if (e.target === this) { $(this).hide(); updateScrollLock(); } });
 
-function resetSearch(){
-  // 検索条件リセット
-  $('#searchBox').val('');
-  $('#sortSelect').val('newest');
+  // --- resetSearch を上書き：フィルターも閉じて必ず解除 ---
+  window.resetSearch = function () {
+    $('#searchBox').val('');
+    $('#sortSelect').val('newest');
 
-  // フィルタ全解除
-  selectedGuests = [];
-  selectedCorners = [];
-  selectedOthers = [];
-  selectedYears = [];
-  updateGuestButtonStyles();
-  updateCornerStyles();
-  updateOtherStyles();
-  updateYearStyles();
+    // 既存のリセット処理（選択配列や見た目をクリア）
+    if (typeof resetFilters === 'function') resetFilters();
 
-  // お気に入りも全解除
-  favorites.clear();     // ← Setを空に
-  saveFavorites();       // ← localStorage の 'favorites_v1' を空配列で保存
-  favOnly = false;
-  $('#favOnlyBtn').attr('aria-pressed','false');
+    // ドロワーが開いていたら閉じる＆スクロール解除
+    closeDrawer();
+    updateScrollLock();
 
-  search();
-}
+    // 件数/並びやUIの更新を実行
+    if (typeof search === 'function') search();
+  };
 
+  // 初期呼び出しでもロックの整合性を確保
+  updateScrollLock();
+})();
 
-
-/* ===== お気に入り一括Xシェア（一覧下） ===== */
-function openXShareText(text){
-  const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
-  window.open(url, '_blank', 'noopener');
-}
-function getFavoritesSet(){
-  if (window.favorites instanceof Set) return window.favorites;
-  try { return new Set(JSON.parse(localStorage.getItem('favorites_v1') || '[]')); }
-  catch(e){ return new Set(); }
-}
-function isFavOnlyMode(){
-  if (typeof window.favOnly === 'boolean') return window.favOnly;
-  return $('#favOnlyBtn').attr('aria-pressed') === 'true' || $('#favOnlyBtn').hasClass('active');
-}
-function updateFavShareArea(){
-  const hasFav = getFavoritesSet().size > 0;
-  const show = isFavOnlyMode() && hasFav;
-  $('#favShareArea').toggle(show);
-}
-// 初期化
-$(function(){ updateFavShareArea(); });
-// 「お気に入りのみ」トグル後に反映
-$(document).on('click', '#favOnlyBtn', function(){ setTimeout(updateFavShareArea, 0); });
-// ★トグル後にも反映
-$(document).on('click', '#results .fav-btn', function(){ setTimeout(updateFavShareArea, 0); });
-// 検索描画のたびにも反映（search() の最後で custom event を投げているならそれを拾ってもOK）
-$(document).on('search:rendered', function(){ updateFavShareArea(); });
-
-// クリックで一括シェア
-$(document).on('click', '#favShareMainBtn', function () {
-  const favs = Array.from(getFavoritesSet());
-  if (!favs.length) return;
-  const eps = favs.map(n => Number(n)).sort((a,b)=>a-b);
-  const list = eps.map(ep => `「第${ep}回」`).join(' ');
-  const text =
-`私の好きなぼっち・ざ・らじお！は${list}です！
-#さーち・ざ・らじお`;
-  openXShareText(text);
-});
-/* ===== /お気に入り一括Xシェア ===== */
