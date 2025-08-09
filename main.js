@@ -176,8 +176,7 @@ if (g === "結束バンド") {
           return kwWords.every(w => text.includes(w));
         });
       }
-// --- 出演者フィルタ（「結束バンド」「その他」を OR に統一）---
-if (selectedGuests.length) {
+      if (selectedGuests.length) {
   res = res.filter(it => {
     const guestArr =
       Array.isArray(it.guest) ? it.guest :
@@ -214,7 +213,6 @@ if (selectedGuests.length) {
     return match;
   });
 }
-
 
       if (selectedOthers.length) res = res.filter(it => {
         const combined = [it.title, it.guest, it.keywords.join(" ")].join(" ");
@@ -759,8 +757,11 @@ window.__updateHeaderOffset && window.__updateHeaderOffset();
 
 
 
-// ===== unified scroll-lock & drawer handlers (hotfix) =====
+// ===== unified scroll-lock & drawer handlers (consolidated patch) =====
 (function () {
+  if (window.__drawerPatched) return; // idempotent
+  window.__drawerPatched = true;
+
   let __scrollY = 0;
   function lockScroll() {
     if (document.body.classList.contains('scroll-lock')) return;
@@ -774,15 +775,13 @@ window.__updateHeaderOffset && window.__updateHeaderOffset();
     document.body.style.top = '';
     window.scrollTo(0, __scrollY);
   }
-  function updateScrollLock() {
+  window.updateScrollLock = function updateScrollLock() {
     const isFilterOpen = $('#filterDrawer').is(':visible');
     const isAboutOpen  = $('#aboutModal').is(':visible');
     (isFilterOpen || isAboutOpen) ? lockScroll() : unlockScroll();
-  }
+  };
 
-  // --- helper: open/close drawer ---
-  function openDrawer() {
-    // 位置を更新してから表示
+  function updateDrawerTop() {
     const sbar = document.querySelector('.sticky-search-area');
     const drawer = document.getElementById('filterDrawer');
     if (sbar && drawer) {
@@ -793,6 +792,10 @@ window.__updateHeaderOffset && window.__updateHeaderOffset();
       drawer.style.right = '';
       drawer.style.top = (rect.top + rect.height + 8) + 'px';
     }
+  }
+
+  function openDrawer() {
+    updateDrawerTop();
     $('#filterDrawer').show();
     $('#drawerBackdrop').addClass('show');
     $('#filterToggleBtn').attr({ 'aria-expanded': true, 'aria-pressed': true });
@@ -804,22 +807,23 @@ window.__updateHeaderOffset && window.__updateHeaderOffset();
     $('#filterToggleBtn').attr({ 'aria-expanded': false, 'aria-pressed': false });
     updateScrollLock();
   }
+  window.__openDrawer = openDrawer;
+  window.__closeDrawer = closeDrawer;
 
-  // --- 既存の重複ハンドラを解除してから統一バインド ---
+  // Remove duplicate/legacy handlers, then bind once.
   $('#filterToggleBtn').off('click keypress').on('click keypress', function (e) {
     if (e.type === 'click' || (e.type === 'keypress' && (e.key === 'Enter' || e.key === ' '))) {
       $('#filterDrawer').is(':visible') ? closeDrawer() : openDrawer();
     }
   });
   $('#drawerBackdrop').off('click').on('click', closeDrawer);
-  // 「ドロワーの外をクリックで閉じる」も一応統一
   $(document).off('click.__drawer').on('click.__drawer', function(e){
     if ($('#filterDrawer').is(':visible') && !$(e.target).closest('#filterDrawer,#filterToggleBtn').length) {
       closeDrawer();
     }
   });
 
-  // --- About モーダルも scroll-lock と連動させる ---
+  // About modal hooks
   $('#aboutSiteLink').off('click').on('click', function(e){
     e.preventDefault();
     $('#aboutModal').css('display','flex');
@@ -828,23 +832,24 @@ window.__updateHeaderOffset && window.__updateHeaderOffset();
   $('#aboutCloseBtn').off('click').on('click', function(){ $('#aboutModal').hide(); updateScrollLock(); });
   $('#aboutModal').off('click').on('click', function(e){ if (e.target === this) { $(this).hide(); updateScrollLock(); } });
 
-  // --- resetSearch を上書き：フィルターも閉じて必ず解除 ---
-  window.resetSearch = function () {
-    $('#searchBox').val('');
-    $('#sortSelect').val('newest');
+  // Ensure reset closes drawer and unlocks scroll
+  window.resetSearch = (function(orig){
+    return function(){
+      if ($('#searchBox').length) $('#searchBox').val('');
+      if ($('#sortSelect').length) $('#sortSelect').val('newest');
+      if (typeof resetFilters === 'function') resetFilters();
+      closeDrawer();
+      updateScrollLock();
+      if (typeof search === 'function') search();
+    };
+  })(window.resetSearch);
 
-    // 既存のリセット処理（選択配列や見た目をクリア）
-    if (typeof resetFilters === 'function') resetFilters();
-
-    // ドロワーが開いていたら閉じる＆スクロール解除
-    closeDrawer();
-    updateScrollLock();
-
-    // 件数/並びやUIの更新を実行
-    if (typeof search === 'function') search();
-  };
-
-  // 初期呼び出しでもロックの整合性を確保
+  // Dev helper: warn on duplicate YouTube IDs in data
+  try {
+    const ids = (Array.isArray(data)?data:[]).map(it => (it.link||"").match(/watch\\?v=([\\w-]{11})/)?.[1]).filter(Boolean);
+    const seen = {};
+    ids.forEach(id => { seen[id]=(seen[id]||0)+1; });
+    Object.keys(seen).forEach(id => { if (seen[id] > 1) console.warn('[SearchTheRadio] Duplicate video id:', id, 'x'+seen[id]); });
+  } catch(e){}
   updateScrollLock();
 })();
-
