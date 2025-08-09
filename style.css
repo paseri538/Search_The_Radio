@@ -815,14 +815,98 @@ body.dark-mode .no-results{
 
 /* ★を右下に配置（既存の right/top 指定を上書き） */
 #results .episode-item { position: relative; }           /* 念のため */
-
-
-/* （必要なら）重なり防止でカード内に少し余白を作る */
-#results .episode-item { padding-right: 52px; }
-@media (max-width: 900px){
-  #results .episode-item { padding-right: 48px; }
+#results .episode-item .fav-btn{
+  top: auto;                 /* 右上→解除 */
+  bottom: 10px;              /* 右下に固定 */
+  right: 10px;
 }
 
 
 /* ===== 端末でのダブルタップ拡大を抑止 ===== */
 button, a, select, input, label { touch-action: manipulation; }
+
+
+/* ===== Dark mode button accent unify (#a6e1fa) ===== */
+body.dark-mode .icon-btn,
+body.dark-mode #favOnlyToggleBtn,
+body.dark-mode #randomBtn {
+  background: #2f3640 !important;
+  border: 1.3px solid #4d6272 !important;
+  color: #a6e1fa !important;
+}
+body.dark-mode #favOnlyToggleBtn.active,
+body.dark-mode #favOnlyToggleBtn[aria-pressed="true"] {
+  background: #33414d !important;
+  border-color: #7fbfe0 !important;
+  color: #a6e1fa !important;
+}
+
+/* フィルター開閉ボタンも同じトーンへ */
+body.dark-mode #filterToggleBtn {
+  background: #2f3640 !important;
+  border: 1.3px solid #4d6272 !important;
+  color: #a6e1fa !important;
+}
+body.dark-mode #filterToggleBtn[aria-pressed="true"],
+body.dark-mode #filterToggleBtn[aria-expanded="true"],
+body.dark-mode #filterToggleBtn:hover,
+body.dark-mode #filterToggleBtn:focus {
+  background: #33414d !important;
+  border-color: #7fbfe0 !important;
+  color: #a6e1fa !important;
+}
+
+/* リセットの文字色も統一（ホバー時は白で可読性UP） */
+body.dark-mode .reset-btn {
+  background: #2f3640 !important;
+  border: 1.2px solid #415766 !important;
+  color: #a6e1fa !important;
+}
+body.dark-mode .reset-btn:hover,
+body.dark-mode .reset-btn:focus {
+  background: #365561 !important;
+  color: #a6e1fa !important;
+}
+
+
+
+
+
+/* ===== Light mode button accent unify (#a6e1fa) ===== */
+body:not(.dark-mode) .icon-btn,
+body:not(.dark-mode) #favOnlyToggleBtn,
+body:not(.dark-mode) #randomBtn,
+body:not(.dark-mode) #filterToggleBtn {
+  background: #fff !important;
+  border: 1.3px solid #5744D8 !important;
+  color: #5744D8 !important;
+}
+
+/* フィルター開閉（ホバー/展開時も同色トーン） */
+body:not(.dark-mode) #filterToggleBtn:hover,
+body:not(.dark-mode) #filterToggleBtn:focus,
+body:not(.dark-mode) #filterToggleBtn[aria-expanded="true"] {
+  background: #eaf6ff !important;
+  border-color: #5744D8 !important;
+  color: #5744D8 !important;
+}
+
+/* 「お気に入りだけ」ON 表示 */
+body:not(.dark-mode) #favOnlyToggleBtn.active,
+body:not(.dark-mode) #favOnlyToggleBtn[aria-pressed="true"] {
+  background: #eaf6ff !important;
+  border-color: #5744D8 !important;
+  color: #5744D8 !important;
+}
+
+/* リセットボタンも統一 */
+body:not(.dark-mode) .reset-btn {
+  background: #fff !important;
+  border: 1.2px solid #5744D8 !important;
+  color: #5744D8 !important;
+}
+body:not(.dark-mode) .reset-btn:hover,
+body:not(.dark-mode) .reset-btn:focus {
+  background: #eaf6ff !important;
+  color: #5744D8 !important; /* 可読性を少し上げる */
+}
