@@ -958,3 +958,30 @@ body.dark-mode .autocomplete {
 body.dark-mode .autocomplete-item:hover,
 body.dark-mode .autocomplete-item[aria-selected="true"] { background: #2b3a46; }
 body.dark-mode .autocomplete-item .type { border-color: #415766; color: #96e5c4; }
+
+
+
+/* --- iOS PWA の安全域対応（ノッチ・ステータスバーを回避） --- */
+:root{
+  /* 念のため左右/下も変数化 */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* 既存の .sticky-search-area に追記 */
+.sticky-search-area{
+  /* 上パディングを安全域ぶんだけ増やす */
+  padding-top: calc(0.38rem + var(--safe-top));
+  /* 横も端末によっては必要になるので入れておくと安心 */
+  padding-left:  max(0px, var(--safe-left));
+  padding-right: max(0px, var(--safe-right));
+}
+
+/* 旧iOS対策（古いSafariで constant() を見る端末向け・任意） */
+@supports (padding: constant(safe-area-inset-top)) {
+  .sticky-search-area{
+    padding-top: calc(0.38rem + constant(safe-area-inset-top));
+  }
+}
