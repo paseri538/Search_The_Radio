@@ -58,11 +58,11 @@
       { episode:"29", title:"#29　ゲスト：鈴代紗弓", guest:"鈴代紗弓", date:"2023-07-05", link:"https://www.youtube.com/watch?v=Xg1ozrPAwDI", keywords:["鈴代紗弓","さゆみん","おさゆ","みんみん","さゆちゃん","おすず","すずちゃん","鈴代ちゃん","すずしろさゆみ"], duration:"1:04:08" },
       { episode:"28", title:"#28　", guest:"青山吉能", date:"2023-06-21", link:"https://www.youtube.com/watch?v=_SUn0OWQo2k", keywords:["青山吉能","よぴ","よしの","よっぴー","あおやまよしの"], duration:"1:11:00" },
       { episode:"27", title:"#27　ゲスト：水野朔", guest:"水野朔", date:"2023-06-07", link:"https://www.youtube.com/watch?v=HqKaV7V4L7A", keywords:["水野朔","さくぴ","さくさくちゃん","ﾐｽﾞﾉｻｸﾃﾞｼｭ","みずのさく",], duration:"1:02:45" },
-      { episode:"26", title:"#26　ゲスト：長谷川育美", guest:"長谷川育美", date:"2023-05-24", link:"https://www.youtube.com/watch?v=L8mHUOlAw64", keywords:["長谷川育美","いくみ","はせみ","はせちゃん","いくちゃん","はっせー","はせがわいくみ","よぴいく","ypik","結束バンドLIVE恒星","恒星","こうせい",], duration:"1:07:08" },
+      { episode:"26", title:"#26　ゲスト：長谷川育美", guest:"長谷川育美", date:"2023-05-24", link:"https://www.youtube.com/watch?v=L8mHUOlAw64", keywords:["長谷川育美","いくみ","はせみ","はせちゃん","いくちゃん","はっせー","はせがわいくみ","よぴいく","ypik","恒星","こうせい",], duration:"1:07:08" },
       { episode:"25", title:"#25　ゲスト：鈴代紗弓", guest:"鈴代紗弓", date:"2023-05-10", link:"https://www.youtube.com/watch?v=WsfRhqaLO_k", keywords:["鈴代紗弓","さゆみん","おさゆ","みんみん","さゆちゃん","おすず","すずちゃん","鈴代ちゃん","すずしろさゆみ"], duration:"1:10:38" },
       { episode:"24", title:"#24　", guest:"青山吉能", date:"2023-04-26", link:"https://www.youtube.com/watch?v=efXr9X648so", keywords:["青山吉能","よぴ","よしの","よっぴー","あおやまよしの","ぼっち・ざ・ろっく！です。","ぼざろです"], duration:"54:09" },
       { episode:"23", title:"#23　", guest:"青山吉能", date:"2023-04-12", link:"https://www.youtube.com/watch?v=_8-sk4OwB78", keywords:["青山吉能","よぴ","よしの","よっぴー","あおやまよしの","エロ女上司","えろおんなじょうし"], duration:"1:11:46" },
-      { episode:"22", title:"#22　ゲスト：鈴代紗弓、水野朔、長谷川育美", guest:["鈴代紗弓","水野朔","長谷川育美"], date:"2023-03-29", link:"https://www.youtube.com/watch?v=mwJeACqV2Oc", keywords:["鈴代紗弓","さゆみん","おさゆ","みんみん","さゆちゃん","おすず","すずちゃん","鈴代ちゃん","すずしろさゆみ","水野朔","さくぴ","さくさくちゃん","ﾐｽﾞﾉｻｸﾃﾞｼｭ","みずのさく","長谷川育美","いくみ","はせみ","はせちゃん","いくちゃん","はっせー","はせがわいくみ","生配信・公録","ラッキーボタン@45:15","藤田亜紀子@45:15","ふじたあきこ@45:15","ｵﾓｼﾛｲｯ!","ダジャレ","匂わせ"], duration:"1:27:48" },
+      { episode:"22", title:"#22　ゲスト：鈴代紗弓、水野朔、長谷川育美", guest:["鈴代紗弓","水野朔","長谷川育美"], date:"2023-03-29", link:"https://www.youtube.com/watch?v=mwJeACqV2Oc", keywords:["鈴代紗弓","さゆみん","おさゆ","みんみん","さゆちゃん","おすず","すずちゃん","鈴代ちゃん","すずしろさゆみ","水野朔","さくぴ","さくさくちゃん","ﾐｽﾞﾉｻｸﾃﾞｼｭ","みずのさく","長谷川育美","いくみ","はせみ","はせちゃん","いくちゃん","はっせー","はせがわいくみ","生配信・公録","ラッキーボタン@45:15","藤田亜紀子@45:15","ふじたあきこ@45:15","ｵﾓｼﾛｲｯ!","ダジャレ","匂わせ","におわせ"], duration:"1:27:48" },
       { episode:"21", title:"#21　", guest:"青山吉能", date:"2023-03-15", link:"https://www.youtube.com/watch?v=kUbnGEpkT6E", keywords:["青山吉能","よぴ","よしの","よっぴー","あおやまよしの","エロ女上司","えろおんなじょうし"], duration:"56:46" },
       { episode:"20", title:"#20　ゲスト：長谷川育美", guest:"長谷川育美", date:"2023-03-01", link:"https://www.youtube.com/watch?v=VN95H7KjuL0", keywords:["長谷川育美","いくみ","はせみ","はせちゃん","いくちゃん","はっせー","はせがわいくみ","よぴいく","ypik","優しさで言ってない","やさしさでいってない",], duration:"1:02:01" },
       { episode:"19", title:"#19　ゲスト：水野朔", guest:"水野朔", date:"2023-02-15", link:"https://www.youtube.com/watch?v=cAx6-HQejSI", keywords:["水野朔","さくぴ","さくさくちゃん","ﾐｽﾞﾉｻｸﾃﾞｼｭ","みずのさく",], duration:"1:03:29" },
@@ -1241,12 +1241,7 @@ e.norms.add(normalize(stripTimeSuffix(label)));
 
     // itemsRaw の map 内
 const itemsRaw = scored.slice(0, 20).map(({ e }) => {
-// --- 読み(かな)のキーワード候補を抑制：対応する正規ラベルが「漢字＋ひらがな」なら弾く ---
-const baseNoTime = stripTimeSuffix(e.label); // 例: "やまもとゆうすけ"
-const mapped = READING_TO_LABEL[normalize(baseNoTime)]; // 例: "山本ゆうすけ"
-if (e.type === 'キーワード' && mapped && hasKanji(mapped) && /[ぁ-ん]/.test(mapped)) {
-   return null; // キーワード側は非表示
-}
+
 
 
 let label = e.label;
@@ -1323,6 +1318,8 @@ const CUSTOM_READINGS = {
   "エロ女上司": ["えろおんなじょうし"],
   "京まふ": ["きょうまふ"],
   "Venue101": ["べにゅー101"],
+  "恒星": ["こうせい"],
+  "匂わせ": ["におわせ"],
 };
 
 
