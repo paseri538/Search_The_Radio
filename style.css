@@ -920,3 +920,41 @@ body:not(.dark-mode) .reset-btn:focus {
 }
 /* ダークモード */
 body.dark-mode .ts-btn { background:#25323c; color:#a6e1fa; border-color:#415766; }
+
+
+/* --- Autocomplete (検索候補) -------------------- */
+.search-row-keyword { position: relative; }
+
+.autocomplete[hidden] { display: none !important; }
+.autocomplete {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0; right: 0;
+  background: #fff;
+  border: 1px solid #e3e3ec;
+  border-radius: 10px;
+  box-shadow: 0 12px 28px -10px rgba(60,60,110,0.18);
+  max-height: 320px;
+  overflow-y: auto;
+  z-index: var(--search-z);
+}
+
+.autocomplete-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 12px; cursor: pointer; font-size: 0.98em;
+}
+.autocomplete-item:hover,
+.autocomplete-item[aria-selected="true"] { background: #f4f6ff; }
+.autocomplete-item .type {
+  font-size: 12px; line-height: 1; padding: 2px 6px;
+  border: 1px solid #e3e3ec; border-radius: 999px; color: #7c8798;
+}
+.autocomplete-item .match { font-weight: 700; }
+
+/* Dark mode */
+body.dark-mode .autocomplete {
+  background: #2d333b; border-color: #394150; box-shadow: 0 14px 34px -12px #000a;
+}
+body.dark-mode .autocomplete-item:hover,
+body.dark-mode .autocomplete-item[aria-selected="true"] { background: #2b3a46; }
+body.dark-mode .autocomplete-item .type { border-color: #415766; color: #96e5c4; }

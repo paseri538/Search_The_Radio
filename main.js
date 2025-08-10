@@ -1,6 +1,6 @@
 // --- データ・状態 ---
     const data = [
-      { episode:"83", title:"#83　ゲスト：水野朔", guest:"水野朔", date:"2025-07-30", link:"https://www.youtube.com/watch?v=LcPFWQ5JdoU", keywords:["水野朔","さくぴ","さくさくちゃん","ﾐｽﾞﾉｻｸﾃﾞｼｭ","みずのさく","本日のテーマ","結束バンドと私","夏フェス@01:23"], duration:"1:08:26" },
+      { episode:"83", title:"#83　ゲスト：水野朔", guest:"水野朔", date:"2025-07-30", link:"https://www.youtube.com/watch?v=LcPFWQ5JdoU", keywords:["水野朔","さくぴ","さくさくちゃん","ﾐｽﾞﾉｻｸﾃﾞｼｭ","みずのさく","本日のテーマ","結束バンドと私"], duration:"1:08:26" },
       { episode:"82", title:"#82　ゲスト：長谷川育美", guest:"長谷川育美", date:"2025-07-16", link:"https://www.youtube.com/watch?v=IdEStksoFaM", keywords:["長谷川育美","いくみ","はせみ","はせちゃん","いくちゃん","はっせー","はせがわいくみ","よぴいく","ypik"], duration:"1:12:20" },
       { episode:"81", title:"#81　ゲスト：鈴代紗弓", guest:"鈴代紗弓", date:"2025-07-02", link:"https://www.youtube.com/watch?v=FA7BqhR_AkQ", keywords:["鈴代紗弓","さゆみん","おさゆ","みんみん","さゆちゃん","おすず","すずちゃん","鈴代ちゃん","すずしろさゆみ"], duration:"1:08:01" },
       { episode:"80", title:"#80　", guest:"青山吉能", date:"2025-06-18", link:"https://www.youtube.com/watch?v=saAS_RHRhDI", keywords:["青山吉能","よぴ","よしの","よっぴー","あおやまよしの"], duration:"1:04:09" },
@@ -12,7 +12,7 @@
       { episode:"74", title:"#74　ゲスト：水野朔", guest:"水野朔", date:"2025-03-26", link:"https://www.youtube.com/watch?v=hHfpdyDFN6U", keywords:["水野朔","さくぴ","さくさくちゃん","ﾐｽﾞﾉｻｸﾃﾞｼｭ","みずのさく",], duration:"1:05:11" },
       { episode:"73", title:"#73　ゲスト：鈴代紗弓、水野朔、長谷川育美", guest:["鈴代紗弓","水野朔","長谷川育美"], date:"2025-03-12", link:"https://www.youtube.com/watch?v=IaN7fW-RJPo", keywords:["鈴代紗弓","さゆみん","おさゆ","みんみん","さゆちゃん","おすず","すずちゃん","鈴代ちゃん","すずしろさゆみ","水野朔","さくぴ","さくさくちゃん","ﾐｽﾞﾉｻｸﾃﾞｼｭ","みずのさく","長谷川育美","いくみ","はせみ","はせちゃん","いくちゃん","はっせー","はせがわいくみ"], duration:"1:06:27" },
       { episode:"72", title:"#72　", guest:"青山吉能", date:"2025-02-26", link:"https://www.youtube.com/watch?v=oLdNIIz3qWw", keywords:["青山吉能","よぴ","よしの","よっぴー","あおやまよしの"], duration:"1:06:41" },
-      { episode:"緊急", title:"特別編　", guest:["斎藤圭一郎","山本ゆうすけ","けろりら"], date:"2025-02-15", link:"https://www.youtube.com/watch?v=P0ifdqZm8wo", keywords:["青山吉能","よぴ","よしの","よっぴー","あおやまよしの","斎藤圭一郎","さいとうけいいちろう","けいいちろう","やまもとゆうすけ","山本ゆうすけ","けろりら","2期"], duration:"59:01" },
+      { episode:"緊急", title:"特別編　", guest:["斎藤圭一郎","山本ゆうすけ","けろりら"], date:"2025-02-15", link:"https://www.youtube.com/watch?v=P0ifdqZm8wo", keywords:["青山吉能","よぴ","よしの","よっぴー","あおやまよしの","斎藤圭一郎","さいとうけいいちろう","やまもとゆうすけ","山本ゆうすけ","けろりら","2期"], duration:"59:01" },
       { episode:"71", title:"#71　ゲスト：鈴代紗弓", guest:"鈴代紗弓", date:"2025-02-12", link:"https://www.youtube.com/watch?v=16fCDsC2Aks", keywords:["鈴代紗弓","さゆみん","おさゆ","みんみん","さゆちゃん","おすず","すずちゃん","鈴代ちゃん","すずしろさゆみ"], duration:"1:05:44" },
       { episode:"70", title:"#70　ゲスト：長谷川育美", guest:"長谷川育美", date:"2025-01-29", link:"https://www.youtube.com/watch?v=_x5aMdhpeW8", keywords:["長谷川育美","いくみ","はせみ","はせちゃん","いくちゃん","はっせー","はせがわいくみ","よぴいく","ypik"], duration:"1:05:59" },
       { episode:"69", title:"#69　", guest:"青山吉能", date:"2025-01-15", link:"https://www.youtube.com/watch?v=_U9gzTHBSNo", keywords:["青山吉能","よぴ","よしの","よっぴー","あおやまよしの"], duration:"56:40" },
@@ -1083,4 +1083,244 @@ function clearAllFavorites(){
   } else if (typeof FAV_KEY !== "undefined") {
     localStorage.setItem(FAV_KEY, "[]");
   }
+}
+
+
+// ===== Autocomplete（リアルタイム＋読み対応、#番号展開なし） =====
+(function () {
+  const $input = document.getElementById('searchBox');
+  const $box   = document.getElementById('autocomplete');
+  if (!$input || !$box) return;
+
+  // 1) ひらがな＆表記ゆれ吸収（全角半角/カタカナ→ひらがな/小文字化/空白除去）
+  const toWide = (s)=> (s||'').normalize('NFKC');
+  const toHiragana = (s)=> toWide(s).replace(/[ァ-ン]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0x60));
+  const normalize = (s)=> toHiragana(s).toLowerCase().replace(/\s+/g,'');
+  const hasKanji = (s)=> /[\p{sc=Han}]/u.test(s||'');
+
+
+  // ★ここに追加（hasKanji の直後）
+  // ASCII/全角 @ に続く mm:ss または hh:mm:ss を末尾から除去（表示用）
+  const stripTimeSuffix = (s) =>
+    (s || '').replace(/[＠@]\s*\d{1,2}:\d{2}(?::\d{2})?\s*$/,'');
+
+  // 2) 「漢字→読み」をここに登録
+  //    例：'青山吉能': ['あおやまよしの']
+  const CUSTOM_READINGS = {
+  "青山吉能": ["青山吉能","よぴ","よしの","よっぴー","あおやまよしの"],
+  "鈴代紗弓": ["さゆみん","おさゆ","みんみん","さゆちゃん","おすず","すずちゃん","鈴代ちゃん","すずしろさゆみ"],
+  "水野朔": ["水野朔","さくぴ","さくさくちゃん","ﾐｽﾞﾉｻｸﾃﾞｼｭ","みずのさく"],
+  "長谷川育美": ["長谷川育美","いくみ","はせみ","はせちゃん","いくちゃん","はっせー","はせがわいくみ"],
+  "内田真礼": ["内田真礼","まややん","まれいたそ","うちだまあや"],
+  "千本木彩花": ["千本木彩花","ぼんちゃん","ぽんちゃん","さやか","せんぼんぎさやか"],
+  "小岩井ことり": ["小岩井ことり","こっこちゃん","ことりん","ことピー","ことにゃん","ことたま","こいわいことり"],
+  "斎藤圭一郎": ["さいとうけいいちろう"],
+  };
+
+  // 3) 候補エントリを構築（重複排除＆読みも紐づけ）
+  //    entriesByLabel: label => { label, type, norms:Set<string> }
+  const entriesByLabel = new Map();
+
+  const ensureEntry = (label, type) => {
+    if (!label) return null;
+    let e = entriesByLabel.get(label);
+    if (!e) {
+      e = { label, type: type || 'キーワード', norms: new Set() };
+      entriesByLabel.set(label, e);
+    } else {
+      // 「出演者」を優先（並びの微ブースト用）
+      if (e.type !== '出演者' && type === '出演者') e.type = '出演者';
+    }
+    // 自身の表記をキーに追加
+    e.norms.add(normalize(label));
+    // 追加：時間なし版もキーにしておく
+e.norms.add(normalize(stripTimeSuffix(label)));
+    // 手動の読みもキーに追加
+    const rs = CUSTOM_READINGS[label];
+    if (rs) rs.forEach(r => e.norms.add(normalize(r)));
+    return e;
+  };
+
+  // data から keywords / ゲスト名を集約（同一ラベルは統合）
+  const keywordsSeen = new Set();
+  for (const ep of data) {
+    // keywords
+    (ep.keywords || []).forEach(kw => {
+      if (!kw) return;
+      // 同一ラベルの重複挿入はスキップ（件数が多いので）
+      if (keywordsSeen.has(kw)) return;
+      keywordsSeen.add(kw);
+      ensureEntry(kw, 'キーワード');
+    });
+
+    // guest（配列/単体どちらでも）
+    const guests = Array.isArray(ep.guest) ? ep.guest : [ep.guest];
+    guests.filter(Boolean).forEach(g => ensureEntry(g, '出演者'));
+  }
+
+  const entries = Array.from(entriesByLabel.values());
+
+  // 4) 描画系
+  let cursor = -1;
+  let viewItems = [];
+  let composing = false;
+
+  const clear = () => {
+    $box.innerHTML = '';
+    $box.hidden = true;
+    cursor = -1;
+    viewItems = [];
+  };
+
+  const render = (items) => {
+    viewItems = items;
+    $box.innerHTML = '';
+    $box.hidden = items.length === 0;
+
+    const qRaw = $input.value.trim();
+
+    items.forEach((item, idx) => {
+      const el = document.createElement('div');
+      el.className = 'autocomplete-item';
+      el.setAttribute('role', 'option');
+      el.setAttribute('aria-selected', idx === cursor ? 'true' : 'false');
+
+      // 簡易ハイライト（英数の大小のみ、和文は表示優先）
+      const i = item.label.toLowerCase().indexOf(qRaw.toLowerCase());
+      const html = (i >= 0)
+        ? `${item.label.slice(0,i)}<span class="match">${item.label.slice(i, i+qRaw.length)}</span>${item.label.slice(i+qRaw.length)}`
+        : item.label;
+
+      el.innerHTML = `<span class="type">${item.type}</span><span class="label">${html}</span>`;
+      el.addEventListener('mousedown', (e) => { e.preventDefault(); pick(idx); });
+      $box.appendChild(el);
+    });
+  };
+
+  const pick = (index) => {
+    const item = viewItems[index];
+    if (!item) return;
+    $input.value = item.fill ?? item.label;
+    clear();
+    if (typeof search === 'function') search(); // 既存の検索を実行
+  };
+
+  // 5) 入力に応じてリアルタイムで候補を出す（ひらがな/漢字どちらでもOK）
+  const scoreEntry = (entry, normQ, raw) => {
+    // エントリの任意の norm が prefix/部分一致するか
+    let prefix = false, part = false;
+    for (const k of entry.norms) {
+      if (!k) continue;
+      if (k.startsWith(normQ)) { prefix = true; break; }
+      if (!part && k.includes(normQ)) part = true;
+    }
+    if (!prefix && !part) return null;
+
+    // スコアリング：prefix優先、ひらがな入力時は漢字ラベルを少し優遇、出演者を微優遇
+    const preferKanji = !hasKanji(raw) && hasKanji(entry.label) ? 2 : 0;
+    const typeBoost  = entry.type === '出演者' ? 1 : 0;
+    const score = (prefix ? 4 : 0) + (part ? 1 : 0) + preferKanji + typeBoost;
+    return score;
+  };
+
+  const onInput = () => {
+    const raw = $input.value;
+    const normQ = normalize(raw);
+    if (!normQ) { clear(); return; }
+
+    const scored = [];
+    for (const e of entries) {
+      const s = scoreEntry(e, normQ, raw);
+      if (s != null) scored.push({ e, s });
+      if (scored.length > 200) break; // 安全上限
+    }
+    scored.sort((a,b)=> b.s - a.s);
+
+    // itemsRaw の map 内
+const itemsRaw = scored.slice(0, 20).map(({ e }) => {
+  let label = e.label;
+
+  // かな → 漢字への置換は「時間なしの正規化ラベル」で引く
+  const nlabel = normalize(stripTimeSuffix(label)); // ← 時間を剥がしてから辞書照合
+if (!hasKanji(label) && READING_TO_LABEL[nlabel]) {
+  label = READING_TO_LABEL[nlabel];
+}
+
+  // 表示は時間を隠す（= 候補の見た目）
+  const display = stripTimeSuffix(label);
+
+  // 入力欄に入れる値は「漢字 +（元ラベルの）時間サフィックス」
+  const timeSuffix = (e.label.match(/[＠@]\s*\d{1,2}:\d{2}(?::\d{2})?\s*$/) || [''])[0] || '';
+  const fill = display + timeSuffix;
+
+  return { label: display, fill: display, type: e.type };
+});
+
+// 同じ表示ラベル（例：'鈴代紗弓'）が複数できたら1件に統合
+const seen = new Set();
+const items = [];
+for (const it of itemsRaw) {
+  if (seen.has(it.label)) continue;
+  seen.add(it.label);
+  items.push(it);
+}
+render(items.slice(0, 12));
+  };
+
+  // キーボード操作
+  const onKeyDown = (e) => {
+    if ($box.hidden) return;
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      cursor = (cursor + 1) % viewItems.length;
+      render(viewItems);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      cursor = (cursor - 1 + viewItems.length) % viewItems.length;
+      render(viewItems);
+    } else if (e.key === 'Enter') {
+      if (cursor >= 0) { e.preventDefault(); pick(cursor); }
+      // カーソルがない場合は、index.html 側の onkeydown(Enter→search()) が動く
+    } else if (e.key === 'Escape') {
+      clear();
+    }
+  };
+
+  // IME中は確定まで待つ（ひらがな入力でもリアルタイムに出るよう compositionend で再評価）
+  $input.addEventListener('compositionstart', ()=> composing = true);
+  $input.addEventListener('compositionend', ()=> { composing = false; onInput(); });
+
+  // 入力イベント（漢字/ひらがな両対応）
+  const debounce = (fn, ms=40) => { let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a),ms); }; };
+  $input.addEventListener('input', debounce(onInput, 30));
+  $input.addEventListener('keydown', onKeyDown);
+
+  // 外側クリックで閉じる
+  document.addEventListener('click', (e) => {
+    if (e.target === $input || $box.contains(e.target)) return;
+    clear();
+  });
+})();
+
+
+const CUSTOM_READINGS = {
+  "青山吉能": ["青山吉能","よぴ","よしの","よっぴー","あおやまよしの"],
+  "鈴代紗弓": ["さゆみん","おさゆ","みんみん","さゆちゃん","おすず","すずちゃん","鈴代ちゃん","すずしろさゆみ"],
+  "水野朔": ["水野朔","さくぴ","さくさくちゃん","ﾐｽﾞﾉｻｸﾃﾞｼｭ","みずのさく"],
+  "長谷川育美": ["長谷川育美","いくみ","はせみ","はせちゃん","いくちゃん","はっせー","はせがわいくみ"],
+  "内田真礼": ["内田真礼","まややん","まれいたそ","うちだまあや"],
+  "千本木彩花": ["千本木彩花","ぼんちゃん","ぽんちゃん","さやか","せんぼんぎさやか"],
+  "小岩井ことり": ["小岩井ことり","こっこちゃん","ことりん","ことピー","ことにゃん","ことたま","こいわいことり"],
+  "藤田亜紀子": ["ふじたあきこ"],
+  "斎藤圭一郎": ["さいとうけいいちろう"],
+  "エロ女上司": ["えろおんなじょうし"],
+};
+
+
+// 読み（かな）→ 正規ラベル（漢字） の逆引き
+const READING_TO_LABEL = {};
+for (const kanji in CUSTOM_READINGS) {
+  (CUSTOM_READINGS[kanji] || []).forEach(r => {
+    READING_TO_LABEL[normalize(r)] = kanji;
+  });
 }
