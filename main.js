@@ -29,7 +29,7 @@
       { episode:"58", title:"#58　ゲスト：長谷川育美", guest:"長谷川育美", date:"2024-08-14", link:"https://www.youtube.com/watch?v=aJS3Gn27ecQ", keywords:["長谷川育美","いくみ","はせみ","はせちゃん","いくちゃん","はっせー","はせがわいくみ","よぴいく","ypik"], duration:"1:12:11" },
       { episode:"57", title:"#57　ゲスト：鈴代紗弓、水野朔、長谷川育美", guest:["鈴代紗弓","水野朔","長谷川育美"], date:"2024-07-31", link:"https://www.youtube.com/watch?v=zNSZqWpbCjg", keywords:["鈴代紗弓","さゆみん","おさゆ","みんみん","さゆちゃん","おすず","すずちゃん","鈴代ちゃん","すずしろさゆみ","水野朔","さくぴ","さくさくちゃん","ﾐｽﾞﾉｻｸﾃﾞｼｭ","みずのさく","長谷川育美","いくみ","はせみ","はせちゃん","いくちゃん","はっせー","はせがわいくみ",], duration:"1:06:01" },
       { episode:"56", title:"#56　", guest:"青山吉能", date:"2024-07-17", link:"https://www.youtube.com/watch?v=jWQZeh5QBEA", keywords:["青山吉能","よぴ","よしの","よっぴー","あおやまよしの"], duration:"1:00:41" },
-      { episode:"55", title:"#55　ゲスト：長谷川育美", guest:"長谷川育美", date:"2024-07-03", link:"https://www.youtube.com/watch?v=UH2tnm8-zFg", keywords:["長谷川育美","いくみ","はせみ","はせちゃん","いくちゃん","はっせー","はせがわいくみ","よぴいく","ypik","NHKVenue101","ベニューワンオーワン"], duration:"1:07:06" },
+      { episode:"55", title:"#55　ゲスト：長谷川育美", guest:"長谷川育美", date:"2024-07-03", link:"https://www.youtube.com/watch?v=UH2tnm8-zFg", keywords:["長谷川育美","いくみ","はせみ","はせちゃん","いくちゃん","はっせー","はせがわいくみ","よぴいく","ypik","NHKVenue101","べにゅー101"], duration:"1:07:06" },
       { episode:"54", title:"#54　ゲスト：鈴代紗弓", guest:"鈴代紗弓", date:"2024-06-19", link:"https://www.youtube.com/watch?v=D6h2j9TK95U", keywords:["鈴代紗弓","さゆみん","おさゆ","みんみん","さゆちゃん","おすず","すずちゃん","鈴代ちゃん","すずしろさゆみ"], duration:"1:12:28" },
       { episode:"53", title:"#53　", guest:"青山吉能", date:"2024-06-05", link:"https://www.youtube.com/watch?v=7yENoBuBn6k", keywords:["青山吉能","よぴ","よしの","よっぴー","あおやまよしの"], duration:"1:10:52" },
       { episode:"52", title:"#52　ゲスト：水野朔", guest:"水野朔", date:"2024-05-22", link:"https://www.youtube.com/watch?v=35i46aXGr_U", keywords:["水野朔","さくぴ","さくさくちゃん","ﾐｽﾞﾉｻｸﾃﾞｼｭ","みずのさく",], duration:"1:09:04" },
@@ -1113,8 +1113,11 @@ function clearAllFavorites(){
   "長谷川育美": ["長谷川育美","いくみ","はせみ","はせちゃん","いくちゃん","はっせー","はせがわいくみ"],
   "内田真礼": ["内田真礼","まややん","まれいたそ","うちだまあや"],
   "千本木彩花": ["千本木彩花","ぼんちゃん","ぽんちゃん","さやか","せんぼんぎさやか"],
+  "和多田美咲": ["和多田美咲","わっちゃん","わただみさき"],
   "小岩井ことり": ["小岩井ことり","こっこちゃん","ことりん","ことピー","ことにゃん","ことたま","こいわいことり"],
   "斎藤圭一郎": ["さいとうけいいちろう"],
+  "山本ゆうすけ": ["やまもとゆうすけ"],
+  "けろりら":　[],
   };
 
   // 3) 候補エントリを構築（重複排除＆読みも紐づけ）
@@ -1238,23 +1241,25 @@ e.norms.add(normalize(stripTimeSuffix(label)));
 
     // itemsRaw の map 内
 const itemsRaw = scored.slice(0, 20).map(({ e }) => {
-  let label = e.label;
+// --- 読み(かな)のキーワード候補を抑制：対応する正規ラベルが「漢字＋ひらがな」なら弾く ---
+const baseNoTime = stripTimeSuffix(e.label); // 例: "やまもとゆうすけ"
+const mapped = READING_TO_LABEL[normalize(baseNoTime)]; // 例: "山本ゆうすけ"
+if (e.type === 'キーワード' && mapped && hasKanji(mapped) && /[ぁ-ん]/.test(mapped)) {
+   return null; // キーワード側は非表示
+}
 
-  // かな → 漢字への置換は「時間なしの正規化ラベル」で引く
-  const nlabel = normalize(stripTimeSuffix(label)); // ← 時間を剥がしてから辞書照合
+
+let label = e.label;
+  const nlabel = normalize(stripTimeSuffix(label));
 if (!hasKanji(label) && READING_TO_LABEL[nlabel]) {
-  label = READING_TO_LABEL[nlabel];
+label = READING_TO_LABEL[nlabel]; // 表示ラベル自体は漢字に寄せる（従来処理）
 }
 
   // 表示は時間を隠す（= 候補の見た目）
   const display = stripTimeSuffix(label);
 
-  // 入力欄に入れる値は「漢字 +（元ラベルの）時間サフィックス」
-  const timeSuffix = (e.label.match(/[＠@]\s*\d{1,2}:\d{2}(?::\d{2})?\s*$/) || [''])[0] || '';
-  const fill = display + timeSuffix;
-
   return { label: display, fill: display, type: e.type };
-});
+}).filter(Boolean); // ← null を除去
 
 // 同じ表示ラベル（例：'鈴代紗弓'）が複数できたら1件に統合
 const seen = new Set();
@@ -1310,10 +1315,14 @@ const CUSTOM_READINGS = {
   "長谷川育美": ["長谷川育美","いくみ","はせみ","はせちゃん","いくちゃん","はっせー","はせがわいくみ"],
   "内田真礼": ["内田真礼","まややん","まれいたそ","うちだまあや"],
   "千本木彩花": ["千本木彩花","ぼんちゃん","ぽんちゃん","さやか","せんぼんぎさやか"],
+  "和多田美咲": ["和多田美咲","わっちゃん","わただみさき"],
   "小岩井ことり": ["小岩井ことり","こっこちゃん","ことりん","ことピー","ことにゃん","ことたま","こいわいことり"],
   "藤田亜紀子": ["ふじたあきこ"],
   "斎藤圭一郎": ["さいとうけいいちろう"],
+  "山本ゆうすけ": ["やまもとゆうすけ"],
   "エロ女上司": ["えろおんなじょうし"],
+  "京まふ": ["きょうまふ"],
+  "Venue101": ["べにゅー101"],
 };
 
 
