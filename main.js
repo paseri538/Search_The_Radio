@@ -102,7 +102,7 @@ let showFavoritesOnly = false;
 
 function getVideoId(link) {
   const m = (link || '').match(/(?:v=|be\/)([\w-]{11})/);
-  return m ? m[1] : null;
+  return m ? m[1] : link;
 }
 function loadFavs() {
   try { return new Set(JSON.parse(localStorage.getItem(FAV_KEY) || '[]')); }
@@ -166,42 +166,6 @@ function withTimeParam(url, seconds) {
     return cleaned + (cleaned.includes("?") ? "&" : "?") + "t=" + seconds;
   }
 }
-
-// --- YouTubeアプリ優先で開く（iOSはフォールバックなし、Androidのみフォールバック） ---
-function preferYouTubeApp(url){
-  const id = getVideoId(url); // 既存。v= or youtu.be から11桁IDを抽出
-  if (!id) { window.open(url, '_blank', 'noopener'); return; }
-
-  // t= を秒で読む（存在すれば）
-  let t = 0;
-  try { t = parseInt(new URL(url).searchParams.get('t') || '0', 10) || 0; } catch(e){}
-
-  const ua = navigator.userAgent || '';
-  const isIOS     = /iP(hone|od|ad)/.test(ua);
-  const isAndroid = /Android/.test(ua);
-
-  if (isIOS) {
-    // iOS：ユニバーサルリンクに遷移（アプリがあれば即起動・ダイアログ無し）
-    const uni = `https://youtu.be/${id}` + (t ? `?t=${t}s` : '');
-    window.location.href = uni;
-    return;
-  }
-
-  if (isAndroid) {
-    // Android：YouTubeアプリへ（fallback無し＝サイトに留まる挙動）
-    const qs = t ? `?v=${id}&t=${t}s` : `?v=${id}`;
-    const intent = `intent://www.youtube.com/watch${qs}#Intent;package=com.google.android.youtube;scheme=https;end`;
-    window.location.href = intent;
-    return;
-  }
-
-  // PCなどは通常オープン
-  window.open(url, '_blank', 'noopener');
-}
-
-
-
-
 
 // --- 検索語と keyword@time を“部分一致”で探して 1件返す ---
 // 例: keywords に「ラッキーボタン@45:15」登録、検索語が「らっきー」でもヒット
@@ -435,26 +399,7 @@ function renderResults(arr, page = 1) {
     if (!hit && cornerTarget) hit = findHitTime(it, cornerTarget);
 
     // ヒットしていたら &t=sec を付与したURLに差し替え
-    const finalLinkBase = hit ? withTimeParam(it.link, hit.seconds) : it.link;
-
-    // iOS はユニバーサルリンク (youtu.be) に変換して新規タブ→アプリ起動（元ページは残る）
-    let finalLink = finalLinkBase;
-    (function () {
-      const ua = navigator.userAgent || '';
-      const isIOS = /iP(hone|od|ad)/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
-
-      if (!isIOS) return;
-      const id = getVideoId(finalLinkBase);
-      if (!id) return;
-      try {
-        const u = new URL(finalLinkBase);
-        const t = u.searchParams.get('t');                 // 秒があれば引き継ぐ
-        finalLink = `https://www.youtube.com/watch?v=${id}` + (t ? `&t=${t}` : '');
-      } catch {
-        finalLink = `https://youtu.be/${id}`;
-      }
-    })();
-
+    const finalLink = hit ? withTimeParam(it.link, hit.seconds) : it.link;
 
     let guestText = "";
     if (Array.isArray(it.guest)) guestText = "ゲスト：" + it.guest.join("、");
@@ -488,39 +433,12 @@ function renderResults(arr, page = 1) {
   });
 
   // サムネ下の時刻ボタン（委任）
-ul.off('click', '.ts-btn').on('click', '.ts-btn', function (e) {
-  e.preventDefault(); e.stopPropagation();
-  const sec  = Number(this.dataset.ts) || 0;
-  const base = this.dataset.url || '';
-  preferYouTubeApp(withTimeParam(base, sec)); // ← window.open(...) をやめる
-});
-
-
-ul.off('click', 'a').on('click', 'a', function(e){
-  const ua = navigator.userAgent || '';
-  const isIOS = /iP(hone|od|ad)/.test(ua);
-  const href = this.getAttribute('href') || '';
-
-  if (isIOS) {
-  // YouTube アプリのユニバーサルリンクは watch?v=... が最も安定
-  const uni = `https://www.youtube.com/watch?v=${id}` + (t ? `&t=${t}` : '');
-  window.location.href = uni;
-  return;
-}
-if (isAndroid) {
-  // s を付けない（数値秒で統一）
-  const qs = t ? `?v=${id}&t=${t}` : `?v=${id}`;
-  const intent = `intent://www.youtube.com/watch${qs}#Intent;package=com.google.android.youtube;scheme=https;end`;
-  window.location.href = intent;
-  return;
-}
-
-  // iOS以外はアプリ優先ロジックへ
-  e.preventDefault();
-  preferYouTubeApp(href);
-});
-
-
+  ul.off('click', '.ts-btn').on('click', '.ts-btn', function (e) {
+    e.preventDefault(); e.stopPropagation();
+    const sec = Number(this.dataset.ts) || 0;
+    const base = this.dataset.url || '';
+    window.open(withTimeParam(base, sec), '_blank', 'noopener');
+  });
 
   // ★ボタン付与（既存）
   $('#results .episode-item').each(function () {
@@ -771,7 +689,7 @@ $('#randomBtn').on('click', function(){
   const pool = (Array.isArray(lastResults) && lastResults.length) ? lastResults : data;
   if (!pool.length) return;
   const pick = pool[Math.floor(Math.random() * pool.length)];
-  preferYouTubeApp(pick.link);
+  window.open(pick.link, '_blank', 'noopener');
 });
 
     });
@@ -798,10 +716,10 @@ document.getElementById("darkModeBtn").onclick = function(){
   document.body.classList.toggle("dark-mode");
   // お好みでローカルストレージに記録も可能
   if(document.body.classList.contains("dark-mode")){
-    localStorage.setItem("theme", "dark");
+    localStorage.setItem("dark-mode", "on");
     this.textContent = "☀";
   } else {
-    localStorage.setItem("theme", "light");
+    localStorage.setItem("dark-mode", "off");
     this.textContent = "🌙";
   }
 };
@@ -809,7 +727,7 @@ document.getElementById("darkModeBtn").onclick = function(){
 
 // ページ読込時に前回の設定を反映
 window.addEventListener("DOMContentLoaded", function(){
-  if(localStorage.getItem("theme")==="on"){
+  if(localStorage.getItem("dark-mode")==="on"){
     document.body.classList.add("dark-mode");
     document.getElementById("darkModeBtn").textContent = "☀";
   }
@@ -1412,41 +1330,3 @@ for (const kanji in CUSTOM_READINGS) {
     READING_TO_LABEL[normalize(r)] = kanji;
   });
 }
-
-
-
-// ---- YouTubeアプリで開く（iOS/Android 兼用, 1本化）----
-function openInYouTubeApp(httpsLink){
-  const id = httpsLink.match(/[?&]v=([\w-]{11})/)?.[1];
-  const t  = (httpsLink.match(/[?&]t=(\d+)(s)?/)?.[1] || 0) | 0;
-  if(!id){ window.open(httpsLink, '_blank', 'noopener'); return; }
-
-  const ua = navigator.userAgent || '';
-  const isIOS = /iPad|iPhone|iPod/i.test(ua);
-
-  if(isIOS){
-    // iOSは OS ダイアログが出る仕様。抑止は不可（仕様上の限界）
-    const scheme = `vnd.youtube://watch?v=${id}${t?`&t=${t}`:''}`;
-    const fallback = httpsLink + (t? (httpsLink.includes('?')?'&':'?')+`t=${t}` : '');
-    const a = document.createElement('a');
-    a.href = scheme; document.body.appendChild(a);
-    const start = Date.now(); a.click();
-    setTimeout(()=>{ if(Date.now()-start<1400) location.href = fallback; }, 1200);
-    setTimeout(()=>a.remove(), 1600);
-  } else {
-    const withT = `${httpsLink}${t? (httpsLink.includes('?')?'&':'?')+`t=${t}` : ''}`;
-    const intent = `intent://www.youtube.com/watch?v=${id}${t?`&t=${t}`:''}` +
-                   `#Intent;package=com.google.android.youtube;scheme=https;` +
-                   `S.browser_fallback_url=${encodeURIComponent(withT)};end`;
-    location.href = intent;
-  }
-}
-
-// クリック委任（結果リストのYouTubeリンクをアプリへ）
-$('#results').off('click.openYt').on('click.openYt','a[href*="youtube.com/watch"]',function(e){
-  e.preventDefault();
-  openInYouTubeApp(this.href);
-});
-
-// ランダム再生も同関数を利用
-function preferYouTubeApp(link){ openInYouTubeApp(link); }
