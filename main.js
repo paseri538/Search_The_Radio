@@ -179,38 +179,7 @@ function preferYouTubeApp(url){
   const isIOS     = /iP(hone|od|ad)/.test(ua);
   const isAndroid = /Android/.test(ua);
 
-  if (isIOS) {
-    // iOSは Universal Link を新しいタブで開く → ダイアログなしでYouTubeアプリへハンドオフ
-    // 元のタブ（このサイト）はそのまま残る
-    const ul = `https://www.youtube.com/watch?v=${id}${t ? `&t=${t}` : ''}`;
-    window.open(ul, '_blank', 'noopener');  // 直クリックのユーザー操作内でのみ呼ぶこと
-    return;
-  }
-
-  if (isAndroid) {
-    // Androidは intent:// で起動。未インストール等のときだけ Web に落とす。
-    const appUrl = `intent://www.youtube.com/watch?v=${id}${t ? `&t=${t}` : ''}#Intent;package=com.google.android.youtube;scheme=https;end`;
-
-    let switched = false;
-    const cleanup = () => {
-      document.removeEventListener('visibilitychange', onVis, true);
-      window.removeEventListener('pagehide', onVis, true);
-    };
-    const onVis = () => { switched = true; cleanup(); };
-    document.addEventListener('visibilitychange', onVis, true);
-    window.addEventListener('pagehide', onVis, true);
-
-    setTimeout(() => { // 未切替＝アプリ起動失敗 → Webへ
-      cleanup();
-      if (!switched) window.location.href = url;
-    }, 1200);
-
-    window.location.href = appUrl;
-    return;
-  }
-
-  // PCなど
-  window.open(url, '_blank', 'noopener');
+  
 }
 
 

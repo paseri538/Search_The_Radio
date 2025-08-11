@@ -630,8 +630,6 @@ body.dark-mode #aboutCloseBtn {
   backdrop-filter: blur(2px);
   align-items: center;
   justify-content: center;
-  /* 重要！ */
-  display: flex;
 }
 
 /* 跳ねる4つの丸ローディング */
