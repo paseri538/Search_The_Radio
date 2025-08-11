@@ -167,6 +167,7 @@ function withTimeParam(url, seconds) {
   }
 }
 
+// --- YouTubeアプリ優先で開く（iOSはフォールバックなし、Androidのみフォールバック） ---
 function preferYouTubeApp(url){
   const id = getVideoId(url);
   if (!id) { window.open(url, '_blank', 'noopener'); return; }
@@ -174,9 +175,41 @@ function preferYouTubeApp(url){
   let t = 0;
   try { t = parseInt(new URL(url).searchParams.get('t') || '0', 10) || 0; } catch(e){}
 
-  // iOS/Androidともにユニバーサルリンクを使う
-  const link = `https://www.youtube.com/watch?v=${id}${t ? `&t=${t}` : ''}`;
-  window.location.href = link;
+  const ua = navigator.userAgent || '';
+  const isIOS     = /iP(hone|od|ad)/.test(ua);
+  const isAndroid = /Android/.test(ua);
+
+  if (isIOS) {
+    // iOSは必ず確認ダイアログが出る（仕様）。フォールバックは入れない＝戻ってきても自サイトのまま。
+    const appUrl = `youtube://watch?v=${id}${t ? `&t=${t}` : ''}`;
+    window.location.href = appUrl;
+    return; // ← タイマーや visibilitychange 監視はしない
+  }
+
+  if (isAndroid) {
+    // Androidは intent:// で起動。未インストール等のときだけ Web に落とす。
+    const appUrl = `intent://www.youtube.com/watch?v=${id}${t ? `&t=${t}` : ''}#Intent;package=com.google.android.youtube;scheme=https;end`;
+
+    let switched = false;
+    const cleanup = () => {
+      document.removeEventListener('visibilitychange', onVis, true);
+      window.removeEventListener('pagehide', onVis, true);
+    };
+    const onVis = () => { switched = true; cleanup(); };
+    document.addEventListener('visibilitychange', onVis, true);
+    window.addEventListener('pagehide', onVis, true);
+
+    setTimeout(() => { // 未切替＝アプリ起動失敗 → Webへ
+      cleanup();
+      if (!switched) window.location.href = url;
+    }, 1200);
+
+    window.location.href = appUrl;
+    return;
+  }
+
+  // PCなど
+  window.open(url, '_blank', 'noopener');
 }
 
 
@@ -423,7 +456,7 @@ function renderResults(arr, page = 1) {
 
     ul.append(`
       <li class="episode-item" role="link" tabindex="0">
-        <a href="${finalLink}" target="_blank" rel="noopener"
+        <a href="${finalLink}"${targetAttr}
            style="display:flex;gap:13px;text-decoration:none;color:inherit;align-items:center;min-width:0;">
           <div class="thumb-col">
             <img src="${thumb}" class="thumbnail" alt="サムネイル：${hashOnly}">
@@ -452,15 +485,17 @@ ul.off('click', '.ts-btn').on('click', '.ts-btn', function (e) {
   e.preventDefault(); e.stopPropagation();
   const sec  = Number(this.dataset.ts) || 0;
   const base = this.dataset.url || '';
-  preferYouTubeApp(withTimeParam(base, sec)); // ← window.open(...) をやめる
 });
 
 
-// サムネ（<a>）のクリックでアプリ優先起動
+// サムネ（<a>）クリック：iOSはユニバーサルリンクで素通し／他OSはアプリ優先
 ul.off('click', 'a').on('click', 'a', function(e){
-  e.preventDefault();
   const href = this.getAttribute('href') || '';
-  preferYouTubeApp(href);
+  const isIOS = /iP(hone|od|ad)/.test(navigator.userAgent || '');
+  if (!isIOS) { // iOS 以外だけ JS で介入
+    e.preventDefault();
+    preferYouTubeApp(href);
+ }
 });
 
 
