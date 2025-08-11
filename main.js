@@ -167,7 +167,7 @@ function withTimeParam(url, seconds) {
   }
 }
 
-// --- YouTubeアプリを優先して開く（iOS/Android対応・失敗時はWebに戻す） ---
+// --- YouTubeアプリ優先で開く（iOSはフォールバックなし、Androidのみフォールバック） ---
 function preferYouTubeApp(url){
   const id = getVideoId(url);
   if (!id) { window.open(url, '_blank', 'noopener'); return; }
@@ -179,24 +179,39 @@ function preferYouTubeApp(url){
   const isIOS     = /iP(hone|od|ad)/.test(ua);
   const isAndroid = /Android/.test(ua);
 
-  const appUrl =
-    // ★iOSは「www なし」の /watch?v=... が最も安定
-    isIOS    ? `youtube://watch?v=${id}${t ? `&t=${t}` : ''}` :
-    // ★Androidは intent:// が安定（vnd.youtube より推奨）
-    isAndroid? `intent://www.youtube.com/watch?v=${id}${t ? `&t=${t}` : ''}#Intent;package=com.google.android.youtube;scheme=https;end` :
-               null;
+  if (isIOS) {
+    // iOSは必ず確認ダイアログが出る（仕様）。フォールバックは入れない＝戻ってきても自サイトのまま。
+    const appUrl = `youtube://watch?v=${id}${t ? `&t=${t}` : ''}`;
+    window.location.href = appUrl;
+    return; // ← タイマーや visibilitychange 監視はしない
+  }
 
-  if (!appUrl) { window.open(url, '_blank', 'noopener'); return; }
+  if (isAndroid) {
+    // Androidは intent:// で起動。未インストール等のときだけ Web に落とす。
+    const appUrl = `intent://www.youtube.com/watch?v=${id}${t ? `&t=${t}` : ''}#Intent;package=com.google.android.youtube;scheme=https;end`;
 
-  // 起動試行 → 失敗時フォールバック
-  let timer;
-  const cleanup  = () => { if (timer) clearTimeout(timer); document.removeEventListener('visibilitychange', cleanup, true); };
-  const fallback = () => { cleanup(); window.location.href = url; };
+    let switched = false;
+    const cleanup = () => {
+      document.removeEventListener('visibilitychange', onVis, true);
+      window.removeEventListener('pagehide', onVis, true);
+    };
+    const onVis = () => { switched = true; cleanup(); };
+    document.addEventListener('visibilitychange', onVis, true);
+    window.addEventListener('pagehide', onVis, true);
 
-  document.addEventListener('visibilitychange', cleanup, true);
-  timer = setTimeout(fallback, 700);
-  window.location.href = appUrl;
+    setTimeout(() => { // 未切替＝アプリ起動失敗 → Webへ
+      cleanup();
+      if (!switched) window.location.href = url;
+    }, 1200);
+
+    window.location.href = appUrl;
+    return;
+  }
+
+  // PCなど
+  window.open(url, '_blank', 'noopener');
 }
+
 
 
 
