@@ -180,10 +180,11 @@ function preferYouTubeApp(url){
   const isAndroid = /Android/.test(ua);
 
   if (isIOS) {
-    // iOSは必ず確認ダイアログが出る（仕様）。フォールバックは入れない＝戻ってきても自サイトのまま。
-    const appUrl = `youtube://watch?v=${id}${t ? `&t=${t}` : ''}`;
-    window.location.href = appUrl;
-    return; // ← タイマーや visibilitychange 監視はしない
+    // iOSは Universal Link を新しいタブで開く → ダイアログなしでYouTubeアプリへハンドオフ
+    // 元のタブ（このサイト）はそのまま残る
+    const ul = `https://www.youtube.com/watch?v=${id}${t ? `&t=${t}` : ''}`;
+    window.open(ul, '_blank', 'noopener');  // 直クリックのユーザー操作内でのみ呼ぶこと
+    return;
   }
 
   if (isAndroid) {
@@ -456,7 +457,7 @@ function renderResults(arr, page = 1) {
 
     ul.append(`
       <li class="episode-item" role="link" tabindex="0">
-        <a href="${finalLink}"${targetAttr}
+        <a href="${finalLink}" target="_blank" rel="noopener"
            style="display:flex;gap:13px;text-decoration:none;color:inherit;align-items:center;min-width:0;">
           <div class="thumb-col">
             <img src="${thumb}" class="thumbnail" alt="サムネイル：${hashOnly}">
@@ -485,17 +486,15 @@ ul.off('click', '.ts-btn').on('click', '.ts-btn', function (e) {
   e.preventDefault(); e.stopPropagation();
   const sec  = Number(this.dataset.ts) || 0;
   const base = this.dataset.url || '';
+  preferYouTubeApp(withTimeParam(base, sec)); // ← window.open(...) をやめる
 });
 
 
-// サムネ（<a>）クリック：iOSはユニバーサルリンクで素通し／他OSはアプリ優先
+// サムネ（<a>）のクリックでアプリ優先起動
 ul.off('click', 'a').on('click', 'a', function(e){
+  e.preventDefault();
   const href = this.getAttribute('href') || '';
-  const isIOS = /iP(hone|od|ad)/.test(navigator.userAgent || '');
-  if (!isIOS) { // iOS 以外だけ JS で介入
-    e.preventDefault();
-    preferYouTubeApp(href);
- }
+  preferYouTubeApp(href);
 });
 
 
