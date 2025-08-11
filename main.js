@@ -179,10 +179,13 @@ function preferYouTubeApp(url){
   const isIOS     = /iP(hone|od|ad)/.test(ua);
   const isAndroid = /Android/.test(ua);
 
-  const appUrl =
-    isIOS    ? `youtube://www.youtube.com/watch?v=${id}${t ? `&t=${t}` : ''}` :
-    isAndroid? `vnd.youtube://${id}${t ? `?t=${t}` : ''}` :
-               null;
+ const appUrl =
+  // iOS: www を付けずに /watch?v=... で起動させる
+  isIOS    ? `youtube://watch?v=${id}${t ? `&t=${t}` : ''}` :
+  // Android: intent:// の方が確実（vnd.youtube でも可）
+  isAndroid? `intent://www.youtube.com/watch?v=${id}${t ? `&t=${t}` : ''}#Intent;package=com.google.android.youtube;scheme=https;end` :
+             null;
+
 
   // PC等は従来どおりWebへ
   if (!appUrl) { window.open(url, '_blank', 'noopener'); return; }
