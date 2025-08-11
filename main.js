@@ -102,7 +102,7 @@ let showFavoritesOnly = false;
 
 function getVideoId(link) {
   const m = (link || '').match(/(?:v=|be\/)([\w-]{11})/);
-  return m ? m[1] : link;
+  return m ? m[1] : null;
 }
 function loadFavs() {
   try { return new Set(JSON.parse(localStorage.getItem(FAV_KEY) || '[]')); }
@@ -435,7 +435,25 @@ function renderResults(arr, page = 1) {
     if (!hit && cornerTarget) hit = findHitTime(it, cornerTarget);
 
     // ヒットしていたら &t=sec を付与したURLに差し替え
-    const finalLink = hit ? withTimeParam(it.link, hit.seconds) : it.link;
+    const finalLinkBase = hit ? withTimeParam(it.link, hit.seconds) : it.link;
+
+    // iOS はユニバーサルリンク (youtu.be) に変換して新規タブ→アプリ起動（元ページは残る）
+    let finalLink = finalLinkBase;
+    (function () {
+      const ua = navigator.userAgent || '';
+      const isIOS = /iP(hone|od|ad)/.test(ua);
+      if (!isIOS) return;
+      const id = getVideoId(finalLinkBase);
+      if (!id) return;
+      try {
+        const u = new URL(finalLinkBase);
+        const t = u.searchParams.get('t');                 // 秒があれば引き継ぐ
+        finalLink = `https://youtu.be/${id}` + (t ? `?t=${t}` : '');
+      } catch {
+        finalLink = `https://youtu.be/${id}`;
+      }
+    })();
+
 
     let guestText = "";
     if (Array.isArray(it.guest)) guestText = "ゲスト：" + it.guest.join("、");
