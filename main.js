@@ -169,9 +169,10 @@ function withTimeParam(url, seconds) {
 
 // --- YouTubeアプリ優先で開く（iOSはフォールバックなし、Androidのみフォールバック） ---
 function preferYouTubeApp(url){
-  const id = getVideoId(url);
+  const id = getVideoId(url); // 既存。v= or youtu.be から11桁IDを抽出
   if (!id) { window.open(url, '_blank', 'noopener'); return; }
 
+  // t= を秒で読む（存在すれば）
   let t = 0;
   try { t = parseInt(new URL(url).searchParams.get('t') || '0', 10) || 0; } catch(e){}
 
@@ -179,8 +180,25 @@ function preferYouTubeApp(url){
   const isIOS     = /iP(hone|od|ad)/.test(ua);
   const isAndroid = /Android/.test(ua);
 
-  
+  if (isIOS) {
+    // iOS：ユニバーサルリンクに遷移（アプリがあれば即起動・ダイアログ無し）
+    const uni = `https://youtu.be/${id}` + (t ? `?t=${t}s` : '');
+    window.location.href = uni;
+    return;
+  }
+
+  if (isAndroid) {
+    // Android：YouTubeアプリへ（fallback無し＝サイトに留まる挙動）
+    const qs = t ? `?v=${id}&t=${t}s` : `?v=${id}`;
+    const intent = `intent://www.youtube.com/watch${qs}#Intent;package=com.google.android.youtube;scheme=https;end`;
+    window.location.href = intent;
+    return;
+  }
+
+  // PCなどは通常オープン
+  window.open(url, '_blank', 'noopener');
 }
+
 
 
 
@@ -459,10 +477,17 @@ ul.off('click', '.ts-btn').on('click', '.ts-btn', function (e) {
 });
 
 
-// サムネ（<a>）のクリックでアプリ優先起動
 ul.off('click', 'a').on('click', 'a', function(e){
-  e.preventDefault();
+  const ua = navigator.userAgent || '';
+  const isIOS = /iP(hone|od|ad)/.test(ua);
   const href = this.getAttribute('href') || '';
+
+  if (isIOS) {
+    // iOSはユニバーサルリンクに任せる：preventDefaultしない
+    return;
+  }
+  // iOS以外はアプリ優先ロジックへ
+  e.preventDefault();
   preferYouTubeApp(href);
 });
 
