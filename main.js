@@ -441,14 +441,15 @@ function renderResults(arr, page = 1) {
     let finalLink = finalLinkBase;
     (function () {
       const ua = navigator.userAgent || '';
-      const isIOS = /iP(hone|od|ad)/.test(ua);
+      const isIOS = /iP(hone|od|ad)/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+
       if (!isIOS) return;
       const id = getVideoId(finalLinkBase);
       if (!id) return;
       try {
         const u = new URL(finalLinkBase);
         const t = u.searchParams.get('t');                 // 秒があれば引き継ぐ
-        finalLink = `https://youtu.be/${id}` + (t ? `?t=${t}` : '');
+        finalLink = `https://www.youtube.com/watch?v=${id}` + (t ? `&t=${t}` : '');
       } catch {
         finalLink = `https://youtu.be/${id}`;
       }
@@ -501,9 +502,19 @@ ul.off('click', 'a').on('click', 'a', function(e){
   const href = this.getAttribute('href') || '';
 
   if (isIOS) {
-    // iOSはユニバーサルリンクに任せる：preventDefaultしない
-    return;
-  }
+  // YouTube アプリのユニバーサルリンクは watch?v=... が最も安定
+  const uni = `https://www.youtube.com/watch?v=${id}` + (t ? `&t=${t}` : '');
+  window.location.href = uni;
+  return;
+}
+if (isAndroid) {
+  // s を付けない（数値秒で統一）
+  const qs = t ? `?v=${id}&t=${t}` : `?v=${id}`;
+  const intent = `intent://www.youtube.com/watch${qs}#Intent;package=com.google.android.youtube;scheme=https;end`;
+  window.location.href = intent;
+  return;
+}
+
   // iOS以外はアプリ優先ロジックへ
   e.preventDefault();
   preferYouTubeApp(href);
