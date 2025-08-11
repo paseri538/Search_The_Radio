@@ -798,10 +798,10 @@ document.getElementById("darkModeBtn").onclick = function(){
   document.body.classList.toggle("dark-mode");
   // お好みでローカルストレージに記録も可能
   if(document.body.classList.contains("dark-mode")){
-    localStorage.setItem("dark-mode", "on");
+    localStorage.setItem("theme", "dark");
     this.textContent = "☀";
   } else {
-    localStorage.setItem("dark-mode", "off");
+    localStorage.setItem("theme", "light");
     this.textContent = "🌙";
   }
 };
@@ -809,7 +809,7 @@ document.getElementById("darkModeBtn").onclick = function(){
 
 // ページ読込時に前回の設定を反映
 window.addEventListener("DOMContentLoaded", function(){
-  if(localStorage.getItem("dark-mode")==="on"){
+  if(localStorage.getItem("theme")==="on"){
     document.body.classList.add("dark-mode");
     document.getElementById("darkModeBtn").textContent = "☀";
   }
