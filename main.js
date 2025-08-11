@@ -167,7 +167,6 @@ function withTimeParam(url, seconds) {
   }
 }
 
-// --- YouTubeアプリ優先で開く（iOSはフォールバックなし、Androidのみフォールバック） ---
 function preferYouTubeApp(url){
   const id = getVideoId(url);
   if (!id) { window.open(url, '_blank', 'noopener'); return; }
@@ -175,41 +174,9 @@ function preferYouTubeApp(url){
   let t = 0;
   try { t = parseInt(new URL(url).searchParams.get('t') || '0', 10) || 0; } catch(e){}
 
-  const ua = navigator.userAgent || '';
-  const isIOS     = /iP(hone|od|ad)/.test(ua);
-  const isAndroid = /Android/.test(ua);
-
-  if (isIOS) {
-    // iOSは必ず確認ダイアログが出る（仕様）。フォールバックは入れない＝戻ってきても自サイトのまま。
-    const appUrl = `youtube://watch?v=${id}${t ? `&t=${t}` : ''}`;
-    window.location.href = appUrl;
-    return; // ← タイマーや visibilitychange 監視はしない
-  }
-
-  if (isAndroid) {
-    // Androidは intent:// で起動。未インストール等のときだけ Web に落とす。
-    const appUrl = `intent://www.youtube.com/watch?v=${id}${t ? `&t=${t}` : ''}#Intent;package=com.google.android.youtube;scheme=https;end`;
-
-    let switched = false;
-    const cleanup = () => {
-      document.removeEventListener('visibilitychange', onVis, true);
-      window.removeEventListener('pagehide', onVis, true);
-    };
-    const onVis = () => { switched = true; cleanup(); };
-    document.addEventListener('visibilitychange', onVis, true);
-    window.addEventListener('pagehide', onVis, true);
-
-    setTimeout(() => { // 未切替＝アプリ起動失敗 → Webへ
-      cleanup();
-      if (!switched) window.location.href = url;
-    }, 1200);
-
-    window.location.href = appUrl;
-    return;
-  }
-
-  // PCなど
-  window.open(url, '_blank', 'noopener');
+  // iOS/Androidともにユニバーサルリンクを使う
+  const link = `https://www.youtube.com/watch?v=${id}${t ? `&t=${t}` : ''}`;
+  window.location.href = link;
 }
 
 
