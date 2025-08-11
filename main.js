@@ -179,26 +179,25 @@ function preferYouTubeApp(url){
   const isIOS     = /iP(hone|od|ad)/.test(ua);
   const isAndroid = /Android/.test(ua);
 
- const appUrl =
-  // iOS: www を付けずに /watch?v=... で起動させる
-  isIOS    ? `youtube://watch?v=${id}${t ? `&t=${t}` : ''}` :
-  // Android: intent:// の方が確実（vnd.youtube でも可）
-  isAndroid? `intent://www.youtube.com/watch?v=${id}${t ? `&t=${t}` : ''}#Intent;package=com.google.android.youtube;scheme=https;end` :
-             null;
+  const appUrl =
+    // ★iOSは「www なし」の /watch?v=... が最も安定
+    isIOS    ? `youtube://watch?v=${id}${t ? `&t=${t}` : ''}` :
+    // ★Androidは intent:// が安定（vnd.youtube より推奨）
+    isAndroid? `intent://www.youtube.com/watch?v=${id}${t ? `&t=${t}` : ''}#Intent;package=com.google.android.youtube;scheme=https;end` :
+               null;
 
-
-  // PC等は従来どおりWebへ
   if (!appUrl) { window.open(url, '_blank', 'noopener'); return; }
 
-  // アプリ起動を試し、失敗時はWebにフォールバック
+  // 起動試行 → 失敗時フォールバック
   let timer;
-  const cleanup = () => { if (timer) clearTimeout(timer); document.removeEventListener('visibilitychange', cleanup, true); };
+  const cleanup  = () => { if (timer) clearTimeout(timer); document.removeEventListener('visibilitychange', cleanup, true); };
   const fallback = () => { cleanup(); window.location.href = url; };
 
   document.addEventListener('visibilitychange', cleanup, true);
-  timer = setTimeout(fallback, 700); // 未インストール等のときにWebへ
-  window.location.href = appUrl;     // iOS/Androidはアプリにフォーカス
+  timer = setTimeout(fallback, 700);
+  window.location.href = appUrl;
 }
+
 
 
 // --- 検索語と keyword@time を“部分一致”で探して 1件返す ---
@@ -471,8 +470,9 @@ ul.off('click', '.ts-btn').on('click', '.ts-btn', function (e) {
   e.preventDefault(); e.stopPropagation();
   const sec  = Number(this.dataset.ts) || 0;
   const base = this.dataset.url || '';
-  preferYouTubeApp(withTimeParam(base, sec));
+  preferYouTubeApp(withTimeParam(base, sec)); // ← window.open(...) をやめる
 });
+
 
 // サムネ（<a>）のクリックでアプリ優先起動
 ul.off('click', 'a').on('click', 'a', function(e){
