@@ -167,6 +167,37 @@ function withTimeParam(url, seconds) {
   }
 }
 
+// --- YouTubeアプリを優先して開く（iOS/Android対応・失敗時はWebに戻す） ---
+function preferYouTubeApp(url){
+  const id = getVideoId(url);
+  if (!id) { window.open(url, '_blank', 'noopener'); return; }
+
+  let t = 0;
+  try { t = parseInt(new URL(url).searchParams.get('t') || '0', 10) || 0; } catch(e){}
+
+  const ua = navigator.userAgent || '';
+  const isIOS     = /iP(hone|od|ad)/.test(ua);
+  const isAndroid = /Android/.test(ua);
+
+  const appUrl =
+    isIOS    ? `youtube://www.youtube.com/watch?v=${id}${t ? `&t=${t}` : ''}` :
+    isAndroid? `vnd.youtube://${id}${t ? `?t=${t}` : ''}` :
+               null;
+
+  // PC等は従来どおりWebへ
+  if (!appUrl) { window.open(url, '_blank', 'noopener'); return; }
+
+  // アプリ起動を試し、失敗時はWebにフォールバック
+  let timer;
+  const cleanup = () => { if (timer) clearTimeout(timer); document.removeEventListener('visibilitychange', cleanup, true); };
+  const fallback = () => { cleanup(); window.location.href = url; };
+
+  document.addEventListener('visibilitychange', cleanup, true);
+  timer = setTimeout(fallback, 700); // 未インストール等のときにWebへ
+  window.location.href = appUrl;     // iOS/Androidはアプリにフォーカス
+}
+
+
 // --- 検索語と keyword@time を“部分一致”で探して 1件返す ---
 // 例: keywords に「ラッキーボタン@45:15」登録、検索語が「らっきー」でもヒット
 function findHitTime(item, rawQuery) {
@@ -433,12 +464,21 @@ function renderResults(arr, page = 1) {
   });
 
   // サムネ下の時刻ボタン（委任）
-  ul.off('click', '.ts-btn').on('click', '.ts-btn', function (e) {
-    e.preventDefault(); e.stopPropagation();
-    const sec = Number(this.dataset.ts) || 0;
-    const base = this.dataset.url || '';
-    window.open(withTimeParam(base, sec), '_blank', 'noopener');
-  });
+ul.off('click', '.ts-btn').on('click', '.ts-btn', function (e) {
+  e.preventDefault(); e.stopPropagation();
+  const sec  = Number(this.dataset.ts) || 0;
+  const base = this.dataset.url || '';
+  preferYouTubeApp(withTimeParam(base, sec));
+});
+
+// サムネ（<a>）のクリックでアプリ優先起動
+ul.off('click', 'a').on('click', 'a', function(e){
+  e.preventDefault();
+  const href = this.getAttribute('href') || '';
+  preferYouTubeApp(href);
+});
+
+
 
   // ★ボタン付与（既存）
   $('#results .episode-item').each(function () {
@@ -689,7 +729,7 @@ $('#randomBtn').on('click', function(){
   const pool = (Array.isArray(lastResults) && lastResults.length) ? lastResults : data;
   if (!pool.length) return;
   const pick = pool[Math.floor(Math.random() * pool.length)];
-  window.open(pick.link, '_blank', 'noopener');
+  preferYouTubeApp(pick.link);
 });
 
     });
