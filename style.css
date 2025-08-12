@@ -1366,3 +1366,18 @@ body.dark-mode #historyModal .modal-close{
 body.dark-mode #historyModal .modal-close:hover{
   background: rgba(255,255,255,0.16);
 }
+
+
+/* === FIX: Force light theme colors for history when site is in light mode,
+   even if the OS is set to dark (iOS Safari was applying @media(prefers-color-scheme: dark)
+   and overriding these CSS variables only for the history section). === */
+body:not(.dark-mode){
+  --history-line: #dfe5f5;
+  --history-dot: #6c5ce7;
+  --history-dot-ring: 36, 28, 170;
+  --history-card-bg: #ffffff;
+  --history-card-bd: #e9edf7;
+  --history-muted: #667085;
+  --history-year: #3b3486;
+}
+
