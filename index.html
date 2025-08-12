@@ -19,7 +19,7 @@
         "#loading-screen{background:#22272e!important}";
       document.head.appendChild(st);
       // 早期にダークであることを示すフラグ（任意）
-      document.documentElement.setAttribute("data-theme","dark");
+      document.documentElement.setAttribute("data-theme","dark"); document.body && document.body.classList.add("dark-mode");
     }
   } catch(e){}
 })();
@@ -197,9 +197,7 @@
   <div class="main-content" id="mainContent">
     <ul id="results" class="list-unstyled"></ul>
     <div class="pagination-area" id="paginationArea"></div>
-    <div id="aboutSiteArea" style="text-align:center; margin:24px 0 8px;">
-      <a href="#" id="aboutSiteLink" style="color:#6654e8; text-decoration:underline; cursor:pointer; font-weight:500;">このサイトについて</a>
-    </div>
+   
     <div id="aboutModal" style="display:none; position:fixed; z-index:2055; left:0; top:0; width:100vw; height:100vh; background:rgba(30,29,52,0.18); backdrop-filter: blur(2px); align-items:center; justify-content:center;">
       <div id="aboutModalContent" style="background:#fff; color:#222; border-radius:16px; box-shadow:0 6px 30px -6px #7c3aed35; max-width:95vw; width:360px; padding:32px 22px 22px 22px; margin:auto; text-align:center; position:relative; display:flex; flex-direction:column; align-items:center;">
         <button id="aboutCloseBtn" style="position:absolute; right:17px; top:13px; border:none; background:none; font-size:1.5em; color:#6654e8; cursor:pointer;">×</button>
@@ -217,9 +215,43 @@
         </div>
       </div>
     </div>
+
+   <!-- 置き換え：ラジオの歴史ボタン -->
+<section id="radio-history" class="history-section" aria-label="ラジオの歴史">
+  <button class="history-toggle" id="historyToggle"
+          aria-haspopup="dialog" aria-expanded="false" aria-controls="historyModal">
+    <span class="icon">📻</span>
+   <span class="title">ぼっち・ざ・らじお！の歴史</span>
+    <!-- ※ .sub は削除 -->
+    <span class="chevron" aria-hidden="true">▾</span>
+  </button>
+</section>
+
+<!-- 置き換え：モーダル（ヘッダーを新設・固定） -->
+<div id="historyModal" class="modal-overlay" role="dialog" aria-modal="true"
+     aria-labelledby="historyModalTitle" hidden aria-label="ぼっち・ざ・らじお！の歴史">
+  <div class="modal-content history-modal" role="document">
+    <div class="modal-header">
+      <h2 id="historyModalTitle" class="modal-title">ぼっち・ざ・らじお！の歴史</h2>
+      <button class="modal-close" id="historyCloseBtn" aria-label="閉じる">
+  <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+</button>
+    </div>
+
+    <div class="history-body" id="historyBody">
+      <div class="history-sticky-year" id="historyStickyYear" aria-hidden="true"></div>
+      <div id="historyTimeline" class="history-timeline" aria-live="polite"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ▲ ラジオの歴史（ここまで） -->
+
     <footer>
       ©はまじあき／芳文社・アニプレックス<br>
       <a href="https://x.com/paseri_538" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;">Developed by paseri_538</a>
+  <span class="footer-sep">・</span>
+  <a href="#" id="aboutSiteLink" style="color:inherit;text-decoration:underline;">このサイトについて</a>
     </footer>
   </div>
   <script src="main.js"></script>

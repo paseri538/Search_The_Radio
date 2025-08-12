@@ -985,3 +985,384 @@ body.dark-mode .autocomplete-item .type { border-color: #415766; color: #96e5c4;
     padding-top: calc(0.38rem + constant(safe-area-inset-top));
   }
 }
+
+/* === Radio History Timeline (refined) === */
+:root{
+  --history-line: #dfe5f5;
+  --history-dot: #6c5ce7;
+  --history-dot-ring: 36, 28, 170; /* rgb base for ring alpha */
+  --history-card-bg: #ffffff;
+  --history-card-bd: #e9edf7;
+  --history-muted: #667085;
+  --history-year: #3b3486;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --history-line: #384154;
+    --history-dot: #9ad9de;
+    --history-dot-ring: 154, 217, 222;
+    --history-card-bg: #22272e;
+    --history-card-bd: #364152;
+    --history-muted: #9aa4b2;
+    --history-year: #9ad9de;
+  }
+}
+
+.history-section{
+  max-width: 960px; margin: 56px auto 28px; padding: 0 16px;
+}
+.history-toggle{
+  -webkit-tap-highlight-color: transparent;
+  width: 100%; display:flex; align-items:center; gap:12px;
+  padding: 16px 18px; border-radius: 14px; border: 1px solid var(--history-card-bd);
+  background: var(--history-card-bg); color: inherit; cursor: pointer;
+  box-shadow: 0 10px 30px -18px rgba(20,20,70,.25);
+  font-weight: 750; letter-spacing: .01em;
+}
+.history-toggle .icon{ font-size: 1.15em; }
+.history-toggle .title{ font-size: 1.06em; }
+.history-toggle .sub{ margin-left:auto; color: var(--history-muted); font-weight:650; }
+.history-toggle .chevron{ margin-left:6px; transition: transform .2s ease; }
+.history-toggle[aria-expanded="true"] .chevron{ transform: rotate(180deg); }
+.history-toggle:focus-visible{ outline: 3px solid rgba(99,102,241,.45); outline-offset: 2px; }
+
+.history-body{ position: relative; padding: 14px 2px 2px; }
+
+/* Sticky year badge (left) */
+.history-sticky-year{
+  position: sticky; top: 12px; left: 0;
+  width: fit-content; margin-left: 4px; z-index: 1;
+  padding: 6px 12px; border-radius: 999px;
+  background: rgba(240,243,255,.8);
+  border: 1px solid var(--history-card-bd);
+  backdrop-filter: blur(6px);
+  font-weight: 800; font-size: 14px; color: var(--history-year);
+  box-shadow: 0 8px 24px -14px rgba(20,20,70,.25);
+  display: none; /* 開いた時にJSで表示 */
+}
+@media (prefers-color-scheme: dark){
+  .history-sticky-year{ background: rgba(33,38,46,.6); }
+}
+
+.history-timeline{
+  position: relative; margin: 8px 0 0 28px; padding-left: 24px;
+}
+.history-timeline::before{
+  content:""; position:absolute; left: 4px; top: 0; bottom: 0;
+  width: 2px; background: linear-gradient(var(--history-line), transparent 60%), var(--history-line);
+  border-radius: 2px;
+}
+
+/* 年の見出し */
+.history-year{
+  position: relative; margin: 22px 0 10px;
+  font-weight: 900; color: var(--history-year); letter-spacing: .02em;
+}
+
+/* アイテム */
+.history-item{
+  position: relative; padding: 12px 14px 14px 16px; margin: 12px 0 14px;
+  background: var(--history-card-bg); border: 1px solid var(--history-card-bd); border-radius: 12px;
+  box-shadow: 0 14px 36px -20px rgba(26, 26, 80, .28);
+  transform: translateZ(0);
+  animation: historyFade .35s ease both;
+}
+@keyframes historyFade {
+  from { opacity: 0; translate: 0 6px; }
+  to   { opacity: 1; translate: 0 0; }
+}
+@media (prefers-reduced-motion: reduce){
+  .history-item{ animation: none; }
+}
+
+.history-item::before{
+  content:""; position:absolute; left: -27px; top: 18px;
+  width: 14px; height: 14px; border-radius: 50%;
+  background: var(--history-dot);
+  box-shadow:
+    0 0 0 4px rgba(var(--history-dot-ring), .18),
+    0 10px 24px -8px rgba(16,16,64,.35);
+}
+.history-item:hover{
+  border-color: color-mix(in oklab, var(--history-card-bd), var(--history-dot) 20%);
+}
+
+.history-item .date{ font-weight:800; margin-bottom:4px; color: color-mix(in oklab, var(--history-year), #6b7cff 40%); font-size: 13.5px; }
+.history-item .label{ font-weight:800; line-height: 1.5; }
+.history-item .desc{ color: var(--history-muted); margin-top: 2px; line-height: 1.7; }
+.history-item a{ color: inherit; text-decoration: underline; text-underline-offset: 3px; }
+
+/* 小さめ画面最適化 */
+@media (max-width: 640px){
+  .history-section{ margin-top: 40px; }
+  .history-timeline{ margin-left: 22px; padding-left: 18px; }
+  .history-item{ padding: 12px 12px 14px 14px; }
+  .history-sticky-year{ font-size: 13px; padding: 5px 10px; }
+}
+
+
+/* === Radio History Timeline: tweaks === */
+/* タイトル中央揃え（開閉ボタン） */
+.history-toggle{
+  position: relative;
+  display:flex; align-items:center; gap:12px;
+}
+.history-toggle .title{
+  position:absolute; left:50%; transform:translateX(-50%);
+  text-align:center; pointer-events:none; /* クリックはボタン全体に委譲 */
+  font-weight: 800;
+}
+
+/* ダークモード強化（ヒストリー一式） */
+body.dark-mode .history-toggle{
+  background:#2d333b !important; border-color:#3b4552 !important;
+  color:#e9f2f6 !important; box-shadow: 0 10px 30px -18px #000c !important;
+}
+body.dark-mode .history-timeline::before{ background:#3a4452 !important; }
+body.dark-mode .history-year{ color:#9ad9de !important; }
+body.dark-mode .history-item{
+  background:#2d333b !important; border-color:#3b4552 !important;
+  box-shadow: 0 14px 36px -20px #000f !important;
+}
+body.dark-mode .history-item::before{
+  background:#90c9ce !important; box-shadow:0 0 0 4px rgba(144,201,206,.18) !important;
+}
+body.dark-mode .history-item .date{ color:#9ad9de !important; }
+body.dark-mode .history-sticky-year{
+  background: rgba(33,38,46,.6) !important; border-color:#3b4552 !important;
+  color:#9ad9de !important;
+}
+
+.history-item .date{
+  font-weight: 800;
+  font-size: 13px;       /* 13.5→13 に微下げ */
+  opacity: .95;
+}
+
+
+/* Fix for circle misalignment on mobile */
+@media (max-width: 600px) {
+  .timeline-circle {
+    position: relative;
+    left: 0 !important;
+    margin: 0 auto !important;
+    transform: translateX(0) !important;
+  }
+}
+
+/* Stylish design improvements */
+.timeline-circle {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #7c3aed, #4f46e5);
+  box-shadow: 0 0 0 3px #fff, 0 4px 10px rgba(0,0,0,0.15);
+  border: 2px solid #fff;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.timeline-circle:hover {
+  transform: scale(1.2);
+  box-shadow: 0 0 0 3px #fff, 0 6px 16px rgba(0,0,0,0.25);
+}
+
+/* Connectors */
+.timeline-connector {
+  width: 3px;
+  background: linear-gradient(to bottom, #7c3aed, #4f46e5);
+  margin: 0 auto;
+}
+
+/* Mobile: タイムラインの丸位置を微修正（18px padding, 線は4px → 左端 -21px） */
+@media (max-width: 640px){
+  .history-timeline .history-item::before{
+    left: -21px; /* ずれ解消 */
+  }
+}
+
+
+.history-timeline::before { left: -7px; }   
+.history-item::before      { left: -38px; } 
+@media (max-width: 640px){
+  .history-timeline .history-item::before { left: -32px; } 
+}
+
+
+
+/* ラジオの歴史：年バッジを使わない */
+.history-sticky-year { display: none !important; }
+
+
+/* ラジオの歴史：説明文の行間を調整 */
+.history-item .desc { line-height: 1.55; }   /* 元は 1.7 */
+@media (max-width: 640px){
+  .history-item .desc { line-height: 1.4; }  /* スマホはさらに少しタイトに */
+}
+
+/* === Modal 基本 === */
+.modal-overlay{
+  display: none;
+  position: fixed; inset: 0; z-index: 2055;
+  background: rgba(30,29,52,0.18);
+  backdrop-filter: blur(2px);
+  align-items: center; justify-content: center;
+}
+.modal-overlay.show{ display: flex; }
+
+/* ダークモード時はオーバーレイ濃いめ */
+body.dark-mode .modal-overlay{
+  background: rgba(0,0,0,0.5);
+  backdrop-filter: blur(3px);
+}
+
+.modal-content.history-modal{
+  background: var(--history-card-bg);
+  color: inherit;
+  width: min(960px, 95vw);
+  max-height: min(80vh, calc(100vh - 80px));
+  border: 1px solid var(--history-card-bd);
+  border-radius: 16px;
+  box-shadow: 0 18px 48px -12px rgba(20,20,70,.33);
+  overflow: auto;
+  position: relative;
+}
+
+/* モーダル固定ヘッダー（タイトル中央＋×固定） */
+.history-modal .modal-header{
+  position: sticky; top: 0; z-index: 3;
+  background: var(--history-card-bg);
+  border-bottom: 1px solid var(--history-card-bd);
+  padding: 10px 16px;
+}
+.history-modal .modal-title{
+  margin: 0; font-size: 1.15rem; font-weight: 800;
+  text-align: center; line-height: 1.2;
+  color: var(--history-year);
+}
+
+/* ダーク時のカード境界色・背景は変数で自動適用 */
+body.dark-mode .modal-content.history-modal{
+  background: var(--history-card-bg);
+  border-color: var(--history-card-bd);
+}
+
+/* モーダル内の“現在の年”バッジがヘッダーの下に来るよう微調整 */
+#historyStickyYear{
+  top: 56px;            /* ヘッダー高の分だけ下げる */
+  z-index: 2;
+}
+
+/* 背景スクロール禁止用（JSで .modal-open を付与） */
+body.modal-open{
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  overflow: hidden;
+}
+
+/* 追加：サイトのダーク切替でも色変数を上書き */
+body.dark-mode{
+  --history-line:#384154;
+  --history-dot:#9ad9de;
+  --history-dot-ring:154,217,222;
+  --history-card-bg:#22272e;
+  --history-card-bd:#364152;
+  --history-muted:#9aa4b2;
+  --history-year:#9ad9de;
+}
+
+/* 追加：フェードイン＆ポップ */
+.modal-overlay[hidden]{display:none;}
+.modal-overlay.show{display:flex; animation:modalFade .22s ease-out both;}
+.history-modal{transform:translateY(8px) scale(.98); animation:modalPop .24s ease-out both;}
+@keyframes modalFade{from{opacity:0}to{opacity:1}}
+@keyframes modalPop{to{transform:translateY(0) scale(1)}}
+
+
+.history-modal .modal-close i{ font-size:1.25rem; }
+
+.history-modal .modal-close:hover{ transform: scale(1.06); background: rgba(255,255,255,0.92); }
+.history-modal .modal-close:active{ transform: scale(0.98); }
+.history-modal .modal-close:focus-visible{ outline: 3px solid #8de0ee; outline-offset: 2px; }
+
+/* ダークモードの閉じるボタン */
+body.dark-mode .history-modal .modal-close{
+  background: rgba(255,255,255,0.10);
+  color: #eaf4f6;
+  border-color: #3b4552;
+  box-shadow: 0 8px 24px -12px rgba(0,0,0,.6);
+}
+body.dark-mode .history-modal .modal-close:hover{
+  background: rgba(255,255,255,0.16);
+}
+
+/* 余白を少し広げる＆タイトル右に×のスペース確保 */
+.history-modal .modal-header{ padding:14px 56px 12px; } /* 右=56pxで×が食い込まない */
+.history-modal .history-body{  padding:16px 22px 22px 16px; } /* ←右側にゆとり */
+
+
+
+/* 閉じる時：フェードアウト＋少し沈む */
+.modal-overlay.closing{ animation: modalFadeOut .20s ease-in forwards; }
+.modal-overlay.closing .history-modal{ animation: modalPopOut .18s ease-in forwards; }
+
+@keyframes modalFadeOut { from{opacity:1} to{opacity:0} }
+@keyframes modalPopOut  { from{transform: translateY(0) scale(1); opacity:1}
+                          to  {transform: translateY(6px) scale(.98); opacity:.96} }
+
+/* フェードアウト（closing） */
+.modal-overlay.closing{ animation: modalHide .18s ease-in both; }
+.modal-overlay.closing .history-modal{ animation: modalPopOut .18s ease-in both; }
+
+@keyframes modalHide { from{opacity:1} to{opacity:0} }
+@keyframes modalPopOut { from{transform:translateY(0) scale(1)} to{transform:translateY(8px) scale(.98)} }
+
+body.fav-only #radio-history { display: none !important; }
+
+/* 最後に置く（これを生かす） */
+.history-modal .modal-close{
+  width:36px; height:36px; /* 小さく */
+  top:80px; right:40px;      /* さらに右寄せ */
+}
+
+.close {
+    position: absolute !important;
+    top: 10px !important;
+    right: 30px !important; /* 数値を大きくして右寄せ */
+    font-size: 30px;
+    font-weight: bold;
+    color: #aaa;
+    cursor: pointer;
+    z-index: 9999; /* モーダルの上にくるように */
+}
+
+/* === Radio History modal: CLOSE button (single source of truth) === */
+#historyModal .modal-header {          /* ×と干渉しないだけ右側に余白を確保 */
+  padding: 14px 48px 12px 16px;        /* ← 右側=48px（ボタン幅+余白ぶん） */
+}
+
+#historyModal .modal-close {
+  position: absolute;
+  top: 8px;
+  right: 4px;                          /* ← もっと右寄せしたいなら 0～4px */
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 5;
+}
+
+#historyModal .modal-close i { font-size: 1.15rem; }
+
+/* ダークモードの見た目（既存と同じでOK。必要なら残す） */
+body.dark-mode #historyModal .modal-close{
+  background: rgba(255,255,255,0.10);
+  color: #eaf4f6;
+  border-color: #3b4552;
+  box-shadow: 0 8px 24px -12px rgba(0,0,0,.6);
+}
+body.dark-mode #historyModal .modal-close:hover{
+  background: rgba(255,255,255,0.16);
+}

@@ -37,7 +37,7 @@
       { episode:"50", title:"#50　ゲスト：鈴代紗弓", guest:"鈴代紗弓", date:"2024-04-24", link:"https://www.youtube.com/watch?v=e2ZTylMTA9A", keywords:["鈴代紗弓","さゆみん","おさゆ","みんみん","さゆちゃん","おすず","すずちゃん","鈴代ちゃん","すずしろさゆみ"], duration:"1:07:02" },
       { episode:"49", title:"#49　", guest:"青山吉能", date:"2024-04-10", link:"https://www.youtube.com/watch?v=JxVrbUUC8uk", keywords:["青山吉能","よぴ","よしの","よっぴー","あおやまよしの"], duration:"54:29" },
       { episode:"48", title:"#48　ゲスト：水野朔", guest:"水野朔", date:"2024-03-27", link:"https://www.youtube.com/watch?v=F_ydWMhlg9s", keywords:["水野朔","さくぴ","さくさくちゃん","ﾐｽﾞﾉｻｸﾃﾞｼｭ","みずのさく",], duration:"1:07:42" },
-      { episode:"47", title:"#47　ゲスト：鈴代紗弓", guest:"鈴代紗弓", date:"2024-03-13", link:"https://www.youtube.com/watch?v=nSO14XAm2GI", keywords:["鈴代紗弓","さゆみん","おさゆ","みんみん","さゆちゃん","おすず","すずちゃん","鈴代ちゃん","すずしろさゆみ"], duration:"1:07:14" },
+      { episode:"47", title:"#47　ゲスト：鈴代紗弓", guest:"鈴代紗弓", date:"2024-03-13", link:"https://www.youtube.com/watch?v=nSO14XAm2GI", keywords:["鈴代紗弓","さゆみん","おさゆ","みんみん","さゆちゃん","おすず","すずちゃん","鈴代ちゃん","すずしろさゆみ","薮崎D","やぶさき"], duration:"1:07:14" },
       { episode:"46", title:"#46　ゲスト：長谷川育美", guest:"長谷川育美", date:"2024-02-28", link:"https://www.youtube.com/watch?v=ZHabLKrF-Aw", keywords:["長谷川育美","いくみ","はせみ","はせちゃん","いくちゃん","はっせー","はせがわいくみ","よぴいく","ypik"], duration:"1:18:16" },
       { episode:"45", title:"#45　", guest:"青山吉能", date:"2024-02-14", link:"https://www.youtube.com/watch?v=0nHtK3Zokmg", keywords:["青山吉能","よぴ","よしの","よっぴー","あおやまよしの"], duration:"1:08:09" },
       { episode:"44", title:"#44　ゲスト：鈴代紗弓", guest:"鈴代紗弓", date:"2024-01-31", link:"https://www.youtube.com/watch?v=EoW2sRMJeYs", keywords:["鈴代紗弓","さゆみん","おさゆ","みんみん","さゆちゃん","おすず","すずちゃん","鈴代ちゃん","すずしろさゆみ"], duration:"1:14:46" },
@@ -79,12 +79,12 @@
       { episode:"08", title:"#08　ゲスト：長谷川育美", guest:"長谷川育美", date:"2022-11-09", link:"https://www.youtube.com/watch?v=0Vz-WHfPrI4", keywords:["長谷川育美","いくみ","はせみ","はせちゃん","いくちゃん","はっせー","はせがわいくみ","よぴいく","ypik"], duration:"1:04:24" },
       { episode:"07", title:"#07　ゲスト：水野朔", guest:"水野朔", date:"2022-11-02", link:"https://www.youtube.com/watch?v=JQ_xgtun1kQ", keywords:["水野朔","さくぴ","さくさくちゃん","ﾐｽﾞﾉｻｸﾃﾞｼｭ","みずのさく",], duration:"1:05:36" },
       { episode:"06", title:"#06　ゲスト：鈴代紗弓", guest:"鈴代紗弓", date:"2022-10-26", link:"https://www.youtube.com/watch?v=f18K3nc2wAw", keywords:["鈴代紗弓","さゆみん","おさゆ","みんみん","さゆちゃん","おすず","すずちゃん","鈴代ちゃん","すずしろさゆみ"], duration:"1:06:11" },
-      { episode:"05", title:"#05　ゲスト：長谷川育美", guest:"長谷川育美", date:"2022-10-19", link:"https://www.youtube.com/watch?v=4hcPzIW8MfE", keywords:["長谷川育美","いくみ","はせみ","はせちゃん","いくちゃん","はっせー","はせがわいくみ","よぴいく","ypik"], duration:"58:15" },
+      { episode:"05", title:"#05　ゲスト：長谷川育美", guest:"長谷川育美", date:"2022-10-19", link:"https://www.youtube.com/watch?v=4hcPzIW8MfE", keywords:["長谷川育美","いくみ","はせみ","はせちゃん","いくちゃん","はっせー","はせがわいくみ","よぴいく","ypik","ぼっち・ざ・おーでぃしょん！@45:17"], duration:"58:15" },
       { episode:"04", title:"#04　ゲスト：水野朔", guest:"水野朔", date:"2022-10-12", link:"https://www.youtube.com/watch?v=ieCOGEOXxr8", keywords:["水野朔","さくぴ","さくさくちゃん","ﾐｽﾞﾉｻｸﾃﾞｼｭ","みずのさく",], duration:"1:06:40" },
       { episode:"03", title:"#03　ゲスト：鈴代紗弓", guest:"鈴代紗弓", date:"2022-10-05", link:"https://www.youtube.com/watch?v=4c_DVoq-9oU", keywords:["鈴代紗弓","さゆみん","おさゆ","みんみん","さゆちゃん","おすず","すずちゃん","鈴代ちゃん","すずしろさゆみ"], duration:"1:07:18" },
       { episode:"02", title:"#02　ゲスト：水野朔、長谷川育美", guest:["水野朔","長谷川育美"], date:"2022-09-21", link:"https://www.youtube.com/watch?v=kct8627dspo", keywords:["3mm","ｵﾓｼﾛｲｯ!","水野朔","さくぴ","さくさくちゃん","ﾐｽﾞﾉｻｸﾃﾞｼｭ","みずのさく","長谷川育美","いくみ","はせみ","はせちゃん","いくちゃん","はっせー","はせがわいくみ","生配信・公録"], duration:"1:07:41" },
       { episode:"02", title:"京まふ大作戦2022　", guest:["水野朔","長谷川育美"], date:"2022-09-18", link:"https://www.youtube.com/watch?v=EDay9btUsKw", keywords:["3mm","ｵﾓｼﾛｲｯ!","水野朔","さくぴ","さくさくちゃん","ﾐｽﾞﾉｻｸﾃﾞｼｭ","みずのさく","長谷川育美","いくみ","はせみ","はせちゃん","いくちゃん","はっせー","はせがわいくみ","生配信・公録","きょうまふ"], duration:"54:45" },
-      { episode:"01", title:"#01　", guest:"青山吉能", date:"2022-09-07", link:"https://www.youtube.com/watch?v=__P57MTTjyw", keywords:["青山吉能","よぴ","よしの","よっぴー","あおやまよしの"], duration:"55:53" },
+      { episode:"01", title:"#01　", guest:"青山吉能", date:"2022-09-07", link:"https://www.youtube.com/watch?v=__P57MTTjyw", keywords:["青山吉能","よぴ","よしの","よっぴー","あおやまよしの","ぼっち共感@27:49"], duration:"55:53" },
 
     ];
     let selectedGuests = [];
@@ -477,6 +477,8 @@ function resetSearch() {
     clearAllFavorites();
 
     showFavoritesOnly = false;
+    document.body.classList.remove('fav-only');
+
     $("#favOnlyToggleBtn")
       .removeClass("active")
       .attr("aria-pressed", "false");
@@ -681,6 +683,8 @@ $('#favOnlyToggleBtn').on('click', function(){
   showFavoritesOnly = !showFavoritesOnly;
   $(this).attr('aria-pressed', showFavoritesOnly)
          .toggleClass('active', showFavoritesOnly);
+
+  document.body.classList.toggle('fav-only', showFavoritesOnly); // ★これ
   search({ gotoPage: 1 });
 });
 
@@ -806,18 +810,6 @@ document.getElementById('rcModal').addEventListener('click', function(e){
 
 // 検索ボタンやページ移動の関数内で currentPage をグローバル管理すること
 window.currentPage = 1; // グローバル変数を用意（既にあれば不要）
-
-window.addEventListener('DOMContentLoaded', function() {
-  // 初期化
-  if (typeof search === 'function') {
-    window.currentPage = 1;
-    search(1); // 1ページ目を明示的に呼ぶ
-    setTimeout(() => {
-      window.scrollTo(0, 0);
-      document.getElementById('mainContent')?.scrollIntoView({behavior: 'auto'});
-    }, 300);
-  }
-});
 
 
 
@@ -1320,6 +1312,8 @@ const CUSTOM_READINGS = {
   "Venue101": ["べにゅー101"],
   "恒星": ["こうせい"],
   "匂わせ": ["におわせ"],
+  "薮崎D": ["やぶさき"],
+  "ぼっち・ざ・ろっく！です。": ["ぼざろです"],
 };
 
 
@@ -1330,3 +1324,229 @@ for (const kanji in CUSTOM_READINGS) {
     READING_TO_LABEL[normalize(r)] = kanji;
   });
 }
+
+// ===== ラジオの歴史：データ → タイムライン描画 =====
+(function(){
+  const $toggle = document.getElementById('historyToggle');
+  const $body   = document.getElementById('historyBody');
+  const $list   = document.getElementById('historyTimeline');
+  if(!$toggle || !$body || !$list) return;
+
+  // ここに歴史データを足していく（時系列順／日付降順でもOK）
+  // date: YYYY-MM-DD, month-only可（YYYY-MM）, year-only可（YYYY）
+  const HISTORY = [
+    { date: '2022-08-19', label: '番組配信決定', desc: '旧Twitterにて公式ラジオスタートの告知。', url: 'https://x.com/BTR_anime/status/1560280368384581632' },
+    { date: '2022-09-07', label: '第1回配信開始', desc: '『ぼっち・ざ・らじお！』第1回がYoutubeと音泉にて配信開始。', url: 'https://x.com/BTR_anime/status/1567439907542499328' },
+    { date: '2022-09-18', label: '番組公開収録 in 京まふ2022', desc: 'みやこめっせステージにて第2回の公開収録。', url: 'https://x.com/BTR_anime/status/1571365877211336707' },
+    { date: '2022-12-01', label: 'フレッシュネスバーガー下北沢店コラボ開催', desc: 'ラジオでのアツいフレッシュネスバーガー話がきっかけになり、コラボが決定。', url: 'https://x.com/Yopipi555/status/1597898760633610240' },
+    { date: '2022-12-11', label: 'フレッシュネスバーガー下北沢店　青山吉能スパムバーガーお渡し会開催', desc: 'ぼっち応援キャンペーン第2弾として青山吉能が1日店長に。', url: 'https://x.com/BTR_anime/status/1601789726217756672' },
+
+    
+    { date: '2023-03-19', label: '番組イベント開催', desc: '初の番組イベント。第1部：公開録音、第2部：後夜祭の2部制。会場では「特製ボイスキーホルダー」が発売された。', url: 'https://x.com/onsenradio/status/1637405895683604480' },
+    { date: '2023-03-29', label: '第8回『アニラジアワード』史上初の3冠受賞', desc: 'ぼっち・ざ・らじお！が『最優秀ラジオ大賞』『最優秀女性ラジオ賞』『大笑いラジオ賞』を受賞。', url: 'https://x.com/BTR_anime/status/1641067456625274881' },
+    { date: '2023-04-26', label: '番組リニューアル', desc: '新コーナー「ぼっち予想テスト」「イキり懺悔室」や「ぼっち・ざ・おーでぃしょん！」では新テーマ「青春」を募集した。', url: 'https://x.com/BTR_anime/status/1651151378570682369' },
+    { date: '2023-06-24', label: 'ぼっち・ざ・らじお！音泉祭りスペシャル', desc: '音泉祭り2023に青山吉能、鈴代紗弓が出演。', url: 'https://x.com/BTR_anime/status/1672559141800521729' },
+    { date: '2023-08-01', label: '第1回Youtube100万再生突破', desc: '', url: 'https://x.com/BTR_anime/status/1686303096375513088' },
+    { date: '2023-12-20', label: '第41回クリスマススペシャル回', desc: '初の映像特別回。おしゃべりピンク爆誕。', url: 'https://x.com/onsenradio/status/1737399690579382638' },
+
+
+    { date: '2024-04-24', label: '番組配信50回突破', desc: '', url: 'https://x.com/BTR_anime/status/1783088715356893504' },
+    { date: '2024-12-25', label: '第68回クリスマススペシャル回', desc: '初の映像生配信回。カラオケコーナーあり。', url: 'https://x.com/BTR_anime/status/1871935819327639585' },
+
+    { date: '2025-01-15', label: '第69(ロック)回特別コーナー「ろっく！えぴそーど！」', desc: '破天荒＆カッコいいエピソードを青山吉能が「ロック」かどうか判定。', url: 'https://x.com/BTR_anime/status/1879455907379294412' },
+    { date: '2025-02-15', label: '【緊急】ぼっち・ざ・らじお！【特別編】', desc: 'アニメ2期制作決定とともに公開された特別編。', url: 'https://x.com/BTR_anime/status/1890732797804839239' },
+    { date: '2025-04-09', label: '番組リニューアル', desc: '新コーナー「本日のテーマ」「結束バンドと私」が登場。おまけコーナーも「ぼっち・ざ・らじお！アフタートーク」へリニューアル。', url: 'https://x.com/BTR_anime/status/1909896315141529882' },
+    { date: '2025-09-07', label: 'ぼっち・ざ・らじお！番組3周年', desc: '', url: '' },
+
+
+
+    // （この下にどんどん追加してOK）
+  ];
+
+
+  // --- モーダル参照＆スクロールロック ---
+  const $modal = document.getElementById('historyModal');
+  const $close = document.getElementById('historyCloseBtn');
+  let _scrollY = 0;
+
+  function openHistoryModal(){
+  const overlay = document.getElementById('historyModal');
+  if(!overlay) return;
+
+  // （初回ビルドが別にあるなら不要。なければここで実行）
+  if (!$list?.dataset?.built && typeof buildTimeline === 'function') {
+    buildTimeline(HISTORY);
+    if (typeof setupYearObserver === 'function') setupYearObserver();
+    if ($list) $list.dataset.built = '1';
+  }
+
+  overlay.hidden = false;                 // 表示フラグON
+  overlay.classList.remove('closing');
+requestAnimationFrame(() => overlay.classList.add('show'));
+
+
+const sc = overlay.querySelector('.history-modal');
+if (sc) sc.scrollTop = 0;
+
+
+lockScroll(); // ← これで現在の scrollY を保持して固定
+  // a11y（任意）
+  try{ $toggle?.setAttribute('aria-expanded','true'); }catch(_){}
+}
+
+function closeHistoryModal(){
+  const overlay = document.getElementById('historyModal');
+  if(!overlay || overlay.hidden) return;
+
+  // フェードアウト開始
+  overlay.classList.add('closing');
+  overlay.classList.remove('show');
+
+  // アニメーション終了後に完全に非表示
+  const done = () => {
+    overlay.hidden = true;
+overlay.classList.remove('closing');
+overlay.removeEventListener('animationend', done);
+unlockScroll(); // ← 固定を解除して元の位置に復帰
+    try{ $toggle?.setAttribute('aria-expanded','false'); }catch(_){}
+  };
+  overlay.addEventListener('animationend', done);
+  setTimeout(done, 260); // Safari等のフォールバック
+}
+
+$('#historyCloseBtn').off('click').on('click', closeHistoryModal);
+$('#historyModal').off('click').on('click', function(e){
+  if(e.target === this) closeHistoryModal(); // 背景クリックで閉じる
+});
+$(document).off('keydown.__history').on('keydown.__history', function(e){
+  if(e.key === 'Escape'){
+    const overlay = document.getElementById('historyModal');
+    if(overlay && !overlay.hidden) closeHistoryModal();
+  }
+});
+// 開く側（トグルボタン）
+$('#historyToggle').off('click').on('click', function(e){
+  e.preventDefault(); e.stopPropagation();
+  openHistoryModal();
+});
+
+
+  function lockBodyScroll(){
+    _scrollY = window.scrollY || document.documentElement.scrollTop || 0;
+    document.body.classList.add('modal-open');
+    document.body.style.top = `-${_scrollY}px`;
+  }
+  function unlockBodyScroll(){
+    document.body.classList.remove('modal-open');
+    const top = document.body.style.top;
+    document.body.style.top = '';
+    window.scrollTo(0, top ? -parseInt(top,10) : 0);
+  }
+
+
+
+  // 起動・終了イベント
+  $toggle.addEventListener('click', openHistoryModal);
+  $close?.addEventListener('click', closeHistoryModal);
+  $modal?.addEventListener('click', (e)=>{ if(e.target === $modal) closeHistoryModal(); });
+  document.addEventListener('keydown', (e)=>{ if(e.key==='Escape' && !$modal.hasAttribute('hidden')) closeHistoryModal(); });
+
+  // --- タイムライン構築 ---
+  function buildTimeline(data){
+    $list.innerHTML = '';
+    // 日付の種類（YYYY / YYYY-MM / YYYY-MM-DD）に対応してソート
+    const sorted = [...data].sort((a,b)=> (toDateKey(a.date) < toDateKey(b.date) ? -1 : 1));
+
+    let currentYear = null;
+    sorted.forEach(it=>{
+      const y = (it.date || '').slice(0,4);
+      if (y && y !== currentYear){
+        currentYear = y;
+        const yEl = document.createElement('div');
+        yEl.className = 'history-year';
+        yEl.textContent = `${y}年`;
+        $list.appendChild(yEl);
+      }
+
+      const el = document.createElement('div');
+      el.className = 'history-item';
+      const dateText = fmtDate(it.date);
+      el.innerHTML = `
+        ${dateText ? `<div class="date">${dateText}</div>` : ''}
+        <div class="label">${it.url ? `<a href="${it.url}" target="_blank" rel="noopener">${it.label}</a>` : it.label}</div>
+        ${it.desc ? `<div class="desc">${it.desc}</div>` : ''}
+      `;
+      $list.appendChild(el);
+    });
+  }
+
+  function toDateKey(s){
+    if(!s) return '0000-00-00';
+    const parts = s.split('-'); // YYYY / YYYY-MM / YYYY-MM-DD
+    const y = parts[0] || '0000';
+    const m = parts[1] || '00';
+    const d = parts[2] || '00';
+    return `${y}-${m.padStart(2,'0')}-${d.padStart(2,'0')}`;
+  }
+
+  function fmtDate(s){
+    if(!s) return '';
+    const parts = s.split('-');
+    if (parts.length === 3) return `${parseInt(parts[1])}月${parseInt(parts[2])}日`;
+    if (parts.length === 2) return `${parseInt(parts[1])}月`;
+    return ''; // 年だけのときは年見出しに出るので個別表示しない
+  }
+
+  // --- 年表示（モーダル内のみ） ---
+  let yearObserver;
+  function setupYearObserver(){
+    const targets = [...$list.querySelectorAll('.history-year')];
+    if (!targets.length) return;
+
+    const rootEl = document.querySelector('.history-modal') || null;  // ★モーダルを監視基準に
+    const io = new IntersectionObserver((entries)=>{
+      const visible = entries
+        .filter(e => e.isIntersecting)
+        .sort((a,b) => a.boundingClientRect.top - b.boundingClientRect.top);
+      if (visible[0]) {
+        const y = visible[0].target.textContent.replace('年','');
+        setSubYear(y);
+      }
+    }, { root: rootEl, rootMargin: '-20% 0px -70% 0px', threshold: [0,1] });
+
+    targets.forEach(t => io.observe(t));
+    yearObserver = io;
+    updateHeaderYear(); // 初回反映
+  }
+
+  function updateHeaderYear(){
+    const rootEl = document.querySelector('.history-modal');
+    if(!rootEl) return;
+    const rootTop = rootEl.getBoundingClientRect().top;
+    const headerOffset = 56; // 固定ヘッダー分のオフセット（CSSと合わせる）
+    let nearest = null, best = Infinity;
+
+    [...$list.querySelectorAll('.history-year')].forEach(y=>{
+      const rTop = y.getBoundingClientRect().top - rootTop - headerOffset;
+      const score = Math.abs(rTop);
+      if (score < best){ best = score; nearest = y; }
+    });
+
+    if (nearest){
+      setSubYear(nearest.textContent.replace('年',''));
+    }
+  }
+
+  // ボタン側の `.sub` は廃止。モーダル左上の年バッジのみ更新
+  function setSubYear(y){
+    const sticky = document.getElementById('historyStickyYear');
+    if (sticky) sticky.textContent = `${y}`;
+  }
+
+  // 追加API（必要なら使用）
+  window.addHistory = function(entry){
+    HISTORY.push(entry);
+    if ($list.dataset.built) { buildTimeline(HISTORY); setupYearObserver(); }
+  };
+})()
+
