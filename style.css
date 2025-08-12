@@ -1381,3 +1381,42 @@ body:not(.dark-mode){
   --history-year: #3b3486;
 }
 
+/* === iPhoneでfooterが隠れる対策（FAB & セーフエリア対応） === */
+
+/* 1) 下固定ボタンをセーフエリア分だけ持ち上げる */
+#toTopBtn,
+#darkModeBtn {
+  bottom: calc(18px + var(--safe-bottom)) !important;
+}
+
+/* 古いiOS向け（optional） */
+@supports (bottom: constant(safe-area-inset-bottom)) {
+  #toTopBtn,
+  #darkModeBtn {
+    bottom: calc(18px + constant(safe-area-inset-bottom)) !important;
+  }
+}
+
+/* 2) ページ末尾に余白を用意して、ボタンに被らないようにする */
+.main-content {
+  padding-bottom: calc(120px + var(--safe-bottom));
+}
+
+footer {
+  padding-bottom: calc(8px + var(--safe-bottom));
+}
+
+
+/* 「ぼっち・ざ・らじお！の歴史」を1行固定に */
+.history-toggle .title{
+  white-space: nowrap;       /* 改行しない */
+  overflow: hidden;          /* はみ出しを隠す */
+  text-overflow: ellipsis;   /* 入り切らない時は … */
+  flex: 1 1 auto;            /* 右側の要素の分だけ縮められるように */
+  min-width: 0;              /* flex子の省略幅を許可（ellipsisに必須） */
+}
+
+
+@media (max-width: 380px){
+  .history-toggle .title{ font-size: 1em; }
+}
