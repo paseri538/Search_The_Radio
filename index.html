@@ -35,7 +35,7 @@
 
   <title>さーち・ざ・らじお！</title>
   <!-- OGP basic -->
-<meta property="og:title" content="さーち・ざ・らじお！ — ぼざら専門検索エンジン" />
+<meta property="og:title" content="さーち・ざ・らじお！ — ぼっち・ざ・らじお！専門検索エンジン" />
 <meta property="og:description" content="『ぼっち・ざ・らじお！』のエピソードを出演者・コーナー・年でサクッと検索。お気に入り機能も対応。" />
 <meta property="og:type" content="website" />
 <meta property="og:url" content="https://searchtheradio.com/" />
@@ -48,7 +48,7 @@
 
 <!-- Twitter Card -->
 <meta name="twitter:card" content="summary_large_image" />
-<meta name="twitter:title" content="さーち・ざ・らじお！ — ぼざら専門検索エンジン" />
+<meta name="twitter:title" content="さーち・ざ・らじお！ — ぼっち・ざ・らじお！専門検索エンジン" />
 <meta name="twitter:description" content="『ぼっち・ざ・らじお！』のエピソードを出演者・コーナー・年でサクッと検索。お気に入り機能も対応。" />
 <meta name="twitter:image" content="https://searchtheradio.com/ogp_img.jpg?v=1" />
 
@@ -83,7 +83,7 @@
   
   <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" />
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet" />
   <link href="style.css" rel="stylesheet" />
 </head>
 <body>
@@ -224,6 +224,25 @@
    <span class="title">ぼっち・ざ・らじお！の歴史</span>
   </button>
 </section>
+
+  </button>
+  <!-- ▼ ここから追記：SNSシェア -->
+  <div class="share-buttons" id="shareButtons">
+  <a id="shareX" class="share-btn" href="#" aria-label="Xでシェア" target="_blank" rel="noopener">
+  <i class="fa-brands fa-x-twitter"></i>
+</a>
+
+  <a id="shareLINE" class="share-btn" href="#" aria-label="LINEでシェア" target="_blank" rel="noopener">
+    <i class="fa-brands fa-line"></i>
+  </a>
+  <a id="shareFB" class="share-btn" href="#" aria-label="Facebookでシェア" target="_blank" rel="noopener">
+    <i class="fa-brands fa-facebook"></i>
+  </a>
+</div>
+
+  <!-- ▲ ここまで追記 -->
+</section>
+
 
 <!-- 置き換え：モーダル（ヘッダーを新設・固定） -->
 <div id="historyModal" class="modal-overlay" role="dialog" aria-modal="true"

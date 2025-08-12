@@ -1651,3 +1651,23 @@ $('#historyToggle').off('click').on('click', function(e){
   };
 })()
 
+
+// === SNSシェアリンクを設定 ===
+;(function(){
+  const x   = document.getElementById('shareX');
+  const ln  = document.getElementById('shareLINE');
+  const fb  = document.getElementById('shareFB');
+  if(!x || !ln || !fb) return;
+
+  // サイトのトップを共有（必要なら location.href に変更可）
+  const shareUrl = 'https://searchtheradio.com/';
+  const text = 'さーち・ざ・らじお！ — ぼっち・ざ・らじお！専門検索エンジン';
+
+  const u = encodeURIComponent(shareUrl);
+  const t = encodeURIComponent(text);
+
+  x.href  = `https://x.com/intent/tweet?url=${u}&text=${t}`;
+  ln.href = `https://social-plugins.line.me/lineit/share?url=${u}`;
+  fb.href = `https://www.facebook.com/sharer/sharer.php?u=${u}`;
+})();
+

@@ -1449,3 +1449,87 @@ footer {
 @media (max-width: 380px){
   .history-toggle .title{ font-size: 1em; }
 }
+
+
+/* === History modal: タイトル中央揃え === */
+#historyModal .modal-header{
+  text-align: center;          /* テキスト中央寄せ */
+  position: relative;          /* 右上の×ボタンの absolute と共存 */
+}
+
+#historyModal .modal-title{
+  display: block;
+  margin: 0 auto;              /* 真ん中に配置 */
+  font-weight: 800;
+}
+
+
+
+/* === SNS share buttons (under the history button) === */
+.share-buttons{
+  display:flex;
+  justify-content:center;
+  gap:16px;
+  margin:14px auto 0;
+}
+
+.share-btn{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:56px; height:56px;
+  border-radius:999px;
+  background:#ffffff;
+  color:#374151;
+  border:1px solid #e5e9f7;
+  font-size:28px;
+  box-shadow:0 6px 20px -10px rgba(0,0,0,.12);
+  transition:transform .15s, background .15s, box-shadow .15s;
+  -webkit-tap-highlight-color: transparent; /* モバイルの青ハイライト除去 */
+}
+.share-btn:hover{ transform:translateY(-1px); background:#f7f8ff; }
+
+/* ダークモード調整 */
+body.dark-mode .share-btn{
+  background:#283240;
+  color:#a6e1fa;
+  border-color:#33404c;
+}
+body.dark-mode .share-btn:hover{
+  background:#323a47;
+}
+
+
+/* シェアボタンの下線を完全に無効化（hover/focus含む） */
+.share-btn,
+.share-btn:link,
+.share-btn:visited,
+.share-btn:hover,
+.share-btn:focus,
+.share-btn:active {
+  text-decoration: none !important;
+}
+
+/* アイコンの行高を詰めてセンタリングを安定 */
+.share-btn i {
+  line-height: 1;
+  pointer-events: none; /* クリックを <a> に通す保険 */
+}
+
+/* キーボード操作用のフォーカスリング（下線消した代わり） */
+.share-btn:focus-visible {
+  outline: 2px solid #5744D8;
+  outline-offset: 2px;
+}
+body.dark-mode .share-btn:focus-visible {
+  outline-color: #8de0ee;
+}
+
+
+@media (max-width: 600px){
+  .share-btn{
+    width:64px;          /* 指標：タップターゲット 48–64px */
+    height:64px;
+    font-size:30px;
+  }
+}
