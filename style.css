@@ -1227,6 +1227,24 @@ body.dark-mode .modal-overlay{
   position: relative;
 }
 
+/* スマホでは少し低めにして、URLバーの有無で伸びすぎないようにsvhで制御 */
+@media (max-width: 600px) {
+  .modal-content.history-modal {
+    /* ちょい低め：76svh くらいが体感バランス良い */
+    max-height: min(76svh, calc(100svh - 96px));
+  }
+}
+
+/* svh非対応ブラウザ用の軽いフォールバック（あれば上書きされる） */
+@supports not (height: 1svh) {
+  @media (max-width: 600px) {
+    .modal-content.history-modal {
+      max-height: min(76vh, calc(100vh - 96px));
+    }
+  }
+}
+
+
 /* モーダル固定ヘッダー（タイトル中央＋×固定） */
 .history-modal .modal-header{
   position: sticky; top: 0; z-index: 3;
@@ -1365,6 +1383,17 @@ body.dark-mode #historyModal .modal-close{
 }
 body.dark-mode #historyModal .modal-close:hover{
   background: rgba(255,255,255,0.16);
+}
+
+/* ライトテーマ時の閉じるボタン（落ち着いた中間トーン） */
+#historyModal .modal-close {
+  background: #ffffff;
+  color: #667085;                 /* × アイコン色：落ち着いたグレー */
+  border: 1px solid #d3d8e0;      /* 薄い境界線で浮かないように */
+  box-shadow: 0 8px 24px -12px rgba(20,30,55,.12);
+}
+#historyModal .modal-close:hover {
+  background: #f6f8fc;            /* うっすらホバー */
 }
 
 

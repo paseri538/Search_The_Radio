@@ -82,9 +82,9 @@
       { episode:"05", title:"#05　ゲスト：長谷川育美", guest:"長谷川育美", date:"2022-10-19", link:"https://www.youtube.com/watch?v=4hcPzIW8MfE", keywords:["長谷川育美","いくみ","はせみ","はせちゃん","いくちゃん","はっせー","はせがわいくみ","よぴいく","ypik","ぼっち・ざ・おーでぃしょん！@45:17"], duration:"58:15" },
       { episode:"04", title:"#04　ゲスト：水野朔", guest:"水野朔", date:"2022-10-12", link:"https://www.youtube.com/watch?v=ieCOGEOXxr8", keywords:["水野朔","さくぴ","さくさくちゃん","ﾐｽﾞﾉｻｸﾃﾞｼｭ","みずのさく",], duration:"1:06:40" },
       { episode:"03", title:"#03　ゲスト：鈴代紗弓", guest:"鈴代紗弓", date:"2022-10-05", link:"https://www.youtube.com/watch?v=4c_DVoq-9oU", keywords:["鈴代紗弓","さゆみん","おさゆ","みんみん","さゆちゃん","おすず","すずちゃん","鈴代ちゃん","すずしろさゆみ"], duration:"1:07:18" },
-      { episode:"02", title:"#02　ゲスト：水野朔、長谷川育美", guest:["水野朔","長谷川育美"], date:"2022-09-21", link:"https://www.youtube.com/watch?v=kct8627dspo", keywords:["3mm","ｵﾓｼﾛｲｯ!","水野朔","さくぴ","さくさくちゃん","ﾐｽﾞﾉｻｸﾃﾞｼｭ","みずのさく","長谷川育美","いくみ","はせみ","はせちゃん","いくちゃん","はっせー","はせがわいくみ","生配信・公録"], duration:"1:07:41" },
-      { episode:"02", title:"京まふ大作戦2022　", guest:["水野朔","長谷川育美"], date:"2022-09-18", link:"https://www.youtube.com/watch?v=EDay9btUsKw", keywords:["3mm","ｵﾓｼﾛｲｯ!","水野朔","さくぴ","さくさくちゃん","ﾐｽﾞﾉｻｸﾃﾞｼｭ","みずのさく","長谷川育美","いくみ","はせみ","はせちゃん","いくちゃん","はっせー","はせがわいくみ","生配信・公録","きょうまふ"], duration:"54:45" },
-      { episode:"01", title:"#01　", guest:"青山吉能", date:"2022-09-07", link:"https://www.youtube.com/watch?v=__P57MTTjyw", keywords:["青山吉能","よぴ","よしの","よっぴー","あおやまよしの","ぼっち共感@27:49","ウソ陽キャ辞典@43:23","ラッキーボタン@50:44"], duration:"55:53" },
+      { episode:"02", title:"#02　ゲスト：水野朔、長谷川育美", guest:["水野朔","長谷川育美"], date:"2022-09-21", link:"https://www.youtube.com/watch?v=kct8627dspo", keywords:["3mm","ｵﾓｼﾛｲｯ!","水野朔","さくぴ","さくさくちゃん","ﾐｽﾞﾉｻｸﾃﾞｼｭ","みずのさく","長谷川育美","いくみ","はせみ","はせちゃん","いくちゃん","はっせー","はせがわいくみ","生配信・公録","藤田亜紀子@4:26","ふじたあきこ@4:26"], duration:"1:07:41" },
+      { episode:"02", title:"京まふ大作戦2022　", guest:["水野朔","長谷川育美"], date:"2022-09-18", link:"https://www.youtube.com/watch?v=EDay9btUsKw", keywords:["3mm","ｵﾓｼﾛｲｯ!","水野朔","さくぴ","さくさくちゃん","ﾐｽﾞﾉｻｸﾃﾞｼｭ","みずのさく","長谷川育美","いくみ","はせみ","はせちゃん","いくちゃん","はっせー","はせがわいくみ","生配信・公録","京まふ","きょうまふ"], duration:"54:45" },
+      { episode:"01", title:"#01　", guest:"青山吉能", date:"2022-09-07", link:"https://www.youtube.com/watch?v=__P57MTTjyw", keywords:["青山吉能","よぴ","よしの","よっぴー","あおやまよしの","ぼっち共感@27:49","ウソ陽キャ辞典@43:23"], duration:"55:53" },
 
     ];
     let selectedGuests = [];
@@ -138,6 +138,92 @@ function toggleFavorite(id) { favorites.has(id) ? favorites.delete(id) : favorit
     function normalize(s){
       return toHiragana(s.normalize("NFKC").toLowerCase().replace(/\s+/g,""));
     }
+
+    // ===== URL <-> State sync =====
+let isRestoringURL = false;
+
+function readMulti(params, key) {
+  const all = params.getAll(key);
+  if (all.length === 1 && all[0].includes(',')) {
+    return all[0].split(',').map(decodeURIComponent).filter(Boolean);
+  }
+  return all.map(decodeURIComponent).filter(Boolean);
+}
+
+function buildURLFromState({ method = 'push' } = {}) {
+  if (isRestoringURL) return;
+  const params = new URLSearchParams();
+
+  const q = $("#searchBox").val().trim();
+  if (q) params.set('q', q);
+
+  // 配列はキーの複数回出現で表現（g=..&g=..）
+  selectedGuests.forEach(v => params.append('g', v));
+  selectedCorners.forEach(v => params.append('c', v));
+  selectedOthers.forEach(v => params.append('o', v));
+  selectedYears.forEach(y => params.append('y', String(y)));
+
+  const sort = $("#sortSelect").val();
+  if (sort) params.set('sort', sort);
+
+  if (showFavoritesOnly) params.set('fav', '1');
+  if (currentPage > 1) params.set('p', String(currentPage));
+
+  const qs = params.toString();
+  const url = qs ? `?${qs}` : location.pathname;
+
+  const state = {
+    q, selectedGuests, selectedCorners, selectedOthers, selectedYears,
+    sort, fav: showFavoritesOnly, p: currentPage
+  };
+  try {
+    history[method === 'replace' ? 'replaceState' : 'pushState'](state, '', url);
+  } catch {}
+}
+
+function applyStateFromURL({ replace = false } = {}) {
+  const params = new URLSearchParams(location.search);
+  if (![...params.keys()].length) return false;
+
+  isRestoringURL = true;
+
+  const q = params.get('q') || '';
+  $('#searchBox').val(q);
+
+  selectedGuests = readMulti(params, 'g');
+  selectedCorners = readMulti(params, 'c');
+  selectedOthers  = readMulti(params, 'o');
+  selectedYears   = readMulti(params, 'y').map(String);
+
+  const sort = params.get('sort') || 'newest';
+  $('#sortSelect').val(sort);
+
+  showFavoritesOnly = params.get('fav') === '1';
+  $('#favOnlyToggleBtn')
+    .toggleClass('active', showFavoritesOnly)
+    .attr('aria-pressed', showFavoritesOnly);
+  document.body.classList.toggle('fav-only', showFavoritesOnly);
+
+  updateGuestButtonStyles();
+  updateCornerStyles();
+  updateOtherStyles();
+  updateYearStyles();
+
+  const p = parseInt(params.get('p') || '1', 10);
+  currentPage = Number.isFinite(p) && p > 0 ? p : 1;
+
+  search({ gotoPage: currentPage });
+
+  isRestoringURL = false;
+  if (replace) buildURLFromState({ method: 'replace' });
+  return true;
+}
+
+// 戻る/進む対策
+window.addEventListener('popstate', () => {
+  applyStateFromURL({ replace: false });
+});
+
 
     // --- keyword に付けた @mm:ss / @hh:mm:ss を読む ---
 function parseKeywordTime(kw) {
@@ -340,6 +426,8 @@ if (showFavoritesOnly) {
       lastResults = res;
       $("#fixedResultsCount").text(`表示数：${res.length}件`);
       currentPage = opts.gotoPage || 1;
+      if (!isRestoringURL) { buildURLFromState({ method: 'push' }); }
+
     
       renderResults(res, currentPage);
       fitGuestLines(); // ゲスト行の幅調整
@@ -570,7 +658,9 @@ function resetSearch() {
       }
     }
     $(function() {
-      search();
+      if (!applyStateFromURL({ replace: true })) {
+    search();
+  }
       $(".guest-button").on("click keypress", function(e) {
         if(e.type==="click"||(e.type==="keypress"&&(e.key==="Enter"||e.key===" "))) {
           const name = $(this).data("guest");
@@ -621,15 +711,16 @@ function resetSearch() {
       });
       $("#drawerBackdrop").on("click", ()=>toggleFilterDrawer(false));
       $(window).on("resize", updateDrawerTop);
-      $("#paginationArea").on("click keypress", ".page-btn", function(e) {
-        if(e.type==="click"||(e.type==="keypress"&&(e.key==="Enter"||e.key===" "))) {
-          currentPage = parseInt($(this).data("page"));
-          renderResults(lastResults, currentPage);
-          renderPagination(lastResults.length);
-          setTimeout(fitGuestLines, 0); // ← ここを追加：描画後にゲスト名を再フィット
-          $("html,body").animate({scrollTop: $(".main-content").offset().top-24}, 180);
-        }
-      });
+      // ページネーション（URLも更新したいので search({ gotoPage }) を使う）
+$("#paginationArea").on("click keypress", ".page-btn", function (e) {
+  if (e.type === "click" || (e.type === "keypress" && (e.key === "Enter" || e.key === " "))) {
+    const n = parseInt($(this).data("page"), 10) || 1;
+    currentPage = n;
+    // ← 直接 renderResults せず、URL更新を内包する search に任せる
+    search({ gotoPage: n });
+    $("html,body").animate({ scrollTop: $(".main-content").offset().top - 24 }, 180);
+  }
+});
       $("#filtersBar").on("click keypress", ".filter-tag", function(e) {
         if(e.type==="click"||(e.type==="keypress"&&(e.key==="Enter"||e.key===" "))) {
           const type = $(this).data("type");
@@ -1001,8 +1092,12 @@ window.__updateHeaderOffset && window.__updateHeaderOffset();
 // Ensure reset really resets everything (favorites included) and tidy UI
 window.resetSearch = (function (orig) {
   return function () {
+    // リセット処理中は URL の更新を止める（search() が走っても pushState しない）
+    const prev = isRestoringURL;
+    isRestoringURL = true;
+
     if (typeof orig === "function") {
-      // ← ここで前に定義した resetSearch()（★全解除など）を実行
+      // 既存の resetSearch（入力クリア/★解除 など）を実行
       orig();
     } else {
       // フォールバック：最小限の完全リセット
@@ -1014,20 +1109,26 @@ window.resetSearch = (function (orig) {
         if (typeof clearAllFavorites === "function") clearAllFavorites();
         window.showFavoritesOnly = false;
         $("#favOnlyToggleBtn").removeClass("active").attr("aria-pressed", "false");
-        $("#results .fav-btn.active")
-          .removeClass("active")
-          .find("i").removeClass("fa-solid").addClass("fa-regular");
+        $("#results .fav-btn.active").removeClass("active").find("i").removeClass("fa-solid").addClass("fa-regular");
       }
 
       if (typeof resetFilters === "function") resetFilters();
       else if (typeof search === "function") search();
     }
 
+    // ここまでで search() は走っているが URL は未更新
+    currentPage = 1;
+    isRestoringURL = prev;          // URL更新ガードを解除（通常は false に戻る）
+
+    // 最後に URL を「/」へ置換（履歴を増やさない）
+    buildURLFromState({ method: 'replace' });
+
     // UI後処理
     if (typeof closeDrawer === "function") closeDrawer();
     if (typeof updateScrollLock === "function") updateScrollLock();
   };
 })(window.resetSearch);
+
 
 
 
