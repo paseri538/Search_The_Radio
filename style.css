@@ -1,6 +1,6 @@
 /* 変数・レイアウト */
 :root {
-  --safe-bottom: env(safe-area-inset-bottom, 0px)
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
   --bg-color: #f9fafe;
   --card-bg: #fff;
   --text-color: #242943;
