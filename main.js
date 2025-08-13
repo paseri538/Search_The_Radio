@@ -85,7 +85,7 @@
       { episode:"03", title:"#03　ゲスト：鈴代紗弓", guest:"鈴代紗弓", date:"2022-10-05", link:"https://www.youtube.com/watch?v=4c_DVoq-9oU", keywords:["鈴代紗弓","さゆみん","おさゆ","みんみん","さゆちゃん","おすず","すずちゃん","鈴代ちゃん","すずしろさゆみ"], duration:"1:07:18" },
       { episode:"02", title:"#02　ゲスト：水野朔、長谷川育美", guest:["水野朔","長谷川育美"], date:"2022-09-21", link:"https://www.youtube.com/watch?v=kct8627dspo", keywords:["3mm","ｵﾓｼﾛｲｯ!","水野朔","さくぴ","さくさくちゃん","ﾐｽﾞﾉｻｸﾃﾞｼｭ","みずのさく","長谷川育美","いくみ","はせみ","はせちゃん","いくちゃん","はっせー","はせがわいくみ","生配信・公録","藤田亜紀子@4:26","ふじたあきこ@4:26"], duration:"1:07:41" },
       { episode:"02", title:"京まふ大作戦2022　", guest:["水野朔","長谷川育美"], date:"2022-09-18", link:"https://www.youtube.com/watch?v=EDay9btUsKw", keywords:["3mm","ｵﾓｼﾛｲｯ!","水野朔","さくぴ","さくさくちゃん","ﾐｽﾞﾉｻｸﾃﾞｼｭ","みずのさく","長谷川育美","いくみ","はせみ","はせちゃん","いくちゃん","はっせー","はせがわいくみ","生配信・公録","京まふ","きょうまふ"], duration:"54:45" },
-      { episode:"01", title:"#01　", guest:"青山吉能", date:"2022-09-07", link:"https://www.youtube.com/watch?v=__P57MTTjyw", keywords:["青山吉能","よぴ","よしの","よっぴー","あおやまよしの","ぼっち共感@27:49","ウソ陽キャ辞典@43:23"], duration:"55:53" },
+      { episode:"01", title:"#01　", guest:"青山吉能", date:"2022-09-07", link:"https://www.youtube.com/watch?v=__P57MTTjyw", keywords:["青山吉能","よぴ","よしの","よっぴー","あおやまよしの","ぼっち共感@27:49","ウソ陽キャ辞典@43:23","ラッキーボタン@"], duration:"55:53" },
 
     ];
     let selectedGuests = [];
@@ -464,8 +464,8 @@ function renderResults(arr, page = 1) {
     $("#results").html(
       `<li class="no-results">${
         showFavoritesOnly
-          ? "お気に入りはまだありません。<br>★を押して登録してください。"
-          : "該当する回が見つかりません。"
+          ? "お気に入りはありません。<br>★を押して登録してください。"
+          : "ﾉ°(6ᯅ9) "
       }</li>`
     );
     return;
@@ -853,21 +853,29 @@ window.addEventListener('load', function() {
 });
 
 
-// 「このサイトについて」表示・非表示
-$('#aboutSiteLink').on('click', function(e) {
+// 「このサイトについて」表示・非表示（fade + scroll lock に統一）
+$('#aboutSiteLink').off('click.__about').on('click.__about', function(e){
   e.preventDefault();
-  $('#aboutModal').fadeIn(150, function() {
-    $(this).css('display', 'flex');
+  $('#aboutModal').stop(true, true).fadeIn(150, function(){
+    $(this).css('display','flex');
+    if (typeof updateScrollLock === 'function') updateScrollLock();
   });
 });
-$('#aboutCloseBtn, #aboutModal').on('click', function(e) {
-  if (e.target.id === "aboutModal" || e.target.id === "aboutCloseBtn") {
-    $('#aboutModal').fadeOut(130);
+
+$('#aboutCloseBtn, #aboutModal').off('click.__about').on('click.__about', function(e){
+  if (e.target.id === 'aboutModal' || e.target.id === 'aboutCloseBtn') {
+    $('#aboutModal').stop(true, true).fadeOut(130, function(){
+      if (typeof updateScrollLock === 'function') updateScrollLock();
+    });
   }
 });
-$('#aboutModalContent').on('click', function(e) {
-  e.stopPropagation();
+
+$('#aboutModalContent').off('click.__about').on('click.__about', function(e){
+  e.stopPropagation(); // 中身クリックでは閉じない
 });
+
+
+
 
 // 右クリック・長押し禁止（PC・スマホ）
 document.addEventListener('contextmenu', function(e) { e.preventDefault(); });
@@ -1081,14 +1089,6 @@ window.__updateHeaderOffset && window.__updateHeaderOffset();
     }
   });
 
-  // About modal hooks
-  $('#aboutSiteLink').off('click').on('click', function(e){
-    e.preventDefault();
-    $('#aboutModal').css('display','flex');
-    updateScrollLock();
-  });
-  $('#aboutCloseBtn').off('click').on('click', function(){ $('#aboutModal').hide(); updateScrollLock(); });
-  $('#aboutModal').off('click').on('click', function(e){ if (e.target === this) { $(this).hide(); updateScrollLock(); } });
 
 // Ensure reset really resets everything (favorites included) and tidy UI
 window.resetSearch = (function (orig) {
@@ -1147,10 +1147,10 @@ window.resetSearch = (function (orig) {
 // ===== スマホ時は並び替えラベルを短くする =====
 (function(){
   const MAP = {
-    newest : {full:'公開日時が新しい順', short:'新しい順'},
-    oldest : {full:'公開日時が古い順',   short:'古い順'},
-    longest: {full:'動画時間が長い順',   short:'長い順'},
-    shortest:{full:'動画時間が短い順',   short:'短い順'}
+    newest : {full:'公開日時が新しい順', short:'公開日時が新しい順'},
+    oldest : {full:'公開日時が古い順',   short:'公開日時が古い順'},
+    longest: {full:'動画時間が長い順',   short:'動画時間が長い順'},
+    shortest:{full:'動画時間が短い順',   short:'動画時間が短い順'}
   };
   function applySortLabels(){
     const sel = document.getElementById('sortSelect');
@@ -1163,6 +1163,20 @@ window.resetSearch = (function (orig) {
   }
   // 初期化とリサイズで反映
   document.addEventListener('DOMContentLoaded', applySortLabels);
+  // ボタンラベルの先頭スペースを除去し、data-label を補完して揃える
+document.addEventListener('DOMContentLoaded', () => {
+  ['favOnlyToggleBtn', 'randomBtn'].forEach(id => {
+    const el = document.getElementById(id);
+    const sp = el && el.querySelector('span');
+    if (sp) sp.textContent = sp.textContent.trim();  // ←先頭スペース除去
+  });
+
+  const filterBtn = document.getElementById('filterToggleBtn');
+  if (filterBtn && !filterBtn.dataset.label) {
+    filterBtn.dataset.label = 'フィルタ'; // ::after の表示文言
+  }
+});
+
   window.addEventListener('resize', applySortLabels);
   window.addEventListener('orientationchange', applySortLabels);
 })();
@@ -1664,3 +1678,96 @@ $('#historyToggle').off('click').on('click', function(e){
   fb.href = `https://www.facebook.com/sharer/sharer.php?u=${u}`;
 })();
 
+
+// === 4ボタンの自動フィット：全ボタンを「最小サイズ」に統一して1行死守 ===
+(function autoFitControlButtonsGroup(){
+  const elFilter = document.getElementById('filterToggleBtn');
+  const elFav    = document.getElementById('favOnlyToggleBtn');
+  const elRand   = document.getElementById('randomBtn');
+  const elReset  = document.querySelector('.reset-btn');
+  if (!elFilter || !elFav || !elRand || !elReset) return;
+
+  const targets = [elFilter, elFav, elRand, elReset];
+
+  function neededFontSize(el, startPx=16, minPx=12){
+    // いったん最大に戻す
+    el.style.setProperty('--ctl-fs', startPx + 'px');
+    // 擬似要素(::before/::after)込みの実幅で判定
+    for (let fs = startPx; fs >= minPx; fs--){
+      el.style.setProperty('--ctl-fs', fs + 'px');
+      if (el.scrollWidth <= el.clientWidth + 2) return fs;
+    }
+    return minPx; // どうしても入らなければ最小
+  }
+
+  function fitAll(){
+    if (!window.matchMedia('(max-width: 768px)').matches){
+      targets.forEach(el => el.style.removeProperty('--ctl-fs'));
+      return;
+    }
+    // それぞれに必要なフォントサイズを測り、最小値で全員を統一
+    const sizes = targets.map(el => neededFontSize(el, 16, 12));
+    const groupFs = Math.min.apply(null, sizes);
+    targets.forEach(el => el.style.setProperty('--ctl-fs', groupFs + 'px'));
+
+    // 念のため再チェック（万一溢れたら1px下げる）
+    let safe = true;
+    for (const el of targets){
+      if (el.scrollWidth > el.clientWidth + 2){ safe = false; break; }
+    }
+    if (!safe){
+      const s = Math.max(12, groupFs - 1);
+      targets.forEach(el => el.style.setProperty('--ctl-fs', s + 'px'));
+    }
+  }
+
+  window.addEventListener('load', fitAll, { passive:true });
+  window.addEventListener('resize', fitAll, { passive:true });
+  window.addEventListener('orientationchange', fitAll, { passive:true });
+  setTimeout(fitAll, 120); // フォント読み込み後のズレ対策
+})();
+
+/* ===== Controls (Unified) — ラベル整形＋自動フィット（SPのみ） ===== */
+(function(){
+  const elFilter = document.getElementById('filterToggleBtn');
+  const elFav    = document.getElementById('favOnlyToggleBtn');
+  const elRand   = document.getElementById('randomBtn');
+  const elReset  = document.querySelector('.reset-btn');
+  if (!elFilter || !elFav || !elRand || !elReset) return;
+
+  // ラベル整形
+  document.addEventListener('DOMContentLoaded', () => {
+    [elFav, elRand].forEach(el => {
+      const sp = el.querySelector('span'); if (sp) sp.textContent = sp.textContent.trim();
+    });
+    if (!elFilter.dataset.label) elFilter.dataset.label = 'フィルタ';
+  });
+
+  const targets = [elFilter, elFav, elRand, elReset];
+
+  function neededFontSize(el, startPx=16, minPx=12){
+    el.style.setProperty('--ctl-fs', startPx + 'px');
+    for (let fs = startPx; fs >= minPx; fs--){
+      el.style.setProperty('--ctl-fs', fs + 'px');
+      if (el.scrollWidth <= el.clientWidth + 2) return fs;
+    }
+    return minPx;
+  }
+  function fitAll(){
+    if (!window.matchMedia('(max-width: 768px)').matches){
+      targets.forEach(el => el.style.removeProperty('--ctl-fs'));
+      return;
+    }
+    const sizes = targets.map(el => neededFontSize(el, 16, 12));
+    const groupFs = Math.min.apply(null, sizes);
+    targets.forEach(el => el.style.setProperty('--ctl-fs', groupFs + 'px'));
+    if (targets.some(el => el.scrollWidth > el.clientWidth + 2)){
+      const s = Math.max(12, groupFs - 1);
+      targets.forEach(el => el.style.setProperty('--ctl-fs', s + 'px'));
+    }
+  }
+  window.addEventListener('load', fitAll, { passive:true });
+  window.addEventListener('resize', fitAll, { passive:true });
+  window.addEventListener('orientationchange', fitAll, { passive:true });
+  setTimeout(fitAll, 120);
+})();

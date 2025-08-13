@@ -1337,11 +1337,6 @@ body.dark-mode .history-modal .modal-close:hover{
 
 body.fav-only #radio-history { display: none !important; }
 
-/* 最後に置く（これを生かす） */
-.history-modal .modal-close{
-  width:36px; height:36px; /* 小さく */
-  top:80px; right:40px;      /* さらに右寄せ */
-}
 
 .close {
     position: absolute !important;
@@ -1361,8 +1356,8 @@ body.fav-only #radio-history { display: none !important; }
 
 #historyModal .modal-close {
   position: absolute;
-  top: 8px;
-  right: 4px;                          /* ← もっと右寄せしたいなら 0～4px */
+  top: 4px;
+  right: 8px;                          /* ← もっと右寄せしたいなら 0～4px */
   width: 34px;
   height: 34px;
   border-radius: 50%;
@@ -1463,8 +1458,8 @@ footer {
 /* ついでに×ボタンのタップしやすさを安定化（任意） */
 #historyModal .modal-close {
   position: absolute;    /* 既存 */
-  top: 8px;
-  right: 4px;
+  top: 4px;
+  right: 8px;
   width: 38px;           /* 少し広げるなら */
   height: 38px;
 }
@@ -1547,3 +1542,355 @@ body.dark-mode .share-btn:focus-visible {
   }
 }
 
+
+/* Radio History modal — close button (single source of truth) */
+#historyModal .modal-header { padding:12px 48px 10px 16px; } /* 右側に×の余白 */
+#historyCloseBtn {
+  position: absolute;
+  top: 6px;          /* ← 好みで微調整 */
+  right: 8px;        /* ← 好みで微調整 */
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 5;
+}
+
+
+/* ★ボタンの分だけ右側にスペース（スマホ） */
+@media (max-width: 640px){
+  #results .episode-item{ padding-right: 26px; } /* 34px(ボタン) + 10px*2(余白) */
+}
+
+@media (max-width: 640px){
+  .episode-meta{
+    font-size: clamp(0.8rem, 3.3vw, 0.98rem);
+    line-height: 1.35;
+  }
+  /* タイトル行もわずかに可変にする場合（任意） */
+  #results h5.mb-1{ font-size: clamp(0.95rem, 4vw, 1rem); }
+}
+
+
+
+/* ===== SP: 4ボタン等幅 + 並び替えは下段（gridで統一） ===== */
+@media (max-width: 768px){
+  .search-row-controls{
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 6px;                        /* 横・縦の間隔＝行間もこれで調整 */
+    align-items: stretch;
+  }
+
+  /* 4ボタンを完全等幅に（既存の min-width を無効化） */
+  .search-row-controls #filterToggleBtn,
+  .search-row-controls #favOnlyToggleBtn,
+  .search-row-controls #randomBtn,
+  .search-row-controls .reset-btn{
+    min-width: 0 !important;
+    max-width: none !important;
+    width: 100% !important;
+    padding-left: .4em;
+    padding-right: .4em;
+  }
+
+  /* 並び替えは2段目で全幅、行間は gap にまかせる */
+  .search-row-controls .sort-wrapper{
+    grid-column: 1 / -1;
+    margin-top: 0;
+  }
+  .search-row-controls .sort-wrapper select{
+    width: 100%;
+    min-height: 40px;
+  }
+
+  /* レイアウト切替時の“にゅるっ”を防ぐ（保険） */
+  .search-row-controls > * { transition: none !important; }
+}
+
+
+
+
+  /* 2) 「フィルタ」はアイコンのみなので擬似要素でテキストを追加 */
+  #filterToggleBtn{
+    display: flex; align-items: center; justify-content: center; gap: .35em;
+  }
+  #filterToggleBtn::after{
+    content: " フィルタ";            /* ←お好みで「フィルター」に */
+    font-size: .95em;
+    font-weight: 500;
+  }
+
+  /* 3) 他のボタンも中央寄せ（見た目を揃える） */
+  #favOnlyToggleBtn,
+  #randomBtn,
+  .reset-btn{
+    display: flex; align-items: center; justify-content: center; gap: .35em;
+  }
+
+
+/* === Controls: 自動調整用の共通サイズ変数＋形崩れ防止 === */
+@media (max-width: 768px){
+  /* 文字サイズを JS から上書きするための CSS 変数（初期値 15px） */
+  .search-row-controls #filterToggleBtn,
+  .search-row-controls #favOnlyToggleBtn,
+  .search-row-controls #randomBtn,
+  .search-row-controls .reset-btn{
+    --ctl-fs: 15px;                 /* ← JS がここを書き換えます */
+    font-size: var(--ctl-fs);
+    white-space: nowrap;            /* ぜったい改行しない */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    gap: .45em;
+    height: 37px;                   /* 高さは固定 → 形崩れしない */
+    line-height: 1;                 /* アイコンと文字のベース */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding-inline: 10px;
+  }
+
+  /* アイコンの大きさも文字と一緒に縮む */
+  #filterToggleBtn i,
+  #favOnlyToggleBtn i,
+  #randomBtn i{
+    font-size: calc(var(--ctl-fs) + 1px);
+    line-height: 1;
+  }
+
+  /* フィルタのラベルは ::after で付与しているので、サイズ連動 */
+  #filterToggleBtn::after{
+    content: attr(data-label);      /* JSで data-label="フィルタ" を付けます */
+    font-size: var(--ctl-fs);
+    font-weight: 600;
+    margin-left: .35em;
+  }
+
+  /* リセットにも記号を追加して左右バランスを統一（FontAwesome不要） */
+  
+}
+
+/* === SPボタン: 見た目の統一（アイコン行高/記号サイズ） === */
+@media (max-width: 768px){
+  /* 自動調整フォント用 変数（JSで更新） */
+  .search-row-controls #filterToggleBtn,
+  .search-row-controls #favOnlyToggleBtn,
+  .search-row-controls #randomBtn,
+  .search-row-controls .reset-btn{
+    --ctl-fs: 15px;                 /* JSがここを上書き */
+    font-size: var(--ctl-fs);
+    line-height: 1;
+    height: 37px;                   /* 高さ固定で形崩れ防止 */
+  }
+
+  /* FAアイコンの行高をきっちり揃える */
+  #favOnlyToggleBtn i,
+  #randomBtn i,
+  #filterToggleBtn i{
+    font-size: calc(var(--ctl-fs) + 1px);
+    line-height: 1;
+  }
+
+  /* リセットにも記号（↺）— 他と同サイズに */
+  
+}
+
+
+/* ===== SP: 4ボタンの太さと余白を完全統一 ===== */
+:root { --ctl-gap: .38em; }  /* アイコンと文字の統一間隔 */
+
+@media (max-width: 768px){
+  /* 4ボタンの太さはすべて同じ（500）に統一。余白は margin で管理 */
+  .search-row-controls #filterToggleBtn,
+  .search-row-controls #favOnlyToggleBtn,
+  .search-row-controls #randomBtn,
+  .search-row-controls .reset-btn{
+    font-weight: 500 !important;
+    gap: 0 !important;                /* gapに依存せず margin に統一 */
+  }
+
+  /* フィルタのラベル（::after）は太さ/間隔を統一 */
+  #filterToggleBtn::after{
+    margin-left: var(--ctl-gap) !important;
+    font-weight: 500 !important;      /* ←600になっていたのを上書き */
+  }
+
+  /* 既存 <span> ラベルは左マージンで統一（先頭スペース除去はJS側で） */
+  #favOnlyToggleBtn span,
+  #randomBtn span{
+    display: inline !important;
+    margin-left: var(--ctl-gap);
+    line-height: 1;
+  }
+
+  /* リセットの記号（↺）も同スケール・同間隔に */
+  
+}
+
+
+/* === Desktop: 4ボタンの見た目を統一（並び替えは上段のまま） === */
+:root{
+  --ctl-gap-d: .45em;          /* アイコンと文字の間隔（PC） */
+  --ctl-fs-d: 15.5px;          /* ボタンの基準フォントサイズ（PC） */
+}
+
+@media (min-width: 769px){
+  /* 1) 1行配置をキープ。ソートは右端へ寄せる */
+  .search-row-controls{ flex-wrap: nowrap; align-items: center; }
+  .sort-wrapper{ margin-left: auto; flex: 0 0 260px; min-width: 220px; }
+
+  /* 2) 4ボタンの高さ／丸み／文字太さ／行高を統一 */
+  .search-row-controls #filterToggleBtn,
+  .search-row-controls #favOnlyToggleBtn,
+  .search-row-controls #randomBtn,
+  .search-row-controls .reset-btn{
+    display: inline-flex; align-items: center; justify-content: center;
+    height: 40px; line-height: 1; font-size: var(--ctl-fs-d);
+    font-weight: 500; border-radius: 10px; white-space: nowrap;
+    padding: 0 .85em; gap: 0; /* 余白は margin で統一 */
+  }
+
+  /* 3) ラベル間隔を統一（お気に入り／ランダムは既存 <span> を使用） */
+  #favOnlyToggleBtn span,
+  #randomBtn span{ margin-left: var(--ctl-gap-d); }
+
+  /* 4) フィルタにもラベルを付けて統一（HTML変更なし） */
+  #filterToggleBtn::after{
+    content: " フィルタ";
+    margin-left: var(--ctl-gap-d); font-weight: 500;
+  }
+
+  /* 5) アイコンと記号のサイズ／行高を揃える */
+  #filterToggleBtn i,
+  #favOnlyToggleBtn i,
+  #randomBtn i{ line-height: 1; font-size: 1em; }
+  
+}
+
+
+/* ===== PC: 4ボタンは等幅／余りは並び替えが吸収 ===== */
+:root{
+  /* 4ボタンの共通幅（画面に応じて少しだけ伸縮） */
+  --pc-btn-w: clamp(124px, 12vw, 144px);
+}
+
+@media (min-width: 769px){
+  /* 1行キープ。ソートは右端で“余りを全部”受ける */
+  .search-row-controls{
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: nowrap;
+  }
+  .search-row-controls .sort-wrapper{
+    margin-left: auto;
+    flex: 1 1 280px;   /* ← 余白を最優先で広げる */
+    min-width: 240px;
+  }
+  .search-row-controls .sort-wrapper select{
+    width: 100%;
+  }
+
+  /* 4ボタンの横幅を完全統一（既存の min-width などを打ち消し） */
+  #filterToggleBtn,
+  #favOnlyToggleBtn,
+  #randomBtn,
+  .reset-btn{
+    flex: 0 0 var(--pc-btn-w) !important;
+    width: var(--pc-btn-w) !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;  /* 予防 */
+  }
+}
+
+/* ===== Controls (Unified) — SP/PC 共通の見た目・間隔・幅 ===== */
+:root{
+  --pc-btn-w: clamp(124px, 12vw, 144px);
+  --ctl-gap: .38em;
+}
+
+/* --- SP（768px以下） --- */
+@media (max-width: 768px){
+  .search-row-controls{
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 6px;
+    align-items: stretch;
+  }
+  .search-row-controls .sort-wrapper{
+    grid-column: 1 / -1;
+    margin-top: 0;
+  }
+  .search-row-controls .sort-wrapper select{
+    width: 100%;
+    min-height: 40px;
+  }
+  .search-row-controls #filterToggleBtn,
+  .search-row-controls #favOnlyToggleBtn,
+  .search-row-controls #randomBtn,
+  .search-row-controls .reset-btn{
+    --ctl-fs: 15px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 42px;
+    line-height: 1;
+    font-size: var(--ctl-fs);
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding-inline: 10px;
+    border-radius: 10px;
+    gap: 0 !important;
+  }
+  #filterToggleBtn i,
+  #favOnlyToggleBtn i,
+  #randomBtn i{ font-size: calc(var(--ctl-fs) + 1px); line-height:1; }
+  #filterToggleBtn{ display:flex; align-items:center; justify-content:center; }
+  #filterToggleBtn::after{
+    content: attr(data-label);
+    margin-left: var(--ctl-gap) !important;
+    font-size: var(--ctl-fs); font-weight: 500; line-height: 1;
+  }
+  #favOnlyToggleBtn span,
+  #randomBtn span{
+    display: inline !important;
+    margin-left: var(--ctl-gap); line-height: 1;
+  }
+  .reset-btn::before{
+    content: "↺";
+    margin-right: var(--ctl-gap);
+    font-size: calc(var(--ctl-fs) + 1px);
+    line-height: 1; transform: translateY(-.02em);
+  }
+  .search-row-controls > * { transition: none !important; }
+}
+
+/* --- PC（769px以上） --- */
+@media (min-width: 769px){
+  .search-row-controls{ display:flex; align-items:center; gap:8px; flex-wrap:nowrap; }
+  .search-row-controls .sort-wrapper{
+    margin-left:auto; flex:1 1 280px; min-width:240px;
+  }
+  .search-row-controls .sort-wrapper select{ width:100%; }
+  .search-row-controls #filterToggleBtn,
+  .search-row-controls #favOnlyToggleBtn,
+  .search-row-controls #randomBtn,
+  .search-row-controls .reset-btn{
+    display:inline-flex; align-items:center; justify-content:center;
+    height:40px; line-height:1; font-weight:500; font-size:15.5px;
+    border-radius:10px; white-space:nowrap; gap:0;
+    padding:0 .85em;
+    flex:0 0 var(--pc-btn-w) !important; width:var(--pc-btn-w) !important;
+    min-width:0 !important; max-width:none !important;
+  }
+  #favOnlyToggleBtn span, #randomBtn span{ margin-left: var(--ctl-gap); }
+  #filterToggleBtn::after{ content:" フィルタ"; margin-left: var(--ctl-gap); font-weight:500; }
+  .reset-btn::before{ content:"↺"; margin-right: var(--ctl-gap); font-size:1em; line-height:1; transform: translateY(-.02em); }
+}
