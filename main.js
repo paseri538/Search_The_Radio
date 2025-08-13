@@ -1448,11 +1448,11 @@ for (const kanji in CUSTOM_READINGS) {
     { date: '2023-04-26', label: '番組リニューアル', desc: '新コーナー「ぼっち予想テスト」「イキり懺悔室」や<br>「ぼっち・ざ・おーでぃしょん！」では新テーマ「青春」を募集。', url: 'https://x.com/BTR_anime/status/1651151378570682369' },
     { date: '2023-06-24', label: 'ぼっち・ざ・らじお！音泉祭りスペシャル', desc: '音泉祭り2023に青山吉能、鈴代紗弓が出演。', url: 'https://x.com/BTR_anime/status/1672559141800521729' },
     { date: '2023-08-01', label: '第1回Youtube100万再生突破', desc: '', url: 'https://x.com/BTR_anime/status/1686303096375513088' },
-    { date: '2023-12-20', label: '第41回クリスマススペシャル回', desc: '初の映像特別回。おしゃべりピンク爆誕。', url: 'https://x.com/onsenradio/status/1737399690579382638' },
+    { date: '2023-12-20', label: '第41回クリスマススペシャル', desc: '初の映像特別回。おしゃべりピンク爆誕。', url: 'https://x.com/onsenradio/status/1737399690579382638' },
 
 
     { date: '2024-04-24', label: '番組配信50回突破', desc: '', url: 'https://x.com/BTR_anime/status/1783088715356893504' },
-    { date: '2024-12-25', label: '第68回クリスマススペシャル回', desc: '初の映像生配信回。カラオケコーナーあり。', url: 'https://x.com/BTR_anime/status/1871935819327639585' },
+    { date: '2024-12-25', label: '第68回クリスマススペシャル', desc: '初の映像生配信回。カラオケコーナーあり。', url: 'https://x.com/BTR_anime/status/1871935819327639585' },
 
     { date: '2025-01-15', label: '第69(ロック)回特別コーナー「ろっく！えぴそーど！」', desc: '破天荒＆カッコいいエピソードを青山吉能が「ロック」かどうか判定。', url: 'https://x.com/BTR_anime/status/1879455907379294412' },
     { date: '2025-02-15', label: '【緊急】ぼっち・ざ・らじお！【特別編】', desc: 'アニメ2期制作決定とともに公開された特別編。', url: 'https://x.com/BTR_anime/status/1890732797804839239' },
@@ -1543,16 +1543,8 @@ $('#historyToggle').off('click').on('click', function(e){
     document.body.style.top = '';
     window.scrollTo(0, top ? -parseInt(top,10) : 0);
   }
+// --- タイムライン構築 ---
 
-
-
-  // 起動・終了イベント
-  $toggle.addEventListener('click', openHistoryModal);
-  $close?.addEventListener('click', closeHistoryModal);
-  $modal?.addEventListener('click', (e)=>{ if(e.target === $modal) closeHistoryModal(); });
-  document.addEventListener('keydown', (e)=>{ if(e.key==='Escape' && !$modal.hasAttribute('hidden')) closeHistoryModal(); });
-
-  // --- タイムライン構築 ---
   function buildTimeline(data){
     $list.innerHTML = '';
     // 日付の種類（YYYY / YYYY-MM / YYYY-MM-DD）に対応してソート
