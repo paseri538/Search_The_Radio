@@ -1,5 +1,6 @@
 // --- データ・状態 ---
     const data = [
+      { episode:"84", title:"#84　", guest:"青山吉能", date:"2025-08-13", link:"https://www.youtube.com/watch?v=4l77d67EiPc", keywords:["青山吉能","よぴ","よしの","よっぴー","あおやまよしの"], duration:"57:46" },
       { episode:"83", title:"#83　ゲスト：水野朔", guest:"水野朔", date:"2025-07-30", link:"https://www.youtube.com/watch?v=LcPFWQ5JdoU", keywords:["水野朔","さくぴ","さくさくちゃん","ﾐｽﾞﾉｻｸﾃﾞｼｭ","みずのさく","本日のテーマ","結束バンドと私"], duration:"1:08:26" },
       { episode:"82", title:"#82　ゲスト：長谷川育美", guest:"長谷川育美", date:"2025-07-16", link:"https://www.youtube.com/watch?v=IdEStksoFaM", keywords:["長谷川育美","いくみ","はせみ","はせちゃん","いくちゃん","はっせー","はせがわいくみ","よぴいく","ypik"], duration:"1:12:20" },
       { episode:"81", title:"#81　ゲスト：鈴代紗弓", guest:"鈴代紗弓", date:"2025-07-02", link:"https://www.youtube.com/watch?v=FA7BqhR_AkQ", keywords:["鈴代紗弓","さゆみん","おさゆ","みんみん","さゆちゃん","おすず","すずちゃん","鈴代ちゃん","すずしろさゆみ"], duration:"1:08:01" },
@@ -1653,7 +1654,7 @@ $('#historyToggle').off('click').on('click', function(e){
 
   // サイトのトップを共有（必要なら location.href に変更可）
   const shareUrl = 'https://searchtheradio.com/';
-  const text = 'さーち・ざ・らじお！ — ぼっち・ざ・らじお！専門検索エンジン';
+  const text = 'さーち・ざ・らじお！ — ぼっち・ざ・らじお！専門検索エンジン #さーち・ざ・らじお';
 
   const u = encodeURIComponent(shareUrl);
   const t = encodeURIComponent(text);

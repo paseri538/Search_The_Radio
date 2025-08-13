@@ -1428,7 +1428,7 @@ body:not(.dark-mode){
 
 /* 2) ページ末尾に余白を用意して、ボタンに被らないようにする */
 .main-content {
-  padding-bottom: calc(120px + var(--safe-bottom));
+  padding-bottom: calc(60px + var(--safe-bottom));
 }
 
 footer {
@@ -1451,11 +1451,24 @@ footer {
 }
 
 
-/* === History modal: タイトル中央揃え === */
+/* === History modal header: always visible while scrolling === */
 #historyModal .modal-header{
-  text-align: center;          /* テキスト中央寄せ */
-  position: relative;          /* 右上の×ボタンの absolute と共存 */
+  position: sticky;      /* ← スクロールしてもヘッダーを固定 */
+  top: 0;                /* 画面上端に貼り付け */
+  z-index: 10;           /* 本文より手前に */
+  background: var(--history-card-bg);
+  border-bottom: 1px solid var(--history-card-bd);
 }
+
+/* ついでに×ボタンのタップしやすさを安定化（任意） */
+#historyModal .modal-close {
+  position: absolute;    /* 既存 */
+  top: 8px;
+  right: 4px;
+  width: 38px;           /* 少し広げるなら */
+  height: 38px;
+}
+
 
 #historyModal .modal-title{
   display: block;
@@ -1533,3 +1546,4 @@ body.dark-mode .share-btn:focus-visible {
     font-size:30px;
   }
 }
+
