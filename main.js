@@ -530,7 +530,16 @@ function renderResults(arr, page = 1) {
   });
 
   // ★ボタン付与（既存）
-  $('#results .episode-item').each(function () {
+  
+// キーボード操作でエピソードを開く（Enter/Space）
+$(document).off('keydown.__episodeopen').on('keydown.__episodeopen', '#results .episode-item', function(e){
+  const key = e.key;
+  if (key === 'Enter' || key === ' ') {
+    const a = $(this).find('a').get(0);
+    if (a) { a.click(); e.preventDefault(); }
+  }
+});
+$('#results .episode-item').each(function () {
     if ($(this).find('.fav-btn').length) return;
     const link = $(this).find('a').attr('href') || '';
     const id = getVideoId(link);
@@ -564,22 +573,20 @@ function resetSearch() {
   // 「お気に入りだけ表示」中なら、★を全解除してトグルもOFF
   if (typeof showFavoritesOnly !== "undefined" && showFavoritesOnly) {
     clearAllFavorites();
-
     showFavoritesOnly = false;
     document.body.classList.remove('fav-only');
-
-    $("#favOnlyToggleBtn")
-      .removeClass("active")
-      .attr("aria-pressed", "false");
-
-    // 画面に出ている星の見た目も即時反映（安全のため）
-    $("#results .fav-btn.active")
-      .removeClass("active")
-      .find("i").removeClass("fa-solid").addClass("fa-regular");
+    $("#favOnlyToggleBtn").removeClass("active").attr("aria-pressed","false");
   }
+
+  // 表示中の星の見た目も即時反映（安全のため）
+  $("#results .fav-btn.active").removeClass("active")
+    .find("i").removeClass("fa-solid").addClass("fa-regular");
 
   // 既存のフィルタ初期化（この中で search() が呼ばれて初期表示に戻る想定）
   resetFilters();
+
+  // ページ先頭へスクロール
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch (e) { window.scrollTo(0, 0); }
 }
 
     function updateGuestButtonStyles() {
@@ -938,11 +945,7 @@ function unlockScroll() {
   // 元いた位置に戻す
   window.scrollTo(0, __scrollY);
 }
-function updateScrollLock() {
-  const isFilterOpen = $('#filterDrawer').is(':visible');   // フィルタードロワー
-  const isAboutOpen  = $('#aboutModal').is(':visible');     // このサイトについて(モーダル)
-  if (isFilterOpen || isAboutOpen) lockScroll(); else unlockScroll();
-}
+function updateScrollLock(){ if (typeof window.updateScrollLock === 'function') return window.updateScrollLock(); }
 
 
 // フィルターを開くとき
@@ -969,20 +972,20 @@ $('#drawerBackdrop').on('click', function () {
 // 開く
 $('#aboutSiteLink').on('click', function (e) {
   e.preventDefault();
-  $('#aboutModal').css('display', 'flex'); // 既存の表示方法に合わせて
+  $('#aboutModal').css('display','flex').hide().fadeIn(130); // 統一：fadeInで表示
   updateScrollLock(); // ← これ
 });
 
 // 閉じる（×ボタン）
 $('#aboutCloseBtn').on('click', function () {
-  $('#aboutModal').hide();
+  $('#aboutModal').stop(true,true).fadeOut(130, function(){ $(this).hide(); });
   updateScrollLock(); // ← これ
 });
 
 // モーダル外クリックで閉じる
 $('#aboutModal').on('click', function (e) {
   if (e.target === this) {
-    $('#aboutModal').hide();
+    $('#aboutModal').stop(true,true).fadeOut(130, function(){ $(this).hide(); });
     updateScrollLock(); // ← これ
   }
 });
@@ -1165,6 +1168,26 @@ window.resetSearch = (function (orig) {
   document.addEventListener('DOMContentLoaded', applySortLabels);
   // ボタンラベルの先頭スペースを除去し、data-label を補完して揃える
 document.addEventListener('DOMContentLoaded', () => {
+
+// Ensure aria-pressed state sync for toggle buttons
+['#filterToggleBtn','#favOnlyToggleBtn'].forEach(sel => {
+  document.querySelectorAll(sel).forEach(btn => {
+    btn.addEventListener('click', () => {
+      const pressed = btn.getAttribute('aria-pressed') === 'true';
+      btn.setAttribute('aria-pressed', String(!pressed));
+    });
+  });
+});
+
+
+// Remove active class immediately after click to prevent persistent highlight
+['#filterToggleBtn','#favOnlyToggleBtn','#randomBtn','.reset-btn'].forEach(sel => {
+  document.querySelectorAll(sel).forEach(btn => {
+    btn.addEventListener('mouseup', () => btn.classList.remove('active'));
+    btn.addEventListener('blur', () => btn.classList.remove('active'));
+  });
+});
+
   ['favOnlyToggleBtn', 'randomBtn'].forEach(id => {
     const el = document.getElementById(id);
     const sp = el && el.querySelector('span');
@@ -1737,6 +1760,26 @@ $('#historyToggle').off('click').on('click', function(e){
 
   // ラベル整形
   document.addEventListener('DOMContentLoaded', () => {
+
+// Ensure aria-pressed state sync for toggle buttons
+['#filterToggleBtn','#favOnlyToggleBtn'].forEach(sel => {
+  document.querySelectorAll(sel).forEach(btn => {
+    btn.addEventListener('click', () => {
+      const pressed = btn.getAttribute('aria-pressed') === 'true';
+      btn.setAttribute('aria-pressed', String(!pressed));
+    });
+  });
+});
+
+
+// Remove active class immediately after click to prevent persistent highlight
+['#filterToggleBtn','#favOnlyToggleBtn','#randomBtn','.reset-btn'].forEach(sel => {
+  document.querySelectorAll(sel).forEach(btn => {
+    btn.addEventListener('mouseup', () => btn.classList.remove('active'));
+    btn.addEventListener('blur', () => btn.classList.remove('active'));
+  });
+});
+
     [elFav, elRand].forEach(el => {
       const sp = el.querySelector('span'); if (sp) sp.textContent = sp.textContent.trim();
     });
@@ -1771,3 +1814,18 @@ $('#historyToggle').off('click').on('click', function(e){
   window.addEventListener('orientationchange', fitAll, { passive:true });
   setTimeout(fitAll, 120);
 })();
+
+
+// --- Prevent sticky focus after click: blur on pointer interaction ---
+['filterToggleBtn','favOnlyToggleBtn','randomBtn','resetBtn','historyToggle'].forEach(id => {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.addEventListener('pointerup', (e) => {
+    // Keep keyboard accessibility: only blur for actual pointer interactions
+    if (e.pointerType === 'mouse' || e.pointerType === 'pen') {
+      // Defer to allow click handlers to run
+      setTimeout(() => el.blur(), 0);
+    }
+  });
+});
+

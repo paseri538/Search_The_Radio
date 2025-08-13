@@ -631,8 +631,7 @@ body.dark-mode #aboutCloseBtn {
   align-items: center;
   justify-content: center;
   /* 重要！ */
-  display: flex;
-}
+  }
 
 /* 跳ねる4つの丸ローディング */
 .loading-ball {
@@ -745,7 +744,7 @@ body.dark-mode #loading-screen {
 .icon-btn, #favOnlyToggleBtn, #randomBtn{
   height:2.5em;border-radius:.63em;padding:0 .9em;
   background:#fff;border:1.3px solid #dad4ff;color:var(--btn-main);
-  font-weight:500;cursor:pointer;transition:all var(--transition);
+  font-weight:500;cursor:pointer;transition: background var(--transition), border var(--transition), color var(--transition);
 }
 #favOnlyToggleBtn.active,
 #favOnlyToggleBtn[aria-pressed="true"]{
@@ -772,11 +771,19 @@ body.dark-mode #loading-screen {
 @keyframes rise{ from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:translateY(0)} }
 #results .episode-item{ animation:rise .24s ease both; }
 
+
+/* === Dark mode variable overrides for hover colors === */
+body.dark-mode {
+  --filter-btn-active: rgba(200, 200, 255, 0.15);
+  --btn-main: #4d6272;
+  --btn-hover: #a6e1fa;
+}
+
 /* ダークモード調整 */
 body.dark-mode .icon-btn, body.dark-mode #favOnlyToggleBtn, body.dark-mode #randomBtn{
   background:#2f3640;border-color:#49686a;color:#96e5c4;
 }
-body.dark-mode #favOnlyToggleBtn.active{ background:#2b3a27; border-color:#8bb558; color:#e3f6c2; }
+body.dark-mode 
 body.dark-mode .fav-btn{ background:#2d333b;border-color:#394150; }
 
 
@@ -882,6 +889,14 @@ body:not(.dark-mode) #filterToggleBtn {
   color: #5744D8 !important;
 }
 
+
+/* 「お気に入り」「ランダム」ホバー時（ライト） - 色変化のみ */
+body:not(.dark-mode) #favOnlyToggleBtn:hover,
+body:not(.dark-mode) #randomBtn:hover {
+  background: #eaf6ff !important;
+  border-color: #5744D8 !important;
+  color: #5744D8 !important;
+}
 /* フィルター開閉（ホバー/展開時も同色トーン） */
 body:not(.dark-mode) #filterToggleBtn:hover,
 body:not(.dark-mode) #filterToggleBtn:focus,
@@ -1893,4 +1908,94 @@ body.dark-mode .share-btn:focus-visible {
   #favOnlyToggleBtn span, #randomBtn span{ margin-left: var(--ctl-gap); }
   #filterToggleBtn::after{ content:" フィルタ"; margin-left: var(--ctl-gap); font-weight:500; }
   .reset-btn::before{ content:"↺"; margin-right: var(--ctl-gap); font-size:1em; line-height:1; transform: translateY(-.02em); }
+}
+
+/* ページトップへボタンのフォーカス可視化 */
+#toTopBtn:focus-visible {
+  outline: 3px solid #8de0ee;
+  outline-offset: 2px;
+}
+
+/* 「お気に入りだけ」ON時の保険（JSがクラス付与する前提） */
+body.fav-only .episode-item:not(.is-fav) {
+  display: none !important;
+}
+
+
+/* === Hover: 色変化のみ（通常/ダーク共通） === */
+#filterToggleBtn:hover,
+#favOnlyToggleBtn:hover,
+#randomBtn:hover,
+.reset-btn:hover,
+#historyToggle:hover {
+  background: var(--filter-btn-active) !important;
+  border-color: var(--btn-main) !important;
+  color: var(--btn-hover) !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+
+/* >=641pxでも検索結果枠の外側に同じ余白を付与 */
+@media (min-width: 641px) {
+  .main-content { padding-left: 15px; padding-right: 15px; }
+}
+
+
+/* === Hover: 色変化のみ（ダークモード） === */
+body.dark-mode #filterToggleBtn:hover,
+body.dark-mode #favOnlyToggleBtn:hover,
+body.dark-mode #randomBtn:hover,
+body.dark-mode .reset-btn:hover,
+body.dark-mode #historyToggle:hover {
+  background: var(--filter-btn-active) !important;
+  border-color: var(--btn-main) !important;
+  color: var(--btn-hover) !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+
+
+/* === Hover: 色変化のみ（ダークモード） — 変形/影は禁止 === */
+body.dark-mode #filterToggleBtn:hover,
+body.dark-mode #favOnlyToggleBtn:hover,
+body.dark-mode #randomBtn:hover,
+body.dark-mode .reset-btn:hover,
+body.dark-mode #historyToggle:hover {
+  background: var(--filter-btn-active) !important;
+  border-color: var(--btn-main) !important;
+  color: var(--btn-hover) !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+
+/* Prevent persistent active color on click for main control buttons */
+#filterToggleBtn:active,
+#favOnlyToggleBtn:active,
+#randomBtn:active,
+.reset-btn:active {
+  background: var(--filter-btn-bg) !important;
+  border-color: var(--filter-btn-border) !important;
+  color: var(--filter-btn-text) !important;
+}
+body.dark-mode #filterToggleBtn:active,
+body.dark-mode #favOnlyToggleBtn:active,
+body.dark-mode #randomBtn:active,
+body.dark-mode .reset-btn:active {
+  background: var(--filter-btn-bg) !important;
+  border-color: var(--filter-btn-border) !important;
+  color: var(--filter-btn-text) !important;
+}
+
+
+/* === Buttons: focus-visible はアウトラインのみ（色は変えない） === */
+#filterToggleBtn:focus-visible,
+#favOnlyToggleBtn:focus-visible,
+#randomBtn:focus-visible,
+.reset-btn:focus-visible,
+#historyToggle:focus-visible {
+  outline: 2px solid var(--btn-hover);
+  outline-offset: 2px;
 }
