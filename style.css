@@ -194,8 +194,11 @@ body {
   cursor: pointer; border: none; box-shadow: 0 2px 7px -6px #7c3aed20;
   transition: background 0.13s;
   outline: none;
-  max-width: 210px;
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  max-width: none;
+  overflow: visible; text-overflow: clip; white-space: normal;
+  flex-wrap: wrap;
+  word-break: break-word;
+  line-height: 1.25;
 }
 
 .filter-tag:focus, .filter-tag:hover {
@@ -1998,4 +2001,12 @@ body.dark-mode .reset-btn:active {
 #historyToggle:focus-visible {
   outline: 2px solid var(--btn-hover);
   outline-offset: 2px;
+}
+
+
+/* Fix for long selected filter tags being cut off */
+.selected-filters .tag {
+  white-space: normal !important;
+  word-break: break-word;
+  max-width: 100%;
 }
