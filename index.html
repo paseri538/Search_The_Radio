@@ -24,6 +24,19 @@
   } catch(e){}
 })();
 </script>
+<!-- SAFE AREA INIT: set CSS vars for iOS PWA safe-area -->
+<script>
+/* SAFE AREA INIT */
+(function(){
+  try {
+    var root = document.documentElement;
+    // expose env(safe-area-inset-*) as CSS variables with fallbacks
+    ['top','right','bottom','left'].forEach(function(side){
+      root.style.setProperty('--safe-area-inset-' + side, 'env(safe-area-inset-' + side + ')');
+    });
+  } catch(e){}
+})();
+</script>
 
 <meta name="color-scheme" content="dark light">
 <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#22272e">

@@ -1021,12 +1021,6 @@ $('#aboutModal').on('click', function (e) {
   window.addEventListener('load', updateHeaderOffset);
   window.addEventListener('resize', () => setTimeout(updateHeaderOffset, 50));
   window.addEventListener('orientationchange', () => setTimeout(updateHeaderOffset, 120));
-  function initMobileBar(){ /* ← 既存の生成＆イベント登録ロジック */ }
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", initMobileBar);
-  } else {
-    initMobileBar();
-  }
 
   // ヘッダー内の内容変化（フィルタタグ増減など）も拾う
   const sticky = document.querySelector('.sticky-search-area');
@@ -1096,38 +1090,6 @@ window.__updateHeaderOffset && window.__updateHeaderOffset();
   }
   window.__openDrawer = openDrawer;
   window.__closeDrawer = closeDrawer;
-
-  // --- スマホ：フィルター内のタグを押したら上部へ & ドロワーを閉じる ---
-(function attachAutoScrollAfterFilterSelect(){
-  const drawer = document.getElementById('filterDrawer');
-  if (!drawer) return;
-
-  drawer.addEventListener('click', (ev) => {
-    // フィルター内のボタン（ゲスト・年・コーナー）
-    const btn = ev.target.closest('.guest-button,.btn-year,.btn-corner');
-    if (!btn) return;
-
-    // 既存の選択→search() が走った“後”に動くよう、少し遅らせる
-    setTimeout(() => {
-      if (window.innerWidth <= 900) {       // スマホだけ
-        // 1) まずドロワーを閉じてスクロールロック解除
-        if (typeof window.__closeDrawer === 'function') {
-          window.__closeDrawer();
-        } else {
-          $('#filterDrawer').hide();
-          $('#drawerBackdrop').removeClass('show');
-          if (typeof window.updateScrollLock === 'function') window.updateScrollLock();
-        }
-        // 2) 解除が完了する“次フレーム”で最上部へ
-        requestAnimationFrame(() => {
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-          window.__updateHeaderOffset && window.__updateHeaderOffset();
-        });
-      }
-    }, 0);
-  }, { passive: true });
-})();
-
 
   // Remove duplicate/legacy handlers, then bind once.
   $('#filterToggleBtn').off('click keypress').on('click keypress', function (e) {
@@ -1880,166 +1842,89 @@ $('#historyToggle').off('click').on('click', function(e){
 });
 
 
+// === iOS PWA helpers (added) ===
+(function(){
+  try {
+    var docEl = document.documentElement;
+    var body = document.body;
 
-/* ===== Mobile Action Bar (smartphone-only) ===== */
-(function () {
-  const mq = window.matchMedia("(max-width: 1024px)");
-  const already = document.getElementById("mobileActionBar");
-  if (already) return;
+    // mark PWA/standalone for targeted tweaks
+    var isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+    if (isStandalone) body.classList.add('pwa-standalone');
 
-  // Create bar
-  const bar = document.createElement("nav");
-  bar.id = "mobileActionBar";
-  bar.className = "mobile-action-bar";
-  bar.setAttribute("role", "navigation");
-  bar.innerHTML = `
-    <button class="mab-btn" id="mabFilter" aria-label="フィルタを開く" aria-pressed="false">
-      <i class="fa fa-filter" aria-hidden="true"></i><span>フィルタ</span>
-    </button>
-    <button class="mab-btn" id="mabFav" aria-label="お気に入りだけ" aria-pressed="false">
-      <i class="fa-regular fa-star" aria-hidden="true"></i><span>お気に入り</span>
-    </button>
-    <button class="mab-btn" id="mabRandom" aria-label="ランダム" aria-pressed="false">
-      <i class="fa fa-shuffle" aria-hidden="true"></i><span>ランダム</span>
-    </button>
-    <button class="mab-btn mab-reset" id="mabReset" aria-label="リセット">
-      <i class="fa fa-rotate-left" aria-hidden="true"></i><span>リセット</span>
-    </button>
-  `;
-  document.body.appendChild(bar);
-
-  // Ensure body bottom padding so contents are not hidden
-  const setPaddingForBar = () => {
-    const visible = mq.matches;
-    document.documentElement.style.setProperty(
-      "--mobile-bar-height",
-      visible ? "74px" : "0px"
-    );
-  };
-  setPaddingForBar();
-  mq.addEventListener && mq.addEventListener("change", setPaddingForBar);
-
-  // Click bindings: delegate to existing buttons/logic
-  const filterBtn = document.getElementById("filterToggleBtn");
-  const favBtn = document.getElementById("favOnlyToggleBtn");
-  const randomBtn = document.getElementById("randomBtn");
-  const resetBtn = document.querySelector(".reset-btn");
-
-  // 置き換え（main.js: Mobile Action Bar 部分）
-// ===== モバイルアクションバーのイベントバインド =====
-
-// フィルタ（開閉トグル対応）
-document.getElementById('mabFilter').addEventListener('click', (e) => {
-  e.preventDefault();
-  e.stopPropagation();
-
-  const isOpen = $('#filterDrawer').is(':visible');
-  if (isOpen && typeof window.__closeDrawer === 'function') {
-    window.__closeDrawer(); // 閉じる
-  } else if (!isOpen && typeof window.__openDrawer === 'function') {
-    window.__openDrawer(); // 開く
-  } else {
-    document.getElementById('filterToggleBtn')?.dispatchEvent(
-      new MouseEvent('click', { bubbles: true })
-    );
-  }
-
-  const self = document.getElementById('mabFilter');
-  self?.setAttribute('aria-pressed', (!isOpen).toString());
-  self?.classList.toggle('active', !isOpen);
-});
-
-// お気に入り
-document.getElementById('mabFav').addEventListener('click', (e) => {
-  e.preventDefault();
-  e.stopPropagation();
-  document.getElementById('favOnlyToggleBtn')?.click();
-});
-
-// ランダム
-document.getElementById('mabRandom').addEventListener('click', (e) => {
-  e.preventDefault();
-  e.stopPropagation();
-  document.getElementById('randomBtn')?.click();
-});
-
-// リセット
-document.getElementById('mabReset').addEventListener('click', (e) => {
-  e.preventDefault();
-  e.stopPropagation();
-  if (typeof resetSearch === 'function') {
-    resetSearch();
-  } else {
-    document.querySelector('.reset-btn')?.click();
-  }
-});
-
-
-
-
-
-  // Reflect state: filter expanded / favorite on/off
-  const reflectStates = () => {
-    if (filterBtn) {
-      const pressed = filterBtn.getAttribute("aria-expanded") === "true" ||
-                      filterBtn.getAttribute("aria-pressed") === "true";
-      document.getElementById("mabFilter").setAttribute("aria-pressed", pressed ? "true" : "false");
-      document.getElementById("mabFilter").classList.toggle("active", !!pressed);
+    // Recompute header offset based on actual sticky header & filters height
+    function computeHeaderOffset(){
+      var sticky = document.querySelector('.sticky-search-area');
+      var filters = document.querySelector('.filters-bar');
+      var extra = 10;
+      var h = 0;
+      if (sticky) h += sticky.getBoundingClientRect().height || 0;
+      if (filters) {
+        // If filters are visually under the header and not position:fixed, count their height only once
+        var rect = filters.getBoundingClientRect();
+        h += rect.height || 0;
+      }
+      // Safety clamp
+      if (h < 120) h = parseInt(getComputedStyle(docEl).getPropertyValue('--header-offset')) || 186;
+      docEl.style.setProperty('--header-offset', Math.round(h + extra) + 'px');
     }
-    if (favBtn) {
-      const favPressed = favBtn.getAttribute("aria-pressed") === "true";
-      document.getElementById("mabFav").setAttribute("aria-pressed", favPressed ? "true" : "false");
-      document.getElementById("mabFav").classList.toggle("active", !!favPressed);
-    }
-  };
-  reflectStates();
 
-  const observeAttr = (el) => {
-    if (!el || !window.MutationObserver) return;
-    const mo = new MutationObserver(reflectStates);
-    mo.observe(el, { attributes: true, attributeFilter: ["aria-expanded", "aria-pressed", "class"] });
-  };
-  observeAttr(filterBtn);
-  observeAttr(favBtn);
-
-  // Show only on smartphones
-  const updateBarVisibility = () => {
-    const isMobile = mq.matches;
-    bar.style.display = isMobile ? "grid" : "none";
-  };
-  updateBarVisibility();
-  mq.addEventListener && mq.addEventListener("change", updateBarVisibility);
-})();
-
-
-/* =========================
- * スマホ時：フィルタータップで先頭へスクロール（まとめて適用）
- * ========================= */
-(function () {
-  // ページのDOMが使えるようになってから設定
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initScrollOnFilterClick);
-  } else {
-    initScrollOnFilterClick();
-  }
-
-  function initScrollOnFilterClick() {
-    var drawer = document.getElementById('filterDrawer');
-    if (!drawer) return; // 念のため存在チェック
-
-    drawer.addEventListener('click', function (e) {
-      // 出演者/年/コーナーの各ボタンにマッチするか（イベント委譲）
-      var btn = e.target.closest('.guest-button, .btn-year, .btn-corner');
-      if (!btn) return;
-
-      // 既存の絞り込み処理でDOMが更新された「あと」にスクロールさせたいので、後段で実行
-      setTimeout(function () {
-        if (window.innerWidth <= 1024) { // スマホ・タブレット幅
-          window.scrollTo({ top: 0, behavior: 'smooth' });
+    // Detect any other fixed bottom bars to avoid overlap with floating buttons
+    function computeBottomUIOffset(){
+      var candidates = Array.from(document.querySelectorAll('body *')).filter(function(el){
+        var cs = getComputedStyle(el);
+        if (el.id === 'toTopBtn' || el.id === 'darkModeBtn') return false;
+        if (cs.position !== 'fixed') return false;
+        if (!/auto|0px/.test(cs.top) && parseFloat(cs.bottom || '0') >= 0) {
+          // element fixed to bottom
+          var rect = el.getBoundingClientRect();
+          // consider bars that span the width and have reasonable height
+          if (rect.height >= 32 && rect.bottom >= (window.innerHeight - 2)) return true;
         }
-      }, 0);
-    });
-  }
-})();
+        return false;
+      });
+      var offset = 0;
+      candidates.forEach(function(el){
+        var rect = el.getBoundingClientRect();
+        offset = Math.max(offset, Math.ceil(rect.height));
+      });
+      docEl.style.setProperty('--bottom-ui-offset', offset + 'px');
+    }
 
+    // iOS virtual keyboard & address bar changes
+    function onViewportChange(){
+      // Ensures floaters remain visible above keyboard
+      // We read visualViewport to get safe area changes
+      computeHeaderOffset();
+      computeBottomUIOffset();
+    }
+
+    // Initial compute
+    window.addEventListener('load', function(){
+      computeHeaderOffset();
+      computeBottomUIOffset();
+      setTimeout(computeHeaderOffset, 300); // after webfonts/layout settle
+    });
+
+    // Recompute on relevant events
+    ['resize','orientationchange'].forEach(function(ev){
+      window.addEventListener(ev, onViewportChange, {passive:true});
+    });
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', onViewportChange, {passive:true});
+      window.visualViewport.addEventListener('scroll', onViewportChange, {passive:true});
+    }
+
+    // Also recompute when the filter drawer toggles
+    var filterToggle = document.getElementById('filterToggleBtn');
+    if (filterToggle) {
+      filterToggle.addEventListener('click', function(){
+        setTimeout(function(){
+          computeHeaderOffset();
+          computeBottomUIOffset();
+        }, 250);
+      });
+    }
+  } catch(e) { /* no-op */ }
+})();
 
