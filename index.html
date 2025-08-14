@@ -298,5 +298,28 @@
     });
   }
 </script>
+<script>
+  // --- Dynamically set --mobile-bar-height so floating buttons avoid overlap ---
+  (function(){
+    function updateMobileBarHeight(){
+      const bar = document.querySelector('.mobile-action-bar');
+      let h = 0;
+      if (bar && getComputedStyle(bar).display !== 'none') {
+        h = bar.offsetHeight || 0;
+      }
+      document.documentElement.style.setProperty('--mobile-bar-height', h + 'px');
+    }
+    // run on load and on layout changes
+    window.addEventListener('load', updateMobileBarHeight);
+    window.addEventListener('resize', updateMobileBarHeight);
+    window.addEventListener('orientationchange', updateMobileBarHeight);
+    const ro = new ResizeObserver(updateMobileBarHeight);
+    const bar = document.querySelector('.mobile-action-bar');
+    if (bar) ro.observe(bar);
+    // also re-run when PWA class toggled
+    document.addEventListener('DOMContentLoaded', updateMobileBarHeight);
+    setTimeout(updateMobileBarHeight, 500);
+  })();
+</script>
 </body>
 </html>

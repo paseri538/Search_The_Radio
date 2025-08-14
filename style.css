@@ -2182,3 +2182,12 @@ html.pwa #darkModeBtn{
 /* コンテンツ・フッターの下余白を確保 */
 html.pwa .main-content{ padding-bottom: calc(100px + var(--safe-bottom)) !important; }
 html.pwa footer{       padding-bottom: calc(24px  + var(--safe-bottom)) !important; }
+
+
+/* --- Mobile action bar: add comfortable gap above iOS home indicator --- */
+@media (max-width: 1024px) {
+  .mobile-action-bar {
+    bottom: max(8px, calc(env(safe-area-inset-bottom) * 0.5));
+    padding-bottom: calc(12px + env(safe-area-inset-bottom));
+  }
+}
