@@ -944,13 +944,13 @@ window.addEventListener('DOMContentLoaded', function() {
 
 // ===== Scroll lock helpers =====
 let __scrollY = 0;
-function lockScroll() {
+function lockBodyScroll() {
   if (document.body.classList.contains('scroll-lock')) return;
   __scrollY = window.scrollY || document.documentElement.scrollTop || 0;
   document.body.style.top = `-${__scrollY}px`;
   document.body.classList.add('scroll-lock');
 }
-function unlockScroll() {
+function unlockBodyScroll() {
   if (!document.body.classList.contains('scroll-lock')) return;
   document.body.classList.remove('scroll-lock');
   document.body.style.top = '';
@@ -1050,13 +1050,13 @@ window.__updateHeaderOffset && window.__updateHeaderOffset();
   window.__drawerPatched = true;
 
   let __scrollY = 0;
-  function lockScroll() {
+  function lockBodyScroll() {
     if (document.body.classList.contains('scroll-lock')) return;
     __scrollY = window.scrollY || document.documentElement.scrollTop || 0;
     document.body.style.top = `-${__scrollY}px`;
     document.body.classList.add('scroll-lock');
   }
-  function unlockScroll() {
+  function unlockBodyScroll() {
     if (!document.body.classList.contains('scroll-lock')) return;
     document.body.classList.remove('scroll-lock');
     document.body.style.top = '';
@@ -1065,7 +1065,7 @@ window.__updateHeaderOffset && window.__updateHeaderOffset();
   window.updateScrollLock = function updateScrollLock() {
     const isFilterOpen = $('#filterDrawer').is(':visible');
     const isAboutOpen  = $('#aboutModal').is(':visible');
-    (isFilterOpen || isAboutOpen) ? lockScroll() : unlockScroll();
+    (isFilterOpen || isAboutOpen) ? lockBodyScroll() : unlockBodyScroll();
   };
 
   function updateDrawerTop() {
@@ -1578,7 +1578,7 @@ const sc = overlay.querySelector('.history-modal');
 if (sc) sc.scrollTop = 0;
 
 
-lockScroll(); // ← これで現在の scrollY を保持して固定
+lockBodyScroll(); // ← これで現在の scrollY を保持して固定
   // a11y（任意）
   try{ $toggle?.setAttribute('aria-expanded','true'); }catch(_){}
 }
@@ -1596,7 +1596,7 @@ function closeHistoryModal(){
     overlay.hidden = true;
 overlay.classList.remove('closing');
 overlay.removeEventListener('animationend', done);
-unlockScroll(); // ← 固定を解除して元の位置に復帰
+unlockBodyScroll(); // ← 固定を解除して元の位置に復帰
     try{ $toggle?.setAttribute('aria-expanded','false'); }catch(_){}
   };
   overlay.addEventListener('animationend', done);
