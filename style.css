@@ -2011,46 +2011,45 @@ body.dark-mode .reset-btn:active {
   max-width: 100%;
 }
 
-
-/* === iOS PWA / Safe Area & Touch Targets (added) === */
+/* --- Patch v2025-08-14 (iOS PWA safe-area, tap targets, header stability, icon width) --- */
 :root {
-  --safe-area-inset-top: env(safe-area-inset-top, 0px);
-  --safe-area-inset-right: env(safe-area-inset-right, 0px);
-  --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
-  --safe-area-inset-left: env(safe-area-inset-left, 0px);
-  --bottom-ui-offset: 0px; /* measured in JS when a fixed bottom bar exists */
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
 
-/* Increase touch targets on small screens */
+/* Safe-area aware paddings */
+.sticky-search-area {
+  padding-bottom: calc(0.21rem + var(--safe-bottom));
+  min-height: 64px; /* prevent subtle jumps on focus / font swap */
+}
+
+#toTopBtn,
+#darkModeBtn {
+  bottom: calc(18px + var(--safe-bottom));
+}
+
+/* Make tap targets larger on small screens */
 @media (max-width: 600px) {
-  .guest-button, .btn-corner, .btn-year {
-    min-height: 44px !important;
-    padding-top: 10px !important;
-    padding-bottom: 10px !important;
+  #filterToggleBtn,
+  .reset-btn {
+    min-width: 88px;
+    padding: 0 0.6em;
   }
-  .searchbox-input, .searchbox-select, #filterToggleBtn, .reset-btn {
-    min-height: 44px !important;
+  .search-row-controls {
+    gap: 8px;
   }
 }
 
-/* Floaters: keep above any bottom bars & away from iOS home indicator */
-#toTopBtn, #darkModeBtn {
-  z-index: 4000 !important;
-  bottom: calc(18px + var(--safe-area-inset-bottom) + var(--bottom-ui-offset)) !important;
-  /* keep away from left/right safe areas on devices with rounded corners */
-}
-#toTopBtn { right: max(18px, calc(18px + var(--safe-area-inset-right))); }
-#darkModeBtn { left: max(18px, calc(18px + var(--safe-area-inset-left))); }
-
-/* Drawer & content should respect safe areas */
-#filterDrawer {
-  padding-bottom: calc(10px + var(--safe-area-inset-bottom));
-}
-.main-content {
-  padding-left: max(15px, var(--safe-area-inset-left));
-  padding-right: max(15px, var(--safe-area-inset-right));
+/* Stabilize icon widths to avoid layout shift while icons/fonts load */
+#filterToggleBtn i,
+#favOnlyToggleBtn i,
+#randomBtn i {
+  width: 1.2em;
+  display: inline-block;
+  text-align: center;
 }
 
-/* Improve tap feedback & prevent accidental double-zoom */
-* { -webkit-tap-highlight-color: rgba(0,0,0,0.06); }
-input, select, button { font-size: 16px; } /* iOS: prevents zoom on focus */
+/* Ensure fixed buttons remain visible above bottom bar in dark mode as well */
+body.dark-mode #toTopBtn,
+body.dark-mode #darkModeBtn {
+  bottom: calc(18px + var(--safe-bottom));
+}
