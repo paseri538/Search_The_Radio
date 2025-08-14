@@ -766,8 +766,6 @@ $("#paginationArea").on("click keypress", ".page-btn", function (e) {
           toggleFilterDrawer(false);
         }
       });
-      window.addEventListener("scroll", updateDrawerTop);
-      window.addEventListener("resize", updateDrawerTop);
       // 初期化
       updateGuestButtonStyles();
       updateCornerStyles();
@@ -1017,8 +1015,6 @@ $('#aboutModal').on('click', function (e) {
   }
 
   // 初回と画面変化で更新
-  window.addEventListener('DOMContentLoaded', updateHeaderOffset);
-  window.addEventListener('load', updateHeaderOffset);
   window.addEventListener('resize', () => setTimeout(updateHeaderOffset, 50));
   window.addEventListener('orientationchange', () => setTimeout(updateHeaderOffset, 120));
   function initMobileBar(){ /* ← 既存の生成＆イベント登録ロジック */ }
@@ -1250,9 +1246,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-  window.addEventListener('resize', applySortLabels);
-  window.addEventListener('orientationchange', applySortLabels);
-})();
+  })();
 
 
 // 全お気に入りを解除して保存
@@ -1794,9 +1788,6 @@ $('#historyToggle').off('click').on('click', function(e){
     }
   }
 
-  window.addEventListener('load', fitAll, { passive:true });
-  window.addEventListener('resize', fitAll, { passive:true });
-  window.addEventListener('orientationchange', fitAll, { passive:true });
   setTimeout(fitAll, 120); // フォント読み込み後のズレ対策
 })();
 
@@ -1859,9 +1850,6 @@ $('#historyToggle').off('click').on('click', function(e){
       targets.forEach(el => el.style.setProperty('--ctl-fs', s + 'px'));
     }
   }
-  window.addEventListener('load', fitAll, { passive:true });
-  window.addEventListener('resize', fitAll, { passive:true });
-  window.addEventListener('orientationchange', fitAll, { passive:true });
   setTimeout(fitAll, 120);
 })();
 
@@ -1911,8 +1899,7 @@ $('#historyToggle').off('click').on('click', function(e){
   // Read computed height once and align CSS var to avoid mismatch and layout shift
   try {
     const h = Math.max(60, Math.round(parseFloat(getComputedStyle(bar).height)));
-    document.documentElement.style.setProperty('--mobile-bar-height', h + 'px');
-  } catch(_) {}
+    } catch(_) {}
 
 
   
@@ -2006,8 +1993,7 @@ document.getElementById('mabReset').addEventListener('click', (e) => { blurActiv
     bar.style.display = isMobile ? "grid" : "none";
   };
   updateBarVisibility();
-  mq.addEventListener && mq.addEventListener("change", updateBarVisibility);
-})();
+  mq.addEventListener && })();
 
 
 /* =========================

@@ -1429,20 +1429,20 @@ body:not(.dark-mode){
 /* 1) 下固定ボタンをセーフエリア分だけ持ち上げる */
 #toTopBtn,
 #darkModeBtn {
-  bottom: calc(var(--mobile-bar-height, 0px) + 16px + var(--safe-bottom));
+  
 }
 
 /* 古いiOS向け（optional） */
 @supports (bottom: constant(safe-area-inset-bottom)) {
   #toTopBtn,
   #darkModeBtn {
-    bottom: calc(var(--mobile-bar-height, 0px) + 16px + var(--safe-bottom));
+    
   }
 }
 
 /* 2) ページ末尾に余白を用意して、ボタンに被らないようにする */
 .main-content {
-  padding-bottom: calc(var(--mobile-bar-height) + 32px) + 32px));
+  padding-
 }
 
 footer {
@@ -2016,7 +2016,7 @@ body.dark-mode .reset-btn:active {
 /* ===== Mobile Action Bar (smartphone-only) ===== */
 :root { --mobile-bar-height: 0px; }
 @media (max-width: 1024px) {
-  body { padding-bottom: calc(var(--mobile-bar-height) + env(safe-area-inset-bottom)); }
+  body { padding- }
   .mobile-action-bar {
     position: fixed;
     left: 0; right: 0; bottom: var(--safe-bottom) !important;
@@ -2104,7 +2104,7 @@ body.dark-mode .mobile-action-bar .mab-btn.mab-reset {
   #darkModeBtn {
     position: fixed;
     /* 下部モバイルコントロールの高さ + 安全域ぶんだけ持ち上げる */
-    bottom: calc(var(--mobile-bar-height, 0px) + 16px + var(--safe-bottom));
+    
     z-index: 2300 !important; /* 下部バー(≈2100)やドロワー(≈2022)より前面 */
   }
   #toTopBtn   { right: max(16px, env(safe-area-inset-right)); }
@@ -2123,7 +2123,7 @@ body.dark-mode .mobile-action-bar .mab-btn.mab-reset {
 @media (max-width: 1024px) {
   /* Ensure page content clears the mobile bar */
   body {
-    padding-bottom: calc(var(--mobile-bar-height) + env(safe-area-inset-bottom));
+    padding-
   }
 
   /* Keep the bar below the buttons */
@@ -2135,7 +2135,7 @@ body.dark-mode .mobile-action-bar .mab-btn.mab-reset {
   #toTopBtn,
   #darkModeBtn {
     position: fixed;
-    bottom: calc(var(--mobile-bar-height, 0px) + 16px + var(--safe-bottom));
+    
     z-index: 2301 !important;
   }
 }
@@ -2161,14 +2161,14 @@ body.dark-mode .mobile-action-bar .mab-btn.mab-reset {
   }
   /* FABは常にバーの上に回避 */
   #toTopBtn, #darkModeBtn{
-    bottom: calc(var(--mobile-bar-height, 0px) + 16px + var(--safe-bottom));
+    
   }
   html.pwa #toTopBtn, html.pwa #darkModeBtn{
-    bottom: calc(var(--mobile-bar-height, 0px) + 18px + var(--safe-bottom));
+    
   }
   /* コンテンツの下余白（バー＋FAB分） */
   .main-content, main {
-    padding-bottom: calc(var(--mobile-bar-height) + 32px) + 32px) + 32px) + 120px) !important;
+    padding-
   }
   footer{
     padding-bottom: calc(24px + env(safe-area-inset-bottom)) !important;
@@ -2185,7 +2185,7 @@ html.pwa #darkModeBtn {
   font-size: 26px !important;
   border-radius: 20px !important;
   box-shadow: 0 10px 28px -10px rgba(0,0,0,.35) !important;
-  bottom: calc(var(--mobile-bar-height, 0px) + 18px + var(--safe-bottom));
+  
 }
 html.pwa #darkModeBtn { left: max(18px, env(safe-area-inset-left)); right: auto !important; }
 html.pwa #toTopBtn   { right: max(18px, env(safe-area-inset-right)); }
@@ -2211,3 +2211,33 @@ html.pwa #toTopBtn   { right: max(18px, env(safe-area-inset-right)); }
 }
 .mobile-action-bar .mab-btn{ transform: none !important; }
 .mobile-action-bar .mab-btn:active{ transform: none !important; }
+
+
+/* === FINAL OVERRIDES: iOS PWA 安定化（A～D統合） === */
+@media (max-width: 1024px){
+  .mobile-action-bar{
+    bottom: var(--safe-bottom) !important;
+    height: var(--mobile-bar-height) !important;
+    padding-bottom: 10px !important;
+    box-sizing: border-box;
+    will-change: auto;
+    transform: translateZ(0);
+  }
+  /* 本文の下余白：固定バー + 少しだけ */
+  .main-content, main{
+    padding-bottom: calc(var(--mobile-bar-height) + 32px) !important;
+  }
+
+  /* FABは常に固定バーの“上”に。PWA時は少し上げる */
+  #toTopBtn, #darkModeBtn{
+    bottom: calc(var(--mobile-bar-height) + 16px + var(--safe-bottom)) !important;
+  }
+  html.pwa #toTopBtn, html.pwa #darkModeBtn{
+    bottom: calc(var(--mobile-bar-height) + 18px + var(--safe-bottom)) !important;
+  }
+
+  /* ボタン押下時に高さが変わる見え方を防ぐ */
+  .mobile-action-bar .mab-btn{ transform: none !important; }
+  .mobile-action-bar .mab-btn:active{ transform: none !important; }
+}
+
