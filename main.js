@@ -766,6 +766,8 @@ $("#paginationArea").on("click keypress", ".page-btn", function (e) {
           toggleFilterDrawer(false);
         }
       });
+      window.addEventListener("scroll", updateDrawerTop);
+      window.addEventListener("resize", updateDrawerTop);
       // 初期化
       updateGuestButtonStyles();
       updateCornerStyles();
@@ -942,13 +944,13 @@ window.addEventListener('DOMContentLoaded', function() {
 
 // ===== Scroll lock helpers =====
 let __scrollY = 0;
-function lockBodyScroll() {
+function lockScroll() {
   if (document.body.classList.contains('scroll-lock')) return;
   __scrollY = window.scrollY || document.documentElement.scrollTop || 0;
   document.body.style.top = `-${__scrollY}px`;
   document.body.classList.add('scroll-lock');
 }
-function unlockBodyScroll() {
+function unlockScroll() {
   if (!document.body.classList.contains('scroll-lock')) return;
   document.body.classList.remove('scroll-lock');
   document.body.style.top = '';
@@ -1015,6 +1017,8 @@ $('#aboutModal').on('click', function (e) {
   }
 
   // 初回と画面変化で更新
+  window.addEventListener('DOMContentLoaded', updateHeaderOffset);
+  window.addEventListener('load', updateHeaderOffset);
   window.addEventListener('resize', () => setTimeout(updateHeaderOffset, 50));
   window.addEventListener('orientationchange', () => setTimeout(updateHeaderOffset, 120));
   function initMobileBar(){ /* ← 既存の生成＆イベント登録ロジック */ }
@@ -1046,13 +1050,13 @@ window.__updateHeaderOffset && window.__updateHeaderOffset();
   window.__drawerPatched = true;
 
   let __scrollY = 0;
-  function lockBodyScroll() {
+  function lockScroll() {
     if (document.body.classList.contains('scroll-lock')) return;
     __scrollY = window.scrollY || document.documentElement.scrollTop || 0;
     document.body.style.top = `-${__scrollY}px`;
     document.body.classList.add('scroll-lock');
   }
-  function unlockBodyScroll() {
+  function unlockScroll() {
     if (!document.body.classList.contains('scroll-lock')) return;
     document.body.classList.remove('scroll-lock');
     document.body.style.top = '';
@@ -1061,7 +1065,7 @@ window.__updateHeaderOffset && window.__updateHeaderOffset();
   window.updateScrollLock = function updateScrollLock() {
     const isFilterOpen = $('#filterDrawer').is(':visible');
     const isAboutOpen  = $('#aboutModal').is(':visible');
-    (isFilterOpen || isAboutOpen) ? lockBodyScroll() : unlockBodyScroll();
+    (isFilterOpen || isAboutOpen) ? lockScroll() : unlockScroll();
   };
 
   function updateDrawerTop() {
@@ -1246,7 +1250,9 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-  })();
+  window.addEventListener('resize', applySortLabels);
+  window.addEventListener('orientationchange', applySortLabels);
+})();
 
 
 // 全お気に入りを解除して保存
@@ -1572,7 +1578,7 @@ const sc = overlay.querySelector('.history-modal');
 if (sc) sc.scrollTop = 0;
 
 
-lockBodyScroll(); // ← これで現在の scrollY を保持して固定
+lockScroll(); // ← これで現在の scrollY を保持して固定
   // a11y（任意）
   try{ $toggle?.setAttribute('aria-expanded','true'); }catch(_){}
 }
@@ -1590,7 +1596,7 @@ function closeHistoryModal(){
     overlay.hidden = true;
 overlay.classList.remove('closing');
 overlay.removeEventListener('animationend', done);
-unlockBodyScroll(); // ← 固定を解除して元の位置に復帰
+unlockScroll(); // ← 固定を解除して元の位置に復帰
     try{ $toggle?.setAttribute('aria-expanded','false'); }catch(_){}
   };
   overlay.addEventListener('animationend', done);
@@ -1788,6 +1794,9 @@ $('#historyToggle').off('click').on('click', function(e){
     }
   }
 
+  window.addEventListener('load', fitAll, { passive:true });
+  window.addEventListener('resize', fitAll, { passive:true });
+  window.addEventListener('orientationchange', fitAll, { passive:true });
   setTimeout(fitAll, 120); // フォント読み込み後のズレ対策
 })();
 
@@ -1850,6 +1859,9 @@ $('#historyToggle').off('click').on('click', function(e){
       targets.forEach(el => el.style.setProperty('--ctl-fs', s + 'px'));
     }
   }
+  window.addEventListener('load', fitAll, { passive:true });
+  window.addEventListener('resize', fitAll, { passive:true });
+  window.addEventListener('orientationchange', fitAll, { passive:true });
   setTimeout(fitAll, 120);
 })();
 
@@ -1896,13 +1908,17 @@ $('#historyToggle').off('click').on('click', function(e){
   `;
   document.body.appendChild(bar);
 
-  // Read computed height once and align CSS var to avoid mismatch and layout shift
-  try {
-    const h = Math.max(60, Math.round(parseFloat(getComputedStyle(bar).height)));
-    } catch(_) {}
+  // Ensure body bottom padding so contents are not hidden
+  const setPaddingForBar = () => {
+    const visible = mq.matches;
+    document.documentElement.style.setProperty(
+      "--mobile-bar-height",
+      visible ? "74px" : "0px"
+    );
+  };
+  setPaddingForBar();
+  mq.addEventListener && mq.addEventListener("change", setPaddingForBar);
 
-
-  
   // Click bindings: delegate to existing buttons/logic
   const filterBtn = document.getElementById("filterToggleBtn");
   const favBtn = document.getElementById("favOnlyToggleBtn");
@@ -1911,10 +1927,9 @@ $('#historyToggle').off('click').on('click', function(e){
 
   // 置き換え（main.js: Mobile Action Bar 部分）
 // ===== モバイルアクションバーのイベントバインド =====
-function blurActive(){ try{ document.activeElement && document.activeElement.blur(); }catch(_){}}
 
 // フィルタ（開閉トグル対応）
-document.getElementById('mabFilter').addEventListener('click', (e) => { blurActive();
+document.getElementById('mabFilter').addEventListener('click', (e) => {
   e.preventDefault();
   e.stopPropagation();
 
@@ -1935,21 +1950,21 @@ document.getElementById('mabFilter').addEventListener('click', (e) => { blurActi
 });
 
 // お気に入り
-document.getElementById('mabFav').addEventListener('click', (e) => { blurActive();
+document.getElementById('mabFav').addEventListener('click', (e) => {
   e.preventDefault();
   e.stopPropagation();
   document.getElementById('favOnlyToggleBtn')?.click();
 });
 
 // ランダム
-document.getElementById('mabRandom').addEventListener('click', (e) => { blurActive();
+document.getElementById('mabRandom').addEventListener('click', (e) => {
   e.preventDefault();
   e.stopPropagation();
   document.getElementById('randomBtn')?.click();
 });
 
 // リセット
-document.getElementById('mabReset').addEventListener('click', (e) => { blurActive();
+document.getElementById('mabReset').addEventListener('click', (e) => {
   e.preventDefault();
   e.stopPropagation();
   if (typeof resetSearch === 'function') {
@@ -1993,7 +2008,8 @@ document.getElementById('mabReset').addEventListener('click', (e) => { blurActiv
     bar.style.display = isMobile ? "grid" : "none";
   };
   updateBarVisibility();
-  mq.addEventListener && })();
+  mq.addEventListener && mq.addEventListener("change", updateBarVisibility);
+})();
 
 
 /* =========================
