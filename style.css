@@ -2147,47 +2147,30 @@ body.dark-mode .mobile-action-bar .mab-btn.mab-reset {
   /* margin: 8px 0; */
 }
 
-/* ===== PWA（ホーム画面起動）時の親指最適化 for FABs ===== */
-html.pwa #toTopBtn,
-html.pwa #darkModeBtn{
-  width: 60px !important;
-  height: 60px !important;
-  font-size: 26px !important;
-  border-radius: 20px !important;
-  box-shadow: 0 10px 28px -10px rgba(0,0,0,.35) !important;
-  bottom: calc(18px + var(--safe-bottom)) !important;
-  right: calc(18px + env(safe-area-inset-right, 0px));
-}
-@supports (bottom: constant(safe-area-inset-bottom)) {
-  html.pwa #toTopBtn,
-  html.pwa #darkModeBtn{
-    bottom: calc(18px + constant(safe-area-inset-bottom)) !important;
-  }
-}
 
-/* さらに“見えないタップ拡張”で押しミス低減 */
-html.pwa #toTopBtn::after,
-html.pwa #darkModeBtn::after{
-  content:"";
-  position:absolute; inset:-8px;
-  border-radius: 24px;
-}
-
-/* 左のダークモードボタンは左安全域に沿わせる */
-html.pwa #darkModeBtn{
-  left: calc(18px + env(safe-area-inset-left, 0px)) !important;
-  right: auto !important;
-}
-
-/* コンテンツ・フッターの下余白を確保 */
-html.pwa .main-content{ padding-bottom: calc(100px + var(--safe-bottom)) !important; }
-html.pwa footer{       padding-bottom: calc(24px  + var(--safe-bottom)) !important; }
-
-
-/* --- Mobile action bar: add comfortable gap above iOS home indicator --- */
+/* --- Keep mobile action bar at a constant, comfortable position --- */
 @media (max-width: 1024px) {
-  .mobile-action-bar {
-    bottom: max(8px, calc(env(safe-area-inset-bottom) * 0.5));
-    padding-bottom: calc(12px + env(safe-area-inset-bottom));
+  :root{
+    /* 固定ヘッダーの高さを固定（端末差はこの値で微調整可能） */
+    --mobile-bar-height: 76px;
+  }
+  .mobile-action-bar{
+    height: var(--mobile-bar-height) !important;
+    bottom: calc(env(safe-area-inset-bottom) + 8px) !important; /* 常に少し浮かせる */
+    padding-bottom: 12px !important; /* 触りやすい余白 */
+  }
+  /* FABは常にバーの上に回避 */
+  #toTopBtn, #darkModeBtn{
+    bottom: calc(var(--mobile-bar-height) + 16px + env(safe-area-inset-bottom)) !important;
+  }
+  html.pwa #toTopBtn, html.pwa #darkModeBtn{
+    bottom: calc(var(--mobile-bar-height) + 16px + var(--safe-bottom)) !important;
+  }
+  /* コンテンツの下余白（バー＋FAB分） */
+  .main-content, main {
+    padding-bottom: calc(var(--mobile-bar-height) + 120px) !important;
+  }
+  footer{
+    padding-bottom: calc(24px + env(safe-area-inset-bottom)) !important;
   }
 }
