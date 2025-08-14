@@ -1,5 +1,5 @@
 // --- sw.js --- 最小構成：即時更新＋ネットワーク優先（GitHub Pages向け）
-const SW_VERSION = 'v-2025-08-14-0443';
+const SW_VERSION = 'v-2025-08-14-050309';
 
 // 1) インストール後すぐ更新適用
 self.addEventListener('install', (e) => {

@@ -266,5 +266,13 @@
     </footer>
   </div>
   <script src="main.js"></script>
+<script>
+(function(){
+  const isPWA = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || (navigator.standalone === true);
+  if (isPWA) document.documentElement.classList.add('pwa');
+  // Fallback safe area var (iOS)
+  document.documentElement.style.setProperty('--safe-bottom', getComputedStyle(document.documentElement).getPropertyValue('--safe-bottom') || 'env(safe-area-inset-bottom)');
+})();
+</script>
 </body>
 </html>

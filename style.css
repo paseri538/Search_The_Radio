@@ -2026,7 +2026,7 @@ body.dark-mode .reset-btn:active {
     border-top: 1px solid #e7e7ef;
     box-shadow: 0 -6px 18px -8px rgba(80,80,120,0.18);
     padding: 8px calc(10px + env(safe-area-inset-right)) calc(8px + env(safe-area-inset-bottom)) calc(10px + env(safe-area-inset-left));
-    height: 74px;
+    height: var(--mobile-bar-height);
     grid-template-columns: repeat(4, 1fr);
     gap: 8px;
   }
@@ -2174,3 +2174,29 @@ body.dark-mode .mobile-action-bar .mab-btn.mab-reset {
     padding-bottom: calc(24px + env(safe-area-inset-bottom)) !important;
   }
 }
+
+
+
+/* === PWA ergonomics: larger FABs and safe-area aware offsets === */
+html.pwa #toTopBtn,
+html.pwa #darkModeBtn {
+  width: 60px !important;
+  height: 60px !important;
+  font-size: 26px !important;
+  border-radius: 20px !important;
+  box-shadow: 0 10px 28px -10px rgba(0,0,0,.35) !important;
+  bottom: calc(var(--mobile-bar-height) + 18px + var(--safe-bottom)) !important;
+}
+html.pwa #darkModeBtn { left: max(18px, env(safe-area-inset-left)); right: auto !important; }
+html.pwa #toTopBtn   { right: max(18px, env(safe-area-inset-right)); }
+
+
+
+/* Prevent bar height jank on tap: no transform on container, and stable borders */
+.mobile-action-bar {
+  will-change: auto;
+  transform: translateZ(0); /* create its own layer without changing layout height */
+  border-top-width: 1px;
+  border-top-style: solid;
+}
+.mobile-action-bar .mab-btn:active { transform: none; }

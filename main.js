@@ -1908,17 +1908,14 @@ $('#historyToggle').off('click').on('click', function(e){
   `;
   document.body.appendChild(bar);
 
-  // Ensure body bottom padding so contents are not hidden
-  const setPaddingForBar = () => {
-    const visible = mq.matches;
-    document.documentElement.style.setProperty(
-      "--mobile-bar-height",
-      visible ? "74px" : "0px"
-    );
-  };
-  setPaddingForBar();
-  mq.addEventListener && mq.addEventListener("change", setPaddingForBar);
+  // Read computed height once and align CSS var to avoid mismatch and layout shift
+  try {
+    const h = Math.max(60, Math.round(parseFloat(getComputedStyle(bar).height)));
+    document.documentElement.style.setProperty('--mobile-bar-height', h + 'px');
+  } catch(_) {}
 
+
+  
   // Click bindings: delegate to existing buttons/logic
   const filterBtn = document.getElementById("filterToggleBtn");
   const favBtn = document.getElementById("favOnlyToggleBtn");
@@ -1927,9 +1924,10 @@ $('#historyToggle').off('click').on('click', function(e){
 
   // 置き換え（main.js: Mobile Action Bar 部分）
 // ===== モバイルアクションバーのイベントバインド =====
+function blurActive(){ try{ document.activeElement && document.activeElement.blur(); }catch(_){}}
 
 // フィルタ（開閉トグル対応）
-document.getElementById('mabFilter').addEventListener('click', (e) => {
+document.getElementById('mabFilter').addEventListener('click', (e) => { blurActive();
   e.preventDefault();
   e.stopPropagation();
 
@@ -1950,21 +1948,21 @@ document.getElementById('mabFilter').addEventListener('click', (e) => {
 });
 
 // お気に入り
-document.getElementById('mabFav').addEventListener('click', (e) => {
+document.getElementById('mabFav').addEventListener('click', (e) => { blurActive();
   e.preventDefault();
   e.stopPropagation();
   document.getElementById('favOnlyToggleBtn')?.click();
 });
 
 // ランダム
-document.getElementById('mabRandom').addEventListener('click', (e) => {
+document.getElementById('mabRandom').addEventListener('click', (e) => { blurActive();
   e.preventDefault();
   e.stopPropagation();
   document.getElementById('randomBtn')?.click();
 });
 
 // リセット
-document.getElementById('mabReset').addEventListener('click', (e) => {
+document.getElementById('mabReset').addEventListener('click', (e) => { blurActive();
   e.preventDefault();
   e.stopPropagation();
   if (typeof resetSearch === 'function') {
