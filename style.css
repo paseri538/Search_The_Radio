@@ -2010,3 +2010,23 @@ body.dark-mode .reset-btn:active {
   word-break: break-word;
   max-width: 100%;
 }
+
+@media (max-width: 600px) {
+  #filterDrawer {
+    top: 0;
+    border-radius: 0;
+    max-height: 100vh;
+  }
+}
+
+/* モーダルのスクロールを自前で完結させる（親に伝播させない） */
+.modal-content.history-modal {
+  overscroll-behavior: contain;        /* ← これが一番効く */
+  -webkit-overflow-scrolling: touch;   /* iOSの慣性スクロールを有効にする */
+  touch-action: pan-y;                 /* 横パン拒否で意図しない捕捉を回避（任意） */
+}
+
+/* 念のため、オーバーレイ側はスクロールさせない */
+.modal-overlay {
+  overscroll-behavior: none;
+}

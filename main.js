@@ -1214,6 +1214,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
   window.addEventListener('resize', applySortLabels);
   window.addEventListener('orientationchange', applySortLabels);
+
+  const overlay = document.getElementById('historyModal');
+  if (!overlay) return;
+  const sc = overlay.querySelector('.history-modal');
+  if (!sc) return;
+
+  function edgeBounceGuard(){
+    // 上端で上方向フリック → 直後の操作が死ぬのを防ぐ
+    if (sc.scrollTop <= 0) sc.scrollTop = 1;
+    // 下端で下方向フリック → 同様に死ぬのを防ぐ
+    const max = sc.scrollHeight - sc.clientHeight;
+    if (sc.scrollTop >= max) sc.scrollTop = max - 1;
+  }
+  sc.addEventListener('touchstart', edgeBounceGuard, { passive: true });
 })();
 
 
