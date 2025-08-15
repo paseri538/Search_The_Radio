@@ -960,7 +960,25 @@ function unlockScroll() {
 function updateScrollLock(){ if (typeof window.updateScrollLock === 'function') return window.updateScrollLock(); }
 
 
+// フィルターを開くとき
+$('#filterToggleBtn').on('click', function () {
+  const currentlyOpen = $('#filterDrawer').is(':visible');
+  if (currentlyOpen) {
+    $('#filterDrawer').hide();
+    $('#drawerBackdrop').removeClass('show');
+  } else {
+    $('#filterDrawer').show();
+    $('#drawerBackdrop').addClass('show');
+  }
+  updateScrollLock(); // ← これを最後に
+});
 
+// 背景クリックで閉じるとき
+$('#drawerBackdrop').on('click', function () {
+  $('#filterDrawer').hide();
+  $('#drawerBackdrop').removeClass('show');
+  updateScrollLock(); // ← これ
+});
 
 
 // 開く
@@ -1073,19 +1091,18 @@ window.__updateHeaderOffset && window.__updateHeaderOffset();
   window.__openDrawer = openDrawer;
   window.__closeDrawer = closeDrawer;
 
-// 統合版：二重バインドを避けつつ中央固定で開閉
-$('#filterToggleBtn').off('click keypress').on('click keypress', function (e) {
-  if (e.type === 'click' || (e.type === 'keypress' && (e.key === 'Enter' || e.key === ' '))) {
-    $('#filterDrawer').is(':visible') ? closeDrawer() : openDrawer();
-  }
-});
-$('#drawerBackdrop').off('click').on('click', closeDrawer);
-$(document).off('click.__drawer').on('click.__drawer', function(e){
-  if ($('#filterDrawer').is(':visible') && !$(e.target).closest('#filterDrawer,#filterToggleBtn').length) {
-    closeDrawer();
-  }
-});
-
+  // Remove duplicate/legacy handlers, then bind once.
+  $('#filterToggleBtn').off('click keypress').on('click keypress', function (e) {
+    if (e.type === 'click' || (e.type === 'keypress' && (e.key === 'Enter' || e.key === ' '))) {
+      $('#filterDrawer').is(':visible') ? closeDrawer() : openDrawer();
+    }
+  });
+  $('#drawerBackdrop').off('click').on('click', closeDrawer);
+  $(document).off('click.__drawer').on('click.__drawer', function(e){
+    if ($('#filterDrawer').is(':visible') && !$(e.target).closest('#filterDrawer,#filterToggleBtn').length) {
+      closeDrawer();
+    }
+  });
 
 
 // Ensure reset really resets everything (favorites included) and tidy UI
