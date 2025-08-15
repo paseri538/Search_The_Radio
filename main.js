@@ -2009,19 +2009,73 @@ $(function () {
 });
 
 
-function openFilterDrawer() {
-  const drawer = document.getElementById('filterDrawer');
-  drawer.style.display = 'block';
-  requestAnimationFrame(() => {
-    drawer.classList.add('show');
-  });
-}
+document.addEventListener('DOMContentLoaded', () => {
+    const filterToggleBtn = document.getElementById('filterToggleBtn');
+    const filterDrawer = document.getElementById('filterDrawer');
+    const drawerBackdrop = document.querySelector('.drawer-backdrop');
 
-function closeFilterDrawer() {
-  const drawer = document.getElementById('filterDrawer');
-  drawer.classList.remove('show');
-  setTimeout(() => {
-    drawer.style.display = 'none';
-    drawer.style.transform = ''; // ← transformリセット
-  }, 170); // CSSのアニメ時間と合わせる
-}
+    let isFilterOpen = false;
+    let isAnimating = false;
+
+    function openDrawer() {
+        if (isAnimating || isFilterOpen) return;
+        isAnimating = true;
+        isFilterOpen = true;
+
+        filterDrawer.classList.add('open');
+        drawerBackdrop.classList.add('show');
+        document.body.classList.add('scroll-lock');
+
+        filterToggleBtn.setAttribute('aria-pressed', 'true');
+        filterToggleBtn.setAttribute('aria-expanded', 'true');
+
+        setTimeout(() => { isAnimating = false; }, 200);
+    }
+
+    function closeDrawer() {
+        if (isAnimating || !isFilterOpen) return;
+        isAnimating = true;
+        isFilterOpen = false;
+
+        filterDrawer.classList.remove('open');
+        drawerBackdrop.classList.remove('show');
+        document.body.classList.remove('scroll-lock');
+
+        filterToggleBtn.setAttribute('aria-pressed', 'false');
+        filterToggleBtn.setAttribute('aria-expanded', 'false');
+
+        setTimeout(() => { isAnimating = false; }, 200);
+    }
+
+    filterToggleBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (isAnimating) return;
+
+        filterToggleBtn.style.pointerEvents = 'none';
+        setTimeout(() => { filterToggleBtn.style.pointerEvents = ''; }, 250);
+
+        if (isFilterOpen) {
+            closeDrawer();
+        } else {
+            openDrawer();
+        }
+    });
+
+    drawerBackdrop.addEventListener('click', () => {
+        closeDrawer();
+    });
+
+    document.addEventListener('click', (e) => {
+        if (isFilterOpen && !filterDrawer.contains(e.target) && e.target !== filterToggleBtn) {
+            closeDrawer();
+        }
+    });
+
+    // 検索後に閉じる（スマホ時）
+    window.searchAndCloseDrawer = function() {
+        if (typeof search === 'function') search();
+        if (window.innerWidth <= 600 && isFilterOpen) {
+            setTimeout(() => { closeDrawer(); }, 50);
+        }
+    };
+});
