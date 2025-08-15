@@ -1063,35 +1063,17 @@ window.__updateHeaderOffset && window.__updateHeaderOffset();
   };
 
   function updateDrawerTop() {
-  const drawer = document.getElementById('filterDrawer');
-  if (!drawer) return;
-
-  // モバイルは CSS の inset:0 で全画面にする。JS での位置指定はクリア。
-  if (window.matchMedia('(max-width: 600px)').matches) {
-    drawer.style.top = '';
-    drawer.style.left = '';
-    drawer.style.right = '';
-    drawer.style.transform = '';
-    return;
+    const sbar = document.querySelector('.sticky-search-area');
+    const drawer = document.getElementById('filterDrawer');
+    if (sbar && drawer) {
+      const rect = sbar.getBoundingClientRect();
+      drawer.style.position = 'fixed';
+      drawer.style.left = '50%';
+      drawer.style.transform = 'translateX(-50%)';
+      drawer.style.right = '';
+      drawer.style.top = (rect.top + rect.height + 8) + 'px';
+    }
   }
-
-  // PCのみ：固定ヘッダーの下に揃える
-  const sbar = document.querySelector('.sticky-search-area');
-  if (sbar) {
-    const rect = sbar.getBoundingClientRect();
-    drawer.style.position = 'fixed';
-    drawer.style.left = '50%';
-    drawer.style.transform = 'translateX(-50%)';
-    drawer.style.right = '';
-    drawer.style.top = (rect.top + rect.height + 8) + 'px';
-  }
-}
-
-// リサイズ・回転時も再計算（開いている時だけでOK）
-window.addEventListener('resize', () => {
-  if ($('#filterDrawer').is(':visible')) updateDrawerTop();
-}, { passive: true });
-
 
   function openDrawer() {
     updateDrawerTop();
@@ -1232,6 +1214,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
   window.addEventListener('resize', applySortLabels);
   window.addEventListener('orientationchange', applySortLabels);
+
+  const overlay = document.getElementById('historyModal');
+  if (!overlay) return;
+  const sc = overlay.querySelector('.history-modal');
+  if (!sc) return;
+
+  function edgeBounceGuard(){
+    // 上端で上方向フリック → 直後の操作が死ぬのを防ぐ
+    if (sc.scrollTop <= 0) sc.scrollTop = 1;
+    // 下端で下方向フリック → 同様に死ぬのを防ぐ
+    const max = sc.scrollHeight - sc.clientHeight;
+    if (sc.scrollTop >= max) sc.scrollTop = max - 1;
+  }
+  sc.addEventListener('touchstart', edgeBounceGuard, { passive: true });
 })();
 
 
@@ -1861,71 +1857,124 @@ $('#historyToggle').off('click').on('click', function(e){
 
 
 
+(function () {
+  const drawer = document.getElementById('filterDrawer');
+  if (!drawer) return;
 
-/* ======================================================================
- * Drawer bottom actions: canonical handlers for "すべてクリア / 適用"
- * - Ensure scroll lock is released after Apply
- * - Stop legacy document-level delegation from interfering
- * ====================================================================== */
+  // すべてクリア：正規のクリックハンドラを通す
+  function clearDrawerFilters() {
+    const active = drawer.querySelectorAll(
+      '.guest-button[aria-pressed="true"], .btn-year[aria-pressed="true"], .btn-corner[aria-pressed="true"]'
+    );
+    active.forEach(btn => {
+      // 既存のトグル処理（add/remove & search の呼び出し）を確実に通す
+      btn.click();
+    });
+
+    // 念のため filtersBar を空に（search() 側で再構築する設計なら不要）
+    const fb = document.getElementById('filtersBar');
+    if (fb && fb.children.length) fb.innerHTML = '';
+
+    // 重複呼び出しでも安全なら実行（なければ削ってOK）
+    if (typeof search === 'function') search();
+  }
+
+  function closeDrawer() {
+    const backdrop = document.getElementById('drawerBackdrop');
+    const toggle   = document.getElementById('filterToggleBtn');
+    if (drawer)   drawer.classList.remove('show'); // display 操作でも可
+    if (drawer)   drawer.style.display = 'none';
+    if (backdrop) backdrop.classList.remove('show');
+    if (toggle)   toggle.setAttribute('aria-expanded', 'false');
+    document.body.classList.remove('drawer-open');
+  }
+
+  // イベント委譲
+  document.addEventListener('click', (e) => {
+    if (e.target.id === 'drawerClearBtn') {
+      clearDrawerFilters();
+    }
+    if (e.target.id === 'drawerApplyBtn') {
+      if (typeof search === 'function') search();
+      closeDrawer();
+    }
+  }, { passive: true });
+})();
+
+
+// 開閉のどこか適切な場所に
+let __drawerScrollY = 0;
+
+function lockBody() {
+  __drawerScrollY = window.scrollY || document.documentElement.scrollTop;
+  document.body.style.position = 'fixed';
+  document.body.style.top = `-${__drawerScrollY}px`;
+  document.body.style.left = '0';
+  document.body.style.right = '0';
+  document.body.style.width = '100%';
+}
+
+function unlockBody() {
+  document.body.style.position = '';
+  document.body.style.top = '';
+  document.body.style.left = '';
+  document.body.style.right = '';
+  document.body.style.width = '';
+  window.scrollTo(0, __drawerScrollY || 0);
+}
+
+// Drawerを開く時に lockBody(), 閉じる時に unlockBody()
+
+
+
+/* ==========================================================
+ * FINAL: Filter toggle button — single source of truth
+ * Ensures the button always works even if legacy handlers exist.
+ * ========================================================== */
 (function(){
-  // Utility: run on Enter/Space or click
+  function fallbackOpen(){
+    const d = document.getElementById('filterDrawer');
+    const b = document.getElementById('drawerBackdrop');
+    const t = document.getElementById('filterToggleBtn');
+    if (d) d.style.display = 'block';
+    if (b) b.classList.add('show');
+    if (t) { t.setAttribute('aria-expanded','true'); t.setAttribute('aria-pressed','true'); }
+    if (typeof updateScrollLock === 'function') updateScrollLock();
+  }
+  function fallbackClose(){
+    const d = document.getElementById('filterDrawer');
+    const b = document.getElementById('drawerBackdrop');
+    const t = document.getElementById('filterToggleBtn');
+    if (d) d.style.display = 'none';
+    if (b) b.classList.remove('show');
+    if (t) { t.setAttribute('aria-expanded','false'); t.setAttribute('aria-pressed','false'); }
+    if (typeof updateScrollLock === 'function') updateScrollLock();
+  }
+  function toggle(){
+    const isOpen = $('#filterDrawer').is(':visible');
+    if (isOpen) {
+      if (window.__closeDrawer) window.__closeDrawer(); else fallbackClose();
+    } else {
+      if (window.__openDrawer) window.__openDrawer(); else fallbackOpen();
+    }
+  }
   function isActivateEvent(e){
     return e.type === 'click' || (e.type === 'keypress' && (e.key === 'Enter' || e.key === ' '));
   }
-  // Utility: canonical close (unified)
-  function canonicalClose(){
-    if (window.__closeDrawer) {
-      window.__closeDrawer();                 // preferred path (calls updateScrollLock 内部)
-    } else {
-      // fallback close
-      const drawer = document.getElementById('filterDrawer');
-      const backdrop = document.getElementById('drawerBackdrop');
-      const toggle   = document.getElementById('filterToggleBtn');
-      if (drawer)   drawer.style.display = 'none';
-      if (backdrop) backdrop.classList.remove('show');
-      if (toggle)   toggle.setAttribute('aria-expanded', 'false');
-      if (typeof updateScrollLock === 'function') updateScrollLock();   // ← 重要：ロック解除
-      document.body.classList.remove('drawer-open');
-    }
+  function bind(){
+    var $btn = $('#filterToggleBtn');
+    if (!$btn.length) return;
+    $btn.off('.__drawerToggle click keypress');
+    $btn.on('click.__drawerToggle keypress.__drawerToggle', function(e){
+      if (!isActivateEvent(e)) return;
+      toggle();
+      e.preventDefault();
+      e.stopPropagation();
+    });
   }
-  function clearDrawerFilters(){
-    const drawer = document.getElementById('filterDrawer');
-    if (!drawer) return;
-    drawer.querySelectorAll('.guest-button[aria-pressed="true"], .btn-year[aria-pressed="true"], .btn-corner[aria-pressed="true"]')
-      .forEach(btn => btn.click()); // 既存の正規トグルを通す
-  }
-
-  // Capture-phase listeners to override any legacy delegation on document
-  document.addEventListener('click', function(e){
-    const t = e.target.closest && e.target.closest('#drawerApplyBtn, #drawerClearBtn');
-    if (!t) return;
-    // Handle
-    if (t.id === 'drawerClearBtn') {
-      clearDrawerFilters();
-      if (typeof search === 'function') search();
-    } else if (t.id === 'drawerApplyBtn') {
-      if (typeof search === 'function') search();
-      canonicalClose();
-    }
-    // Stop propagation so old bubbling listeners won't run
-    e.stopImmediatePropagation();
-    e.stopPropagation();
-    e.preventDefault();
-  }, true); // <-- capture!
-
-  document.addEventListener('keypress', function(e){
-    const t = e.target.closest && e.target.closest('#drawerApplyBtn, #drawerClearBtn');
-    if (!t || !isActivateEvent(e)) return;
-    // Delegate to click handler
-    t.click();
-    e.stopImmediatePropagation();
-    e.stopPropagation();
-    e.preventDefault();
-  }, true);
-
-  // Also bind with jQuery if available (for robustness)
   if (window.jQuery) {
-    const $ = window.jQuery;
-    $('#drawerApplyBtn, #drawerClearBtn').off('click keypress'); // remove any jQuery duplicates
+    jQuery(function(){ bind(); });
+  } else {
+    document.addEventListener('DOMContentLoaded', bind, { once: true });
   }
 })();
