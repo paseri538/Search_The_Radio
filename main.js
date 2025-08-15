@@ -1214,20 +1214,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   window.addEventListener('resize', applySortLabels);
   window.addEventListener('orientationchange', applySortLabels);
-
-  const overlay = document.getElementById('historyModal');
-  if (!overlay) return;
-  const sc = overlay.querySelector('.history-modal');
-  if (!sc) return;
-
-  function edgeBounceGuard(){
-    // 上端で上方向フリック → 直後の操作が死ぬのを防ぐ
-    if (sc.scrollTop <= 0) sc.scrollTop = 1;
-    // 下端で下方向フリック → 同様に死ぬのを防ぐ
-    const max = sc.scrollHeight - sc.clientHeight;
-    if (sc.scrollTop >= max) sc.scrollTop = max - 1;
-  }
-  sc.addEventListener('touchstart', edgeBounceGuard, { passive: true });
 })();
 
 
@@ -1855,3 +1841,73 @@ $('#historyToggle').off('click').on('click', function(e){
   });
 });
 
+
+
+
+/* ======================================================================
+ * Drawer bottom actions: canonical handlers for "すべてクリア / 適用"
+ * - Ensure scroll lock is released after Apply
+ * - Stop legacy document-level delegation from interfering
+ * ====================================================================== */
+(function(){
+  // Utility: run on Enter/Space or click
+  function isActivateEvent(e){
+    return e.type === 'click' || (e.type === 'keypress' && (e.key === 'Enter' || e.key === ' '));
+  }
+  // Utility: canonical close (unified)
+  function canonicalClose(){
+    if (window.__closeDrawer) {
+      window.__closeDrawer();                 // preferred path (calls updateScrollLock 内部)
+    } else {
+      // fallback close
+      const drawer = document.getElementById('filterDrawer');
+      const backdrop = document.getElementById('drawerBackdrop');
+      const toggle   = document.getElementById('filterToggleBtn');
+      if (drawer)   drawer.style.display = 'none';
+      if (backdrop) backdrop.classList.remove('show');
+      if (toggle)   toggle.setAttribute('aria-expanded', 'false');
+      if (typeof updateScrollLock === 'function') updateScrollLock();   // ← 重要：ロック解除
+      document.body.classList.remove('drawer-open');
+    }
+  }
+  function clearDrawerFilters(){
+    const drawer = document.getElementById('filterDrawer');
+    if (!drawer) return;
+    drawer.querySelectorAll('.guest-button[aria-pressed="true"], .btn-year[aria-pressed="true"], .btn-corner[aria-pressed="true"]')
+      .forEach(btn => btn.click()); // 既存の正規トグルを通す
+  }
+
+  // Capture-phase listeners to override any legacy delegation on document
+  document.addEventListener('click', function(e){
+    const t = e.target.closest && e.target.closest('#drawerApplyBtn, #drawerClearBtn');
+    if (!t) return;
+    // Handle
+    if (t.id === 'drawerClearBtn') {
+      clearDrawerFilters();
+      if (typeof search === 'function') search();
+    } else if (t.id === 'drawerApplyBtn') {
+      if (typeof search === 'function') search();
+      canonicalClose();
+    }
+    // Stop propagation so old bubbling listeners won't run
+    e.stopImmediatePropagation();
+    e.stopPropagation();
+    e.preventDefault();
+  }, true); // <-- capture!
+
+  document.addEventListener('keypress', function(e){
+    const t = e.target.closest && e.target.closest('#drawerApplyBtn, #drawerClearBtn');
+    if (!t || !isActivateEvent(e)) return;
+    // Delegate to click handler
+    t.click();
+    e.stopImmediatePropagation();
+    e.stopPropagation();
+    e.preventDefault();
+  }, true);
+
+  // Also bind with jQuery if available (for robustness)
+  if (window.jQuery) {
+    const $ = window.jQuery;
+    $('#drawerApplyBtn, #drawerClearBtn').off('click keypress'); // remove any jQuery duplicates
+  }
+})();
