@@ -1063,17 +1063,35 @@ window.__updateHeaderOffset && window.__updateHeaderOffset();
   };
 
   function updateDrawerTop() {
-    const sbar = document.querySelector('.sticky-search-area');
-    const drawer = document.getElementById('filterDrawer');
-    if (sbar && drawer) {
-      const rect = sbar.getBoundingClientRect();
-      drawer.style.position = 'fixed';
-      drawer.style.left = '50%';
-      drawer.style.transform = 'translateX(-50%)';
-      drawer.style.right = '';
-      drawer.style.top = (rect.top + rect.height + 8) + 'px';
-    }
+  const drawer = document.getElementById('filterDrawer');
+  if (!drawer) return;
+
+  // モバイルは CSS の inset:0 で全画面にする。JS での位置指定はクリア。
+  if (window.matchMedia('(max-width: 600px)').matches) {
+    drawer.style.top = '';
+    drawer.style.left = '';
+    drawer.style.right = '';
+    drawer.style.transform = '';
+    return;
   }
+
+  // PCのみ：固定ヘッダーの下に揃える
+  const sbar = document.querySelector('.sticky-search-area');
+  if (sbar) {
+    const rect = sbar.getBoundingClientRect();
+    drawer.style.position = 'fixed';
+    drawer.style.left = '50%';
+    drawer.style.transform = 'translateX(-50%)';
+    drawer.style.right = '';
+    drawer.style.top = (rect.top + rect.height + 8) + 'px';
+  }
+}
+
+// リサイズ・回転時も再計算（開いている時だけでOK）
+window.addEventListener('resize', () => {
+  if ($('#filterDrawer').is(':visible')) updateDrawerTop();
+}, { passive: true });
+
 
   function openDrawer() {
     updateDrawerTop();
