@@ -2043,3 +2043,54 @@ document.getElementById('mabReset').addEventListener('click', (e) => {
 })();
 
 
+
+
+
+// ===== Legacy iPhone / small devices: modal sizing helper =====
+(function setupVhUnitFix(){
+  function setVh(){
+    // prefer innerHeight (accounts for iOS toolbars collapsing)
+    var vh = Math.max(320, window.innerHeight || document.documentElement.clientHeight || 0) * 0.01;
+    document.documentElement.style.setProperty('--vh', vh + 'px');
+  }
+  setVh();
+  window.addEventListener('resize', function(){ setTimeout(setVh, 100); }, { passive: true });
+  window.addEventListener('orientationchange', function(){ setTimeout(setVh, 180); }, { passive: true });
+})();
+
+function recalcModalHeights(){
+  try{
+    // About modal content
+    var amc = document.getElementById('aboutModalContent');
+    if (amc){
+      // force max-height recompute by toggling property that depends on --vh
+      amc.style.maxHeight = ''; // reset so CSS applies
+    }
+    // History modal content
+    var hm = document.querySelector('.modal-content.history-modal');
+    if (hm){
+      hm.style.maxHeight = '';
+    }
+  }catch(_){}
+}
+
+// Recalc on viewport changes
+window.addEventListener('resize', function(){ setTimeout(recalcModalHeights, 60); }, { passive: true });
+window.addEventListener('orientationchange', function(){ setTimeout(recalcModalHeights, 160); }, { passive: true });
+document.addEventListener('visibilitychange', function(){
+  if (!document.hidden) setTimeout(recalcModalHeights, 80);
+}, false);
+
+// Hook into existing open handlers to recalc right after showing
+(function hookModalOpenRecalc(){
+  // about modal
+  var aboutLink = document.getElementById('aboutSiteLink');
+  if (aboutLink){
+    aboutLink.addEventListener('click', function(){ setTimeout(recalcModalHeights, 50); });
+  }
+  // history modal
+  var histToggle = document.getElementById('historyToggle');
+  if (histToggle){
+    histToggle.addEventListener('click', function(){ setTimeout(recalcModalHeights, 50); });
+  }
+})();

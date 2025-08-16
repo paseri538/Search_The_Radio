@@ -2201,3 +2201,73 @@ body.modal-open .mobile-action-bar {
 .modal-content.history-modal {
   -webkit-overflow-scrolling: touch;
 }
+
+
+
+/* === Legacy iPhone / small devices: modal hardening === */
+/* custom vh unit based on JS-set --vh for legacy Safari (including iPhone 8) */
+:root { --vh: 1vh; }
+
+/* About modal overlay/content (inline DOM in index.html) */
+#aboutModal{
+  display:none;
+  position: fixed;
+  inset: 0;
+  z-index: 4001; /* bring to top */
+  background: rgba(30,29,52,0.18);
+  backdrop-filter: blur(2px);
+  align-items: center;
+  justify-content: center;
+  /* Use custom --vh to avoid iOS toolbar jumps */
+  height: calc(var(--vh, 1vh) * 100);
+  width: 100vw;
+}
+#aboutModalContent{
+  background: #fff;
+  color: #222;
+  border-radius: 16px;
+  box-shadow: 0 6px 30px -6px #7c3aed35;
+  width: min(420px, 94vw);
+  max-height: min(84svh, calc(var(--vh, 1vh) * 100 - 120px)); /* safe headroom */
+  padding: 32px 22px 22px 22px;
+  margin: auto;
+  text-align: center;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+}
+/* Fallback for browsers without svh */
+@supports not (height: 1svh){
+  #aboutModalContent{ max-height: min(84vh, calc(100vh - 120px)); }
+}
+
+/* When any modal is open, disable bottom fixed buttons */
+body.scroll-lock #toTopBtn,
+body.scroll-lock #darkModeBtn {
+  pointer-events: none !important;
+  opacity: 0.45;
+}
+
+/* History modal: strengthen sizing for very small screens */
+@media (max-width: 380px){
+  .modal-content.history-modal{
+    width: 96vw;
+    max-height: min(78svh, calc(var(--vh, 1vh) * 100 - 96px));
+  }
+}
+@supports not (height: 1svh){
+  @media (max-width: 380px){
+    .modal-content.history-modal{
+      max-height: min(78vh, calc(100vh - 96px));
+    }
+  }
+}
+
+/* Ensure inner scroll area has momentum scrolling on iOS */
+.modal-content.history-modal,
+.history-body{
+  -webkit-overflow-scrolling: touch;
+}
