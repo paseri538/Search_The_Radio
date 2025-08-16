@@ -2149,3 +2149,33 @@ body.dark-mode .thumbnail { background: #1f262d; }
 
 /* お好みで：ロゴとドットの間隔を少し詰めるなら（任意） */
 #spinner { margin-top: 28px !important; } /* 既存は 38px */
+
+/* ===== ローディング中はページを完全固定して“はみ出し”を防ぐ ===== */
+html.is-loading,
+body.is-loading {
+  /* スクロール不可＋引っ張りゴムを抑止 */
+  overflow: hidden !important;
+  overscroll-behavior: contain;
+}
+
+/* iOSのアドレスバーの出入りでも隙間が出ないよう page 自体を固定 */
+body.is-loading {
+  position: fixed;    /* これが効くと“下が見える”現象が止まる */
+  inset: 0;
+  width: 100%;
+}
+
+/* ローディング面が常に全面を覆うよう保険（環境差に強い順序で指定） */
+#loading-screen{
+  /* 既に inline で position:fixed; inset:0; は入っている前提 */
+  min-height: 100vh;     /* 古い環境 */
+}
+@supports (height: 100svh) {
+  #loading-screen { min-height: 100svh; }  /* 初回表示の可視領域基準 */
+}
+@supports (height: 100dvh) {
+  #loading-screen { min-height: 100dvh; }  /* UIの出入りにも追従 */
+}
+
+/* もし前回の“上に少し持ち上げる”調整を入れていたら解除（下に隙間が出るため） */
+#loading-screen { transform: none !important; }

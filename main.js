@@ -1969,3 +1969,14 @@ self.addEventListener('fetch', (event) => {
     }
   })());
 });
+
+window.addEventListener('load', function() {
+  setTimeout(function() {
+    // ← ローディングを消す前にスクロール固定を解除
+    document.body.classList.remove('is-loading');
+    document.documentElement.classList.remove('is-loading');
+
+    $("#loading-screen").addClass("fadeout");
+    setTimeout(function() { $("#loading-screen").remove(); }, 1000);
+  }, 950);
+});
