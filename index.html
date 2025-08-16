@@ -266,5 +266,37 @@
     </footer>
   </div>
   <script src="main.js"></script>
+<script>
+  (function(){
+    const isPWA = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches)
+      || (window.navigator.standalone === true);
+    if (isPWA) document.documentElement.classList.add('pwa');
+    document.documentElement.style.setProperty('--safe-bottom', getComputedStyle(document.documentElement).getPropertyValue('--safe-bottom') || 'env(safe-area-inset-bottom)');
+  })();
+
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js').then(reg => {
+        reg.addEventListener('updatefound', () => {
+          const newSW = reg.installing;
+          if (!newSW) return;
+          newSW.addEventListener('statechange', () => {
+            if (newSW.state === 'installed' && navigator.serviceWorker.controller) {
+              if (newSW.postMessage) newSW.postMessage({ type: 'SKIP_WAITING' });
+            }
+          });
+        });
+      });
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        location.reload();
+      });
+      navigator.serviceWorker.addEventListener('message', (event) => {
+        if (event.data && event.data.type === 'RELOAD_NOW') {
+          location.reload();
+        }
+      });
+    });
+  }
+</script>
 </body>
 </html>
