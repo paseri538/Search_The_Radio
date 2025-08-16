@@ -2099,17 +2099,19 @@ body.modal-open {
   padding-right: max(0.5rem, var(--safe-right));
 }
 
-/* ▼ デフォルトでは“ブラウザ時”に浮遊ボタンを隠す */
+/* ←これで常に表示（ブラウザでもPWAでも） */
 #toTopBtn,
 #darkModeBtn {
-  display: none !important;           /* ← ここを初期非表示に */
+  display: flex !important;
+  bottom: 18px !important;            /* ブラウザ時の基準位置 */
 }
 
-/* ▼ “スタンドアロン時だけ”浮遊ボタンを出す */
+/* ←PWA（ホーム画面から起動）時だけホームバー分を加算 */
 .ios-standalone #toTopBtn,
 .ios-standalone #darkModeBtn {
-  display: flex !important;
+  bottom: calc(18px + var(--safe-bottom)) !important;
 }
+
 
 /* ▼ すでに入れている iOS セーフエリア下寄せは、スタンドアロン時にのみ適用 */
 .ios-standalone #toTopBtn,
