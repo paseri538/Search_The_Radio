@@ -78,7 +78,7 @@
       { episode:"10", title:"#10　ゲスト：鈴代紗弓", guest:"鈴代紗弓", date:"2022-11-23", link:"https://www.youtube.com/watch?v=-bgKWbqNyN0", keywords:["鈴代紗弓","さゆみん","おさゆ","みんみん","さゆちゃん","おすず","すずちゃん","鈴代ちゃん","すずしろさゆみ"], duration:"1:02:39" },
       { episode:"09", title:"#09　", guest:"青山吉能", date:"2022-11-16", link:"https://www.youtube.com/watch?v=OKHnZk0o9lM", keywords:["青山吉能","よぴ","よしの","よっぴー","あおやまよしの"], duration:"1:05:40" },
       { episode:"08", title:"#08　ゲスト：長谷川育美", guest:"長谷川育美", date:"2022-11-09", link:"https://www.youtube.com/watch?v=0Vz-WHfPrI4", keywords:["長谷川育美","いくみ","はせみ","はせちゃん","いくちゃん","はっせー","はせがわいくみ","よぴいく","ypik"], duration:"1:04:24" },
-      { episode:"07", title:"#07　ゲスト：水野朔", guest:"水野朔", date:"2022-11-02", link:"https://www.youtube.com/watch?v=JQ_xgtun1kQ", keywords:["水野朔","さくぴ","さくさくちゃん","ﾐｽﾞﾉｻｸﾃﾞｼｭ","みずのさく",], duration:"1:05:36" },
+      { episode:"07", title:"#07　ゲスト：水野朔", guest:"水野朔", date:"2022-11-02", link:"https://www.youtube.com/watch?v=JQ_xgtun1kQ", keywords:["水野朔","さくぴ","さくさくちゃん","ﾐｽﾞﾉｻｸﾃﾞｼｭ","みずのさく","スパムバーガー","フレッシュネスバーガー",], duration:"1:05:36" },
       { episode:"06", title:"#06　ゲスト：鈴代紗弓", guest:"鈴代紗弓", date:"2022-10-26", link:"https://www.youtube.com/watch?v=f18K3nc2wAw", keywords:["鈴代紗弓","さゆみん","おさゆ","みんみん","さゆちゃん","おすず","すずちゃん","鈴代ちゃん","すずしろさゆみ"], duration:"1:06:11" },
       { episode:"05", title:"#05　ゲスト：長谷川育美", guest:"長谷川育美", date:"2022-10-19", link:"https://www.youtube.com/watch?v=4hcPzIW8MfE", keywords:["長谷川育美","いくみ","はせみ","はせちゃん","いくちゃん","はっせー","はせがわいくみ","よぴいく","ypik","ぼっち・ざ・おーでぃしょん！@45:17"], duration:"58:15" },
       { episode:"04", title:"#04　ゲスト：水野朔", guest:"水野朔", date:"2022-10-12", link:"https://www.youtube.com/watch?v=ieCOGEOXxr8", keywords:["水野朔","さくぴ","さくさくちゃん","ﾐｽﾞﾉｻｸﾃﾞｼｭ","みずのさく",], duration:"1:06:40" },
@@ -1489,11 +1489,11 @@ for (const kanji in CUSTOM_READINGS) {
     { date: '2022-08-19', label: '番組配信決定', desc: '旧Twitterにて公式ラジオスタートの告知。', url: 'https://x.com/BTR_anime/status/1560280368384581632' },
     { date: '2022-09-07', label: '第1回配信開始', desc: '『ぼっち・ざ・らじお！』第1回がYoutubeと音泉にて配信開始。', url: 'https://x.com/BTR_anime/status/1567439907542499328' },
     { date: '2022-09-18', label: '番組公開収録 in 京まふ2022', desc: 'みやこめっせステージにて第2回の公開収録。', url: 'https://x.com/BTR_anime/status/1571365877211336707' },
-    { date: '2022-12-01', label: 'フレッシュネスバーガー下北沢店コラボ開催', desc: 'ラジオでのアツいフレッシュネスバーガー話がきっかけになり、コラボが決定。', url: 'https://x.com/Yopipi555/status/1597898760633610240' },
-    { date: '2022-12-11', label: 'フレッシュネスバーガー下北沢店　青山吉能スパムバーガーお渡し会開催', desc: 'ぼっち応援キャンペーン第2弾として青山吉能が1日店長に。', url: 'https://x.com/BTR_anime/status/1601789726217756672' },
+    { date: '2022-12-01', label: 'フレッシュネスバーガー下北沢店コラボ開催', desc: 'ラジオでのアツいスパムバーガー話がきっかけになり、コラボが決定。<br>第1弾はスパムバーガー/スパムアボカドバーガーの販売延長と、店内にて番組宣伝ポスターの掲示が実施された。', url: 'https://x.com/Yopipi555/status/1597898760633610240' },
+    { date: '2022-12-11', label: 'フレッシュネスバーガー下北沢店　青山吉能スパムバーガーお渡し会開催', desc: 'ぼっち応援キャンペーン第2弾として青山吉能がフレッシュネスバーガー下北沢店の1日店長に。先着100名様限定のレアイベント。', url: 'https://x.com/BTR_anime/status/1601789726217756672' },
 
     
-    { date: '2023-03-19', label: '番組イベント開催', desc: '初の番組イベント。第1部：公開録音、第2部：後夜祭の2部制。<br>会場では「特製ボイスキーホルダー」が発売された。', url: 'https://x.com/onsenradio/status/1637405895683604480' },
+    { date: '2023-03-19', label: '番組イベント開催', desc: '初の番組イベント。第1部：公開録音、第2部：後夜祭の2部制。<br>会場では「番組特製ボイスキーホルダー」が発売。<br>第2部の後夜祭で生まれた「青椒肉絲好きの博多弁エロ女上司(cv.長谷川育美)」が大きな反響を呼んだ。', url: 'https://x.com/onsenradio/status/1637405895683604480' },
     { date: '2023-03-29', label: '第8回『アニラジアワード』史上初の3冠受賞', desc: 'ぼっち・ざ・らじお！が『最優秀ラジオ大賞』『最優秀女性ラジオ賞』『大笑いラジオ賞』を受賞。', url: 'https://x.com/BTR_anime/status/1641067456625274881' },
     { date: '2023-04-26', label: '番組リニューアル', desc: '新コーナー「ぼっち予想テスト」「イキり懺悔室」や<br>「ぼっち・ざ・おーでぃしょん！」では新テーマ「青春」を募集。', url: 'https://x.com/BTR_anime/status/1651151378570682369' },
     { date: '2023-06-24', label: 'ぼっち・ざ・らじお！音泉祭りスペシャル', desc: '音泉祭り2023に青山吉能、鈴代紗弓が出演。', url: 'https://x.com/BTR_anime/status/1672559141800521729' },
@@ -1505,7 +1505,7 @@ for (const kanji in CUSTOM_READINGS) {
     { date: '2024-12-25', label: '第68回クリスマススペシャル', desc: '初の映像生配信回。カラオケコーナーあり。', url: 'https://x.com/BTR_anime/status/1871935819327639585' },
 
     { date: '2025-01-15', label: '第69(ロック)回特別コーナー「ろっく！えぴそーど！」', desc: '破天荒＆カッコいいエピソードを青山吉能が「ロック」かどうか判定。', url: 'https://x.com/BTR_anime/status/1879455907379294412' },
-    { date: '2025-02-15', label: '【緊急】ぼっち・ざ・らじお！【特別編】', desc: 'アニメ2期制作決定とともに公開された特別編。', url: 'https://x.com/BTR_anime/status/1890732797804839239' },
+    { date: '2025-02-15', label: '【緊急】ぼっち・ざ・らじお！【特別編】', desc: 'アニメ2期制作決定とともに公開された特別編。ゲストに斎藤圭一郎、山本ゆうすけ、けろりらを迎えた。(敬称略)', url: 'https://x.com/BTR_anime/status/1890732797804839239' },
     { date: '2025-04-09', label: '番組リニューアル', desc: '新コーナー「本日のテーマ」「結束バンドと私」が登場。<br>おまけコーナーも「ぼっち・ざ・らじお！アフタートーク」へリニューアル。', url: 'https://x.com/BTR_anime/status/1909896315141529882' },
     { date: '2025-09-07', label: 'ぼっち・ざ・らじお！番組3周年', desc: '', url: '' },
 

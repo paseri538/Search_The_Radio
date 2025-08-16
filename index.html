@@ -88,6 +88,19 @@
 
 
   <link rel="preconnect" href="https://i.ytimg.com" crossorigin>
+
+  <script>
+  // 画面の見えている高さ(px)→ --vh に格納
+  (function () {
+    function setVh() {
+      document.documentElement.style.setProperty('--vh', (window.innerHeight * 0.01) + 'px');
+    }
+    setVh();
+    window.addEventListener('resize', setVh, { passive: true });
+    window.addEventListener('orientationchange', setVh, { passive: true });
+  })();
+</script>
+
 </head>
 <body>
   <div id="rcModal" style="display:none; position:fixed; z-index:3000; left:0; top:0; width:100vw; height:100vh; background:rgba(0,0,0,0.22); backdrop-filter:blur(2px); align-items:center; justify-content:center;">
@@ -275,7 +288,7 @@
 
 
 
-  <script src="main.js?v=20250817b"></script>
+  <script src="main.js?v=20250817c"></script>
 
   <script>
   // ---- Service Worker register (network-first) ----

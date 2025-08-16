@@ -2126,3 +2126,26 @@ body.dark-mode .thumbnail { background: #1f262d; }
 
 /* プレースホルダーに軽いスタイル */
 .thumb-fallback { opacity: .85; }
+
+
+/* ===== Loading 画面の垂直センタリングを安定させる ===== */
+
+/* 画面の見えている高さにフィット（順にフォールバック） */
+#loading-screen{
+  /* 既存の fixed/inset/align/justify は inline にあるので、そのままでOK */
+  height: 100vh;       /* 古い環境 */
+  height: 100svh;      /* 初回表示時の可視領域 */
+  height: 100dvh;      /* 動的に追従（対応環境ではこちらが有効） */
+  min-height: calc(var(--vh, 1vh) * 100);  /* JS フォールバック */
+  will-change: transform;
+}
+
+/* ブラウザ（通常起動）時だけ、ほんの少しだけ上へ持ち上げる */
+:root { --loading-nudge: -2svh; }   /* だいたい上に2svhぶん */
+@supports (height: 100dvh) { :root { --loading-nudge: -2dvh; } }
+.ios-standalone { --loading-nudge: 0; }  /* PWA時は微調整なし */
+
+#loading-screen { transform: translateY(var(--loading-nudge)); }
+
+/* お好みで：ロゴとドットの間隔を少し詰めるなら（任意） */
+#spinner { margin-top: 28px !important; } /* 既存は 38px */
