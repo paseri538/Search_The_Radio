@@ -2031,26 +2031,36 @@ html, body {
   min-height: calc(var(--vh, 1vh) * 100);
 }
 
-/* スタンドアロン時はノッチ・ホームバー分だけ安全に余白を足す */
+/* 置き換え：前回の .ios-standalone .sticky-search-area を削除して、これを入れる */
 .ios-standalone .sticky-search-area {
-  top: var(--safe-top);
-  border-top-left-radius: calc(14px + var(--safe-left));
-  border-top-right-radius: calc(14px + var(--safe-right));
+  /* 位置は固定のまま */
+  top: 0;
+  /* ノッチ分は位置を動かさず中に吸収（←ここがポイント） */
+  padding-top: var(--safe-top);
+  /* 上側の角丸は付けない（浮いて見える原因だったので） */
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+  /* 左右も安全域ぶん内側に余白をつけて端切れ回避 */
+  padding-left: max(0px, var(--safe-left));
+  padding-right: max(0px, var(--safe-right));
 }
 
-/* メインコンテンツの先頭余白を動的に（既存 --header-offset を尊重しつつ安全側に） */
+
+/* 置き換え：以前の .ios-standalone .main-content をこれに */
 .ios-standalone .main-content {
-  padding-top: calc(var(--header-offset) + var(--safe-top));
+  padding-top: var(--header-offset); /* ← safe-top を足さない */
   padding-left: max(15px, var(--safe-left));
   padding-right: max(15px, var(--safe-right));
 }
 
-/* フィルタDrawerをノッチ下に固定 */
+
+/* 置き換え */
 .ios-standalone #filterDrawer {
-  top: calc(110px + var(--safe-top)) !important;
+  top: calc(var(--header-offset) + 8px) !important;
   left: 50% !important;
   transform: translateX(-50%) !important;
 }
+
 
 /* 画面下固定ボタン（トップへ/ダークモード）のホームバー干渉回避 */
 .ios-standalone #toTopBtn,
@@ -2082,3 +2092,9 @@ body.modal-open {
   box-shadow: 0 6px 20px -10px rgba(0,0,0,0.12);
 }
 
+
+.ios-standalone .results-count-under-bar,
+.ios-standalone .filters-bar {
+  padding-left: max(0.5rem, var(--safe-left));
+  padding-right: max(0.5rem, var(--safe-right));
+}
