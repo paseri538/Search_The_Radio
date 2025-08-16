@@ -1899,3 +1899,73 @@ document.addEventListener('DOMContentLoaded', () => {
     }, { passive: true });
   }
 });
+
+
+// --- YouTubeサムネ：多段フォールバック ---
+function extractVideoId(url) {
+  // 例: https://www.youtube.com/watch?v=XXXXXXXX
+  const m = url.match(/[?&]v=([^&]+)/) || url.match(/youtu\.be\/([^?]+)/);
+  return m ? m[1] : null;
+}
+function buildThumbCandidates(videoId) {
+  // 存在しないことがある順に並べる（成功したらそこで打ち止め）
+  return [
+    `https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg`,
+    `https://i.ytimg.com/vi/${videoId}/sddefault.jpg`,
+    `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
+    `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg`,
+    `https://i.ytimg.com/vi/${videoId}/default.jpg`,
+  ];
+}
+function createThumbImg(youtubeUrl, altText = 'thumbnail') {
+  const id = extractVideoId(youtubeUrl);
+  const img = document.createElement('img');
+  img.className = 'thumbnail';
+  img.alt = altText;
+  img.loading = 'lazy';
+  img.decoding = 'async';
+  img.referrerPolicy = 'no-referrer'; // 稀な403対策
+
+  const list = id ? buildThumbCandidates(id) : [];
+  let idx = 0;
+  const tryNext = () => {
+    if (idx < list.length) {
+      img.src = list[idx++];
+    } else {
+      img.src = 'logo.png'; // 最終プレースホルダー（任意）
+      img.classList.add('thumb-fallback');
+    }
+  };
+  img.addEventListener('error', tryNext);
+  tryNext(); // kick
+  return img;
+}
+
+// 例：カード生成のところ
+const thumb = createThumbImg(item.link, `#${item.episode} サムネイル`);
+thumbnailContainer.appendChild(thumb);
+
+
+self.addEventListener('fetch', (event) => {
+  const url = new URL(event.request.url);
+  if (url.hostname.endsWith('ytimg.com')) {
+    // YouTubeサムネはSWでいじらず素通し
+    return event.respondWith(fetch(event.request));
+  }
+
+  // 既存の network-first ロジック …
+  event.respondWith((async () => {
+    try {
+      const fresh = await fetch(event.request, { cache: 'no-store' });
+      if (event.request.method === 'GET' && fresh.ok) {
+        const cache = await caches.open(CACHE_NAME);
+        cache.put(event.request, fresh.clone());
+      }
+      return fresh;
+    } catch (err) {
+      const cached = await caches.match(event.request);
+      if (cached) return cached;
+      throw err;
+    }
+  })());
+});
