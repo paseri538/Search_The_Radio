@@ -1098,28 +1098,35 @@ window.__updateHeaderOffset && window.__updateHeaderOffset();
   window.__closeDrawer = closeDrawer;
 
   // --- スマホ：フィルター内のタグを押したら上部へ & ドロワーを閉じる ---
-(
-  function attachAutoScrollAfterFilterSelect(){
-    const drawer = document.getElementById('filterDrawer');
-    if (!drawer) return;
+(function attachAutoScrollAfterFilterSelect(){
+  const drawer = document.getElementById('filterDrawer');
+  if (!drawer) return;
 
-    drawer.addEventListener('click', (ev) => {
-      // フィルター内のボタン（ゲスト・年・コーナー）
-      const btn = ev.target.closest('.guest-button,.btn-year,.btn-corner');
-      if (!btn) return;
+  drawer.addEventListener('click', (ev) => {
+    // フィルター内のボタン（ゲスト・年・コーナー）
+    const btn = ev.target.closest('.guest-button,.btn-year,.btn-corner');
+    if (!btn) return;
 
-      // 各ボタン側で search() が走った“後”にスクロールだけ実行
-      setTimeout(() => {
-        // PC・スマホ共通で最上部へ（フィルタータグをすぐ確認できるように）
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-        if (typeof window.__updateHeaderOffset === 'function') {
-          window.__updateHeaderOffset();
+    // 既存の選択→search() が走った“後”に動くよう、少し遅らせる
+    setTimeout(() => {
+      if (window.innerWidth <= 900) {       // スマホだけ
+        // 1) まずドロワーを閉じてスクロールロック解除
+        if (typeof window.__closeDrawer === 'function') {
+          window.__closeDrawer();
+        } else {
+          $('#filterDrawer').hide();
+          $('#drawerBackdrop').removeClass('show');
+          if (typeof window.updateScrollLock === 'function') window.updateScrollLock();
         }
-        // ※ ここではドロワーを閉じない（複数選択を続けられる）
-      }, 0);
-    }, { passive: true });
-  }
-)();
+        // 2) 解除が完了する“次フレーム”で最上部へ
+        requestAnimationFrame(() => {
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+          window.__updateHeaderOffset && window.__updateHeaderOffset();
+        });
+      }
+    }, 0);
+  }, { passive: true });
+})();
 
 
   // Remove duplicate/legacy handlers, then bind once.

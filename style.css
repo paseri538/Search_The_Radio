@@ -627,7 +627,7 @@ body.dark-mode #aboutCloseBtn {
 #aboutModal {
   display: none; /* 初期状態は非表示 */
   position: fixed;
-  z-index: 2055;
+  z-index: 4000;
   left: 0; top: 0;
   width: 100vw; height: 100vh;
   background: rgba(30,29,52,0.18);
@@ -1221,7 +1221,7 @@ body.dark-mode .history-sticky-year{
 /* === Modal 基本 === */
 .modal-overlay{
   display: none;
-  position: fixed; inset: 0; z-index: 2055;
+  position: fixed; inset: 0; z-index: 4000;
   background: rgba(30,29,52,0.18);
   backdrop-filter: blur(2px);
   align-items: center; justify-content: center;
@@ -2182,3 +2182,22 @@ html.pwa #darkModeBtn{
 /* コンテンツ・フッターの下余白を確保 */
 html.pwa .main-content{ padding-bottom: calc(100px + var(--safe-bottom)) !important; }
 html.pwa footer{       padding-bottom: calc(24px  + var(--safe-bottom)) !important; }
+
+
+/* === Disable bottom-fixed buttons & mobile action bar while a modal/drawer is open === */
+body.scroll-lock #toTopBtn,
+body.scroll-lock #darkModeBtn,
+body.modal-open #toTopBtn,
+body.modal-open #darkModeBtn,
+body.scroll-lock .mobile-action-bar,
+body.modal-open .mobile-action-bar {
+  pointer-events: none !important;
+  opacity: 0.5 !important;
+  filter: grayscale(0.2);
+}
+
+
+/* Ensure the history modal content scrolls on small devices */
+.modal-content.history-modal {
+  -webkit-overflow-scrolling: touch;
+}
