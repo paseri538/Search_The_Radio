@@ -2098,3 +2098,21 @@ body.modal-open {
   padding-left: max(0.5rem, var(--safe-left));
   padding-right: max(0.5rem, var(--safe-right));
 }
+
+/* ▼ デフォルトでは“ブラウザ時”に浮遊ボタンを隠す */
+#toTopBtn,
+#darkModeBtn {
+  display: none !important;           /* ← ここを初期非表示に */
+}
+
+/* ▼ “スタンドアロン時だけ”浮遊ボタンを出す */
+.ios-standalone #toTopBtn,
+.ios-standalone #darkModeBtn {
+  display: flex !important;
+}
+
+/* ▼ すでに入れている iOS セーフエリア下寄せは、スタンドアロン時にのみ適用 */
+.ios-standalone #toTopBtn,
+.ios-standalone #darkModeBtn {
+  bottom: calc(18px + var(--safe-bottom)) !important;
+}
