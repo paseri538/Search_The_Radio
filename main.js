@@ -1,3 +1,40 @@
+
+// --- Hard unlock: ensure page scroll is restored no matter what path was taken
+window.__hardUnlockScroll = function __hardUnlockScroll(){
+  try { window.__bodyLockCount = 0; } catch(e){}
+  try { document.body.classList.remove('modal-open'); } catch(e){}
+  try { document.body.classList.remove('scroll-lock'); } catch(e){}
+  try {
+    const top = document.body.style.top;
+    document.body.style.top = '';
+    if (top) { window.scrollTo(0, -parseInt(top,10) || 0); }
+  } catch(e){}
+};
+
+
+// === Global, reference-counted body scroll locker ===
+(function(){
+  if (!window.__bodyLockCount) window.__bodyLockCount = 0;
+  if (!window.__bodyLockScrollY) window.__bodyLockScrollY = 0;
+  window.acquireBodyLock = function acquireBodyLock(){
+    if (window.__bodyLockCount === 0){
+      window.__bodyLockScrollY = window.scrollY || document.documentElement.scrollTop || 0;
+      document.body.classList.add('modal-open');
+      document.body.style.top = `-${window.__bodyLockScrollY}px`;
+    }
+    window.__bodyLockCount++;
+  };
+  window.releaseBodyLock = function releaseBodyLock(){
+    window.__bodyLockCount = Math.max(0, (window.__bodyLockCount||0) - 1);
+    if (window.__bodyLockCount === 0){
+      document.body.classList.remove('modal-open');
+      const top = document.body.style.top;
+      document.body.style.top = '';
+      try { window.scrollTo(0, top ? -parseInt(top,10) : 0); } catch(e) {}
+    }
+  };
+})();
+
 // --- データ・状態 ---
     const data = [
       { episode:"84", title:"#84　", guest:"青山吉能", date:"2025-08-13", link:"https://www.youtube.com/watch?v=4l77d67EiPc", keywords:["青山吉能","よぴ","よしの","よっぴー","あおやまよしの"], duration:"57:46" },
@@ -682,11 +719,8 @@ function resetSearch() {
       if (drawer && sbar) {
         const rect = sbar.getBoundingClientRect();
         const headerHeight = rect.height;
-        drawer.style.position = "fixed";
-        drawer.style.left = "50%";
-        drawer.style.transform = "translateX(-50%)";
-        drawer.style.right = "";
-        drawer.style.top = (rect.top + headerHeight + 8) + "px";
+        drawer.style.position="fixed";drawer.style.left="0";drawer.style.right="0";drawer.style.margin="0 auto";drawer.style.transform="";
+        drawer.style.top = "";
         const winHeight = window.innerHeight;
         const drawerHeight = drawer.offsetHeight || 340;
         if ((rect.top + headerHeight + 8 + drawerHeight) > (winHeight - 12)) {
@@ -705,18 +739,34 @@ function resetSearch() {
         updateDrawerTop();
         $("#filterDrawer")
           .css({
-            left: "50%",
-            transform: "translateX(-50%)",
-            right: "",
+            left: "0",
+            right: "0",
+            margin: "0 auto",
+            transform: "",
             display: "block"
           })
           .fadeIn(100);
         $("#drawerBackdrop").addClass("show");
+        // lock body scroll (consistent with other openers)
+        if (!document.body.classList.contains('modal-open')){
+          window._filterScrollY = window.scrollY || document.documentElement.scrollTop || 0;
+          window.acquireBodyLock && window.acquireBodyLock();
+          document.body.style.top = `-${window._filterScrollY}px`;
+        }
         $("#filterToggleBtn").attr("aria-expanded", true).attr("aria-pressed", true);
       } else {
         $("#filterDrawer").fadeOut(90);
         $("#drawerBackdrop").removeClass("show");
         $("#filterToggleBtn").attr("aria-expanded", false).attr("aria-pressed", false);
+        window.__hardUnlockScroll && window.__hardUnlockScroll();
+        window.releaseBodyLock && window.releaseBodyLock();
+        // unlock body scroll (even if opened by another path)
+        if (document.body.classList.contains('modal-open')){
+          const top = document.body.style.top;
+          window.releaseBodyLock && window.releaseBodyLock();
+          document.body.style.top = '';
+          if (top) { try { window.scrollTo(0, -parseInt(top, 10)); } catch(e){} }
+        }
       }
     }
     $(function() {
@@ -1115,7 +1165,7 @@ window.__updateHeaderOffset && window.__updateHeaderOffset();
       const rect = sbar.getBoundingClientRect();
       drawer.style.position = 'fixed';
       drawer.style.left = '50%';
-      drawer.style.transform = 'translateX(-50%)';
+      drawer.style.transform = '';
       drawer.style.right = '';
       drawer.style.top = (rect.top + rect.height + 8) + 'px';
     }
@@ -1129,6 +1179,7 @@ window.__updateHeaderOffset && window.__updateHeaderOffset();
     updateScrollLock();
   }
   function closeDrawer() {
+    window.__hardUnlockScroll && window.__hardUnlockScroll();
     $('#filterDrawer').hide();
     $('#drawerBackdrop').removeClass('show');
     $('#filterToggleBtn').attr({ 'aria-expanded': false, 'aria-pressed': false });
@@ -1630,11 +1681,11 @@ $('#historyToggle').off('click').on('click', function(e){
 
   function lockBodyScroll(){
     _scrollY = window.scrollY || document.documentElement.scrollTop || 0;
-    document.body.classList.add('modal-open');
+    window.acquireBodyLock && window.acquireBodyLock();
     document.body.style.top = `-${_scrollY}px`;
   }
   function unlockBodyScroll(){
-    document.body.classList.remove('modal-open');
+    window.releaseBodyLock && window.releaseBodyLock();
     const top = document.body.style.top;
     document.body.style.top = '';
     window.scrollTo(0, top ? -parseInt(top,10) : 0);
@@ -1907,14 +1958,15 @@ document.addEventListener('DOMContentLoaded', () => {
   function openDrawer() {
     drawer.style.display = 'block';
     backdrop.classList.add('show');
-    document.body.classList.add('modal-open');
+    window.acquireBodyLock && window.acquireBodyLock();
     toggleBtn?.setAttribute('aria-expanded', 'true');
     toggleBtn?.setAttribute('aria-pressed', 'true');
   }
   function closeDrawer() {
+    window.__hardUnlockScroll && window.__hardUnlockScroll();
     drawer.style.display = 'none';
     backdrop.classList.remove('show');
-    document.body.classList.remove('modal-open');
+    window.releaseBodyLock && window.releaseBodyLock();
     toggleBtn?.setAttribute('aria-expanded', 'false');
     toggleBtn?.setAttribute('aria-pressed', 'false');
   }
@@ -1922,9 +1974,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // 既存のトグル処理にフック（重複防止のため存在確認）
   if (toggleBtn && drawer && backdrop) {
     // 既存のイベントに影響しないように一応補助リスナーだけ
-    backdrop.addEventListener('click', closeDrawer);
+    backdrop.addEventListener('click', function(){ closeDrawer(); window.__hardUnlockScroll && window.__hardUnlockScroll(); });
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') closeDrawer();
+      if (e.key === 'Escape') { closeDrawer(); window.__hardUnlockScroll && window.__hardUnlockScroll(); }
     });
   }
 
@@ -2029,3 +2081,18 @@ const preloadThumbnails = (episodes) => {
 preloadThumbnails(data);
 
 
+
+
+// --- Safety: release lock if #filterDrawer gets hidden by any path ---
+(function(){
+  const drawer = document.getElementById('filterDrawer');
+  if (!drawer || window.__drawerObserverSetup) return;
+  window.__drawerObserverSetup = true;
+  const obs = new MutationObserver(function(){
+    const style = window.getComputedStyle(drawer);
+    if (style.display === 'none' || !drawer.offsetParent){
+      window.releaseBodyLock && window.releaseBodyLock();
+    }
+  });
+  obs.observe(drawer, { attributes: true, attributeFilter: ['style', 'class'] });
+})();

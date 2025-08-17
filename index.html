@@ -99,7 +99,7 @@
 
 <div id="loading-screen" style="position:fixed;z-index:9999;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;">
   <img src="logo.png" alt="logo" id="loading-logo" style="width:330px;max-width:70vw;">
-  <div id="spinner" style="margin-top:38px; display:flex; gap:12px; flex-direction:row;">
+  <div id="spinner" style="margin-top:38px; display:flex; gap:12px;">
     <div class="loading-ball ball1"></div>
     <div class="loading-ball ball2"></div>
     <div class="loading-ball ball3"></div>
@@ -196,7 +196,15 @@
         <button class="btn-corner" data-other="特別編" aria-pressed="false">特別編</button>
       </div>
     </div>
-  </div>
+  
+    <div class="drawer-footer" role="group" aria-label="フィルター操作">
+      <button id="drawerCloseBtn" type="button" class="drawer-close-btn" title="フィルターを閉じる"
+        onclick="if(window.toggleFilterDrawer){window.toggleFilterDrawer(false);} else if(window.closeDrawer){window.closeDrawer();}">
+        <i class="fa fa-xmark"></i><span> 閉じる</span>
+      </button>
+    </div>
+</div>
+
   <div class="main-content" id="mainContent">
     <ul id="results" class="list-unstyled"></ul>
     <div class="pagination-area" id="paginationArea"></div>
