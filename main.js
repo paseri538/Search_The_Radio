@@ -1917,6 +1917,48 @@ function buildThumbCandidates(videoId) {
     `https://i.ytimg.com/vi/${videoId}/default.jpg`,
   ];
 }
+
+
+const thumbChoiceKey = 'ytThumbChoice';
+const thumbChoice = JSON.parse(localStorage.getItem(thumbChoiceKey) || '{}');
+function rememberThumb(id, url){
+  if (!id || !url) return;
+  if (thumbChoice[id] === url) return;
+  thumbChoice[id] = url;
+  localStorage.setItem(thumbChoiceKey, JSON.stringify(thumbChoice));
+}
+
+// 決定済みURLがあれば即それを使い、なければ多段フォールバック
+function createThumbImg(youtubeUrl, altText='thumbnail'){
+  const id = extractVideoId(youtubeUrl);
+  const img = document.createElement('img');
+  img.className = 'thumbnail';
+  img.alt = altText;
+  img.loading = 'lazy';
+  img.decoding = 'async';
+  img.referrerPolicy = 'no-referrer';
+
+  const decided = id && thumbChoice[id];
+  if (decided) {
+    img.src = decided; // ★即決
+    return img;
+  }
+
+  const list = id ? buildThumbCandidates(id) : [];
+  let idx = 0;
+  const tryNext = () => {
+    if (idx < list.length) {
+      img.src = list[idx++];
+    } else {
+      img.src = 'logo.png';
+      img.classList.add('thumb-fallback');
+    }
+  };
+  img.addEventListener('load', () => { if (id && img.src) rememberThumb(id, img.src); }, { once:true });
+  img.addEventListener('error', tryNext);
+  tryNext();
+  return img;
+}
 function createThumbImg(youtubeUrl, altText = 'thumbnail') {
   const id = extractVideoId(youtubeUrl);
   const img = document.createElement('img');
@@ -1969,3 +2011,22 @@ self.addEventListener('fetch', (event) => {
     }
   })());
 });
+
+// main.js（DOMContentLoaded後など、最初のロード一回だけ）
+async function precacheAllThumbnails(){
+  if (!('serviceWorker' in navigator)) return;
+  const reg = await navigator.serviceWorker.ready.catch(()=>null);
+  if (!reg || !navigator.serviceWorker.controller) return;
+
+  // dataは既存の一覧配列
+  const ids = Array.from(new Set((data||[]).map(it => extractVideoId(it.link)).filter(Boolean)));
+
+  // すでに「成功URL」を覚えているIDはそれを使い、未決定は sddefault を優先で
+  const urls = ids.map(id => thumbChoice[id] || `https://i.ytimg.com/vi/${id}/sddefault.jpg`);
+
+  // Service Workerへ「サムネをプリキャッシュして」と依頼
+  navigator.serviceWorker.controller.postMessage({ type:'PRECACHE_THUMBS', urls });
+}
+
+// 最初のローディングでキック
+document.addEventListener('DOMContentLoaded', precacheAllThumbnails);
