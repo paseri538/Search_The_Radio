@@ -720,7 +720,7 @@ function resetSearch() {
         const rect = sbar.getBoundingClientRect();
         const headerHeight = rect.height;
         drawer.style.position="fixed";drawer.style.left="0";drawer.style.right="0";drawer.style.margin="0 auto";drawer.style.transform="";
-        drawer.style.top = (rect.top + headerHeight + 8) + "px";
+        drawer.style.top = "";
         const winHeight = window.innerHeight;
         const drawerHeight = drawer.offsetHeight || 340;
         if ((rect.top + headerHeight + 8 + drawerHeight) > (winHeight - 12)) {

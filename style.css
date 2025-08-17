@@ -234,7 +234,7 @@ body {
   z-index: 2022; animation: fadein-drawer 0.17s; border-top: none;
   transition: opacity .17s;
 }
-@keyframes fadein-drawer { from { opacity: 0; transform: translate(-50%, -8px);} to { opacity: 1; transform: translate(-50%, 0);} }
+@keyframes fadein-drawer { from { opacity: 0; transform: translateY(-8px);} to { opacity: 1; transform: translateY(0);} } to { opacity: 1; transform: translate(-50%, 0);} }
 .filter-section { margin-bottom: 13px; padding-left: 1.2rem; padding-right: 1.2rem; }
 @media (max-width: 600px) {
   #filterDrawer { /* centered without transform */
@@ -2186,3 +2186,20 @@ html[data-theme="dark"] #filterDrawer .drawer-footer{
 }
 #filterDrawer{ padding-bottom: 0 !important; }
 #filterDrawer > :last-child{ margin-bottom: 0 !important; }
+
+/* ===== FINAL OVERRIDE: stable centering + viewport-height drawer ===== */
+#filterDrawer{
+  position: fixed !important;
+  left: 0 !important;
+  right: 0 !important;
+  margin: 0 auto !important;
+  width: min(100vw, 900px) !important;
+  top: calc(var(--header-offset, 96px) + 8px) !important;
+  bottom: max(8px, env(safe-area-inset-bottom, 8px)) !important;
+  height: auto !important;
+  max-height: none !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  transform: none !important;
+  animation: fadein-drawer 0.17s ease-out;
+}
