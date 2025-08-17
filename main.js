@@ -1917,48 +1917,6 @@ function buildThumbCandidates(videoId) {
     `https://i.ytimg.com/vi/${videoId}/default.jpg`,
   ];
 }
-
-
-const thumbChoiceKey = 'ytThumbChoice';
-const thumbChoice = JSON.parse(localStorage.getItem(thumbChoiceKey) || '{}');
-function rememberThumb(id, url){
-  if (!id || !url) return;
-  if (thumbChoice[id] === url) return;
-  thumbChoice[id] = url;
-  localStorage.setItem(thumbChoiceKey, JSON.stringify(thumbChoice));
-}
-
-// 決定済みURLがあれば即それを使い、なければ多段フォールバック
-function createThumbImg(youtubeUrl, altText='thumbnail'){
-  const id = extractVideoId(youtubeUrl);
-  const img = document.createElement('img');
-  img.className = 'thumbnail';
-  img.alt = altText;
-  img.loading = 'lazy';
-  img.decoding = 'async';
-  img.referrerPolicy = 'no-referrer';
-
-  const decided = id && thumbChoice[id];
-  if (decided) {
-    img.src = decided; // ★即決
-    return img;
-  }
-
-  const list = id ? buildThumbCandidates(id) : [];
-  let idx = 0;
-  const tryNext = () => {
-    if (idx < list.length) {
-      img.src = list[idx++];
-    } else {
-      img.src = 'logo.png';
-      img.classList.add('thumb-fallback');
-    }
-  };
-  img.addEventListener('load', () => { if (id && img.src) rememberThumb(id, img.src); }, { once:true });
-  img.addEventListener('error', tryNext);
-  tryNext();
-  return img;
-}
 function createThumbImg(youtubeUrl, altText = 'thumbnail') {
   const id = extractVideoId(youtubeUrl);
   const img = document.createElement('img');
@@ -2012,21 +1970,30 @@ self.addEventListener('fetch', (event) => {
   })());
 });
 
-// main.js（DOMContentLoaded後など、最初のロード一回だけ）
-async function precacheAllThumbnails(){
-  if (!('serviceWorker' in navigator)) return;
-  const reg = await navigator.serviceWorker.ready.catch(()=>null);
-  if (!reg || !navigator.serviceWorker.controller) return;
+// main.js の初期化時に
+const preloadThumbnails = (episodes) => {
+  episodes.forEach(ep => {
+    const id = new URL(ep.link).searchParams.get("v");
+    const img = new Image();
+    img.src = `https://i.ytimg.com/vi/${id}/hqdefault.jpg`;
+  });
+};
 
-  // dataは既存の一覧配列
-  const ids = Array.from(new Set((data||[]).map(it => extractVideoId(it.link)).filter(Boolean)));
+// data を読み込み終えたら呼び出す
+preloadThumbnails(data);
 
-  // すでに「成功URL」を覚えているIDはそれを使い、未決定は sddefault を優先で
-  const urls = ids.map(id => thumbChoice[id] || `https://i.ytimg.com/vi/${id}/sddefault.jpg`);
 
-  // Service Workerへ「サムネをプリキャッシュして」と依頼
-  navigator.serviceWorker.controller.postMessage({ type:'PRECACHE_THUMBS', urls });
-}
-
-// 最初のローディングでキック
-document.addEventListener('DOMContentLoaded', precacheAllThumbnails);
+// Inject preload links for YouTube thumbnails
+const YT_THUMB_IDS = ["4l77d67EiPc", "LcPFWQ5JdoU", "IdEStksoFaM", "FA7BqhR_AkQ", "saAS_RHRhDI", "QHmGJKLGJs4", "sZ0ElkxOwkY", "uJy5FqDPumk", "8tnv8TFsyTs", "yA90NiAGuF8", "hHfpdyDFN6U", "IaN7fW-RJPo", "oLdNIIz3qWw", "P0ifdqZm8wo", "16fCDsC2Aks", "_x5aMdhpeW8", "_U9gzTHBSNo", "xcJYrnd1lmM", "Z1Jp0XgIjhY", "VOa30rMc_A8", "vEZPauFTld0", "SlqA0WLMIJY", "qGlRPIDpQpQ", "Auf-ShZED9A", "w0v3hA1u_lw", "fTtmFkt7dh8", "uUlbEGKij0k", "aJS3Gn27ecQ", "zNSZqWpbCjg", "jWQZeh5QBEA", "UH2tnm8-zFg", "D6h2j9TK95U", "7yENoBuBn6k", "35i46aXGr_U", "bJNWOULhxFA", "e2ZTylMTA9A", "JxVrbUUC8uk", "F_ydWMhlg9s", "nSO14XAm2GI", "ZHabLKrF-Aw", "0nHtK3Zokmg", "EoW2sRMJeYs", "eBa39x7Y-wU", "QOt1T9L3pwU", "QYL0t78oGTY", "FHYxRO_3_VE", "Ej1RFoHLtdg", "mmHhbqnSoWs", "uB_S_JdKmkM", "gkgQkrTc0qU", "NQx1S6RyK38", "ghFq5nTxOwQ", "OL8SskfX6eA", "0TiPEETSxUo", "Fv_9fQ3PFRY", "JmSomKpSL-M", "Xg1ozrPAwDI", "_SUn0OWQo2k", "HqKaV7V4L7A", "L8mHUOlAw64", "WsfRhqaLO_k", "efXr9X648so", "_8-sk4OwB78", "mwJeACqV2Oc", "kUbnGEpkT6E", "VN95H7KjuL0", "cAx6-HQejSI", "VN5u1Jc3H5I", "YTAG14wJsc0", "bCNwtnv-3Qk", "Xz8iTj-5Ndw", "SonCPSaBlKA", "8zIajtpgosA", "yqHK0r7qhvk", "gzKy7Y10h4g", "-bgKWbqNyN0", "OKHnZk0o9lM", "0Vz-WHfPrI4", "JQ_xgtun1kQ", "f18K3nc2wAw", "4hcPzIW8MfE", "ieCOGEOXxr8", "4c_DVoq-9oU", "kct8627dspo", "EDay9btUsKw", "__P57MTTjyw", "XXXXXXXX"];
+(function(){ 
+  try {
+    const head = document.head || document.getElementsByTagName('head')[0];
+    YT_THUMB_IDS.forEach(id => {
+      const l = document.createElement('link');
+      l.rel = 'preload';
+      l.as = 'image';
+      l.href = `https://i.ytimg.com/vi/${id}/hqdefault.jpg`;
+      head.appendChild(l);
+    });
+  } catch(e){}
+})();

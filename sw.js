@@ -41,3 +41,15 @@ self.addEventListener('message', (event) => {
     self.skipWaiting();
   }
 });
+// sw.js の fetch 内に追加
+if (req.url.includes("i.ytimg.com")) {
+  try {
+    const fresh = await fetch(req, { cache: 'reload' });
+    const cache = await caches.open(CACHE_NAME);
+    cache.put(req, fresh.clone());
+    return fresh;
+  } catch {
+    const cached = await caches.match(req);
+    if (cached) return cached;
+  }
+}
