@@ -1988,3 +1988,10 @@ if (toTop) {
     }
   });
 })();
+
+
+// 追記：初期化で過去の inline style をクリア
+document.addEventListener('DOMContentLoaded', () => {
+  const t = document.getElementById('toTopBtn');
+  if (t) { t.style.opacity = ''; t.style.display = ''; }
+});
