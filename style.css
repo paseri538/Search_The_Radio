@@ -225,12 +225,12 @@ body {
   border: 1px solid #e7e7ef;
   box-shadow: 0 10px 32px -8px rgba(80,80,160,0.13);
   padding: 0 0 8px 0; margin: 0 auto 0 auto;
-  max-height: calc(100dvh - var(--header-offset, 64px) - 24px); overflow-y: auto; overflow-x: hidden;
+  max-height: 340px; overflow-y: auto; overflow-x: hidden;
   position: fixed !important;
-  left: 50% !important;
-  transform: translateX(-50%) !important;
-  right: auto !important;
-  top: calc(var(--header-offset, 64px) + 8px);
+  left: 0 !important;
+  transform: none !important;
+  right: 0 !important;
+  top: 110px;
   z-index: 2022; animation: fadein-drawer 0.17s; border-top: none;
   transition: opacity .17s;
 }
@@ -2061,8 +2061,8 @@ html, body {
 .ios-standalone #filterDrawer { /* centered without transform */
   margin: 0 auto;
   top: calc(var(--header-offset) + 8px) !important;
-  left: 50% !important;
-  transform: translateX(-50%) !important;
+  left: 0 !important;
+  transform: none !important;
 }
 
 
@@ -2135,7 +2135,6 @@ body.dark-mode .thumbnail { background: #1f262d; }
 
 /* sticky stability */
 #filterDrawer{
-  margin: 0 auto;
   overflow-y: auto;
   will-change: scroll-position;
   contain: layout;
@@ -2185,15 +2184,14 @@ html[data-theme="dark"] #filterDrawer .drawer-footer{
 @media (max-width: 640px){
   #filterDrawer .drawer-close-btn{ width: 100%; }
 }
-#filterDrawer{
-  margin: 0 auto; padding-bottom: 0 !important; }
+#filterDrawer{ padding-bottom: 0 !important; }
 #filterDrawer > :last-child{ margin-bottom: 0 !important; }
 
 /* ===== FINAL OVERRIDE: stable centering + viewport-height drawer ===== */
 #filterDrawer{
   position: fixed !important;
-  left: 50% !important;
-  right: auto !important;
+  left: 0 !important;
+  right: 0 !important;
   margin: 0 auto !important;
   width: min(100vw, 900px) !important;
   top: calc(var(--header-offset, 96px) + 8px) !important;
@@ -2202,16 +2200,6 @@ html[data-theme="dark"] #filterDrawer .drawer-footer{
   max-height: none !important;
   overflow-y: auto !important;
   overflow-x: hidden !important;
-  transform: translateX(-50%) !important;
+  transform: none !important;
   animation: fadein-drawer 0.17s ease-out;
-}
-
-
-/* PATCH: drawer spacing */
-@media (min-width: 900px){
-  #filterDrawer{
-    max-width: min(1100px, 96vw);
-    padding-left: 16px;
-    padding-right: 16px;
-  }
 }
