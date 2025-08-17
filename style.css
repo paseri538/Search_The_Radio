@@ -2128,3 +2128,22 @@ body.dark-mode .thumbnail { background: #1f262d; }
 .thumb-fallback { opacity: .85; }
 
 
+
+/* ブラウザ時だけ body を固定（PWAは除外） */
+html:not(.ios-standalone) body.is-loading {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+}
+
+/* ローディング全面は“見えている高さ”にフィット（順にフォールバック） */
+#loading-screen{
+  min-height: 100vh;
+  min-height: 100svh;
+  min-height: 100dvh;
+  min-height: calc(var(--vh, 1vh) * 100); /* JS フォールバック */
+  transform: none !important; /* 以前の微調整があれば無効化：下が見える原因になるため */
+}
+
+/* （任意）ロゴとドットの間隔だけで微調整するならこちらで */
+#spinner { margin-top: 28px !important; }

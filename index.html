@@ -87,6 +87,26 @@
   <link href="style.css?v=20250817a" rel="stylesheet" />
 
 
+  <script>
+/* ブラウザ時のローディング最適化：ページ固定＋可視高さ --vh */
+(function () {
+  // PWA（ホーム画面）判定
+  var isStandalone = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || window.navigator.standalone;
+  if (isStandalone) document.documentElement.classList.add('ios-standalone');
+
+  // ローディング中はスクロールを止める（ブラウザ時のみ body を固定）
+  document.documentElement.classList.add('is-loading');
+  document.addEventListener('DOMContentLoaded', function () {
+    if (!isStandalone) document.body.classList.add('is-loading');
+  });
+
+  // 可視領域の高さを --vh に常時反映（アドレスバー出入りに追従）
+  function setVh(){ document.documentElement.style.setProperty('--vh', (window.innerHeight*0.01)+'px'); }
+  setVh();
+  window.addEventListener('resize', setVh, {passive:true});
+  window.addEventListener('orientationchange', setVh, {passive:true});
+})();
+</script>
   <link rel="preconnect" href="https://i.ytimg.com" crossorigin>
 </head>
 <body>
@@ -275,7 +295,7 @@
 
 
 
-  <script src="main.js?v=20250817b"></script>
+  <script src="main.js?v=20250817c"></script>
 
   <script>
   // ---- Service Worker register (network-first) ----
