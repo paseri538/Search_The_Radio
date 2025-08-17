@@ -19,6 +19,23 @@ self.addEventListener('fetch', (event) => {
   const req = event.request;
 
   event.respondWith((async () => {
+
+        // YouTubeサムネは専用ハンドリング（失敗時キャッシュフォールバック）
+    if (req.url.includes('i.ytimg.com')) {
+      try {
+        const fresh = await fetch(req, { cache: 'reload' });
+        if (req.method === 'GET' && fresh.ok) {
+          const cache = await caches.open(CACHE_NAME);
+          cache.put(req, fresh.clone());
+        }
+        return fresh;
+      } catch (_) {
+        const cached = await caches.match(req);
+        if (cached) return cached;
+        throw _;
+      }
+    }
+
     try {
       const fresh = await fetch(req, { cache: 'no-store' });
       // Optionally cache successful GET responses

@@ -88,6 +88,52 @@
       { episode:"01", title:"#01　", guest:"青山吉能", date:"2022-09-07", link:"https://www.youtube.com/watch?v=__P57MTTjyw", keywords:["青山吉能","よぴ","よしの","よっぴー","あおやまよしの","ぼっち共感@27:49","ウソ陽キャ辞典@43:23","ラッキーボタン@50:44"], duration:"55:53" },
 
     ];
+
+    +/**
++ * data内の YouTube URL から動画IDを抽出し、
++ * <head> に <link rel="preload" as="image"> をまとめて追加する
++ * - 重複IDはスキップ
++ * - まず hqdefault.jpg を対象（必要なら mqdefault も併せて先読み）
++ */
+function preloadThumbsFromData() {
+  try {
+    const head = document.head || document.getElementsByTagName('head')[0];
+    const seen = new Set();
+
+    data.forEach((ep) => {
+      if (!ep || !ep.link) return;
+      let vid = null;
+      try {
+        const url = new URL(ep.link);
+        vid = url.searchParams.get('v');
+      } catch (_) {}
+      if (!vid || seen.has(vid)) return;
+      seen.add(vid);
+
+      // 必須の hqdefault をプリロード
+      const l1 = document.createElement('link');
+      l1.rel = 'preload';
+      l1.as = 'image';
+      l1.href = `https://i.ytimg.com/vi/${vid}/hqdefault.jpg`;
+      l1.crossOrigin = 'anonymous';
+      head.appendChild(l1);
+
+    });
+  } catch (e) {
+    console.error('Thumbnail preload error:', e);
+  }
+}
+
+// 可能な限り早く実行（初回描画を邪魔しないように配慮）
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => {
+    // requestIdleCallback があれば使う（フォールバックは setTimeout）
+    (window.requestIdleCallback || function (cb){ return setTimeout(cb, 0); })(preloadThumbsFromData);
+  });
+} else {
+  (window.requestIdleCallback || function (cb){ return setTimeout(cb, 0); })(preloadThumbsFromData);
+}
+
     let selectedGuests = [];
     let selectedCorners = [];
     let selectedOthers = [];
@@ -1983,17 +2029,3 @@ const preloadThumbnails = (episodes) => {
 preloadThumbnails(data);
 
 
-// Inject preload links for YouTube thumbnails
-const YT_THUMB_IDS = ["4l77d67EiPc", "LcPFWQ5JdoU", "IdEStksoFaM", "FA7BqhR_AkQ", "saAS_RHRhDI", "QHmGJKLGJs4", "sZ0ElkxOwkY", "uJy5FqDPumk", "8tnv8TFsyTs", "yA90NiAGuF8", "hHfpdyDFN6U", "IaN7fW-RJPo", "oLdNIIz3qWw", "P0ifdqZm8wo", "16fCDsC2Aks", "_x5aMdhpeW8", "_U9gzTHBSNo", "xcJYrnd1lmM", "Z1Jp0XgIjhY", "VOa30rMc_A8", "vEZPauFTld0", "SlqA0WLMIJY", "qGlRPIDpQpQ", "Auf-ShZED9A", "w0v3hA1u_lw", "fTtmFkt7dh8", "uUlbEGKij0k", "aJS3Gn27ecQ", "zNSZqWpbCjg", "jWQZeh5QBEA", "UH2tnm8-zFg", "D6h2j9TK95U", "7yENoBuBn6k", "35i46aXGr_U", "bJNWOULhxFA", "e2ZTylMTA9A", "JxVrbUUC8uk", "F_ydWMhlg9s", "nSO14XAm2GI", "ZHabLKrF-Aw", "0nHtK3Zokmg", "EoW2sRMJeYs", "eBa39x7Y-wU", "QOt1T9L3pwU", "QYL0t78oGTY", "FHYxRO_3_VE", "Ej1RFoHLtdg", "mmHhbqnSoWs", "uB_S_JdKmkM", "gkgQkrTc0qU", "NQx1S6RyK38", "ghFq5nTxOwQ", "OL8SskfX6eA", "0TiPEETSxUo", "Fv_9fQ3PFRY", "JmSomKpSL-M", "Xg1ozrPAwDI", "_SUn0OWQo2k", "HqKaV7V4L7A", "L8mHUOlAw64", "WsfRhqaLO_k", "efXr9X648so", "_8-sk4OwB78", "mwJeACqV2Oc", "kUbnGEpkT6E", "VN95H7KjuL0", "cAx6-HQejSI", "VN5u1Jc3H5I", "YTAG14wJsc0", "bCNwtnv-3Qk", "Xz8iTj-5Ndw", "SonCPSaBlKA", "8zIajtpgosA", "yqHK0r7qhvk", "gzKy7Y10h4g", "-bgKWbqNyN0", "OKHnZk0o9lM", "0Vz-WHfPrI4", "JQ_xgtun1kQ", "f18K3nc2wAw", "4hcPzIW8MfE", "ieCOGEOXxr8", "4c_DVoq-9oU", "kct8627dspo", "EDay9btUsKw", "__P57MTTjyw", "XXXXXXXX"];
-(function(){ 
-  try {
-    const head = document.head || document.getElementsByTagName('head')[0];
-    YT_THUMB_IDS.forEach(id => {
-      const l = document.createElement('link');
-      l.rel = 'preload';
-      l.as = 'image';
-      l.href = `https://i.ytimg.com/vi/${id}/hqdefault.jpg`;
-      head.appendChild(l);
-    });
-  } catch(e){}
-})();
