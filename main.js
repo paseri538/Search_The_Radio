@@ -1861,14 +1861,14 @@ document.addEventListener('DOMContentLoaded', () => {
   function openDrawer() {
     drawer.style.display = 'block';
     backdrop.classList.add('show');
-    window.updateScrollLock && window.updateScrollLock();
+    document.body.classList.add('modal-open');
     toggleBtn?.setAttribute('aria-expanded', 'true');
     toggleBtn?.setAttribute('aria-pressed', 'true');
   }
   function closeDrawer() {
     drawer.style.display = 'none';
     backdrop.classList.remove('show');
-    window.updateScrollLock && window.updateScrollLock();
+    document.body.classList.remove('modal-open');
     toggleBtn?.setAttribute('aria-expanded', 'false');
     toggleBtn?.setAttribute('aria-pressed', 'false');
   }
@@ -1941,57 +1941,31 @@ function createThumbImg(youtubeUrl, altText = 'thumbnail') {
   return img;
 }
 
+// 例：カード生成のところ
+const thumb = createThumbImg(item.link, `#${item.episode} サムネイル`);
+thumbnailContainer.appendChild(thumb);
 
 
+self.addEventListener('fetch', (event) => {
+  const url = new URL(event.request.url);
+  if (url.hostname.endsWith('ytimg.com')) {
+    // YouTubeサムネはSWでいじらず素通し
+    return event.respondWith(fetch(event.request));
+  }
 
-
-const scroller = document.scrollingElement || document.documentElement;
-document.getElementById('toTopBtn')?.addEventListener('click', () => {
-  scroller.scrollTo({ top: 0, behavior: 'smooth' });
-});
-
-
-const toTop = document.getElementById('toTopBtn');
-if (toTop) {
-  toTop.addEventListener('click', (e) => {
-    e.preventDefault();
-    document.body.classList.remove('modal-open');      // ロック解除
-    document.body.classList.remove('scroll-lock');     // もう一系統があれば解除
-    // body固定法を使っていた場合の位置復元
-    const topStr = document.body.style.top;
-    if (topStr) {
-      const y = parseInt(topStr) || 0;
-      document.body.style.top = '';
-      document.body.style.position = '';
-      window.scrollTo(0, -y);
-    }
-    // 各ブラウザに効くフォールバック込み
-    requestAnimationFrame(() => {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-      document.documentElement.scrollTop = 0;
-      document.body.scrollTop = 0;
-    });
-  });
-}
-
-
-(() => {
-  const btn = document.getElementById('toTopBtn');
-  if (!btn) return;
-  btn.addEventListener('click', (e) => {
-    e.preventDefault();
-    // Safari等でも安定するよう window.scrollTo を優先
+  // 既存の network-first ロジック …
+  event.respondWith((async () => {
     try {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    } catch {
-      window.scrollTo(0, 0);
+      const fresh = await fetch(event.request, { cache: 'no-store' });
+      if (event.request.method === 'GET' && fresh.ok) {
+        const cache = await caches.open(CACHE_NAME);
+        cache.put(event.request, fresh.clone());
+      }
+      return fresh;
+    } catch (err) {
+      const cached = await caches.match(event.request);
+      if (cached) return cached;
+      throw err;
     }
-  });
-})();
-
-
-// 追記：初期化で過去の inline style をクリア
-document.addEventListener('DOMContentLoaded', () => {
-  const t = document.getElementById('toTopBtn');
-  if (t) { t.style.opacity = ''; t.style.display = ''; }
+  })());
 });

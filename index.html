@@ -87,26 +87,6 @@
   <link href="style.css?v=20250817a" rel="stylesheet" />
 
 
-  <script>
-/* ブラウザ時のローディング最適化：ページ固定＋可視高さ --vh */
-(function () {
-  // PWA（ホーム画面）判定
-  var isStandalone = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || window.navigator.standalone;
-  if (isStandalone) document.documentElement.classList.add('ios-standalone');
-
-  // ローディング中はスクロールを止める（ブラウザ時のみ body を固定）
-  document.documentElement.classList.add('is-loading');
-  document.addEventListener('DOMContentLoaded', function () {
-    if (!isStandalone) document.body.classList.add('is-loading');
-  });
-
-  // 可視領域の高さを --vh に常時反映（アドレスバー出入りに追従）
-  function setVh(){ document.documentElement.style.setProperty('--vh', (window.innerHeight*0.01)+'px'); }
-  setVh();
-  window.addEventListener('resize', setVh, {passive:true});
-  window.addEventListener('orientationchange', setVh, {passive:true});
-})();
-</script>
   <link rel="preconnect" href="https://i.ytimg.com" crossorigin>
 </head>
 <body>
@@ -128,7 +108,7 @@
   <span class="visually-hidden">Loading...</span>
 </div>
 
-  <button id="toTopBtn" aria-label="トップへ戻る" style="position:fixed;right:18px;bottom:18px;z-index:999;border-radius:50%;width:44px;height:44px;font-size:22px;background:#fff;border:1.5px solid #aaa;box-shadow:0 2px 8px #0001;cursor:pointer;transition:opacity .2s;">↑</button>
+  <button id="toTopBtn" aria-label="トップへ戻る" style="position:fixed;right:18px;bottom:18px;z-index:999;display:none;border-radius:50%;width:44px;height:44px;font-size:22px;background:#fff;border:1.5px solid #aaa;box-shadow:0 2px 8px #0001;cursor:pointer;transition:opacity .2s;">↑</button>
   <button id="darkModeBtn" aria-label="ダークモード切替" style="position:fixed;left:18px;bottom:18px;z-index:999;border-radius:50%;width:44px;height:44px;font-size:22px;background:#222;color:#fff;border:none;box-shadow:0 2px 8px #0002;cursor:pointer;transition:background .2s;">🌙</button>
   <div class="sticky-search-area" aria-label="検索とフィルター">
     <div class="search-card">
@@ -295,7 +275,7 @@
 
 
 
-  <script src="main.js?v=20250817c"></script>
+  <script src="main.js?v=20250817b"></script>
 
   <script>
   // ---- Service Worker register (network-first) ----

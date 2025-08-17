@@ -2104,8 +2104,6 @@ body.modal-open {
 #darkModeBtn {
   display: flex !important;
   bottom: 18px !important;            /* ブラウザ時の基準位置 */
-
-  pointer-events: auto;
 }
 
 /* ←PWA（ホーム画面から起動）時だけホームバー分を加算 */
@@ -2129,33 +2127,4 @@ body.dark-mode .thumbnail { background: #1f262d; }
 /* プレースホルダーに軽いスタイル */
 .thumb-fallback { opacity: .85; }
 
-
-
-/* ブラウザ時だけ body を固定（PWAは除外） */
-html:not(.ios-standalone) body.is-loading {
-  position: fixed;
-  inset: 0;
-  width: 100%;
-}
-
-/* ローディング全面は“見えている高さ”にフィット（順にフォールバック） */
-#loading-screen{
-  min-height: 100vh;
-  min-height: 100svh;
-  min-height: 100dvh;
-  min-height: calc(var(--vh, 1vh) * 100); /* JS フォールバック */
-  transform: none !important; /* 以前の微調整があれば無効化：下が見える原因になるため */
-}
-
-/* （任意）ロゴとドットの間隔だけで微調整するならこちらで */
-#spinner { margin-top: 28px !important; }
-
-
-/* 背景スクロールロックの統一クラス */
-body.scroll-lock {
-  position: fixed;
-  inset: 0;
-  overflow: hidden;
-  width: 100%;
-}
 
