@@ -2104,6 +2104,8 @@ body.modal-open {
 #darkModeBtn {
   display: flex !important;
   bottom: 18px !important;            /* ブラウザ時の基準位置 */
+
+  pointer-events: auto;
 }
 
 /* ←PWA（ホーム画面から起動）時だけホームバー分を加算 */
@@ -2147,3 +2149,14 @@ html:not(.ios-standalone) body.is-loading {
 
 /* （任意）ロゴとドットの間隔だけで微調整するならこちらで */
 #spinner { margin-top: 28px !important; }
+
+
+/* 背景スクロールロックの統一クラス */
+body.scroll-lock {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  width: 100%;
+}
+
+body.scroll-lock #toTopBtn { display: none !important; }
