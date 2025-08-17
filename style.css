@@ -581,7 +581,7 @@ body.dark-mode #toTopBtn:hover, body.dark-mode #toTopBtn:focus {
 
 #toTopBtn,
 #darkModeBtn {
-  display: flex !important;
+  display: flex;
   align-items: center;
   justify-content: center;
   padding: 0;
@@ -2102,7 +2102,7 @@ body.modal-open {
 /* ←これで常に表示（ブラウザでもPWAでも） */
 #toTopBtn,
 #darkModeBtn {
-  display: flex !important;
+  display: flex;
   bottom: 18px !important;            /* ブラウザ時の基準位置 */
 }
 
