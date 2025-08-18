@@ -586,16 +586,31 @@ body.dark-mode #toTopBtn:hover, body.dark-mode #toTopBtn:focus {
 }
 
 #toTopBtn,
-#darkModeBtn
+#darkModeBtn, /* 古いIDも念のため残します */
 #theme-toggle-btn {
+  /* 位置とレイヤー */
+  position: fixed;
+  left: 18px;
+  bottom: 18px;
+  z-index: 2040 !important;
+
+  /* アイコンの中央揃え */
   display: flex !important;
   align-items: center;
   justify-content: center;
-  padding: 0;
-  font-size: 22px;
-  border-radius: 50%;
+
+  /* 見た目 */
   width: 44px;
   height: 44px;
+  padding: 0;
+  font-size: 22px;
+  background: #222;
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  cursor: pointer;
+  transition: background .2s;
 }
 
 #loading-screen.fadeout {
