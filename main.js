@@ -971,15 +971,15 @@ $('#randomBtn').on('click', function(){
 
     });
 
-    // トップへ戻るボタンの表示制御
-window.addEventListener("scroll", function(){
+// トップへ戻るボタンの表示制御 (クラス切り替え方式)
+window.addEventListener("scroll", function() {
   const btn = document.getElementById("toTopBtn");
-  if(window.scrollY > 120){
-    btn.style.display = "block";
-    btn.style.opacity = 1;
+  if (!btn) return;
+
+  if (window.scrollY > 120) {
+    btn.classList.add('show');
   } else {
-    btn.style.opacity = 0;
-    setTimeout(() => { if(window.scrollY < 120) btn.style.display = "none"; }, 200);
+    btn.classList.remove('show');
   }
 });
 

@@ -3280,3 +3280,39 @@ body.theme-red .ts-btn {
   color: var(--active-filter-text) !important; /* 白文字 */
   border-color: var(--btn-hover) !important;
 }
+
+/* ===== トップへ戻るボタンのスタイル（確定版）===== */
+#toTopBtn {
+  /* 位置と見た目 */
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 999;
+  width: 44px;
+  height: 44px;
+  font-size: 22px;
+  border-radius: 50%;
+  background: #fff;
+  border: 1.5px solid #aaa;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  cursor: pointer;
+  color: #333; /* 文字色を明示 */
+
+  /* アイコン（文字）中央揃え */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  /* 非表示時の状態 */
+  opacity: 0;
+  transform: translateY(10px);
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+/* 表示時の状態 (.showクラスが付与された時) */
+#toTopBtn.show {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
