@@ -585,8 +585,15 @@ body.dark-mode #toTopBtn:hover, body.dark-mode #toTopBtn:focus {
   overflow: visible !important;
 }
 
-#toTopBtn,
-#darkModeBtn, /* 古いIDも念のため残します */
+/* トップへ戻るボタンのアイコン中央揃え */
+#toTopBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+/* テーマ変更ボタンのスタイル（こちらで表示を制御します） */
 #theme-toggle-btn {
   /* 位置とレイヤー */
   position: fixed;
@@ -595,7 +602,7 @@ body.dark-mode #toTopBtn:hover, body.dark-mode #toTopBtn:focus {
   z-index: 2040 !important;
 
   /* アイコンの中央揃え */
-  display: flex !important;
+  display: flex;
   align-items: center;
   justify-content: center;
 
