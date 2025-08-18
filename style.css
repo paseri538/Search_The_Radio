@@ -586,7 +586,8 @@ body.dark-mode #toTopBtn:hover, body.dark-mode #toTopBtn:focus {
 }
 
 #toTopBtn,
-#darkModeBtn {
+#darkModeBtn
+#theme-toggle-btn {
   display: flex !important;
   align-items: center;
   justify-content: center;
