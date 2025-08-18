@@ -67,7 +67,7 @@ window.__hardUnlockScroll = function __hardUnlockScroll(){
       { episode:"58", title:"#58　ゲスト：長谷川育美", guest:"長谷川育美", date:"2024-08-14", link:"https://www.youtube.com/watch?v=aJS3Gn27ecQ", keywords:["長谷川育美","いくみ","はせみ","はせちゃん","いくちゃん","はっせー","はせがわいくみ","よぴいく","ypik"], duration:"1:12:11" },
       { episode:"57", title:"#57　ゲスト：鈴代紗弓、水野朔、長谷川育美", guest:["鈴代紗弓","水野朔","長谷川育美"], date:"2024-07-31", link:"https://www.youtube.com/watch?v=zNSZqWpbCjg", keywords:["鈴代紗弓","さゆみん","おさゆ","みんみん","さゆちゃん","おすず","すずちゃん","鈴代ちゃん","すずしろさゆみ","水野朔","さくぴ","さくさくちゃん","ﾐｽﾞﾉｻｸﾃﾞｼｭ","みずのさく","長谷川育美","いくみ","はせみ","はせちゃん","いくちゃん","はっせー","はせがわいくみ",], duration:"1:06:01" },
       { episode:"56", title:"#56　", guest:"青山吉能", date:"2024-07-17", link:"https://www.youtube.com/watch?v=jWQZeh5QBEA", keywords:["青山吉能","よぴ","よしの","よっぴー","あおやまよしの"], duration:"1:00:41" },
-      { episode:"55", title:"#55　ゲスト：長谷川育美", guest:"長谷川育美", date:"2024-07-03", link:"https://www.youtube.com/watch?v=UH2tnm8-zFg", keywords:["長谷川育美","いくみ","はせみ","はせちゃん","いくちゃん","はっせー","はせがわいくみ","よぴいく","ypik","NHKVenue101","べにゅー101"], duration:"1:07:06" },
+      { episode:"55", title:"#55　ゲスト：長谷川育美", guest:"長谷川育美", date:"2024-07-03", link:"https://www.youtube.com/watch?v=UH2tnm8-zFg", keywords:["長谷川育美","いくみ","はせみ","はせちゃん","いくちゃん","はっせー","はせがわいくみ","よぴいく","ypik","NHKVenue101","べにゅー101","ラッキーボタン@1:00","フレッシュネスバーガー","スパムバーガー"], duration:"1:07:06" },
       { episode:"54", title:"#54　ゲスト：鈴代紗弓", guest:"鈴代紗弓", date:"2024-06-19", link:"https://www.youtube.com/watch?v=D6h2j9TK95U", keywords:["鈴代紗弓","さゆみん","おさゆ","みんみん","さゆちゃん","おすず","すずちゃん","鈴代ちゃん","すずしろさゆみ"], duration:"1:12:28" },
       { episode:"53", title:"#53　", guest:"青山吉能", date:"2024-06-05", link:"https://www.youtube.com/watch?v=7yENoBuBn6k", keywords:["青山吉能","よぴ","よしの","よっぴー","あおやまよしの"], duration:"1:10:52" },
       { episode:"52", title:"#52　ゲスト：水野朔", guest:"水野朔", date:"2024-05-22", link:"https://www.youtube.com/watch?v=35i46aXGr_U", keywords:["水野朔","さくぴ","さくさくちゃん","ﾐｽﾞﾉｻｸﾃﾞｼｭ","みずのさく",], duration:"1:09:04" },
@@ -102,7 +102,7 @@ window.__hardUnlockScroll = function __hardUnlockScroll(){
       { episode:"23", title:"#23　", guest:"青山吉能", date:"2023-04-12", link:"https://www.youtube.com/watch?v=_8-sk4OwB78", keywords:["青山吉能","よぴ","よしの","よっぴー","あおやまよしの","エロ女上司","えろおんなじょうし"], duration:"1:11:46" },
       { episode:"22", title:"#22　ゲスト：鈴代紗弓、水野朔、長谷川育美", guest:["鈴代紗弓","水野朔","長谷川育美"], date:"2023-03-29", link:"https://www.youtube.com/watch?v=mwJeACqV2Oc", keywords:["鈴代紗弓","さゆみん","おさゆ","みんみん","さゆちゃん","おすず","すずちゃん","鈴代ちゃん","すずしろさゆみ","水野朔","さくぴ","さくさくちゃん","ﾐｽﾞﾉｻｸﾃﾞｼｭ","みずのさく","長谷川育美","いくみ","はせみ","はせちゃん","いくちゃん","はっせー","はせがわいくみ","生配信・公録","ラッキーボタン@45:15","藤田亜紀子@45:15","ふじたあきこ@45:15","ｵﾓｼﾛｲｯ!","ダジャレ","匂わせ","におわせ"], duration:"1:27:48" },
       { episode:"21", title:"#21　", guest:"青山吉能", date:"2023-03-15", link:"https://www.youtube.com/watch?v=kUbnGEpkT6E", keywords:["青山吉能","よぴ","よしの","よっぴー","あおやまよしの","エロ女上司","えろおんなじょうし"], duration:"56:46" },
-      { episode:"20", title:"#20　ゲスト：長谷川育美", guest:"長谷川育美", date:"2023-03-01", link:"https://www.youtube.com/watch?v=VN95H7KjuL0", keywords:["長谷川育美","いくみ","はせみ","はせちゃん","いくちゃん","はっせー","はせがわいくみ","よぴいく","ypik","優しさで言ってない","やさしさでいってない",], duration:"1:02:01" },
+      { episode:"20", title:"#20　ゲスト：長谷川育美", guest:"長谷川育美", date:"2023-03-01", link:"https://www.youtube.com/watch?v=VN95H7KjuL0", keywords:["長谷川育美","いくみ","はせみ","はせちゃん","いくちゃん","はっせー","はせがわいくみ","よぴいく","ypik","優しさで言ってない@21:36","やさしさでいってない",], duration:"1:02:01" },
       { episode:"19", title:"#19　ゲスト：水野朔", guest:"水野朔", date:"2023-02-15", link:"https://www.youtube.com/watch?v=cAx6-HQejSI", keywords:["水野朔","さくぴ","さくさくちゃん","ﾐｽﾞﾉｻｸﾃﾞｼｭ","みずのさく",], duration:"1:03:29" },
       { episode:"18", title:"#18　ゲスト：鈴代紗弓", guest:"鈴代紗弓", date:"2023-02-01", link:"https://www.youtube.com/watch?v=VN5u1Jc3H5I", keywords:["鈴代紗弓","さゆみん","おさゆ","みんみん","さゆちゃん","おすず","すずちゃん","鈴代ちゃん","すずしろさゆみ"], duration:"1:13:42" },
       { episode:"17", title:"#17　ゲスト：鈴代紗弓、水野朔、長谷川育美", guest:["鈴代紗弓","水野朔","長谷川育美"], date:"2023-01-18", link:"https://www.youtube.com/watch?v=YTAG14wJsc0", keywords:["鈴代紗弓","さゆみん","おさゆ","みんみん","さゆちゃん","おすず","すずちゃん","鈴代ちゃん","すずしろさゆみ","水野朔","さくぴ","さくさくちゃん","ﾐｽﾞﾉｻｸﾃﾞｼｭ","みずのさく","長谷川育美","いくみ","はせみ","はせちゃん","いくちゃん","はっせー","はせがわいくみ"], duration:"1:08:18" },
@@ -120,18 +120,13 @@ window.__hardUnlockScroll = function __hardUnlockScroll(){
       { episode:"05", title:"#05　ゲスト：長谷川育美", guest:"長谷川育美", date:"2022-10-19", link:"https://www.youtube.com/watch?v=4hcPzIW8MfE", keywords:["長谷川育美","いくみ","はせみ","はせちゃん","いくちゃん","はっせー","はせがわいくみ","よぴいく","ypik","ぼっち・ざ・おーでぃしょん！@45:17"], duration:"58:15" },
       { episode:"04", title:"#04　ゲスト：水野朔", guest:"水野朔", date:"2022-10-12", link:"https://www.youtube.com/watch?v=ieCOGEOXxr8", keywords:["水野朔","さくぴ","さくさくちゃん","ﾐｽﾞﾉｻｸﾃﾞｼｭ","みずのさく",], duration:"1:06:40" },
       { episode:"03", title:"#03　ゲスト：鈴代紗弓", guest:"鈴代紗弓", date:"2022-10-05", link:"https://www.youtube.com/watch?v=4c_DVoq-9oU", keywords:["鈴代紗弓","さゆみん","おさゆ","みんみん","さゆちゃん","おすず","すずちゃん","鈴代ちゃん","すずしろさゆみ"], duration:"1:07:18" },
-      { episode:"02", title:"#02　ゲスト：水野朔、長谷川育美", guest:["水野朔","長谷川育美"], date:"2022-09-21", link:"https://www.youtube.com/watch?v=kct8627dspo", keywords:["3mm","ｵﾓｼﾛｲｯ!","水野朔","さくぴ","さくさくちゃん","ﾐｽﾞﾉｻｸﾃﾞｼｭ","みずのさく","長谷川育美","いくみ","はせみ","はせちゃん","いくちゃん","はっせー","はせがわいくみ","生配信・公録","藤田亜紀子@4:26","ふじたあきこ@4:26"], duration:"1:07:41" },
+      { episode:"02", title:"#02　ゲスト：水野朔、長谷川育美", guest:["水野朔","長谷川育美"], date:"2022-09-21", link:"https://www.youtube.com/watch?v=kct8627dspo", keywords:["3mm","ｵﾓｼﾛｲｯ!","水野朔","さくぴ","さくさくちゃん","ﾐｽﾞﾉｻｸﾃﾞｼｭ","みずのさく","長谷川育美","いくみ","はせみ","はせちゃん","いくちゃん","はっせー","はせがわいくみ","生配信・公録","藤田亜紀子@4:26","ふじたあきこ","ラッキーボタン@39:31"], duration:"1:07:41" },
       { episode:"02", title:"京まふ大作戦2022　", guest:["水野朔","長谷川育美"], date:"2022-09-18", link:"https://www.youtube.com/watch?v=EDay9btUsKw", keywords:["3mm","ｵﾓｼﾛｲｯ!","水野朔","さくぴ","さくさくちゃん","ﾐｽﾞﾉｻｸﾃﾞｼｭ","みずのさく","長谷川育美","いくみ","はせみ","はせちゃん","いくちゃん","はっせー","はせがわいくみ","生配信・公録","京まふ","きょうまふ"], duration:"54:45" },
       { episode:"01", title:"#01　", guest:"青山吉能", date:"2022-09-07", link:"https://www.youtube.com/watch?v=__P57MTTjyw", keywords:["青山吉能","よぴ","よしの","よっぴー","あおやまよしの","ぼっち共感@27:49","ウソ陽キャ辞典@43:23","ラッキーボタン@50:44"], duration:"55:53" },
 
     ];
 
-    +/**
-+ * data内の YouTube URL から動画IDを抽出し、
-+ * <head> に <link rel="preload" as="image"> をまとめて追加する
-+ * - 重複IDはスキップ
-+ * - まず hqdefault.jpg を対象（必要なら mqdefault も併せて先読み）
-+ */
+
 function preloadThumbsFromData() {
   try {
     const head = document.head || document.getElementsByTagName('head')[0];
@@ -1562,6 +1557,7 @@ const CUSTOM_READINGS = {
   "匂わせ": ["におわせ"],
   "薮崎D": ["やぶさき"],
   "ぼっち・ざ・ろっく！です。": ["ぼざろです"],
+  "優しさで言ってない": ["やさしさでいってない"],
 };
 
 
@@ -2096,3 +2092,5 @@ preloadThumbnails(data);
   });
   obs.observe(drawer, { attributes: true, attributeFilter: ['style', 'class'] });
 })();
+
+
