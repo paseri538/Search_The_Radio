@@ -4,22 +4,30 @@
 
 <head>
 
-<!-- ★最初の描画前にダーク背景を強制 -->
+
 <script>
 (function () {
   try {
-    var ls = localStorage.getItem("theme");
-    var prefers = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
-    var isDark = (ls === "dark") || (!ls && prefers);
+    // 新しいテーマキーを読み込む
+    var savedTheme = localStorage.getItem("site_theme_v1");
+    // OSのダークモード設定を読み込む
+    var prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+    
+    // 保存されたテーマがダーク系か、またはテーマ設定がなくOSがダークモードの場合に isDark を true にする
+    var isDark = ['dark', 'blue', 'red'].includes(savedTheme) || (!savedTheme && prefersDark);
+    
     if (isDark) {
       var st = document.createElement("style");
       st.id = "early-dark-style";
+      // ダーク系のテーマ用の背景色を早期に適用
+      var darkBg = "#22272e"; // デフォルトのダーク背景
+      if (savedTheme === 'blue') darkBg = "#2a3a4a";
+      if (savedTheme === 'red') darkBg = "#4c2a2a";
+
       st.textContent =
-        "html,body{background:#22272e!important;color:#e5ecec!important}" +
-        "#loading-screen{background:#22272e!important}";
+        "html,body{background:" + darkBg + "!important;color:#e5ecec!important}" +
+        "#loading-screen{background:" + darkBg + "!important}";
       document.head.appendChild(st);
-      // 早期にダークであることを示すフラグ（任意）
-      document.documentElement.setAttribute("data-theme","dark"); document.body && document.body.classList.add("dark-mode");
     }
   } catch(e){}
 })();
@@ -74,7 +82,7 @@
 
 
 <!-- Manifest -->
-<link rel="manifest" href="./site.webmanifest?v=20250818a">
+<link rel="manifest" href="./site.webmanifest?v=20250819a">
 
 
 
@@ -84,7 +92,7 @@
   <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet" />
-  <link href="style.css?v=20250818a" rel="stylesheet" />
+  <link href="style.css?v=20250819a" rel="stylesheet" />
 
 
   <link rel="preconnect" href="https://i.ytimg.com" crossorigin>
@@ -109,7 +117,7 @@
 </div>
 
   <button id="toTopBtn" aria-label="トップへ戻る" style="position:fixed;right:18px;bottom:18px;z-index:999;display:none;border-radius:50%;width:44px;height:44px;font-size:22px;background:#fff;border:1.5px solid #aaa;box-shadow:0 2px 8px #0001;cursor:pointer;transition:opacity .2s;">↑</button>
-  <button id="darkModeBtn" aria-label="ダークモード切替" style="position:fixed;left:18px;bottom:18px;z-index:999;border-radius:50%;width:44px;height:44px;font-size:22px;background:#222;color:#fff;border:none;box-shadow:0 2px 8px #0002;cursor:pointer;transition:background .2s;">🌙</button>
+<button id="theme-toggle-btn" aria-label="テーマ切替" style="position:fixed;left:18px;bottom:18px;z-index:999;border-radius:50%;width:44px;height:44px;font-size:22px;background:#222;color:#fff;border:none;box-shadow:0 2px 8px #0002;cursor:pointer;transition:background .2s;"><i class="fa-solid fa-palette"></i></button>
   <div class="sticky-search-area" aria-label="検索とフィルター">
     <div class="search-card">
       <div class="search-row search-row-keyword">
@@ -209,23 +217,23 @@
     <ul id="results" class="list-unstyled"></ul>
     <div class="pagination-area" id="paginationArea"></div>
    
-    <div id="aboutModal" style="display:none; position:fixed; z-index:2055; left:0; top:0; width:100vw; height:100vh; background:rgba(30,29,52,0.18); backdrop-filter: blur(2px); align-items:center; justify-content:center;">
-      <div id="aboutModalContent" style="background:#fff; color:#222; border-radius:16px; box-shadow:0 6px 30px -6px #7c3aed35; max-width:95vw; width:360px; padding:32px 22px 22px 22px; margin:auto; text-align:center; position:relative; display:flex; flex-direction:column; align-items:center;">
-        <button id="aboutCloseBtn" style="position:absolute; right:17px; top:13px; border:none; background:none; font-size:1.5em; color:#6654e8; cursor:pointer;">×</button>
-        <img src="logo.png" alt="logo" style="width:100px; margin-bottom:10px; display:block; margin-left:auto; margin-right:auto;"/>
-        <div style="font-size:1.16em; font-weight:bold; margin-bottom:9px;">このサイトについて</div>
-        <div style="font-size:1em; line-height:1.75; text-align:left;">
-          <br>
-          <b>「さーち・ざ・らじお！」</b>は<br>
-          ぼっち・ざ・らじお！（公式YouTube）の<br>エピソード情報を簡単・高速に検索できる<br>非公式サイトです。<br>
-          <br>
-          <b>出演者やコーナー名、投稿年などで<br>絞り込み・キーワード検索</b>が可能です。<br>
-          <br>
-          ※本サイトはファンによる個人制作です。<br>
-          著作権は各権利者様に帰属します。
-        </div>
-      </div>
+    <div id="aboutModal" class="modal-overlay" style="display: none;">
+  <div id="aboutModalContent">
+    <button id="aboutCloseBtn">×</button>
+    <img src="logo.png" alt="logo" class="about-logo"/>
+    <div class="about-title">このサイトについて</div>
+    <div class="about-body">
+      <br>
+      <b>「さーち・ざ・らじお！」</b>は<br>
+      ぼっち・ざ・らじお！（公式YouTube）の<br>エピソード情報を簡単・高速に検索できる<br>非公式サイトです。<br>
+      <br>
+      <b>出演者やコーナー名、投稿年などで<br>絞り込み・キーワード検索</b>が可能です。<br>
+      <br>
+      ※本サイトはファンによる個人制作です。<br>
+      著作権は各権利者様に帰属します。
     </div>
+  </div>
+</div>
 
    <!-- 置き換え：ラジオの歴史ボタン -->
 <section id="radio-history" class="history-section" aria-label="ラジオの歴史">
@@ -269,11 +277,11 @@
 
 <!-- ▲ ラジオの歴史（ここまで） -->
 
-    <footer>
+<footer class="site-footer">
       ©はまじあき／芳文社・アニプレックス<br>
       <a href="https://x.com/paseri_538" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;">Developed by paseri_538</a>
-  <span class="footer-sep">・</span>
-  <a href="#" id="aboutSiteLink" style="color:inherit;text-decoration:underline;">このサイトについて</a>
+      <span class="footer-sep">・</span>
+      <a href="#" id="aboutSiteLink" style="color:inherit;text-decoration:underline;">このサイトについて</a>
     </footer>
   </div>
 
@@ -283,13 +291,14 @@
 
 
 
-  <script src="main.js?v=20250818a"></script>
+
+  <script src="main.js?v=20250819a"></script>
 
   <script>
   // ---- Service Worker register (network-first) ----
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', function () {
-      navigator.serviceWorker.register('/sw.js?20250818a').then(function(reg) {
+      navigator.serviceWorker.register('/sw.js?20250819a').then(function(reg) {
         return navigator.serviceWorker.ready;
       }).then(function(reg) {
         if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
@@ -303,6 +312,14 @@
     });
   }
   </script>
+  <div id="floating-theme-panel" class="floating-panel">
+  <button class="theme-btn" data-theme="light" title="ライトテーマ" style="background-color: #f9fafe;"></button>
+  <button class="theme-btn" data-theme="dark" title="ダークテーマ" style="background-color: #22272e;"></button>
+  <button class="theme-btn" data-theme="pink" title="ピンクテーマ" style="background-color: #F283A2;"></button>
+  <button class="theme-btn" data-theme="yellow" title="イエローテーマ" style="background-color: #FBCD41;"></button>
+  <button class="theme-btn" data-theme="blue" title="ブルーテーマ" style="background-color: #3482C3;"></button>
+  <button class="theme-btn" data-theme="red" title="レッドテーマ" style="background-color: #EE5960;"></button>
+</div>
 
 </body>
 </html>

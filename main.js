@@ -1,3 +1,74 @@
+// main.js の一番上のテーマ管理機能を、以下にまるごと置き換え
+
+// ===== 新しいテーマ管理機能 (フローティングパネル版) =====
+$(function() {
+    const $toggleBtn = $('#theme-toggle-btn');
+    const $panel = $('#floating-theme-panel');
+
+    if ($toggleBtn.length === 0 || $panel.length === 0) {
+        return;
+    }
+
+    const THEME_KEY = 'site_theme_v1';
+    const allThemeClasses = 'dark-mode theme-pink theme-yellow theme-blue theme-red';
+
+    // 1. テーマを適用する関数
+    function applyTheme(themeName) {
+        $('body').removeClass(allThemeClasses);
+
+        let isDark = false;
+        if (themeName === 'dark') {
+            $('body').addClass('dark-mode');
+            isDark = true;
+        } else if (themeName && themeName !== 'light') {
+            $('body').addClass('theme-' + themeName);
+            if (['blue', 'red'].includes(themeName)) {
+                isDark = true;
+            }
+        }
+
+        // パネル内のアクティブボタンを更新
+        $panel.find('.theme-btn').removeClass('active');
+        $panel.find('.theme-btn[data-theme="' + themeName + '"]').addClass('active');
+
+        try {
+            localStorage.setItem(THEME_KEY, themeName);
+        } catch (e) {
+            console.error('Failed to save theme to localStorage.', e);
+        }
+    }
+
+    // 2. トリガーボタンクリックでパネルの表示/非表示を切り替え
+    $toggleBtn.on('click', function(e) {
+        e.stopPropagation(); // ドキュメントへのクリックイベント伝播を停止
+        $panel.toggleClass('show');
+    });
+
+    // 3. パネル内のテーマボタンクリックでテーマを適用し、パネルを閉じる
+    $panel.on('click', '.theme-btn', function() {
+        const theme = $(this).data('theme');
+        if (theme) {
+            applyTheme(theme);
+        }
+        $panel.removeClass('show');
+    });
+    
+    // 4. パネルの外側をクリックしたらパネルを閉じる
+    $(document).on('click', function(e) {
+        if ($panel.hasClass('show') && !$toggleBtn.is(e.target) && $toggleBtn.has(e.target).length === 0) {
+            $panel.removeClass('show');
+        }
+    });
+
+    // 5. ページ読み込み時に保存されたテーマを適用
+    try {
+        const savedTheme = localStorage.getItem(THEME_KEY) || 'light';
+        applyTheme(savedTheme);
+    } catch (e) {
+        console.error('Failed to load theme from localStorage.', e);
+        applyTheme('light');
+    }
+});
 
 // --- Hard unlock: ensure page scroll is restored no matter what path was taken
 window.__hardUnlockScroll = function __hardUnlockScroll(){
@@ -680,10 +751,10 @@ function resetSearch() {
         const guest = $(this).data("guest");
         if (selectedGuests.includes(guest)) {
           $(this).addClass('active').attr("aria-pressed","true");
-          $(this).css({background:"#ece8ff", color:"#242943", borderColor:"#6c60e8"});
+          
         } else {
           $(this).removeClass('active').attr("aria-pressed","false");
-          $(this).css({background:"", color:"", borderColor:""});
+          
         }
       });
     }
@@ -917,27 +988,7 @@ document.getElementById("toTopBtn").onclick = function(){
 };
 
 
-// ダークモード切り替え
-document.getElementById("darkModeBtn").onclick = function(){
-  document.body.classList.toggle("dark-mode");
-  // お好みでローカルストレージに記録も可能
-  if(document.body.classList.contains("dark-mode")){
-    localStorage.setItem("theme", "on");
-    this.textContent = "☀";
-  } else {
-    localStorage.setItem("theme", "off");
-    this.textContent = "🌙";
-  }
-};
 
-
-// ページ読込時に前回の設定を反映
-window.addEventListener("DOMContentLoaded", function(){
-  if(localStorage.getItem("theme")==="on"){
-    document.body.classList.add("dark-mode");
-    document.getElementById("darkModeBtn").textContent = "☀";
-  }
-});
 
 
 
@@ -2092,5 +2143,6 @@ preloadThumbnails(data);
   });
   obs.observe(drawer, { attributes: true, attributeFilter: ['style', 'class'] });
 })();
+
 
 

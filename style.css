@@ -37,7 +37,6 @@ body {
   border-radius: 0 0 14px 14px;
   border-bottom: 1.5px solid #ececec;
   display: flex; flex-direction: column; align-items: center;
-  backdrop-filter: blur(7px);
   transition: box-shadow 0.14s;
 }
 .search-card {
@@ -289,7 +288,6 @@ body {
 .btn-year[aria-pressed="true"], .btn-year.active {
   outline: none;
   background: #ece8ff !important;
-  color: #242943 !important;
   border-color: #6c60e8 !important;
   box-shadow: 0 0 0 2.5px rgba(79,70,229,0.19) !important;
 }
@@ -2216,4 +2214,1046 @@ html[data-theme="dark"] #filterDrawer .drawer-footer{
   /* 追加: Drawer の余白（PC時に効く） */
   --drawer-px: clamp(12px, 2.2vw, 22px); /* 左右 */
   --drawer-pt: clamp(10px, 1.8vw, 18px); /* 上下 */
+}
+
+
+
+/* ===== これより下を全て差し替えてください ===== */
+
+/* --- テーマスイッチャーのスタイル --- */
+.theme-switcher {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin: 40px auto 20px;
+  padding: 0 1rem;
+}
+.theme-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  box-shadow: 0 2px 5px -2px rgba(0,0,0,0.2);
+}
+.theme-btn:hover {
+  transform: translateY(-2px);
+}
+.theme-btn.active {
+  box-shadow: 0 0 0 3px var(--btn-main, #6654e8);
+  border-color: #fff;
+}
+body.dark-mode .theme-btn,
+body.theme-blue .theme-btn,
+body.theme-red .theme-btn {
+  border-color: rgba(255, 255, 255, 0.2);
+}
+body.dark-mode .theme-btn.active,
+body.theme-blue .theme-btn.active,
+body.theme-red .theme-btn.active {
+  border-color: #fff;
+  box-shadow: 0 0 0 3px var(--btn-hover, #a6e1fa);
+}
+
+/* --- ピンクテーマ --- */
+body.theme-pink {
+  --bg-color: #FEF1F4;
+  --card-bg: #FCE6EB;
+  --item-bg: #FEF8F9;
+  --btn-bg: #fff;
+  --text-color: #6D3A49;
+  --muted: #A17684;
+  --btn-main: #F283A2;
+  --btn-hover: #D97590;
+  --filter-btn-active: #FADAE2;
+  --active-filter: #F283A2;
+  --history-card-bg: #FDF7F8;
+  --history-card-bd: #FADAE2;
+  --history-year: #D97590;
+  --history-dot: #F283A2;
+  --history-line: #FADAE2;
+  --history-muted: #A17684;
+  --history-dot-ring: 242, 131, 162;
+  background: var(--bg-color) !important;
+  color: var(--text-color) !important;
+}
+body.theme-pink .sticky-search-area { background: #FEF1F4e8 !important; border-bottom-color: var(--history-card-bd) !important; }
+body.theme-pink .search-card { background: var(--card-bg) !important; }
+body.theme-pink .searchbox-input, body.theme-pink .searchbox-select { background: #FFFAFB !important; border-color: var(--history-card-bd) !important; color: var(--text-color) !important; }
+body.theme-pink .searchbox-input::placeholder { color: #D6B9C2 !important; }
+body.theme-pink .searchbox-input:focus { border-color: var(--btn-main) !important; }
+body.theme-pink #filterToggleBtn, body.theme-pink .reset-btn, body.theme-pink #favOnlyToggleBtn, body.theme-pink #randomBtn { border-color: var(--history-card-bd) !important; color: var(--btn-main) !important; background: var(--btn-bg) !important; }
+body.theme-pink #filterToggleBtn:hover, body.theme-pink .reset-btn:hover, body.theme-pink #favOnlyToggleBtn:hover, body.theme-pink #randomBtn:hover { background: var(--item-bg) !important; border-color: var(--btn-main) !important;}
+body.theme-pink #favOnlyToggleBtn.active { background: var(--item-bg) !important; border-color: var(--btn-main) !important; color: var(--btn-main) !important;}
+body.theme-pink .results-count-under-bar { color: var(--btn-hover) !important; background: transparent !important; }
+body.theme-pink #filterDrawer { background: var(--item-bg) !important; border-color: var(--history-card-bd) !important; }
+body.theme-pink .filter-title { color: var(--btn-hover) !important; }
+body.theme-pink .guest-button, body.theme-pink .btn-corner, body.theme-pink .btn-year { background: var(--btn-bg) !important; border-color: var(--history-card-bd) !important; color: var(--text-color) !important; }
+body.theme-pink .guest-button.active, body.theme-pink .btn-corner.active, body.theme-pink .btn-year.active { border-color: var(--btn-main) !important; background: var(--filter-btn-active) !important; box-shadow: 0 0 0 2.5px rgba(242, 131, 162, 0.25) !important; }
+body.theme-pink .episode-item { border-color: var(--history-card-bd) !important; background: var(--item-bg) !important; color: var(--text-color) !important; }
+body.theme-pink .page-btn, body.theme-pink .more-btn { background: var(--card-bg) !important; color: var(--btn-hover) !important; }
+body.theme-pink .page-btn.active, body.theme-pink .more-btn:active { background: var(--btn-main) !important; color: #fff !important; }
+body.theme-pink .fav-btn { background: var(--btn-bg) !important; border-color: var(--history-card-bd) !important; }
+body.theme-pink .fav-btn.active { background: var(--filter-btn-active) !important; border-color: var(--btn-main) !important; }
+body.theme-pink .fav-btn.active i { color: var(--btn-main) !important; }
+body.theme-pink .history-toggle { background: var(--history-card-bg) !important; border-color: var(--history-card-bd) !important; }
+
+/* --- イエローテーマ --- */
+body.theme-yellow {
+  --bg-color: #FFF9E6;
+  --card-bg: #FEF2D0;
+  --item-bg: #FFFCF2;
+  --btn-bg: #fff;
+  --text-color: #634F1A;
+  --muted: #957727;
+  --btn-main: #FBCD41;
+  --btn-hover: #E4B53A;
+  --filter-btn-active: #FDE08A;
+  --active-filter: #FBCD41;
+  --history-card-bg: #FFFCF2;
+  --history-card-bd: #FEF2D0;
+  --history-year: #E4B53A;
+  --history-dot: #FBCD41;
+  --history-line: #FEF2D0;
+  --history-muted: #957727;
+  --history-dot-ring: 251, 205, 65;
+  background: var(--bg-color) !important;
+  color: var(--text-color) !important;
+}
+body.theme-yellow .sticky-search-area { background: #FFF9E6e8 !important; border-bottom-color: var(--history-card-bd) !important; }
+body.theme-yellow .search-card { background: var(--card-bg) !important; }
+body.theme-yellow .searchbox-input, body.theme-yellow .searchbox-select { background: #FFFDF5 !important; border-color: var(--history-card-bd) !important; color: var(--text-color) !important; }
+body.theme-yellow .searchbox-input::placeholder { color: #C6B78E !important; }
+body.theme-yellow .searchbox-input:focus { border-color: var(--btn-main) !important; }
+body.theme-yellow #filterToggleBtn, body.theme-yellow .reset-btn, body.theme-yellow #favOnlyToggleBtn, body.theme-yellow #randomBtn { border-color: var(--history-card-bd) !important; color: var(--btn-hover) !important; background: var(--btn-bg) !important; }
+body.theme-yellow #filterToggleBtn:hover, body.theme-yellow .reset-btn:hover, body.theme-yellow #favOnlyToggleBtn:hover, body.theme-yellow #randomBtn:hover { background: var(--item-bg) !important; border-color: var(--btn-hover) !important; }
+body.theme-yellow #favOnlyToggleBtn.active { background: var(--item-bg) !important; border-color: var(--btn-main) !important; color: var(--btn-hover) !important;}
+body.theme-yellow .results-count-under-bar { color: var(--btn-hover) !important; background: transparent !important; }
+body.theme-yellow #filterDrawer { background: #FFFDF5 !important; border-color: var(--history-card-bd) !important; }
+body.theme-yellow .filter-title { color: var(--btn-hover) !important; }
+body.theme-yellow .guest-button, body.theme-yellow .btn-corner, body.theme-yellow .btn-year { background: var(--btn-bg) !important; border-color: var(--history-card-bd) !important; color: var(--text-color) !important; }
+body.theme-yellow .guest-button.active, body.theme-yellow .btn-corner.active, body.theme-yellow .btn-year.active { border-color: var(--btn-main) !important; background: var(--filter-btn-active) !important; box-shadow: 0 0 0 2.5px rgba(251, 205, 65, 0.3) !important; }
+body.theme-yellow .episode-item { border-color: var(--history-card-bd) !important; background: var(--item-bg) !important; color: var(--text-color) !important; }
+body.theme-yellow .page-btn, body.theme-yellow .more-btn { background: var(--card-bg) !important; color: var(--btn-hover) !important; }
+body.theme-yellow .page-btn.active, body.theme-yellow .more-btn:active { background: var(--btn-main) !important; color: #442c00 !important; }
+body.theme-yellow .fav-btn { background: var(--btn-bg) !important; border-color: var(--history-card-bd) !important; }
+body.theme-yellow .fav-btn.active { background: var(--filter-btn-active) !important; border-color: var(--btn-main) !important; }
+body.theme-yellow .fav-btn.active i { color: var(--btn-hover) !important; }
+body.theme-yellow .history-toggle { background: var(--history-card-bg) !important; border-color: var(--history-card-bd) !important; }
+
+/* --- ブルーテーマ --- */
+body.theme-blue {
+  --bg-color: #1A2833;
+  --card-bg: #243644;
+  --item-bg: #243644;
+  --btn-bg: #243644;
+  --text-color: #EAF2F8;
+  --muted: #A0B0BD;
+  --btn-main: #3482C3;
+  --btn-hover: #4DA0DF;
+  --filter-btn-active: #2C4253;
+  --active-filter: #3482C3;
+  --active-filter-text: #fff;
+  --history-card-bg: #243644;
+  --history-card-bd: #2C4253;
+  --history-year: #4DA0DF;
+  --history-dot: #3482C3;
+  --history-line: #2C4253;
+  --history-muted: #A0B0BD;
+  --history-dot-ring: 52, 130, 195;
+  background: var(--bg-color) !important;
+  color: var(--text-color) !important;
+}
+body.theme-blue .sticky-search-area { background: #1A2833e8 !important; border-bottom-color: var(--history-card-bd) !important; }
+body.theme-blue .search-card { background: var(--card-bg) !important; }
+body.theme-blue .searchbox-input, body.theme-blue .searchbox-select { background: #2C4253 !important; border-color: #435A6D !important; color: var(--text-color) !important; }
+body.theme-blue .searchbox-input::placeholder { color: #8FA1B0 !important; opacity: 1 !important; }
+body.theme-blue .searchbox-input:focus { border-color: var(--btn-hover) !important; }
+body.theme-blue #filterToggleBtn, body.theme-blue .reset-btn, body.theme-blue #favOnlyToggleBtn, body.theme-blue #randomBtn { border-color: #4DA0DF !important; color: var(--btn-hover) !important; background: var(--btn-bg) !important; }
+body.theme-blue .results-count-under-bar { color: var(--btn-hover) !important; background: var(--bg-color) !important; }
+body.theme-blue #filterDrawer { background: #2C4253 !important; border-color: #435A6D !important; }
+body.theme-blue .filter-title { color: var(--btn-hover) !important; }
+body.theme-blue .guest-button, body.theme-blue .btn-corner, body.theme-blue .btn-year { background: var(--btn-bg) !important; border-color: #435A6D !important; color: var(--text-color) !important; }
+body.theme-blue .guest-button.active, body.theme-blue .btn-corner.active, body.theme-blue .btn-year.active { border-color: var(--btn-hover) !important; background: var(--filter-btn-active) !important; color: var(--btn-hover) !important; box-shadow: 0 0 0 2.5px rgba(52, 130, 195, 0.3) !important; }
+body.theme-blue .episode-item { border-color: #435A6D !important; background: var(--item-bg) !important; color: var(--text-color) !important; }
+body.theme-blue .page-btn, body.theme-blue .more-btn { background: #2C4253 !important; color: var(--btn-hover) !important; }
+body.theme-blue .page-btn.active, body.theme-blue .more-btn:active { background: var(--btn-hover) !important; color: #1A2833 !important; }
+body.theme-blue .fav-btn { background: #2C4253 !important; border-color: #435A6D !important; }
+body.theme-blue .fav-btn i { color: var(--text-color) !important; }
+body.theme-blue .fav-btn.active { background: var(--btn-hover) !important; border-color: var(--btn-hover) !important; }
+body.theme-blue .fav-btn.active i { color: #fff !important; }
+body.theme-blue .history-toggle { background: var(--history-card-bg) !important; border-color: var(--history-card-bd) !important; }
+
+/* --- レッドテーマ --- */
+body.theme-red {
+  --bg-color: #331E1F;
+  --card-bg: #462A2B;
+  --item-bg: #462A2B;
+  --btn-bg: #462A2B;
+  --text-color: #F9EAEB;
+  --muted: #C7A7A9;
+  --btn-main: #EE5960;
+  --btn-hover: #F17378;
+  --filter-btn-active: #543436;
+  --active-filter: #EE5960;
+  --active-filter-text: #fff;
+  --history-card-bg: #462A2B;
+  --history-card-bd: #543436;
+  --history-year: #F17378;
+  --history-dot: #EE5960;
+  --history-line: #543436;
+  --history-muted: #C7A7A9;
+  --history-dot-ring: 238, 89, 96;
+  background: var(--bg-color) !important;
+  color: var(--text-color) !important;
+}
+body.theme-red .sticky-search-area { background: #331E1Fe8 !important; border-bottom-color: var(--history-card-bd) !important; }
+body.theme-red .search-card { background: var(--card-bg) !important; }
+body.theme-red .searchbox-input, body.theme-red .searchbox-select { background: #543436 !important; border-color: #694446 !important; color: var(--text-color) !important; }
+body.theme-red .searchbox-input::placeholder { color: #B9999B !important; opacity: 1 !important; }
+body.theme-red .searchbox-input:focus { border-color: var(--btn-hover) !important; }
+body.theme-red #filterToggleBtn, body.theme-red .reset-btn, body.theme-red #favOnlyToggleBtn, body.theme-red #randomBtn { border-color: #F17378 !important; color: var(--btn-hover) !important; background: var(--btn-bg) !important; }
+body.theme-red .results-count-under-bar { color: var(--btn-hover) !important; background: var(--bg-color) !important; }
+body.theme-red #filterDrawer { background: #543436 !important; border-color: #694446 !important; }
+body.theme-red .filter-title { color: var(--btn-hover) !important; }
+body.theme-red .guest-button, body.theme-red .btn-corner, body.theme-red .btn-year { background: var(--btn-bg) !important; border-color: #694446 !important; color: var(--text-color) !important; }
+body.theme-red .guest-button.active, body.theme-red .btn-corner.active, body.theme-red .btn-year.active { border-color: var(--btn-hover) !important; background: var(--filter-btn-active) !important; color: var(--btn-hover) !important; box-shadow: 0 0 0 2.5px rgba(238, 89, 96, 0.3) !important; }
+body.theme-red .episode-item { border-color: #694446 !important; background: var(--item-bg) !important; color: var(--text-color) !important; }
+body.theme-red .page-btn, body.theme-red .more-btn { background: #543436 !important; color: var(--btn-hover) !important; }
+body.theme-red .page-btn.active, body.theme-red .more-btn:active { background: var(--btn-main) !important; color: #fff !important; }
+body.theme-red .fav-btn { background: #543436 !important; border-color: #694446 !important; }
+body.theme-red .fav-btn i { color: var(--text-color) !important; }
+body.theme-red .fav-btn.active { background: var(--btn-hover) !important; border-color: var(--btn-hover) !important; }
+body.theme-red .fav-btn.active i { color: #fff !important; }
+body.theme-red .history-toggle { background: var(--history-card-bg) !important; border-color: var(--history-card-bd) !important; }
+
+/* ===== フィルタータグのテーマ別カラー ===== */
+body.dark-mode .filters-bar { background: #232a33ee !important; }
+body.dark-mode .filter-tag { background: #a6e1fa !important; color: #1f3b4d !important; }
+body.theme-pink .filters-bar { background: #FEF1F4e8 !important; }
+body.theme-pink .filter-tag { background: var(--active-filter) !important; color: #fff !important; }
+body.theme-yellow .filters-bar { background: #FFF9E6e8 !important; }
+body.theme-yellow .filter-tag { background: var(--active-filter) !important; color: #634F1A !important; }
+body.theme-blue .filters-bar { background: #1A2833e8 !important; }
+body.theme-blue .filter-tag { background: var(--active-filter) !important; color: #fff !important; }
+body.theme-red .filters-bar { background: #331E1Fe8 !important; }
+body.theme-red .filter-tag { background: var(--active-filter) !important; color: #fff !important; }
+
+/* ===== シェアボタン・トップへ戻るボタンのテーマ別カラー ===== */
+body.theme-pink #toTopBtn { background: var(--filter-btn-active) !important; color: var(--btn-hover) !important; border-color: var(--history-card-bd) !important; }
+body.theme-pink .share-btn { background: var(--btn-bg) !important; color: var(--btn-main) !important; border-color: var(--history-card-bd) !important; }
+body.theme-yellow #toTopBtn { background: var(--filter-btn-active) !important; color: var(--btn-hover) !important; border-color: var(--history-card-bd) !important; }
+body.theme-yellow .share-btn { background: var(--btn-bg) !important; color: var(--btn-hover) !important; border-color: var(--history-card-bd) !important; }
+body.theme-blue #toTopBtn { background: var(--card-bg) !important; color: var(--btn-hover) !important; border-color: var(--history-card-bd) !important; }
+body.theme-blue .share-btn { background: var(--filter-btn-active) !important; color: var(--btn-hover) !important; border-color: var(--history-card-bd) !important; }
+body.theme-red #toTopBtn { background: var(--card-bg) !important; color: var(--btn-hover) !important; border-color: var(--history-card-bd) !important; }
+body.theme-red .share-btn { background: var(--filter-btn-active) !important; color: var(--btn-hover) !important; border-color: var(--history-card-bd) !important; }
+
+/* ===== テーマ別ホバーエフェクト強化 ===== */
+body.theme-pink .episode-item:hover { background: var(--card-bg) !important; border-color: var(--btn-main) !important; box-shadow: 0 8px 24px -8px rgba(242, 131, 162, 0.4) !important; transform: translateY(-2px) !important; }
+body.theme-pink .guest-button:hover, body.theme-pink .btn-corner:hover, body.theme-pink .btn-year:hover { background: var(--filter-btn-active) !important; border-color: var(--btn-main) !important; transform: none !important; box-shadow: none !important; }
+body.theme-pink .page-btn:not(.active):hover { background: var(--btn-main) !important; color: #fff !important; opacity: 0.85; }
+body.theme-pink #toTopBtn:hover { background: #fff !important; border-color: var(--btn-main) !important; color: var(--btn-main) !important; }
+body.theme-pink .share-btn:hover { border-color: var(--btn-main) !important; transform: translateY(-2px) !important; background: var(--item-bg) !important;}
+body.theme-yellow .episode-item:hover { background: var(--card-bg) !important; border-color: var(--btn-main) !important; box-shadow: 0 8px 24px -8px rgba(251, 205, 65, 0.4) !important; transform: translateY(-2px) !important; }
+body.theme-yellow .guest-button:hover, body.theme-yellow .btn-corner:hover, body.theme-yellow .btn-year:hover { background: var(--filter-btn-active) !important; border-color: var(--btn-main) !important; transform: none !important; box-shadow: none !important; }
+body.theme-yellow .page-btn:not(.active):hover { background: var(--btn-main) !important; color: #442c00 !important; opacity: 0.85; }
+body.theme-yellow #toTopBtn:hover { background: #fff !important; border-color: var(--btn-main) !important; color: var(--btn-hover) !important; }
+body.theme-yellow .share-btn:hover { border-color: var(--btn-main) !important; transform: translateY(-2px) !important; background: var(--item-bg) !important;}
+body.theme-blue .episode-item:hover { background: var(--filter-btn-active) !important; border-color: var(--btn-hover) !important; box-shadow: 0 8px 24px -8px rgba(52, 130, 195, 0.4) !important; transform: translateY(-2px) !important; }
+body.theme-blue .guest-button:hover, body.theme-blue .btn-corner:hover, body.theme-blue .btn-year:hover { background: var(--filter-btn-active) !important; border-color: var(--btn-hover) !important; color: var(--btn-hover) !important; transform: none !important; box-shadow: none !important; }
+body.theme-blue .page-btn:not(.active):hover { background: var(--btn-hover) !important; color: #1A2833 !important; opacity: 0.85; }
+body.theme-blue #toTopBtn:hover, body.theme-blue .share-btn:hover { background: var(--filter-btn-active) !important; border-color: var(--btn-hover) !important; transform: translateY(-2px) !important;}
+body.theme-red .episode-item:hover { background: var(--filter-btn-active) !important; border-color: var(--btn-hover) !important; box-shadow: 0 8px 24px -8px rgba(238, 89, 96, 0.4) !important; transform: translateY(-2px) !important; }
+body.theme-red .guest-button:hover, body.theme-red .btn-corner:hover, body.theme-red .btn-year:hover { background: var(--filter-btn-active) !important; border-color: var(--btn-hover) !important; color: var(--btn-hover) !important; transform: none !important; box-shadow: none !important; }
+body.theme-red .page-btn:not(.active):hover { background: var(--btn-main) !important; color: #fff !important; opacity: 0.85; }
+body.theme-red #toTopBtn:hover, body.theme-red .share-btn:hover { background: var(--filter-btn-active) !important; border-color: var(--btn-hover) !important; transform: translateY(-2px) !important;}
+
+/* ===== テーマ機能 総仕上げパッチ ===== */
+body.theme-pink .history-year, body.theme-yellow .history-year { color: var(--history-year) !important; }
+body.theme-pink .history-item .date, body.theme-yellow .history-item .date { color: var(--history-year) !important; }
+body.theme-pink .history-timeline::before, body.theme-yellow .history-timeline::before { background: var(--history-line) !important; }
+body.theme-pink .history-item::before, body.theme-yellow .history-item::before { background: var(--history-dot) !important; box-shadow: 0 0 0 4px rgba(var(--history-dot-ring), .18) !important; }
+body.theme-blue .history-item .date, body.theme-red .history-item .date { color: var(--history-year) !important; }
+body.theme-pink #filterDrawer .drawer-footer { background: rgba(254, 241, 244, 0.9) !important; border-top-color: var(--history-card-bd) !important; }
+body.theme-yellow #filterDrawer .drawer-footer { background: rgba(255, 249, 230, 0.9) !important; border-top-color: var(--history-card-bd) !important; }
+body.theme-blue #filterDrawer .drawer-footer { background: rgba(26, 40, 51, 0.9) !important; border-top-color: var(--history-card-bd) !important; }
+body.theme-red #filterDrawer .drawer-footer { background: rgba(51, 30, 31, 0.9) !important; border-top-color: var(--history-card-bd) !important; }
+body.theme-pink #filterDrawer .drawer-close-btn { background: #fff !important; border-color: var(--history-card-bd) !important; color: var(--btn-hover) !important; }
+body.theme-pink #filterDrawer .drawer-close-btn:hover { background: var(--filter-btn-active) !important; border-color: var(--btn-main) !important; }
+body.theme-yellow #filterDrawer .drawer-close-btn { background: #fff !important; border-color: var(--history-card-bd) !important; color: var(--btn-hover) !important; }
+body.theme-yellow #filterDrawer .drawer-close-btn:hover { background: var(--filter-btn-active) !important; border-color: var(--btn-main) !important; }
+body.theme-blue #filterDrawer .drawer-close-btn { background: var(--card-bg) !important; border-color: var(--history-card-bd) !important; color: var(--btn-hover) !important; }
+body.theme-blue #filterDrawer .drawer-close-btn:hover { background: var(--filter-btn-active) !important; border-color: var(--btn-hover) !important; }
+body.theme-red #filterDrawer .drawer-close-btn { background: var(--card-bg) !important; border-color: var(--history-card-bd) !important; color: var(--btn-hover) !important; }
+body.theme-red #filterDrawer .drawer-close-btn:hover { background: var(--filter-btn-active) !important; border-color: var(--btn-hover) !important; }
+body.theme-pink #filterToggleBtn:active, body.theme-pink #favOnlyToggleBtn:active, body.theme-pink #randomBtn:active, body.theme-pink .reset-btn:active { background: var(--btn-main) !important; color: #fff !important; }
+body.theme-yellow #filterToggleBtn:active, body.theme-yellow #favOnlyToggleBtn:active, body.theme-yellow #randomBtn:active, body.theme-yellow .reset-btn:active { background: var(--btn-main) !important; color: #442c00 !important; }
+body.theme-blue #filterToggleBtn:active, body.theme-blue #favOnlyToggleBtn:active, body.theme-blue #randomBtn:active, body.theme-blue .reset-btn:active { background: var(--btn-hover) !important; color: #fff !important; }
+body.theme-red #filterToggleBtn:active, body.theme-red #favOnlyToggleBtn:active, body.theme-red #randomBtn:active, body.theme-red .reset-btn:active { background: var(--btn-main) !important; color: #fff !important; }
+body.theme-pink #results .no-results { background: var(--card-bg) !important; border: 1px solid var(--history-card-bd) !important; color: var(--text-color) !important; box-shadow: none !important; }
+body.theme-yellow #results .no-results { background: var(--card-bg) !important; border: 1px solid var(--history-card-bd) !important; color: var(--text-color) !important; box-shadow: none !important; }
+body.theme-blue #results .no-results { background: var(--card-bg) !important; border: 1px solid var(--history-card-bd) !important; color: var(--text-color) !important; box-shadow: none !important; }
+body.theme-red #results .no-results { background: var(--card-bg) !important; border: 1px solid var(--history-card-bd) !important; color: var(--text-color) !important; box-shadow: none !important; }
+
+/* ===== フローティングテーマパネル ===== */
+#theme-toggle-btn {
+  z-index: 2040 !important;
+}
+
+.floating-panel {
+  position: fixed;
+  left: 18px;
+  bottom: 72px; /* トリガーボタンの少し上 */
+  z-index: 2030;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px 10px;
+  border-radius: 999px; /* ピルケース形状 */
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 8px 24px -8px rgba(0,0,0,0.2);
+  
+  /* 非表示時の状態 */
+  opacity: 0;
+  transform: translateY(10px) scale(0.95);
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.floating-panel.show {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+
+.floating-panel .theme-btn {
+  box-shadow: none;
+  border-width: 1px;
+}
+.floating-panel .theme-btn.active {
+  box-shadow: 0 0 0 3px var(--btn-main, #6654e8) !important;
+  border-color: #fff !important;
+}
+
+
+/* --- テーマ別カラー --- */
+/* トリガーボタンの色 */
+body.theme-pink #theme-toggle-btn { background-color: var(--card-bg) !important; color: var(--btn-main) !important; border: 1px solid var(--history-card-bd) !important; }
+body.theme-yellow #theme-toggle-btn { background-color: var(--card-bg) !important; color: var(--btn-hover) !important; border: 1px solid var(--history-card-bd) !important; }
+body.theme-blue #theme-toggle-btn { background-color: var(--card-bg) !important; color: var(--btn-hover) !important; border: 1px solid var(--history-card-bd) !important; }
+body.theme-red #theme-toggle-btn { background-color: var(--card-bg) !important; color: var(--btn-hover) !important; border: 1px solid var(--history-card-bd) !important; }
+
+/* パネルの背景色 */
+body.theme-pink .floating-panel { background: rgba(254, 241, 244, 0.8) !important; border-color: var(--history-card-bd) !important; }
+body.theme-yellow .floating-panel { background: rgba(255, 249, 230, 0.8) !important; border-color: var(--history-card-bd) !important; }
+body.theme-blue .floating-panel { background: rgba(26, 40, 51, 0.8) !important; border-color: var(--history-card-bd) !important; }
+body.theme-red .floating-panel { background: rgba(51, 30, 31, 0.8) !important; border-color: var(--history-card-bd) !important; }
+
+/* ===== フッターレイアウト＆フォント最終修正 ===== */
+@media (min-width: 601px) {
+  .main-content footer {
+    display: block !important; /* ブロック要素であることを保証 */
+    max-width: 1040px; /* ページ全体のコンテンツ幅に合わせる */
+    margin: 60px auto 20px auto !important; /* 上下マージンを維持しつつ、左右autoで中央揃え */
+    padding-left: 80px !important; /* 左の固定ボタンを避けるための余白 */
+    padding-right: 80px !important; /* 右の固定ボタンを避けるための余白 */
+    box-sizing: border-box !important; /* パディングを幅の内側に含めることで、中央揃えを維持 */
+    font-size: 12px !important; /* 文字サイズを小さく調整 */
+    text-align: center !important; /* 中央揃えを再確認 */
+  }
+}
+
+/* 画面が狭い場合もフォントサイズを適用 */
+@media (max-width: 600px) {
+  .main-content footer {
+    font-size: 11px !important; /* スマホではさらに少し小さく */
+    padding-left: 15px;
+    padding-right: 15px;
+  }
+}
+
+
+
+/* ===== ヘッダーの背景を不透明にする最終仕上げ ===== */
+
+.sticky-search-area {
+  /* 「すりガラス」効果を無効化 */
+  backdrop-filter: none !important;
+}
+
+/* 各テーマのヘッダー背景を、それぞれのテーマカラーで完全に塗りつぶす */
+body:not([class*="theme-"]):not(.dark-mode) .sticky-search-area {
+    background: #f9fafe !important;
+}
+body.dark-mode .sticky-search-area {
+    background: #252c35 !important;
+}
+body.theme-pink .sticky-search-area,
+body.theme-yellow .sticky-search-area,
+body.theme-blue .sticky-search-area,
+body.theme-red .sticky-search-area {
+    background: var(--bg-color) !important;
+}
+
+
+
+/* ===== ひすとりー・おぶ・らじお！最終デザイン調整 ===== */
+
+/* --- 各テーマの枠線の色を分かりやすく --- */
+body.theme-pink .history-item {
+  border-color: var(--filter-btn-active) !important;
+}
+body.theme-yellow .history-item {
+  border-color: var(--filter-btn-active) !important;
+}
+body.theme-blue .history-item {
+  border-color: #3482C3 !important; /* アクセントカラーで枠を強調 */
+}
+body.theme-red .history-item {
+  border-color: #EE5960 !important; /* アクセントカラーで枠を強調 */
+}
+
+/* --- 各テーマの閉じるボタンの色を調整 --- */
+body.theme-pink #historyCloseBtn {
+  background: var(--item-bg) !important;
+  color: var(--btn-main) !important;
+  border-color: var(--history-card-bd) !important;
+}
+body.theme-pink #historyCloseBtn:hover {
+  background: var(--card-bg) !important;
+}
+
+body.theme-yellow #historyCloseBtn {
+  background: var(--item-bg) !important;
+  color: var(--btn-hover) !important;
+  border-color: var(--history-card-bd) !important;
+}
+body.theme-yellow #historyCloseBtn:hover {
+  background: var(--card-bg) !important;
+}
+
+body.theme-blue #historyCloseBtn {
+  background: var(--filter-btn-active) !important;
+  color: var(--btn-hover) !important;
+  border-color: var(--history-card-bd) !important;
+}
+body.theme-blue #historyCloseBtn:hover {
+  background: var(--card-bg) !important;
+}
+
+body.theme-red #historyCloseBtn {
+  background: var(--filter-btn-active) !important;
+  color: var(--btn-hover) !important;
+  border-color: var(--history-card-bd) !important;
+}
+body.theme-red #historyCloseBtn:hover {
+  background: var(--card-bg) !important;
+}
+
+
+
+/* ===== ひすとりー・おぶ・らじお！の項目の影を削除 ===== */
+.history-item {
+  box-shadow: none !important;
+}
+
+
+
+/* ===== ひすとりー・おぶ・らじお！のスクロール性能改善 ===== */
+
+/* 1. 原因の可能性が高い、背景の「すりガラス」効果を無効化 */
+.modal-overlay {
+  backdrop-filter: none !important;
+  /* 代わりに半透明の背景色を少し濃くして、見た目を維持します */
+  background: rgba(30, 29, 52, 0.35) !important;
+}
+body.dark-mode .modal-overlay {
+  background: rgba(0, 0, 0, 0.65) !important;
+}
+
+/* 2. スクロール時に固定されるヘッダーの描画を最適化 */
+#historyModal .modal-header {
+  will-change: transform;
+}
+
+/* 3. タイムラインの点の影を、より軽量なものに簡略化 */
+.history-item::before {
+  /* 複数あった影を一つに絞り、負荷を軽減 */
+  box-shadow: 0 0 0 4px rgba(var(--history-dot-ring), .18) !important;
+}
+body.dark-mode .history-item::before {
+  box-shadow: 0 0 0 4px rgba(144, 201, 206, .18) !important;
+}
+
+
+/* ===== ローディング画面のテーマ別カラー ===== */
+
+/* --- ピンクテーマ --- */
+body.theme-pink .loading-ball {
+  background-color: var(--btn-main) !important;
+}
+body.theme-pink #loading-screen {
+  background: var(--bg-color) !important;
+}
+
+/* --- イエローテーマ --- */
+body.theme-yellow .loading-ball {
+  background-color: var(--btn-main) !important;
+}
+body.theme-yellow #loading-screen {
+  background: var(--bg-color) !important;
+}
+
+/* --- ブルーテーマ --- */
+body.theme-blue .loading-ball {
+  background-color: var(--btn-main) !important;
+}
+body.theme-blue #loading-screen {
+  background: var(--bg-color) !important;
+}
+
+/* --- レッドテーマ --- */
+body.theme-red .loading-ball {
+  background-color: var(--btn-main) !important;
+}
+body.theme-red #loading-screen {
+  background: var(--bg-color) !important;
+}
+
+/* ===== 「ひすとりー・おぶ・らじお！」タイトルのテーマ別カラー適用 ===== */
+
+/* ダークモード */
+body.dark-mode .history-toggle .title {
+  color: var(--history-year) !important;
+}
+
+/* ピンクテーマ */
+body.theme-pink .history-toggle .title {
+  color: var(--history-year) !important;
+}
+
+/* イエローテーマ */
+body.theme-yellow .history-toggle .title {
+  color: var(--history-year) !important;
+}
+
+/* ブルーテーマ */
+body.theme-blue .history-toggle .title {
+  color: var(--history-year) !important;
+}
+
+/* レッドテーマ */
+body.theme-red .history-toggle .title {
+  color: var(--history-year) !important;
+}
+
+/* ===== テーマカラー適用範囲の拡大（修正版）===== */
+
+/* --- ダークモード --- */
+body.dark-mode .episode-item,
+body.dark-mode .episode-item h5 {
+  color: #e5ecec !important;
+}
+body.dark-mode .episode-meta,
+body.dark-mode .fav-btn i {
+  color: #A0B0BD !important;
+}
+body.dark-mode .filter-title {
+  color: #a6e1fa !important;
+}
+body.dark-mode .guest-button,
+body.dark-mode .btn-corner,
+body.dark-mode .btn-year {
+  color: #e0f1f1 !important;
+}
+
+
+/* --- ピンクテーマ --- */
+body.theme-pink .episode-item,
+body.theme-pink .episode-item h5,
+body.theme-pink .guest-button,
+body.theme-pink .btn-corner,
+body.theme-pink .btn-year {
+  color: var(--text-color) !important;
+}
+body.theme-pink .episode-meta,
+body.theme-pink .fav-btn i {
+  color: var(--muted) !important;
+}
+body.theme-pink .filter-title {
+  color: var(--btn-hover) !important;
+}
+
+
+/* --- イエローテーマ --- */
+body.theme-yellow .episode-item,
+body.theme-yellow .episode-item h5,
+body.theme-yellow .guest-button,
+body.theme-yellow .btn-corner,
+body.theme-yellow .btn-year {
+  color: var(--text-color) !important;
+}
+body.theme-yellow .episode-meta,
+body.theme-yellow .fav-btn i {
+  color: var(--muted) !important;
+}
+body.theme-yellow .filter-title {
+  color: var(--btn-hover) !important;
+}
+
+
+/* --- ブルーテーマ --- */
+body.theme-blue .episode-item,
+body.theme-blue .episode-item h5,
+body.theme-blue .guest-button,
+body.theme-blue .btn-corner,
+body.theme-blue .btn-year {
+  color: var(--text-color) !important;
+}
+body.theme-blue .episode-meta,
+body.theme-blue .fav-btn i {
+  color: var(--muted) !important;
+}
+body.theme-blue .filter-title {
+  color: var(--btn-hover) !important;
+}
+
+
+/* --- レッドテーマ --- */
+body.theme-red .episode-item,
+body.theme-red .episode-item h5,
+body.theme-red .guest-button,
+body.theme-red .btn-corner,
+body.theme-red .btn-year {
+  color: var(--text-color) !important;
+}
+body.theme-red .episode-meta,
+body.theme-red .fav-btn i {
+  color: var(--muted) !important;
+}
+body.theme-red .filter-title {
+  color: var(--btn-hover) !important;
+}
+
+/* ===== Autocomplete (Theme Colors) ===== */
+
+/* --- ピンクテーマ --- */
+body.theme-pink .autocomplete {
+  background: var(--item-bg) !important;
+  border-color: var(--history-card-bd) !important;
+  box-shadow: 0 12px 28px -10px rgba(110, 60, 60, 0.18) !important;
+}
+body.theme-pink .autocomplete-item {
+  color: var(--text-color) !important;
+}
+body.theme-pink .autocomplete-item:hover,
+body.theme-pink .autocomplete-item[aria-selected="true"] {
+  background: var(--card-bg) !important;
+}
+body.theme-pink .autocomplete-item .type {
+  border-color: var(--history-card-bd) !important;
+  color: var(--muted) !important;
+}
+body.theme-pink .autocomplete-item .match {
+  color: var(--btn-main) !important;
+}
+
+/* --- イエローテーマ --- */
+body.theme-yellow .autocomplete {
+  background: var(--item-bg) !important;
+  border-color: var(--history-card-bd) !important;
+  box-shadow: 0 12px 28px -10px rgba(110, 90, 60, 0.18) !important;
+}
+body.theme-yellow .autocomplete-item {
+  color: var(--text-color) !important;
+}
+body.theme-yellow .autocomplete-item:hover,
+body.theme-yellow .autocomplete-item[aria-selected="true"] {
+  background: var(--card-bg) !important;
+}
+body.theme-yellow .autocomplete-item .type {
+  border-color: var(--history-card-bd) !important;
+  color: var(--muted) !important;
+}
+body.theme-yellow .autocomplete-item .match {
+  color: var(--btn-hover) !important; /* Main color is too bright, use hover */
+}
+
+/* --- ブルーテーマ --- */
+body.theme-blue .autocomplete {
+  background: var(--card-bg) !important;
+  border-color: var(--history-card-bd) !important;
+  box-shadow: 0 14px 34px -12px rgba(0, 0, 0, 0.6) !important;
+}
+body.theme-blue .autocomplete-item {
+  color: var(--text-color) !important;
+}
+body.theme-blue .autocomplete-item:hover,
+body.theme-blue .autocomplete-item[aria-selected="true"] {
+  background: var(--filter-btn-active) !important;
+}
+body.theme-blue .autocomplete-item .type {
+  border-color: #435A6D !important;
+  color: var(--btn-hover) !important;
+}
+body.theme-blue .autocomplete-item .match {
+  color: var(--btn-hover) !important;
+}
+
+/* --- レッドテーマ --- */
+body.theme-red .autocomplete {
+  background: var(--card-bg) !important;
+  border-color: var(--history-card-bd) !important;
+  box-shadow: 0 14px 34px -12px rgba(0, 0, 0, 0.6) !important;
+}
+body.theme-red .autocomplete-item {
+  color: var(--text-color) !important;
+}
+body.theme-red .autocomplete-item:hover,
+body.theme-red .autocomplete-item[aria-selected="true"] {
+  background: var(--filter-btn-active) !important;
+}
+body.theme-red .autocomplete-item .type {
+  border-color: #694446 !important;
+  color: var(--btn-hover) !important;
+}
+body.theme-red .autocomplete-item .match {
+  color: var(--btn-hover) !important;
+}
+
+
+
+
+/* ===== 全テーマの全テキストをアクセントカラーに統一する最終決定版 ===== */
+
+/* --- ピンクテーマ --- */
+body.theme-pink .guest-button,
+body.theme-pink .btn-corner,
+body.theme-pink .btn-year,
+body.theme-pink .episode-item,
+body.theme-pink .episode-item h5,
+body.theme-pink .episode-meta,
+body.theme-pink .fav-btn i {
+  color: var(--btn-hover) !important;
+}
+
+/* --- イエローテーマ --- */
+body.theme-yellow .guest-button,
+body.theme-yellow .btn-corner,
+body.theme-yellow .btn-year,
+body.theme-yellow .episode-item,
+body.theme-yellow .episode-item h5,
+body.theme-yellow .episode-meta,
+body.theme-yellow .fav-btn i {
+  color: var(--btn-hover) !important;
+}
+
+/* --- ブルーテーマ --- */
+body.theme-blue .guest-button,
+body.theme-blue .btn-corner,
+body.theme-blue .btn-year,
+body.theme-blue .episode-item,
+body.theme-blue .episode-item h5,
+body.theme-blue .episode-meta,
+body.theme-blue .fav-btn i {
+  color: var(--btn-hover) !important;
+}
+
+/* --- レッドテーマ --- */
+body.theme-red .guest-button,
+body.theme-red .btn-corner,
+body.theme-red .btn-year,
+body.theme-red .episode-item,
+body.theme-red .episode-item h5,
+body.theme-red .episode-meta,
+body.theme-red .fav-btn i {
+  color: var(--btn-hover) !important;
+}
+
+/* ===== 並び替えボタンのテーマカラー適用（ボタン群とデザイン統一）===== */
+
+/* --- ダークモード --- */
+body.dark-mode .searchbox-select {
+  color: var(--btn-hover) !important;       /* 文字色は明るいまま */
+  border-color: #4d6272 !important;       /* 枠線を他のボタンと統一 */
+}
+
+/* --- ピンクテーマ --- */
+body.theme-pink .searchbox-select {
+  color: var(--btn-hover) !important;       /* 文字色は明るいまま */
+  border-color: var(--history-card-bd) !important; /* 枠線を他のボタンと統一 */
+}
+
+/* --- イエローテーマ --- */
+body.theme-yellow .searchbox-select {
+  color: var(--btn-hover) !important;       /* 文字色は明るいまま */
+  border-color: var(--history-card-bd) !important; /* 枠線を他のボタンと統一 */
+}
+
+/* --- ブルーテーマ --- */
+body.theme-blue .searchbox-select {
+  color: var(--btn-hover) !important;       /* 文字色は明るいまま */
+  border-color: #435A6D !important;         /* 枠線を他のボタンと統一 */
+}
+
+/* --- レッドテーマ --- */
+body.theme-red .searchbox-select {
+  color: var(--btn-hover) !important;       /* 文字色は明るいまま */
+  border-color: #694446 !important;         /* 枠線を他のボタンと統一 */
+}
+
+
+/* ===== 検索入力とフッターのテーマカラー適用 ===== */
+
+/* --- ダークモード --- */
+body.dark-mode .searchbox-input,
+body.dark-mode .site-footer {
+  color: var(--btn-hover) !important;
+}
+body.dark-mode .searchbox-input::placeholder {
+  color: var(--btn-hover) !important;
+  opacity: 0.7; /* プレースホルダーは少し薄くする */
+}
+
+/* --- ピンクテーマ --- */
+body.theme-pink .searchbox-input,
+body.theme-pink .site-footer {
+  color: var(--btn-hover) !important;
+}
+body.theme-pink .searchbox-input::placeholder {
+  color: var(--btn-hover) !important;
+  opacity: 0.7;
+}
+
+/* --- イエローテーマ --- */
+body.theme-yellow .searchbox-input,
+body.theme-yellow .site-footer {
+  color: var(--btn-hover) !important;
+}
+body.theme-yellow .searchbox-input::placeholder {
+  color: var(--btn-hover) !important;
+  opacity: 0.7;
+}
+
+/* --- ブルーテーマ --- */
+body.theme-blue .searchbox-input,
+body.theme-blue .site-footer {
+  color: var(--btn-hover) !important;
+}
+body.theme-blue .searchbox-input::placeholder {
+  color: var(--btn-hover) !important;
+  opacity: 0.7;
+}
+
+/* --- レッドテーマ --- */
+body.theme-red .searchbox-input,
+body.theme-red .site-footer {
+  color: var(--btn-hover) !important;
+}
+body.theme-red .searchbox-input::placeholder {
+  color: var(--btn-hover) !important;
+  opacity: 0.7;
+}
+
+
+/* ===== 「お気に入り無し」と歴史モーダルの文字色を最優先で適用する最終修正 ===== */
+
+/* --- ダークモード --- */
+body.dark-mode #results .no-results,
+body.dark-mode .history-item .label,
+body.dark-mode .history-item .desc {
+  color: var(--btn-hover, #a6e1fa) !important;
+}
+
+/* --- ピンクテーマ --- */
+body.theme-pink #results .no-results,
+body.theme-pink .history-item .label,
+body.theme-pink .history-item .desc {
+  color: var(--history-year) !important;
+}
+
+/* --- イエローテーマ --- */
+body.theme-yellow #results .no-results,
+body.theme-yellow .history-item .label,
+body.theme-yellow .history-item .desc {
+  color: var(--history-year) !important;
+}
+
+/* --- ブルーテーマ --- */
+body.theme-blue #results .no-results,
+body.theme-blue .history-item .label,
+body.theme-blue .history-item .desc {
+  color: var(--history-year) !important;
+}
+
+/* --- レッドテーマ --- */
+body.theme-red #results .no-results,
+body.theme-red .history-item .label,
+body.theme-red .history-item .desc {
+  color: var(--history-year) !important;
+}
+
+/* ===== 歴史モーダルの背景ぼかしとオーバーレイ強化 ===== */
+
+/* --- ライトテーマ共通（デフォルト、ピンク、イエロー）--- */
+.modal-overlay {
+  /* ぼかし効果を以前より強く再適用します */
+  backdrop-filter: blur(5px) !important;
+  /* 背景のオーバーレイも少し濃くして、コンテンツを際立たせます */
+  background: rgba(0, 0, 0, 0.5) !important;
+}
+
+/* --- ダークテーマ共通（ダークモード、ブルー、レッド）--- */
+body.dark-mode .modal-overlay,
+body.theme-blue .modal-overlay,
+body.theme-red .modal-overlay {
+  /* ぼかしを強化します */
+  backdrop-filter: blur(5px) !important;
+  /* 背景のオーバーレイをさらに濃くします */
+  background: rgba(0, 0, 0, 0.25) !important;
+}
+
+/* ===== フィルターモーダル表示時のレイヤー順序修正 ===== */
+
+/* フィルターの背景（半透明のオーバーレイ）をテーマボタンより手前に表示 */
+.drawer-backdrop {
+  z-index: 2045 !important;
+}
+
+/* フィルター本体を背景よりさらに手前に表示 */
+#filterDrawer {
+  z-index: 2050 !important;
+}
+
+/* ===== 「このサイトについて」モーダルの基本スタイル ===== */
+#aboutModal {
+  align-items: center;
+  justify-content: center;
+}
+#aboutModalContent {
+  background: #fff;
+  color: #222;
+  border-radius: 16px;
+  box-shadow: 0 6px 30px -6px rgba(124, 58, 237, 0.21);
+  max-width: 95vw;
+  width: 360px;
+  padding: 32px 22px 22px 22px;
+  margin: auto;
+  text-align: center;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+#aboutCloseBtn {
+  position: absolute;
+  right: 17px;
+  top: 13px;
+  border: none;
+  background: none;
+  font-size: 1.5em;
+  color: #6654e8;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+.about-logo {
+  width: 100px;
+  margin-bottom: 10px;
+}
+.about-title {
+  font-size: 1.16em;
+  font-weight: bold;
+  margin-bottom: 9px;
+}
+.about-body {
+  font-size: 1em;
+  line-height: 1.75;
+  text-align: left;
+}
+
+/* ===== 「このサイトについて」モーダルのテーマカラー適用 ===== */
+
+
+/* --- ピンクテーマ --- */
+body.theme-pink #aboutModalContent {
+  background: var(--card-bg) !important;
+  color: var(--text-color) !important;
+}
+body.theme-pink #aboutModalContent b,
+body.theme-pink #aboutModalContent a,
+body.theme-pink #aboutCloseBtn,
+body.theme-pink .about-title {
+  color: var(--btn-hover) !important;
+}
+
+/* --- イエローテーマ --- */
+body.theme-yellow #aboutModalContent {
+  background: var(--card-bg) !important;
+  color: var(--text-color) !important;
+}
+body.theme-yellow #aboutModalContent b,
+body.theme-yellow #aboutModalContent a,
+body.theme-yellow #aboutCloseBtn,
+body.theme-yellow .about-title {
+  color: var(--btn-hover) !important;
+}
+
+/* --- ブルーテーマ --- */
+body.theme-blue #aboutModalContent {
+  background: var(--card-bg) !important;
+  color: var(--text-color) !important;
+}
+body.theme-blue #aboutModalContent b,
+body.theme-blue #aboutModalContent a,
+body.theme-blue #aboutCloseBtn,
+body.theme-blue .about-title {
+  color: var(--btn-hover) !important;
+}
+
+/* --- レッドテーマ --- */
+body.theme-red #aboutModalContent {
+  background: var(--card-bg) !important;
+  color: var(--text-color) !important;
+}
+body.theme-red #aboutModalContent b,
+body.theme-red #aboutModalContent a,
+body.theme-red #aboutCloseBtn,
+body.theme-red .about-title {
+  color: var(--btn-hover) !important;
+}
+
+
+/* ===== タイムスタンプボタンのテーマカラー適用 ===== */
+
+/* --- ピンクテーマ --- */
+body.theme-pink .ts-btn {
+  background-color: var(--btn-main) !important;
+  color: #fff !important;
+  border-color: var(--btn-main) !important;
+}
+
+/* --- イエローテーマ --- */
+body.theme-yellow .ts-btn {
+  background-color: var(--btn-main) !important;
+  color: var(--text-color) !important; /* 背景が明るいため、文字は濃い色に */
+  border-color: var(--btn-main) !important;
+}
+
+/* --- ブルーテーマ --- */
+body.theme-blue .ts-btn {
+  background-color: var(--btn-hover) !important;
+  color: var(--active-filter-text) !important; /* 白文字 */
+  border-color: var(--btn-hover) !important;
+}
+
+/* --- レッドテーマ --- */
+body.theme-red .ts-btn {
+  background-color: var(--btn-hover) !important;
+  color: var(--active-filter-text) !important; /* 白文字 */
+  border-color: var(--btn-hover) !important;
 }
