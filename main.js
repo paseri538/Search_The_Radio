@@ -1013,28 +1013,60 @@ window.addEventListener('load', function() {
   }, 950);
 });
 
+// =====「このサイトについて」モーダル (最終・強制解除版) =====
+document.addEventListener('DOMContentLoaded', () => {
+  const aboutLink = document.getElementById('aboutSiteLink');
+  const aboutModal = document.getElementById('aboutModal');
+  const aboutModalContent = document.getElementById('aboutModalContent');
+  const aboutCloseBtn = document.getElementById('aboutCloseBtn');
 
-// 「このサイトについて」表示・非表示（fade + scroll lock に統一）
-$('#aboutSiteLink').off('click.__about').on('click.__about', function(e){
-  e.preventDefault();
-  $('#aboutModal').stop(true, true).fadeIn(150, function(){
-    $(this).css('display','flex');
-    if (typeof updateScrollLock === 'function') updateScrollLock();
+  if (!aboutLink || !aboutModal || !aboutModalContent || !aboutCloseBtn) {
+    return;
+  }
+
+  let scrollY = 0;
+
+  const lockScrollForAboutModal = () => {
+    if (document.body.classList.contains('scroll-lock')) return;
+    scrollY = window.scrollY;
+    document.body.style.top = `-${scrollY}px`;
+    document.body.classList.add('scroll-lock');
+  };
+
+  const openModal = () => {
+    lockScrollForAboutModal();
+    aboutModal.classList.add('show');
+    aboutCloseBtn.focus();
+  };
+
+  const closeModal = () => {
+    if (!aboutModal.classList.contains('show')) return;
+    
+    // ★追加：ブラウザにスタイルの変更を認識させ、アニメーションの開始を確実にするための合図
+    void aboutModal.offsetHeight;
+
+    // アニメーションを開始
+    aboutModal.classList.remove('show');
+    
+    // アニメーション時間(0.2s)より少し待ってからロックを解除
+    setTimeout(() => {
+      // 前回のテストでコメントアウトしたこの行を元に戻します
+      if (typeof window.__hardUnlockScroll === 'function') {
+        window.__hardUnlockScroll();
+      }
+    }, 250);
+
+    aboutLink.focus();
+  };
+
+  aboutLink.addEventListener('click', (e) => { e.preventDefault(); openModal(); });
+  aboutCloseBtn.addEventListener('click', (e) => { e.preventDefault(); closeModal(); });
+  aboutModal.addEventListener('click', (e) => { if (e.target === aboutModal) closeModal(); });
+  aboutModalContent.addEventListener('click', (e) => { e.stopPropagation(); });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && aboutModal.classList.contains('show')) closeModal();
   });
 });
-
-$('#aboutCloseBtn, #aboutModal').off('click.__about').on('click.__about', function(e){
-  if (e.target.id === 'aboutModal' || e.target.id === 'aboutCloseBtn') {
-    $('#aboutModal').stop(true, true).fadeOut(130, function(){
-      if (typeof updateScrollLock === 'function') updateScrollLock();
-    });
-  }
-});
-
-$('#aboutModalContent').off('click.__about').on('click.__about', function(e){
-  e.stopPropagation(); // 中身クリックでは閉じない
-});
-
 
 
 
@@ -1123,26 +1155,7 @@ $('#drawerBackdrop').on('click', function () {
 });
 
 
-// 開く
-$('#aboutSiteLink').on('click', function (e) {
-  e.preventDefault();
-  $('#aboutModal').css('display','flex').hide().fadeIn(130); // 統一：fadeInで表示
-  updateScrollLock(); // ← これ
-});
 
-// 閉じる（×ボタン）
-$('#aboutCloseBtn').on('click', function () {
-  $('#aboutModal').stop(true,true).fadeOut(130, function(){ $(this).hide(); });
-  updateScrollLock(); // ← これ
-});
-
-// モーダル外クリックで閉じる
-$('#aboutModal').on('click', function (e) {
-  if (e.target === this) {
-    $('#aboutModal').stop(true,true).fadeOut(130, function(){ $(this).hide(); });
-    updateScrollLock(); // ← これ
-  }
-});
 
 
 // ===== 固定ヘッダーぶんの余白を動的に確保 =====
@@ -1198,9 +1211,10 @@ window.__updateHeaderOffset && window.__updateHeaderOffset();
     document.body.style.top = '';
     window.scrollTo(0, __scrollY);
   }
+ // ↓↓↓ この関数を置き換えてください ↓↓↓
   window.updateScrollLock = function updateScrollLock() {
     const isFilterOpen = $('#filterDrawer').is(':visible');
-    const isAboutOpen  = $('#aboutModal').is(':visible');
+    const isAboutOpen  = $('#aboutModal').hasClass('show'); // is(':visible') から hasClass('show') に変更
     (isFilterOpen || isAboutOpen) ? lockScroll() : unlockScroll();
   };
 
