@@ -2805,3 +2805,53 @@ body.dark-mode #aboutModalContent .about-body a {
 }
 
 
+/* ===== デザイン改善提案: フィルター選択色の強調 ===== */
+
+/* --- 1. 通常（ライト）モードの選択色を上書き --- */
+body:not(.dark-mode):not([class*="theme-"]) .guest-button[aria-pressed="true"],
+body:not(.dark-mode):not([class*="theme-"]) .btn-corner[aria-pressed="true"],
+body:not(.dark-mode):not([class*="theme-"]) .btn-year[aria-pressed="true"] {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+  border-color: #000000 !important;
+  box-shadow: 0 0 0 2.5px rgba(0, 0, 0, 0.15) !important;
+}
+
+/* --- 2. ダークモードの選択色を上書き --- */
+body.dark-mode .guest-button[aria-pressed="true"],
+body.dark-mode .btn-corner[aria-pressed="true"],
+body.dark-mode .btn-year[aria-pressed="true"] {
+  background: #ffffff !important;
+  color: #27363f !important; /* ダークモードの濃い背景色に合わせる */
+  border-color: #ffffff !important;
+  box-shadow: 0 0 0 2.5px rgba(255, 255, 255, 0.3) !important;
+}
+
+/* --- 3. 各カラーテーマの選択色を上書き --- */
+body[class*="theme-"] .guest-button.active,
+body[class*="theme-"] .btn-corner.active,
+body[class*="theme-"] .btn-year.active {
+  background: #ffffff !important;
+  color: var(--bg-color) !important; /* 各テーマの背景色を文字色として使用 */
+  border-color: #ffffff !important;
+  box-shadow: 0 0 0 2.5px rgba(255, 255, 255, 0.4) !important;
+}
+
+/* --- 4. ホバー時のスタイルも調整（任意ですが推奨） --- */
+/* 選択されていないボタンのホバーエフェクトを少し抑えめにして、選択状態との差を明確にします */
+.guest-button:not([aria-pressed="true"]):hover,
+.btn-corner:not([aria-pressed="true"]):hover,
+.btn-year:not([aria-pressed="true"]):hover {
+  transform: translateY(-1px) scale(1.02);
+  box-shadow: 0 4px 12px -4px rgba(0,0,0,0.1);
+}
+
+/* ===== 修正: スマホ表示時のテーマ選択ボタンの比率を修正 ===== */
+
+.theme-btn {
+    width: 32px;
+    height: 32px;       /* 高さと幅を明示的に同じ値にする */
+    min-width: 32px;    /* 最小幅も指定して縮小を防ぐ */
+    flex-shrink: 0;     /* Flexboxコンテナ内で縮まないようにする */
+    aspect-ratio: 1 / 1;/* ★この一行が比率を強制的に1:1に保ちます */
+}
