@@ -655,10 +655,10 @@ body.dark-mode #aboutCloseBtn {
   animation: bounce 0.6s infinite ease-in-out;
 }
 
-.ball1 { background-color: #fa01fa; animation-delay: 0s;   }
-.ball2 { background-color: #fdfe0f; animation-delay: 0.15s;}
-.ball3 { background-color: #15f4f3; animation-delay: 0.3s; }
-.ball4 { background-color: #f93e07; animation-delay: 0.45s;}
+.ball1 { background-color: #ff6496; animation-delay: 0s;   }
+.ball2 { background-color: #fabe00; animation-delay: 0.15s;}
+.ball3 { background-color: #006ebe; animation-delay: 0.3s; }
+.ball4 { background-color: #e60046; animation-delay: 0.45s;}
 
 @keyframes bounce {
   0%, 80%, 100% {
@@ -2115,13 +2115,23 @@ body.dark-mode .thumbnail { background: #1f262d; }
 }
 
 /* === Filter drawer sticky footer (restored) === */
+
 #filterDrawer .drawer-footer{
   position: sticky;
   bottom: 0;
-  left: 0; right: 0;
+  left: 0;
+  right: 0;
+
+  /* ▼ここからが変更・追加箇所です▼ */
+  margin-left: calc(-1 * var(--drawer-px));
+  margin-right: calc(-1 * var(--drawer-px));
+  padding: 12px var(--drawer-px);
+  border-bottom-left-radius: 14px;
+  border-bottom-right-radius: 14px;
+  /* ▲ここまで▲ */
+  
   background: rgba(246,245,255,.92);
   border-top: 1px solid rgba(60,60,80,.18);
-  padding: 12px 16px;
   display: flex;
   justify-content: center;
   gap: 12px;
@@ -2168,14 +2178,16 @@ html[data-theme="dark"] #filterDrawer .drawer-footer{
   right: 0 !important;
   margin: 0 auto !important;
   width: min(100vw, 900px) !important;
-  top: calc(var(--header-offset, 96px) + 8px) !important;
-  bottom: max(8px, env(safe-area-inset-bottom, 8px)) !important;
+  top: var(--header-offset, 96px) !important; /* 上の隙間(8px)を削除 */
+  bottom: max(0px, env(safe-area-inset-bottom, 0px)) !important; /* 下の隙間(8px)を削除 */
   height: auto !important;
   max-height: none !important;
   overflow-y: auto !important;
   overflow-x: hidden !important;
   transform: none !important;
   animation: fadein-drawer 0.17s ease-out;
+  border-top-left-radius: 0 !important; /* ヘッダーと繋がる部分の角丸を削除 */
+  border-top-right-radius: 0 !important; /* ヘッダーと繋がる部分の角丸を削除 */
 }
 
 :root{
@@ -2227,14 +2239,14 @@ body.theme-red .theme-btn.active {
   box-shadow: 0 0 0 3px var(--btn-hover, #a6e1fa);
 }
 
-/* ↓↓↓ このブロックをまるごと貼り付けてください ↓↓↓ */
+
 
 /* --- ピンクテーマ --- */
 body.theme-pink {
-  --bg-color: #eb5b89;
-  --card-bg: #ff6496;
+  --bg-color: #ff6496;
+  --card-bg: #eb5b89;
   /* ... (以下は変更ありません) ... */
-  --item-bg: #ff6496;
+  --item-bg: #eb5b89;
   --text-color: #ffffff;
   --muted: #ffffff;
   --btn-bg: #ff85ab;
@@ -2242,7 +2254,7 @@ body.theme-pink {
   --btn-hover: #ffffff;
   --filter-btn-active: #ff79a5;
   --active-filter: #ffffff;
-  --active-filter-text: #ff6496;
+  --active-filter-text: #eb5b89;
   --history-card-bg: var(--card-bg);
   --history-card-bd: #ff85ab;
   --history-year: #ffffff;
@@ -2257,23 +2269,23 @@ body.theme-pink {
 }
 /* --- イエローテーマ --- */
 body.theme-yellow {
-  --bg-color: #f2b900; 
-  --card-bg: #fabe00;
+  --bg-color: #fabe00; 
+  --card-bg: #e1ac00;
   /* ... (以下は変更ありません) ... */
-  --item-bg: #fabe00;
-  --text-color: #000000;
-  --muted: #000000;
+  --item-bg: #e1ac00;
+  --text-color: #ffffff;
+  --muted: #ffffff;
   --btn-bg: #ffca2a;
-  --btn-main: #000000;
-  --btn-hover: #000000;
+  --btn-main: #ffffff;
+  --btn-hover: #ffffff;
   --filter-btn-active: #ffc418;
-  --active-filter: #000000;
-  --active-filter-text: #fabe00;
+  --active-filter: #ffffff;
+  --active-filter-text: #e1ac00;
   --history-card-bg: var(--card-bg);
   --history-card-bd: #ffca2a;
-  --history-year: #000000;
+  --history-year: #ffffff;
   --history-muted: var(--muted);
-  --history-dot: #000000;
+  --history-dot: #ffffff;
   --history-line: #ffca2a;
   --history-dot-ring: 255, 255, 255;
   --input-border: #ffca2a;
@@ -2283,10 +2295,10 @@ body.theme-yellow {
 }
 /* --- ブルーテーマ --- */
 body.theme-blue {
-  --bg-color: #0063a9;
-  --card-bg: #006ebe;
+  --bg-color: #006ebe;
+  --card-bg: #0063a9;
   /* ... (以下は変更ありません) ... */
-  --item-bg: #006ebe;
+  --item-bg: #0063a9;
   --text-color: #ffffff;
   --muted: #ffffff;
   --btn-bg: #1982d2;
@@ -2294,7 +2306,7 @@ body.theme-blue {
   --btn-hover: #ffffff;
   --filter-btn-active: #0f78ca;
   --active-filter: #ffffff;
-  --active-filter-text: #006ebe;
+  --active-filter-text: #0063a9;
   --history-card-bg: var(--card-bg);
   --history-card-bd: #1982d2;
   --history-year: #ffffff;
@@ -2309,10 +2321,10 @@ body.theme-blue {
 }
 /* --- レッドテーマ --- */
 body.theme-red {
-  --bg-color: #cb003d;
-  --card-bg: #e60046;
+  --bg-color: #e60046;
+  --card-bg: #cb003d;
   /* ... (以下は変更ありません) ... */
-  --item-bg: #e60046;
+  --item-bg: #cb003d;
   --text-color: #ffffff;
   --muted: #ffffff;
   --btn-bg: #f32263;
@@ -2320,7 +2332,7 @@ body.theme-red {
   --btn-hover: #ffffff;
   --filter-btn-active: #ef105a;
   --active-filter: #ffffff;
-  --active-filter-text: #e60046;
+  --active-filter-text: #cb003d;
   --history-card-bg: var(--card-bg);
   --history-card-bd: #f32263;
   --history-year: #ffffff;
@@ -2553,3 +2565,243 @@ body[class*="theme-"] #aboutModalContent b,
 body[class*="theme-"] #aboutModalContent a,
 body[class*="theme-"] #aboutCloseBtn,
 body[class*="theme-"] .about-title { color: var(--muted) !important; }
+
+/* === ダークモードの水色を白に完全統一する最終修正 === */
+
+
+
+/* === ダークモードのアクセントカラー（水色）を白に統一する修正 === */
+body.dark-mode {
+  --btn-hover: #ffffff; /* ホバー用の変数を白に変更 */
+}
+
+body.dark-mode .results-count-under-bar,
+body.dark-mode .icon-btn,
+body.dark-mode #favOnlyToggleBtn,
+body.dark-mode #randomBtn,
+body.dark-mode #filterToggleBtn,
+body.dark-mode .reset-btn,
+body.dark-mode #toTopBtn,
+body.dark-mode .filter-title,
+body.dark-mode .history-year,
+body.dark-mode .history-item .date,
+body.dark-mode .history-sticky-year,
+body.dark-mode #aboutModalContent a,
+body.dark-mode #aboutCloseBtn,
+body.dark-mode .share-btn,
+body.dark-mode .page-btn,
+body.dark-mode .more-btn,
+body.dark-mode .ts-btn {
+  color: #ffffff !important;
+}
+
+/* ホバー時などに色が戻ってしまうのを防ぐための追加指定 */
+body.dark-mode #filterToggleBtn:hover,
+body.dark-mode #filterToggleBtn:focus,
+body.dark-mode .reset-btn:hover,
+body.dark-mode .reset-btn:focus,
+body.dark-mode #toTopBtn:hover,
+body.dark-mode #toTopBtn:focus,
+body.dark-mode .share-btn:hover {
+  color: #ffffff !important;
+}
+
+/* 1. 並び替えセレクトボックスの文字色を白に */
+body.dark-mode .searchbox-select {
+  color: #ffffff !important;
+}
+
+/* 2. 検索ボックス選択時の青い枠線を白に変更 */
+body.dark-mode .searchbox-input:focus {
+  border-color: #ffffff !important;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.25) !important;
+}
+
+/* 3. フィルター内のアクティブなボタンの青緑色を白に変更 */
+body.dark-mode .guest-button[aria-pressed="true"], 
+body.dark-mode .guest-button.active,
+body.dark-mode .btn-corner[aria-pressed="true"], 
+body.dark-mode .btn-corner.active,
+body.dark-mode .btn-year[aria-pressed="true"], 
+body.dark-mode .btn-year.active {
+  color: #ffffff !important;
+  border-color: #ffffff !important;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.2) !important;
+}
+
+/* 4. ページ番号ボタンのアクティブ時の水色の背景を白に変更 */
+body.dark-mode .page-btn.active,
+body.dark-mode .more-btn:active {
+  background: #ffffff !important;
+  color: #27363f !important; /* 背景が白になるため、文字はダークカラーにします */
+}
+
+
+
+/* === ダークモードの水色を白に完全統一する最終修正（追記） === */
+
+/* 1. フィルター内のボタンにカーソルを合わせた際の文字色 */
+body.dark-mode .guest-button:hover, 
+body.dark-mode .btn-corner:hover, 
+body.dark-mode .btn-year:hover {
+  color: #ffffff !important;
+}
+
+/* 2. トップへ戻るボタンにカーソルを合わせた際の枠線 */
+body.dark-mode #toTopBtn:hover, 
+body.dark-mode #toTopBtn:focus {
+  border-color: #ffffff !important;
+}
+
+/* 3. 「ひすとりー・おぶ・らじお！」モーダル内の水色要素 */
+
+/* タイムラインの丸い点と影 */
+body.dark-mode .history-item::before {
+  background: #ffffff !important;
+  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.2) !important;
+}
+
+/* モーダルのタイトル、年の見出し、日付、固定ヘッダーの年 */
+body.dark-mode .history-modal .modal-title,
+body.dark-mode .history-year,
+body.dark-mode .history-item .date,
+body.dark-mode .history-sticky-year {
+  color: #ffffff !important;
+}
+
+
+/* === ダークモードの検索結果ホバー色を白に統一する修正 === */
+body.dark-mode .episode-item:hover, 
+body.dark-mode .episode-item:focus-visible {
+  border-color: #ffffff !important; /* 枠線を水色から白に変更 */
+}
+
+
+
+/* === 通常モードのアクセントカラーを黒に統一する最終確定版 === */
+
+/* 1. 基本となるカラー変数を黒/グレー系に変更 */
+body:not(.dark-mode):not([class*="theme-"]) {
+  --btn-main: #000000;
+  --btn-hover: #000000;
+  --filter-btn-active: #f0f0f0; /* ホバー/アクティブ時の背景を薄いグレーに */
+  --active-filter: #000000;     /* 選択中フィルターの背景を黒に */
+  --active-filter-text: #ffffff; /* 選択中フィルターの文字は白のまま */
+  
+  /* 「ひすとりー」モーダル用の変数も黒/グレー系に変更 */
+  --history-dot: #000000;
+  --history-dot-ring: 0, 0, 0;
+  --history-year: #000000;
+}
+
+/* 2. 変数を使っていない、または特殊な状態の個別上書き */
+
+/* ★修正★ フィルターDrawer内のタイトル文字 */
+body:not(.dark-mode):not([class*="theme-"]) .filter-title {
+  color: #000000 !important;
+}
+
+/* ★修正★ トップへ戻るボタンの矢印と枠線 */
+body:not(.dark-mode):not([class*="theme-"]) #toTopBtn {
+  color: #000000 !important;
+  border-color: #dcdcdc !important;
+}
+
+/* 上部コントロールボタン */
+body:not(.dark-mode):not([class*="theme-"]) #filterToggleBtn,
+body:not(.dark-mode):not([class*="theme-"]) #favOnlyToggleBtn,
+body:not(.dark-mode):not([class*="theme-"]) #randomBtn,
+body:not(.dark-mode):not([class*="theme-"]) .reset-btn {
+  color: #000000 !important;
+  border-color: #dcdcdc !important;
+}
+
+/* 上部コントロールボタン (ホバー/アクティブ時) */
+body:not(.dark-mode):not([class*="theme-"]) #filterToggleBtn:hover,
+body:not(.dark-mode):not([class*="theme-"]) #favOnlyToggleBtn:hover,
+body:not(.dark-mode):not([class*="theme-"]) #randomBtn:hover,
+body:not(.dark-mode):not([class*="theme-"]) .reset-btn:hover,
+body:not(.dark-mode):not([class*="theme-"]) #favOnlyToggleBtn.active,
+body:not(.dark-mode):not([class*="theme-"]) #filterToggleBtn[aria-expanded="true"] {
+  background-color: #f0f0f0 !important;
+  border-color: #bbbbbb !important;
+}
+
+/* フィルターDrawer内のボタン (アクティブ時) */
+body:not(.dark-mode):not([class*="theme-"]) .guest-button[aria-pressed="true"],
+body:not(.dark-mode):not([class*="theme-"]) .btn-corner[aria-pressed="true"],
+body:not(.dark-mode):not([class*="theme-"]) .btn-year[aria-pressed="true"] {
+  border-color: #000000 !important;
+  box-shadow: 0 0 0 2.5px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* フィルターDrawer内のボタン (ホバー時) */
+body:not(.dark-mode):not([class*="theme-"]) .guest-button:hover,
+body:not(.dark-mode):not([class*="theme-"]) .btn-corner:hover,
+body:not(.dark-mode):not([class*="theme-"]) .btn-year:hover {
+  box-shadow: 0 6px 18px -6px rgba(0, 0, 0, 0.15) !important;
+}
+
+/* タイムスタンプボタン */
+body:not(.dark-mode):not([class*="theme-"]) .ts-btn {
+  background: #eeeeee !important;
+  color: #000000 !important;
+  border-color: #dcdcdc !important;
+}
+
+/* 検索結果件数バーの文字色 */
+body:not(.dark-mode):not([class*="theme-"]) .results-count-under-bar {
+  color: #000000 !important;
+}
+
+/* ページ番号ボタンの配色 */
+body:not(.dark-mode):not([class*="theme-"]) .page-btn, 
+body:not(.dark-mode):not([class*="theme-"]) .more-btn {
+  color: #000000 !important;
+  background: #eeeeee !important;
+}
+body:not(.dark-mode):not([class*="theme-"]) .page-btn.active, 
+body:not(.dark-mode):not([class*="theme-"]) .more-btn:active {
+  background: #000000 !important;
+  color: #ffffff !important;
+}
+body:not(.dark-mode):not([class*="theme-"]) .page-btn:not(.active):hover, 
+body:not(.dark-mode):not([class*="theme-"]) .more-btn:not(:active):hover {
+  background: #dddddd !important;
+}
+
+/* 検索ボックスのフォーカスリング */
+body:not(.dark-mode):not([class*="theme-"]) .searchbox-input:focus {
+  border-color: #000000 !important;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* 「このサイトについて」モーダル内の強調文字 */
+body:not(.dark-mode):not([class*="theme-"]) .about-body b {
+  color: #000000 !important;
+}
+
+/* 「ひすとりー」モーダル内の日付の色 */
+body:not(.dark-mode):not([class*="theme-"]) .history-item .date {
+  color: #000000 !important;
+}
+
+
+
+
+
+
+/* 1. ダークモード時に --text-color 変数自体を上書きする */
+body.dark-mode {
+  --text-color: #e5ecec; /* テキストカラー変数を明るい色に */
+}
+
+/* 2. 変数を使っていない太字(b)やリンク(a)の色を個別に指定する */
+body.dark-mode #aboutModalContent .about-title,
+body.dark-mode #aboutModalContent .about-body,
+body.dark-mode #aboutModalContent .about-body b,
+body.dark-mode #aboutModalContent .about-body a {
+  color: #ffffff !important; /* タイトル、本文、強調文字、リンクをすべて純粋な白に */
+}
+
+

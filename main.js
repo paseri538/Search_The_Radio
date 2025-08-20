@@ -1,4 +1,4 @@
-// main.js の一番上のテーマ管理機能を、以下にまるごと置き換え
+
 
 // ===== 新しいテーマ管理機能 (フローティングパネル版) =====
 $(function() {
@@ -264,7 +264,7 @@ function toggleFavorite(id) { favorites.has(id) ? favorites.delete(id) : favorit
 
 
     const guestColorMap = {
-      "青山吉能": "#fa01fa", "鈴代紗弓": "#fdfe0f", "水野朔": "#15f4f3", "長谷川育美": "#f93e07",
+      "青山吉能": "#ff6496", "鈴代紗弓": "#fabe00", "水野朔": "#006ebe", "長谷川育美": "#e60046",
       "内田真礼": "#f09110", "千本木彩花": "#bbc3b8", "和多田美咲": "#a8eef4", "小岩井ことり": "#494386"
     };
 
@@ -1168,7 +1168,7 @@ $('#drawerBackdrop').on('click', function () {
     if (!sticky) return;
     const h = sticky.offsetHeight;
     // 影や角丸がかぶらないように少し余裕(+10px)
-    root.style.setProperty('--header-offset', (h + 10) + 'px');
+    root.style.setProperty('--header-offset', h  + 'px');
   }
 
   // 初回と画面変化で更新
@@ -1227,7 +1227,7 @@ window.__updateHeaderOffset && window.__updateHeaderOffset();
       drawer.style.left = '50%';
       drawer.style.transform = '';
       drawer.style.right = '';
-      drawer.style.top = (rect.top + rect.height + 8) + 'px';
+      drawer.style.top = (rect.top + rect.height) + 'px';
     }
   }
 
