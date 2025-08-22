@@ -617,7 +617,7 @@ function renderResults(arr, page = 1) {
         <a href="${finalLink}" target="_blank" rel="noopener"
            style="display:flex;gap:13px;text-decoration:none;color:inherit;align-items:center;min-width:0;">
           <div class="thumb-col">
-            <img src="${thumb}" class="thumbnail" alt="サムネイル：${hashOnly}">
+            <img src="${thumb}" class="thumbnail" alt="サムネイル：${hashOnly}" loading="lazy">
             ${hit ? `
               <div class="ts-buttons">
                 <button class="ts-btn" data-url="${it.link}" data-ts="${hit.seconds}"
@@ -697,6 +697,9 @@ function resetSearch() {
     .find("i").removeClass("fa-solid").addClass("fa-regular");
   resetFilters();
   try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch (e) { window.scrollTo(0, 0); }
+
+  const resetButton = document.getElementById('mainResetBtn');
+  if (resetButton) resetButton.blur();
 }
 
 function updateGuestButtonStyles() {
@@ -1057,7 +1060,11 @@ $('#drawerBackdrop').on('click', function () {
     const sticky = document.querySelector('.sticky-search-area');
     if (!sticky) return;
     const h = sticky.offsetHeight;
-    root.style.setProperty('--header-offset', h  + 'px');
+    // ヘッダーの純粋な高さを --header-height に設定
+  root.style.setProperty('--header-height', h + 'px');
+  
+  // ヘッダーの高さ＋隙間を --header-offset に設定
+  root.style.setProperty('--header-offset', (h + 10) + 'px');
   }
   window.addEventListener('DOMContentLoaded', updateHeaderOffset);
   window.addEventListener('load', updateHeaderOffset);

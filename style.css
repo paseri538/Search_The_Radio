@@ -337,7 +337,6 @@ body {
   display: flex; gap: 13px; padding: 12px; border-radius: 11px; background: var(--card-bg);
   margin-bottom: 0; align-items: center; text-decoration: none; color: inherit;
   border: 1px solid #e5e7ef; cursor: pointer; min-width: 0;
-  transition: box-shadow .17s;
 }
 .episode-item:hover {
   transform: translateY(-2px); box-shadow: 0 13px 32px -8px #5843e825; background: #f5f7fa;
@@ -517,10 +516,9 @@ body.dark-mode .more-btn:disabled {
 
 /* 検索結果カード */
 body.dark-mode .episode-item {
-  border: 1.3px solid #33404c !important;
-  box-shadow: 0 2px 16px -4px #16293a22 !important;
+  border: 1px solid #33404c !important;
   background: #252c35 !important;
-  transition: border .16s, box-shadow .18s, background .14s;
+transition: border .16s, box-shadow .18s, background .14s, color .14s;
 }
 body.dark-mode .episode-item:hover, 
 body.dark-mode .episode-item:focus-visible {
@@ -536,13 +534,7 @@ body.dark-mode .searchbox-input::placeholder {
   opacity: 1 !important;
 }
 
-body.dark-mode  {
-  background: #283240 !important;
-  color: #8de0ee !important;
-  border: 1.5px solid #33404c !important;
-  box-shadow: 0 2px 8px -2px #172a3388 !important;
-  transition: background .15s, color .13s, border .13s;
-}
+
 body.dark-mode #toTopBtn:hover, body.dark-mode #toTopBtn:focus {
   background: #384d5d !important;
   color: #fff !important;
@@ -2178,7 +2170,7 @@ html[data-theme="dark"] #filterDrawer .drawer-footer{
   right: 0 !important;
   margin: 0 auto !important;
   width: min(100vw, 900px) !important;
-  top: var(--header-offset, 96px) !important; /* 上の隙間(8px)を削除 */
+  top: var(--header-height, 96px) !important;/* 上の隙間(8px)を削除 */
   bottom: max(0px, env(safe-area-inset-bottom, 0px)) !important; /* 下の隙間(8px)を削除 */
   height: auto !important;
   max-height: none !important;
@@ -2436,13 +2428,6 @@ body[class*="theme-"] .site-footer a { color: var(--muted) !important; }
 
 
 
-/* ダークモードや他のテーマでも追従するように */
-body.dark-mode  {
-  background: #283240 !important;
-  color: #8de0ee !important;
-  border: 1.5px solid #33404c !important;
-  box-shadow: 0 2px 8px -2px #172a3388 !important;
-}
 body[class*="theme-"]  {
   background: var(--btn-bg) !important;
   color: var(--btn-main) !important;
@@ -3012,3 +2997,4 @@ body[class*="theme-"] .share-btn {
 body.dark-mode .history-item .label {
   color: #ffffff !important; /* ラベル（太字）の文字色を白に強制 */
 }
+
