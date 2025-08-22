@@ -2856,57 +2856,46 @@ body[class*="theme-"] .btn-year.active {
     aspect-ratio: 1 / 1;/* ★この一行が比率を強制的に1:1に保ちます */
 }
 
-/* ===== 修正(最終版): サイト全体のホバーエフェクトをスマホで無効化 (完全対応) ===== */
 
-/*
-  タッチデバイス（ホバー不可）で閲覧した際に、すべてのホバーエフェクトを
-  各要素の「通常時のスタイル」に強制的に戻し、見た目の崩れを完全に防ぎます。
-*/
-@media (hover: none) {
 
-  /* --- 検索結果カード --- */
-  .episode-item:hover { background: var(--card-bg) !important; transform: none !important; box-shadow: none !important; }
-  body.dark-mode .episode-item:hover { background: #252c35 !important; }
-  body[class*="theme-"] .episode-item:hover { background: var(--item-bg) !important; }
+/* ===== ホバー可能なデバイス（PCなど）でのみエフェクトを適用 ===== */
+@media (hover: hover) {
 
-  /* --- フィルター内ボタン --- */
-  .guest-button:hover, .btn-corner:hover, .btn-year:hover { background: #fff !important; transform: none !important; box-shadow: none !important; }
-  body.dark-mode .guest-button:hover, body.dark-mode .btn-corner:hover, body.dark-mode .btn-year:hover { background: #232c35 !important; }
-  body[class*="theme-"] .guest-button:hover, body[class*="theme-"] .btn-corner:hover, body[class*="theme-"] .btn-year:hover { background: var(--btn-bg) !important; }
-
-  /* --- ヘッダーの操作ボタン類 --- */
-  #filterToggleBtn:hover, #favOnlyToggleBtn:hover, #randomBtn:hover, .reset-btn:hover { transform: none !important; box-shadow: none !important; }
-  body:not(.dark-mode):not([class*="theme-"]) #filterToggleBtn:hover,
-  body:not(.dark-mode):not([class*="theme-"]) #favOnlyToggleBtn:hover,
-  body:not(.dark-mode):not([class*="theme-"]) #randomBtn:hover,
-  body:not(.dark-mode):not([class*="theme-"]) .reset-btn:hover { background: #fff !important; }
-  body.dark-mode #filterToggleBtn:hover, body.dark-mode #favOnlyToggleBtn:hover, body.dark-mode #randomBtn:hover, body.dark-mode .reset-btn:hover { background: #2f3640 !important; }
-  body[class*="theme-"] #filterToggleBtn:hover, body[class*="theme-"] #favOnlyToggleBtn:hover, body[class*="theme-"] #randomBtn:hover, body[class*="theme-"] .reset-btn:hover { background: var(--btn-bg) !important; }
-
-  /* --- トップへ戻る, SNSシェア, テーマ選択ボタン --- */
-  #toTopBtn:hover, .share-btn:hover, .theme-btn:hover { transform: none !important; box-shadow: none !important; }
-  body:not(.dark-mode):not([class*="theme-"]) #toTopBtn:hover { background: #fff !important; }
-  body:not(.dark-mode):not([class*="theme-"]) .share-btn:hover { background: #f7f8ff !important; }
-  body.dark-mode #toTopBtn:hover { background: #384d5d !important; }
-  body.dark-mode .share-btn:hover { background: #323a47 !important; }
-  body[class*="theme-"] #toTopBtn:hover, body[class*="theme-"] .share-btn:hover { background: var(--filter-btn-active) !important; }
-
-  /* --- その他、モーダル内のボタンやリンク --- */
-  .filter-tag:hover,
-  .page-btn:hover,
-  .more-btn:hover,
-  .fav-btn:hover,
-  #aboutCloseBtn:hover,
-  .drawer-close-btn:hover,
-  .history-modal .modal-close:hover,
-  .autocomplete-item:hover,
-  .history-toggle:hover,
-  .history-item:hover {
+  /* --- 1. 基本となる浮き上がり・影を無効化 --- */
+  .episode-item:hover {
     transform: none !important;
     box-shadow: none !important;
-    background: inherit !important;
-    border-color: inherit !important;
-    color: inherit !important;
-    background-color: transparent !important;
   }
+
+  /* --- 2. 各テーマでの枠線色の変化を定義 --- */
+
+  /* 通常（ライト）モードのホバー */
+  body:not(.dark-mode):not([class*="theme-"]) .episode-item:hover {
+    border-color: #000000 !important;
+    background-color: #f5f7fa;
+  }
+
+  /* ダークモードのホバー */
+  body.dark-mode .episode-item:hover,
+  body.dark-mode .episode-item:focus-visible {
+    border-color: #ffffff !important;
+    background: #27343b !important;
+    z-index: 2;
+  }
+
+  /* カラーテーマ（ピンク、イエローなど）のホバー */
+  body[class*="theme-"] .episode-item:hover {
+    border-color: var(--btn-main) !important;
+    background: var(--filter-btn-active) !important;
+  }
+}
+
+
+body.theme-pink .episode-item:hover,
+body.theme-yellow .episode-item:hover,
+body.theme-blue .episode-item:hover,
+body.theme-red .episode-item:hover
+{
+transform: none !important; 
+box-shadow: none !important;  
 }
