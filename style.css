@@ -2899,3 +2899,27 @@ body.theme-red .episode-item:hover
 transform: none !important; 
 box-shadow: none !important;  
 }
+
+
+/*
+  ===== スマホでの描画バグ対策 (色が即時反映されない問題) =====
+  タップ時に即座にスタイルが反映されない問題を解決するため、
+  主要なボタンやカード要素に3D変換を適用してGPUレンダリングを促します。
+  見た目上の変化はありませんが、ブラウザの描画を安定させます。
+*/
+.guest-button,
+.btn-corner,
+.btn-year,
+#filterToggleBtn,
+#favOnlyToggleBtn,
+#randomBtn,
+.reset-btn,
+.episode-item,
+.page-btn,
+.fav-btn,
+#toTopBtn,
+#theme-toggle-btn,
+.share-btn,
+#historyToggle {
+  transform: translateZ(0);
+}
