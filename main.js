@@ -120,6 +120,8 @@ let selectedYears = [];
 let currentPage = 1;
 const pageSize = 20;
 let lastResults = [];
+let clearAutocompleteSuggestions = () => {};
+let isSearchTriggered = false;
 
 // --- データ読み込み関数 ---
 async function loadExternalData() {
@@ -430,6 +432,15 @@ function renderPagination(totalCount) {
 }
 
 function search(opts = {}) {
+  // ▼ 目印を立て、検索候補をクリアする
+  isSearchTriggered = true;
+  clearAutocompleteSuggestions();
+
+  // 目印を少し後に自動で下ろすタイマーを設定
+  setTimeout(() => {
+    isSearchTriggered = false;
+  }, 100);
+
   let raw = $("#searchBox").val().trim();
   const sort = $("#sortSelect").val();
   let res = [...data];
@@ -438,34 +449,25 @@ function search(opts = {}) {
     const normalizedQuery = normalize(raw);
     const searchTerms = new Set([normalizedQuery]);
 
-    // CUSTOM_READINGS (keywords.json + readings.json) をチェック
     for (const key in CUSTOM_READINGS) {
       const keyNorm = normalize(key);
       const readings = CUSTOM_READINGS[key].map(normalize);
-
-      // ★★★ここからが修正点★★★
-      // キー自体か、いずれかの読み仮名に部分一致すれば関連キーワードとみなす
       let isMatch = keyNorm.includes(normalizedQuery);
       if (!isMatch) {
         for (const reading of readings) {
           if (reading.includes(normalizedQuery)) {
             isMatch = true;
-            break; // 一つでも一致すればOK
+            break;
           }
         }
       }
-
-      // マッチした場合、そのキーワードと関連する読み仮名をすべて検索対象に追加
       if (isMatch) {
         searchTerms.add(keyNorm);
         readings.forEach(r => searchTerms.add(r));
       }
-      // ★★★ここまでが修正点★★★
     }
 
     const searchWords = [...searchTerms].filter(Boolean);
-
-    // フィルター処理
     res = res.filter(it => {
       const combined = [
         it.title,
@@ -473,12 +475,10 @@ function search(opts = {}) {
         (it.keywords || []).join(" ")
       ].join(" ");
       const text = normalize(combined);
-      
       return searchWords.some(word => text.includes(word));
     });
   }
   
-  // (関数の残りの部分は変更ありません)
   if (selectedGuests.length) {
     res = res.filter(it => {
         const guestArr = Array.isArray(it.guest) ? it.guest : (typeof it.guest === "string" ? [it.guest] : []);
@@ -910,19 +910,8 @@ function setupEventListeners() {
     window.open(pick.link, '_blank', 'noopener');
   });
 
-  document.getElementById("toTopBtn").onclick = function(){
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
 
-  window.addEventListener("scroll", function() {
-    const btn = document.getElementById("toTopBtn");
-    if (!btn) return;
-    if (window.scrollY > 120) {
-      btn.classList.add('show');
-    } else {
-      btn.classList.remove('show');
-    }
-  });
+
 }
 
 
@@ -1296,7 +1285,10 @@ function initializeAutocomplete() {
     viewItems = [];
   };
 
+  clearAutocompleteSuggestions = clear;
+
   const render = (items) => {
+    if (isSearchTriggered) return;
     viewItems = items;
     $box.innerHTML = '';
     $box.hidden = items.length === 0;
@@ -1310,8 +1302,17 @@ function initializeAutocomplete() {
       const html = (i >= 0)
         ? `${item.label.slice(0,i)}<span class="match">${item.label.slice(i, i+qRaw.length)}</span>${item.label.slice(i+qRaw.length)}`
         : item.label;
-      el.innerHTML = `<span class="type">${item.type}</span><span class="label">${html}</span>`;
-      el.addEventListener('mousedown', (e) => { e.preventDefault(); pick(idx); });
+// ▼ アイコンを生成するロジックを追加
+      let typeIcon = '';
+      if (item.type === '出演者') {
+        typeIcon = '<i class="fa-solid fa-user" aria-hidden="true"></i>';
+      } else if (item.type === 'キーワード') {
+        typeIcon = '<i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>';
+      }
+      
+      el.innerHTML = `<span class="type">${typeIcon}</span><span class="label">${html}</span>`;
+      // ▲ ここまで変更
+        el.addEventListener('mousedown', (e) => { e.preventDefault(); pick(idx); });
       $box.appendChild(el);
     });
   };

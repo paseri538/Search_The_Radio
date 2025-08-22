@@ -536,7 +536,7 @@ body.dark-mode .searchbox-input::placeholder {
   opacity: 1 !important;
 }
 
-body.dark-mode #toTopBtn {
+body.dark-mode  {
   background: #283240 !important;
   color: #8de0ee !important;
   border: 1.5px solid #33404c !important;
@@ -593,7 +593,7 @@ body.dark-mode #toTopBtn:hover, body.dark-mode #toTopBtn:focus {
 #theme-toggle-btn {
   /* 位置とレイヤー */
   position: fixed;
-  left: 18px;
+  right: 18px;
   bottom: 18px;
   z-index: 3010 !important; /* ← z-indexをサイト内で最大級に引き上げ */
 
@@ -603,10 +603,10 @@ body.dark-mode #toTopBtn:hover, body.dark-mode #toTopBtn:focus {
   justify-content: center;
 
   /* 見た目 */
-  width: 44px;
-  height: 44px;
+  width: 55px;  
+  height: 55px;
+  font-size: 30px;
   padding: 0;
-  font-size: 22px;
   background: #222;
   color: #fff;
   border: none;
@@ -1314,12 +1314,12 @@ body.modal-open{
 /* 追加：サイトのダーク切替でも色変数を上書き */
 body.dark-mode{
   --history-line:#384154;
-  --history-dot:#9ad9de;
+  --history-dot:#ffffff;
   --history-dot-ring:154,217,222;
   --history-card-bg:#22272e;
   --history-card-bd:#364152;
   --history-muted:#9aa4b2;
-  --history-year:#9ad9de;
+  --history-year:#ffffff;
 }
 
 /* 追加：フェードイン＆ポップ */
@@ -2374,7 +2374,6 @@ body[class*="theme-"] .history-toggle { background: var(--history-card-bg) !impo
 body[class*="theme-"] .history-toggle .title, body[class*="theme-"] .history-modal .modal-title { color: var(--history-year) !important; }
 body[class*="theme-"] .filters-bar { background: var(--bg-color) !important; }
 body[class*="theme-"] .filter-tag { background: var(--active-filter) !important; color: var(--active-filter-text) !important; }
-body[class*="theme-"] #toTopBtn { background: var(--btn-bg) !important; color: var(--btn-main) !important; border-color: var(--history-card-bd) !important; }
 body[class*="theme-"] #toTopBtn:hover { background: var(--filter-btn-active) !important; border-color: var(--btn-main) !important; }
 body[class*="theme-"] .share-btn { background: var(--btn-bg) !important; color: var(--btn-main) !important; border-color: var(--history-card-bd) !important; }
 body[class*="theme-"] .share-btn:hover { border-color: var(--btn-main) !important; transform: translateY(-2px) !important; background: var(--filter-btn-active) !important;}
@@ -2402,13 +2401,13 @@ body[class*="theme-"] .site-footer a { color: var(--muted) !important; }
 
 /* ===== フローティングテーマパネル ===== */
 #theme-toggle-btn {
-  z-index: 3010 !important;
+  z-index: 10 !important;
 }
 
 .floating-panel {
   position: fixed;
-  left: 18px;
-  bottom: 72px; /* トリガーボタンの少し上 */
+  right: 18px;
+  bottom: 80px; /* トリガーボタンの少し上 */
   z-index: 3005; /* ← z-indexをボタンよりは下、他のUIよりは上に設定 */
   display: flex;
   flex-direction: column;
@@ -2435,60 +2434,16 @@ body[class*="theme-"] .site-footer a { color: var(--muted) !important; }
 }
 
 
-/* ===== トップへ戻るボタン ===== */
-#toTopBtn {
-  /* 位置とレイヤー */
-  position: fixed;
-  right: 18px;
-  bottom: 18px;
-  z-index: 3000;
 
-  /* アイコンの中央揃え */
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  /* 見た目 */
-  width: 44px;
-  height: 44px;
-  padding: 0;
-  font-size: 20px;
-  font-weight: bold;
-  background: #fff;
-  color: #5744d8;
-  border: 1.5px solid #e5e7ef;
-  border-radius: 50%;
-  box-shadow: 0 4px 12px -4px rgba(0,0,0,0.15);
-  cursor: pointer;
-  
-  /* 表示/非表示のアニメーションのための初期状態 */
-  opacity: 0;
-  transform: translateY(16px);
-  pointer-events: none;
-  transition: opacity 0.2s ease, transform 0.2s ease;
-}
-
-/* JSによってshowクラスが付いたときに表示状態にする */
-#toTopBtn.show {
-  opacity: 1;
-  transform: translateY(0);
-  pointer-events: auto;
-}
-
-/* キーボード操作時のフォーカスを見やすくする */
-#toTopBtn:focus-visible {
-  outline: 3px solid var(--btn-main);
-  outline-offset: 2px;
-}
 
 /* ダークモードや他のテーマでも追従するように */
-body.dark-mode #toTopBtn {
+body.dark-mode  {
   background: #283240 !important;
   color: #8de0ee !important;
   border: 1.5px solid #33404c !important;
   box-shadow: 0 2px 8px -2px #172a3388 !important;
 }
-body[class*="theme-"] #toTopBtn {
+body[class*="theme-"]  {
   background: var(--btn-bg) !important;
   color: var(--btn-main) !important;
   border-color: var(--history-card-bd) !important;
@@ -2701,11 +2656,7 @@ body:not(.dark-mode):not([class*="theme-"]) .filter-title {
   color: #000000 !important;
 }
 
-/* ★修正★ トップへ戻るボタンの矢印と枠線 */
-body:not(.dark-mode):not([class*="theme-"]) #toTopBtn {
-  color: #000000 !important;
-  border-color: #dcdcdc !important;
-}
+
 
 /* 上部コントロールボタン */
 body:not(.dark-mode):not([class*="theme-"]) #filterToggleBtn,
@@ -2922,4 +2873,142 @@ box-shadow: none !important;
 .share-btn,
 #historyToggle {
   transform: translateZ(0);
+}
+
+/*
+  ===== ダークモード時の選択中フィルタータグの色を修正 =====
+  「青山吉能」などの主要な出演者タグの色はそのままに、
+  「その他」タグおよび、それ以外のタグ（年、コーナーなど）の背景を白に変更します。
+*/
+body.dark-mode .filter-tag:not([data-type="guest"]),
+body.dark-mode .filter-tag[data-value="その他"] {
+  background: #ffffff !important;       /* 背景色を白に */
+  color: #22272e !important;           /* 文字色をダークモードの背景色に近い濃い色に */
+}
+
+
+/* ===== カラーテーマ時のボタンホバーを見やすく修正 ===== */
+body[class*="theme-"] #filterToggleBtn:hover,
+body[class*="theme-"] .reset-btn:hover,
+body[class*="theme-"] #favOnlyToggleBtn:hover,
+body[class*="theme-"] #randomBtn:hover {
+  background-color: rgba(255, 255, 255, 0.15) !important; /* 背景に薄い白を重ねて明るくする */
+  color: #ffffff !important;                              /* 文字色は白のまま */
+}
+
+/* 「お気に入りだけ」ONのスタイルも同様に調整 */
+body[class*="theme-"] #favOnlyToggleBtn.active {
+  background-color: rgba(255, 255, 255, 0.2) !important;
+  border-color: #ffffff !important;
+}
+
+/* ===== 検索候補のアイコンスタイル ===== */
+
+/* アイコンを格納する.type要素のスタイル調整 */
+.autocomplete-item .type {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;  /* アイコンの背景の幅 */
+  height: 28px; /* アイコンの背景の高さ */
+  padding: 0;   /* 元のpaddingをリセット */
+  font-size: 14px; /* アイコンのサイズ */
+}
+
+/* 通常（ライト）モードのアイコン色 */
+body:not(.dark-mode):not([class*="theme-"]) .autocomplete-item .type {
+  border-color: #dcdcdc !important;
+  color: #000000 !important;
+}
+
+/* ダークモードのアイコン色 */
+body.dark-mode .autocomplete-item .type {
+  border-color: #415766 !important;
+  color: #ffffff !important;
+}
+
+/* カラーテーマのアイコン色 */
+body[class*="theme-"] .autocomplete-item .type {
+  border-color: var(--history-card-bd) !important;
+  color: var(--muted) !important;
+}
+
+
+
+/* 公開日時などのメタ情報をさらに控えめに */
+.episode-meta {
+  font-size: clamp(0.75rem, 3vw, 0.85rem) !important;
+  opacity: 0.7;
+}
+
+/* ===== 全テーマ共通: ボタン背景色をカードと統一 ===== */
+
+/* --- 1. 通常（ライト）モード --- */
+body:not(.dark-mode):not([class*="theme-"]) .page-btn,
+body:not(.dark-mode):not([class*="theme-"]) .more-btn,
+body:not(.dark-mode):not([class*="theme-"]) .share-btn {
+  background-color: var(--card-bg) !important; /* カード背景色（白）を適用 */
+  border-color: #e5e9f7 !important;
+}
+
+/* --- 2. ダークモード --- */
+/*カード背景色を基準に、関連ボタンの背景と文字色を完全に統一。*/
+
+/* --- 対象ボタンの文字色を「白」に強制指定 --- */
+body.dark-mode .page-btn,
+body.dark-mode .more-btn,
+body.dark-mode .share-btn,
+body.dark-mode .history-toggle,
+body.dark-mode #filterToggleBtn,
+body.dark-mode #favOnlyToggleBtn,
+body.dark-mode #randomBtn,
+body.dark-mode .reset-btn {
+  color: #ffffff !important;
+}
+
+/* --- ページ番号、SNS、ひすとりーボタンの基本背景色をカード背景(#252c35)に合わせる --- */
+body.dark-mode .page-btn,
+body.dark-mode .more-btn,
+body.dark-mode .share-btn,
+body.dark-mode .history-toggle {
+  background-color: #252c35 !important;
+  border-color: #33404c !important;
+}
+
+/* --- ページ番号ボタン「選択中」のスタイル --- */
+body.dark-mode .page-btn.active,
+body.dark-mode .more-btn:active {
+  background-color: #33414d !important; /* 少し明るいグレーで選択状態を表現 */
+  border-color: #ffffff !important;     /* 枠線を白にして強調 */
+  color: #ffffff !important;            /* 文字色も白を維持 */
+}
+
+/* --- ホバー時のスタイル --- */
+@media (hover: hover) {
+  body.dark-mode .page-btn:not(.active):hover,
+  body.dark-mode .share-btn:hover,
+  body.dark-mode .history-toggle:hover {
+    background-color: #33414d !important; /* 選択中ボタンと同じ背景色に */
+    border-color: #4a5967 !important;
+  }
+}
+
+
+/* ===== ダークモードのカード内テキストが水色になる問題の修正 ===== */
+body.dark-mode .episode-item h5 {
+  color: #ffffff !important; /* タイトルとゲスト名の文字色を白に強制 */
+}
+
+/* --- 3. カラーテーマ（前回と同じ） --- */
+body[class*="theme-"] .page-btn,
+body[class*="theme-"] .more-btn,
+body[class*="theme-"] .share-btn {
+  background-color: var(--card-bg) !important;
+}
+
+
+
+/* ===== ダークモードの「ひすとりー」モーダル内のラベル文字色を修正 ===== */
+body.dark-mode .history-item .label {
+  color: #ffffff !important; /* ラベル（太字）の文字色を白に強制 */
 }
