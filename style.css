@@ -1888,18 +1888,7 @@ body.fav-only .episode-item:not(.is-fav) {
 }
 
 
-/* === Hover: 色変化のみ（通常/ダーク共通） === */
-#filterToggleBtn:hover,
-#favOnlyToggleBtn:hover,
-#randomBtn:hover,
-.reset-btn:hover,
-#historyToggle:hover {
-  background: var(--filter-btn-active) !important;
-  border-color: var(--btn-main) !important;
-  color: var(--btn-hover) !important;
-  transform: none !important;
-  box-shadow: none !important;
-}
+
 
 
 /* >=641pxでも検索結果枠の外側に同じ余白を付与 */
@@ -1923,18 +1912,6 @@ body.dark-mode #historyToggle:hover {
 
 
 
-/* === Hover: 色変化のみ（ダークモード） — 変形/影は禁止 === */
-body.dark-mode #filterToggleBtn:hover,
-body.dark-mode #favOnlyToggleBtn:hover,
-body.dark-mode #randomBtn:hover,
-body.dark-mode .reset-btn:hover,
-body.dark-mode #historyToggle:hover {
-  background: var(--filter-btn-active) !important;
-  border-color: var(--btn-main) !important;
-  color: var(--btn-hover) !important;
-  transform: none !important;
-  box-shadow: none !important;
-}
 
 
 /* Prevent persistent active color on click for main control buttons */
@@ -3041,5 +3018,128 @@ body[class*="theme-"] #favOnlyToggleBtn[aria-pressed="true"] {
   body[class*="theme-"] #randomBtn:hover,
   body[class*="theme-"] .reset-btn:hover {
     background-color: rgba(255, 255, 255, 0.15) !important;
+  }
+}
+
+
+/* ======================================================================== */
+/* ===== (改善版) 上部コントロールボタン スタイル V5 ===== */
+/* ======================================================================== */
+/* これがボタンの見た目を制御する唯一のコードブロックになります */
+
+/* --- 0. 全テーマ共通の基本設定 --- */
+#filterToggleBtn,
+#favOnlyToggleBtn,
+#randomBtn,
+.reset-btn {
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease !important;
+}
+#filterToggleBtn:active,
+#favOnlyToggleBtn:active,
+#randomBtn:active,
+.reset-btn:active {
+  transform: translateY(1px) !important;
+  transition-duration: 0.05s !important;
+  box-shadow: none !important;
+}
+
+/* --- 1. ライトモード --- */
+/* (A) デフォルト状態 */
+body:not(.dark-mode):not([class*="theme-"]) #filterToggleBtn,
+body:not(.dark-mode):not([class*="theme-"]) #favOnlyToggleBtn,
+body:not(.dark-mode):not([class*="theme-"]) #randomBtn,
+body:not(.dark-mode):not([class*="theme-"]) .reset-btn {
+  background-color: #ffffff !important;
+  color: #000000 !important;
+  border-color: #dcdcdc !important;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+/* (B) アクティブ状態 (フィルタ/お気に入り) */
+body:not(.dark-mode):not([class*="theme-"]) #filterToggleBtn[aria-expanded="true"],
+body:not(.dark-mode):not([class*="theme-"]) #favOnlyToggleBtn[aria-pressed="true"] {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+  border-color: #000000 !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+/* (C) ホバー状態 (PCのみ) */
+@media (hover: hover) {
+  body:not(.dark-mode):not([class*="theme-"]) #filterToggleBtn:not([aria-expanded="true"]):hover,
+  body:not(.dark-mode):not([class*="theme-"]) #favOnlyToggleBtn:not([aria-pressed="true"]):hover,
+  body:not(.dark-mode):not([class*="theme-"]) #randomBtn:hover,
+  body:not(.dark-mode):not([class*="theme-"]) .reset-btn:hover {
+    background-color: #f7f7f7 !important;
+    border-color: #b0b0b0 !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.08) !important;
+    color: #000000 !important; /* ★★★ 変更点: 文字色を黒に固定 ★★★ */
+  }
+}
+
+/* --- 2. ダークモード --- */
+/* (A) デフォルト状態 */
+body.dark-mode #filterToggleBtn,
+body.dark-mode #favOnlyToggleBtn,
+body.dark-mode #randomBtn,
+body.dark-mode .reset-btn {
+  background-color: #2f3640 !important;
+  color: #ffffff !important;
+  border-color: #4d6272 !important;
+}
+/* (B) アクティブ状態 (フィルタ/お気に入り) */
+body.dark-mode #filterToggleBtn[aria-expanded="true"],
+body.dark-mode #favOnlyToggleBtn[aria-pressed="true"] {
+  background-color: #ffffff !important;
+  color: #22272e !important;
+  border-color: #ffffff !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+/* (C) ホバー状態 (PCのみ) */
+@media (hover: hover) {
+  body.dark-mode #filterToggleBtn:not([aria-expanded="true"]):hover,
+  body.dark-mode #favOnlyToggleBtn:not([aria-pressed="true"]):hover,
+  body.dark-mode #randomBtn:hover,
+  body.dark-mode .reset-btn:hover {
+    background-color: #3e4854 !important;
+    border-color: #6b7f92 !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2) !important;
+    color: #ffffff !important; /* ★★★ 変更点: 文字色を白に固定 ★★★ */
+  }
+}
+
+/* --- 3. テーマカラー --- */
+/* (A) デフォルト状態 */
+body[class*="theme-"] #filterToggleBtn,
+body[class*="theme-"] #favOnlyToggleBtn,
+body[class*="theme-"] #randomBtn,
+body[class*="theme-"] .reset-btn {
+  background-color: var(--btn-bg) !important;
+  color: var(--btn-main) !important;
+  border-color: var(--history-card-bd) !important;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+/* (B) アクティブ状態 (フィルタ/お気に入り) */
+body[class*="theme-"] #filterToggleBtn[aria-expanded="true"],
+body[class*="theme-"] #favOnlyToggleBtn[aria-pressed="true"] {
+  background-color: #ffffff !important;
+  color: var(--bg-color) !important;
+  border-color: #ffffff !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+/* (C) ホバー状態 (PCのみ) */
+@media (hover: hover) {
+  body[class*="theme-"] #filterToggleBtn:not([aria-expanded="true"]):hover,
+  body[class*="theme-"] #favOnlyToggleBtn:not([aria-pressed="true"]):hover,
+  body[class*="theme-"] #randomBtn:hover,
+  body[class*="theme-"] .reset-btn:hover {
+    background-color: rgba(255, 255, 255, 0.15) !important;
+    border-color: rgba(255, 255, 255, 0.8) !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.25) !important;
+    color: var(--btn-main) !important; /* ★★★ 変更点: 文字色をデフォルト状態と同じに固定 ★★★ */
   }
 }

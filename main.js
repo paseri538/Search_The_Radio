@@ -1122,23 +1122,7 @@ window.addEventListener('DOMContentLoaded', function() {
 
 function updateScrollLock(){ if (typeof window.updateScrollLock === 'function') return window.updateScrollLock(); }
 
-$('#filterToggleBtn').on('click', function () {
-  const currentlyOpen = $('#filterDrawer').is(':visible');
-  if (currentlyOpen) {
-    $('#filterDrawer').hide();
-    $('#drawerBackdrop').removeClass('show');
-  } else {
-    $('#filterDrawer').show();
-    $('#drawerBackdrop').addClass('show');
-  }
-  updateScrollLock();
-});
 
-$('#drawerBackdrop').on('click', function () {
-  $('#filterDrawer').hide();
-  $('#drawerBackdrop').removeClass('show');
-  updateScrollLock();
-});
 
 (function () {
   const root = document.documentElement;
@@ -1683,7 +1667,6 @@ document.addEventListener('DOMContentLoaded', () => {
     toggleBtn?.setAttribute('aria-pressed', 'false');
   }
   if (toggleBtn && drawer && backdrop) {
-    backdrop.addEventListener('click', function(){ closeDrawer(); window.__hardUnlockScroll && window.__hardUnlockScroll(); });
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') { closeDrawer(); window.__hardUnlockScroll && window.__hardUnlockScroll(); }
     });
