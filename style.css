@@ -2998,3 +2998,33 @@ body.dark-mode .history-item .label {
   color: #ffffff !important; /* ラベル（太字）の文字色を白に強制 */
 }
 
+
+
+/* ===== いいねマークが降るアニメーション ===== */
+
+/* いいねマークの基本スタイル */
+.good-mark {
+  position: fixed; /* 画面に固定 */
+  top: -60px; /* 画面の上部外からスタート */
+  font-size: 2rem; /* マークの大きさ */
+  pointer-events: none; /* マークがクリックなどを邪魔しないように */
+  user-select: none; /* テキスト選択を無効に */
+  z-index: 9999; /* 常に最前面に表示 */
+  
+  /* アニメーションの設定 */
+  animation-name: fall-animation;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+}
+
+/* 落下アニメーションの定義 */
+@keyframes fall-animation {
+  from {
+    transform: translateY(0) rotate(0deg);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(110vh) rotate(360deg); /* 画面の下端外まで移動し、回転する */
+    opacity: 0;
+  }
+}

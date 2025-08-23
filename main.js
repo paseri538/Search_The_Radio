@@ -122,21 +122,24 @@ const pageSize = 20;
 let lastResults = [];
 let clearAutocompleteSuggestions = () => {};
 let isSearchTriggered = false;
+let luckyButtonData = {};
 
 // --- データ読み込み関数 ---
 async function loadExternalData() {
     try {
-        // 3つのJSONファイルを並行して非同期で取得
-        const [episodesRes, readingsRes, keywordsRes] = await Promise.all([
+        // 4つのJSONファイルを並行して非同期で取得
+        const [episodesRes, readingsRes, keywordsRes, luckyButtonRes] = await Promise.all([
             fetch('episodes.json'),
             fetch('readings.json'),
-            fetch('keywords.json')
+            fetch('keywords.json'),
+            fetch('lucky-button.json')
         ]);
 
         // 各レスポンスをJSONとして解析
         const episodesData = await episodesRes.json();
         const readingsData = await readingsRes.json();
         const keywordsData = await keywordsRes.json();
+        luckyButtonData = await luckyButtonRes.json();
 
         // グローバル変数にデータを格納
         data = episodesData;
@@ -261,6 +264,7 @@ function toggleFavorite(id) { favorites.has(id) ? favorites.delete(id) : favorit
     function normalize(s){
       return toHiragana(s.normalize("NFKC").toLowerCase().replace(/\s+/g,""));
     }
+    const stripTimeSuffix = (s) => (s || '').replace(/[＠@]\s*\d{1,2}:\d{2}(?::\d{2})?\s*$/,'');
 
 let isRestoringURL = false;
 
@@ -445,6 +449,11 @@ function search(opts = {}) {
   const sort = $("#sortSelect").val();
   let res = [...data];
 
+  // ★★★★★ 隠し要素 ★★★★★
+  if (normalize(raw).includes('いいね')) {
+    rainGoodMarks();
+  }
+  
   if (raw.length > 0) {
     const normalizedQuery = normalize(raw);
     const searchTerms = new Set([normalizedQuery]);
@@ -469,10 +478,12 @@ function search(opts = {}) {
 
     const searchWords = [...searchTerms].filter(Boolean);
     res = res.filter(it => {
+      const keywordsWithoutTimestamp = (it.keywords || []).map(kw => stripTimeSuffix(kw));
+
       const combined = [
         it.title,
         Array.isArray(it.guest) ? it.guest.join(" ") : it.guest,
-        (it.keywords || []).join(" ")
+        keywordsWithoutTimestamp.join(" ")
       ].join(" ");
       const text = normalize(combined);
       return searchWords.some(word => text.includes(word));
@@ -485,10 +496,17 @@ function search(opts = {}) {
         const hasKessoku = selectedGuests.includes("結束バンド");
         const hasOthers  = selectedGuests.includes("その他");
         const indivGuests = selectedGuests.filter(g => g !== "結束バンド" && g !== "その他");
+        
         let match = false;
+
+        // ★★★★★ ここからが修正箇所です ★★★★★
         if (indivGuests.length) {
-        match = indivGuests.some(sel => guestArr.includes(sel));
+          // guest と keywords を結合した検索対象テキストを作成
+          const searchableText = guestArr.join(' ') + ' ' + (it.keywords || []).join(' ');
+          match = indivGuests.some(sel => searchableText.includes(sel));
         }
+        // ★★★★★ ここまでが修正箇所です ★★★★★
+
         if (hasKessoku) {
         const kessokuMembers = ["鈴代紗弓", "水野朔", "長谷川育美"];
         const isKessoku = kessokuMembers.every(m => guestArr.includes(m));
@@ -584,13 +602,12 @@ function renderResults(arr, page = 1) {
   ul.empty();
 
   if (!Array.isArray(arr) || arr.length === 0) {
-    $("#results").html(
-      `<li class="no-results">${
-        showFavoritesOnly
-          ? "お気に入りはありません。<br>★を押して登録してください。"
-          : "ﾉ°(6ᯅ9) "
-      }</li>`
-    );
+    // 顔文字アイコンのみを表示するように変更
+    $("#results").html(`
+      <li class="no-results">
+        <div class="no-results-icon">ﾉ°(6ᯅ9)</div>
+      </li>
+    `);
     return;
   }
 
@@ -601,19 +618,54 @@ function renderResults(arr, page = 1) {
       ? selectedCorners[0]
       : null;
 
-  arr.slice(startIdx, endIdx).forEach(it => {
+  const isLuckyButtonSearch = (
+    normalize(qRaw) === "らっきーぼたん" || 
+    (Array.isArray(selectedCorners) && selectedCorners.includes("ラッキーボタン"))
+  );
+
+  arr.slice(startIdx, endIdx).forEach((it, index) => {
     const thumb = getThumbnail(it.link);
     const hashOnly = getHashNumber(it.title);
+
+    // ★★★★★ ここからが修正箇所です ★★★★★
+    // 1. まず検索ボックスのキーワードでタイムスタンプを探す
     let hit = findHitTime(it, qRaw);
-    if (!hit && cornerTarget) hit = findHitTime(it, cornerTarget);
+
+    // 2. もし見つからなければ、選択中のゲストフィルターでタイムスタンプを探す
+    if (!hit && selectedGuests.length > 0) {
+      for (const guestName of selectedGuests) {
+        const guestHit = findHitTime(it, guestName);
+        if (guestHit) {
+          hit = guestHit; // マッチしたものが見つかったら採用
+          break; // 複数のゲストが選択されていても、最初に見つかったものを優先
+        }
+      }
+    }
+
+    // 3.それでも見つからなければ、選択中のコーナーフィルターでタイムスタンプを探す
+    if (!hit && cornerTarget) {
+      hit = findHitTime(it, cornerTarget);
+    }
+    // ★★★★★ ここまでが修正箇所です ★★★★★
+
     const finalLink = hit ? withTimeParam(it.link, hit.seconds) : it.link;
     let guestText = "";
     if (Array.isArray(it.guest)) guestText = "ゲスト：" + it.guest.join("、");
     else if (it.guest === "青山吉能") guestText = "パーソナリティ：青山吉能";
     else if (it.guest && it.guest !== "その他") guestText = `ゲスト：${it.guest}`;
 
+    if (isLuckyButtonSearch) {
+      const episodeKey = it.episode === "02" && it.title.includes("京まふ") ? "京まふ" : it.episode;
+      const luckyPerson = luckyButtonData[episodeKey];
+      if (luckyPerson) {
+        guestText = `ラッキーボタン：${luckyPerson}`;
+      }
+    }
+    
+    const animationStyle = `style="--i: ${index};"`;
+
     ul.append(`
-      <li class="episode-item" role="link" tabindex="0">
+      <li class="episode-item" role="link" tabindex="0" ${animationStyle}> 
         <a href="${finalLink}" target="_blank" rel="noopener"
            style="display:flex;gap:13px;text-decoration:none;color:inherit;align-items:center;min-width:0;">
           <div class="thumb-col">
@@ -912,11 +964,7 @@ function setupEventListeners() {
     const pick = pool[Math.floor(Math.random() * pool.length)];
     window.open(pick.link, '_blank', 'noopener');
   });
-
-
-
 }
-
 
 // ページが読み込まれたらアプリケーションを初期化
 document.addEventListener('DOMContentLoaded', initializeApp);
@@ -1240,17 +1288,14 @@ function initializeAutocomplete() {
   const toHiragana = (s)=> toWide(s).replace(/[ァ-ン]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0x60));
   const normalize = (s)=> toHiragana(s).toLowerCase().replace(/\s+/g,'');
   const hasKanji = (s)=> /[\p{sc=Han}]/u.test(s||'');
-  const stripTimeSuffix = (s) => (s || '').replace(/[＠@]\s*\d{1,2}:\d{2}(?::\d{2})?\s*$/,'');
 
   const entriesByLabel = new Map();
   const ensureEntry = (label, type) => {
     if (!label) return null;
     
-    // ★★★ここからが修正点★★★
-    const baseLabel = stripTimeSuffix(label); // 元のキーワードからタイムスタンプを除去
-    // ★★★ここまでが修正点★★★
+    const baseLabel = stripTimeSuffix(label); 
 
-    let e = entriesByLabel.get(baseLabel); // タイムスタンプなしのキーワードで候補を管理
+    let e = entriesByLabel.get(baseLabel);
     if (!e) {
       e = { label: baseLabel, type: type || 'キーワード', norms: new Set() };
       entriesByLabel.set(baseLabel, e);
@@ -1258,14 +1303,13 @@ function initializeAutocomplete() {
       if (e.type !== '出演者' && type === '出演者') e.type = '出演者';
     }
     
-    e.norms.add(normalize(label)); // 元の文字列も検索対象に
-    e.norms.add(normalize(baseLabel)); // タイムスタンプなしも検索対象に
+    // ★★★★★ ここが修正点です ★★★★★
+    // タイムスタンプを取り除いた後のキーワード本体と、その読み仮名のみを検索対象とします。
+    e.norms.add(normalize(baseLabel)); 
     
-    // ★★★ここからが修正点★★★
-    const rs = CUSTOM_READINGS[baseLabel]; // タイムスタンプなしのキーワードで読み仮名を取得
-    // ★★★ここまでが修正点★★★
-
+    const rs = CUSTOM_READINGS[baseLabel];
     if (rs) rs.forEach(r => e.norms.add(normalize(r)));
+    // ★★★★★ ここまで ★★★★★
     return e;
   };
 
@@ -1309,7 +1353,6 @@ function initializeAutocomplete() {
       const html = (i >= 0)
         ? `${item.label.slice(0,i)}<span class="match">${item.label.slice(i, i+qRaw.length)}</span>${item.label.slice(i+qRaw.length)}`
         : item.label;
-// ▼ アイコンを生成するロジックを追加
       let typeIcon = '';
       if (item.type === '出演者') {
         typeIcon = '<i class="fa-solid fa-user" aria-hidden="true"></i>';
@@ -1318,7 +1361,6 @@ function initializeAutocomplete() {
       }
       
       el.innerHTML = `<span class="type">${typeIcon}</span><span class="label">${html}</span>`;
-      // ▲ ここまで変更
         el.addEventListener('mousedown', (e) => { e.preventDefault(); pick(idx); });
       $box.appendChild(el);
     });
@@ -1361,12 +1403,11 @@ function initializeAutocomplete() {
     
     const itemsRaw = scored.slice(0, 20).map(({ e }) => {
         let label = e.label;
-        const nlabel = normalize(stripTimeSuffix(label));
+        const nlabel = normalize(label);
         if (!hasKanji(label) && READING_TO_LABEL[nlabel]) {
             label = READING_TO_LABEL[nlabel];
         }
-        const display = stripTimeSuffix(label);
-        return { label: display, fill: display, type: e.type };
+        return { label: label, fill: label, type: e.type };
     }).filter(Boolean);
 
     const seen = new Set();
@@ -1827,3 +1868,30 @@ const preloadThumbnails = (episodes) => {
   });
   obs.observe(drawer, { attributes: true, attributeFilter: ['style', 'class'] });
 })();
+
+/**
+ * 「いいね」マークを画面に降らせる隠し機能
+ */
+function rainGoodMarks() {
+  const count = 30; // 降らせるマークの数
+  const container = document.body;
+
+  for (let i = 0; i < count; i++) {
+    const goodMark = document.createElement('span');
+    goodMark.className = 'good-mark';
+    goodMark.textContent = '👍';
+
+    // 位置や動きをランダムにする
+    goodMark.style.left = Math.random() * 100 + 'vw'; // 横位置をランダムに
+    goodMark.style.animationDuration = (Math.random() * 2 + 3) + 's'; // 3〜5秒かけて落ちる
+    goodMark.style.animationDelay = Math.random() * 2 + 's'; // 0〜2秒遅れて落ち始める
+    goodMark.style.fontSize = (Math.random() * 1.5 + 1) + 'rem'; // 大きさも少しランダムに
+
+    // アニメーションが終わったら要素を削除する
+    goodMark.addEventListener('animationend', () => {
+      goodMark.remove();
+    });
+
+    container.appendChild(goodMark);
+  }
+}
