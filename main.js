@@ -384,6 +384,29 @@ function renderPagination(totalCount) {
   $area.html(html);
 }
 
+function createPlaylist() {
+    if (!showFavoritesOnly || !lastResults || lastResults.length === 0) {
+        alert('プレイリストを作成するには、お気に入りが1件以上必要です。');
+        return;
+    }
+    const videoIds = lastResults.map(item => getVideoId(item.link)).filter(Boolean);
+    if (videoIds.length === 0) {
+        alert('有効な動画IDが見つかりませんでした。');
+        return;
+    }
+    const playlistUrl = `https://www.youtube.com/watch_videos?video_ids=${videoIds.join(',')}`;
+    window.open(playlistUrl, '_blank', 'noopener');
+}
+
+function updatePlaylistButtonVisibility() {
+    const btn = document.getElementById('createPlaylistBtn');
+    if (btn) {
+        // お気に入り表示モードで、かつ結果が1件以上ある場合のみボタンを表示
+        btn.hidden = !(showFavoritesOnly && lastResults && lastResults.length > 0);
+    }
+}
+
+
 function search(opts = {}) {
   isSearchTriggered = true;
   clearAutocompleteSuggestions();
@@ -509,10 +532,10 @@ function search(opts = {}) {
 
   renderResults(res, currentPage);
   fitGuestLines();
-  window.addEventListener('resize', () => setTimeout(fitGuestLines, 30));
   window.addEventListener('orientationchange', () => setTimeout(fitGuestLines, 120));
   renderPagination(res.length);
   updateActiveFilters();
+  updatePlaylistButtonVisibility();
 }
 
 function fitGuestLines() {
@@ -832,6 +855,8 @@ function setupEventListeners() {
     $li.toggleClass('is-fav', !!favNow);
     if (showFavoritesOnly) search({ gotoPage: currentPage || 1 });
   });
+
+  $('#createPlaylistBtn').off('click').on('click', createPlaylist);
 
   updateGuestButtonStyles();
   updateCornerStyles();
@@ -1353,65 +1378,62 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 
-
 // =================================================================
-// ===== ローディング画面制御とボタンフォントサイズ調整（最終ポーリング版） =====
+// ===== ボタンフォントサイズ調整 ＆ ローディング画面制御 (同期最終版) =====
 // =================================================================
 (function() {
-
     // --- ボタンフォントサイズの自動調整機能 ---
-    const autoFitControlButtons = () => {
-        const elFilter = document.getElementById('filterToggleBtn');
-        const elFav = document.getElementById('favOnlyToggleBtn');
-        const elRand = document.getElementById('randomBtn');
-        const elReset = document.querySelector('.reset-btn');
-
-        if (!elFilter || !elFav || !elRand || !elReset) return;
-        const targets = [elFilter, elFav, elRand, elReset];
-
-        const findOptimalFontSize = (element, startSize = 15, minSize = 10.5) => {
-            element.style.setProperty('--ctl-fs', startSize + 'px', 'important');
-            if (element.scrollWidth > element.clientWidth) {
+    const sizerModule = {
+        targets: [],
+        init: function() {
+            this.targets = Array.from(document.querySelectorAll('#filterToggleBtn, #favOnlyToggleBtn, #randomBtn, .reset-btn'));
+            if (this.targets.some(el => !el)) return;
+            
+            // 画面の向きが変わった時にも再計算を実行
+            window.addEventListener('orientationchange', this.fitAll.bind(this), { passive: true });
+        },
+        findOptimalFontSize: function(element, startSize = 15, minSize = 10.5) {
+            element.style.fontSize = startSize + 'px';
+            if (element.scrollWidth > element.clientWidth + 1) { // 許容誤差を1pxに
                 const newSize = startSize - 0.5;
-                if (newSize >= minSize) return findOptimalFontSize(element, newSize, minSize);
+                if (newSize >= minSize) return this.findOptimalFontSize(element, newSize, minSize);
                 return minSize;
             }
             return startSize;
-        };
-
-        const fitAll = () => {
-            requestAnimationFrame(() => {
-                const optimalSizes = targets.map(el => findOptimalFontSize(el));
-                const finalSize = Math.min(...optimalSizes);
-                document.documentElement.style.setProperty('--final-ctl-fs', finalSize + 'px');
-            });
-        };
-
-        // ポーリング（繰り返し）実行
-        // ページの読み込み開始直後から、完了後まで複数回実行し続けることで、
-        // どんなに遅い端末でもレイアウト確定後に必ず計算が実行されるようにする
-        const intervals = [50, 150, 300, 500, 800, 1200, 2000];
-        intervals.forEach(delay => setTimeout(fitAll, delay));
-
-        // 画面の向きが変わった時も実行
-        window.addEventListener('orientationchange', fitAll, { passive: true });
+        },
+        fitAll: function() {
+            if (window.innerWidth > 991) {
+                this.targets.forEach(el => el.style.fontSize = '');
+                return;
+            }
+            const optimalSizes = this.targets.map(el => this.findOptimalFontSize(el));
+            const finalSize = Math.min(...optimalSizes);
+            this.targets.forEach(el => el.style.fontSize = finalSize + 'px');
+        }
     };
 
-    // --- ページの読み込み完了時の処理 ---
+    // DOMが読み込まれたらサイザーを初期化
+    document.addEventListener('DOMContentLoaded', () => sizerModule.init());
+
+    // ページの全リソースが読み込まれたら実行
     window.addEventListener('load', function() {
-        // ローディング画面をフェードアウトさせる
-        const loadingScreen = document.getElementById("loading-screen");
-        if (loadingScreen) {
-            setTimeout(function() {
+        // 異なるタイミングで複数回、最終計算を実行
+        setTimeout(() => sizerModule.fitAll(), 100);
+        setTimeout(() => sizerModule.fitAll(), 300);
+
+        // ★最終計算が完了してから、ローディング画面を消す処理を開始
+        setTimeout(() => {
+            sizerModule.fitAll(); // 最後のダメ押し計算
+            document.body.classList.add('buttons-ready'); // CSSに表示準備完了を伝える
+
+            // ローディング画面をフェードアウト
+            const loadingScreen = document.getElementById("loading-screen");
+            if (loadingScreen) {
                 loadingScreen.classList.add("fadeout");
-                setTimeout(function() {
+                setTimeout(() => {
                     if (loadingScreen) loadingScreen.remove();
                 }, 1000);
-            }, 950);
-        }
+            }
+        }, 750); // 750ミリ秒待つことで、ほとんどの端末で描画が安定する
     });
-    
-    // 文字サイズ調整機能を実行開始
-    autoFitControlButtons();
-
 })();

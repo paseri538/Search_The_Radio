@@ -2424,11 +2424,9 @@ body.dark-mode .history-item .label {
 body.body-scroll-locked {
   overflow: hidden !important;
 }
-
 /* ======================================================================== */
-/* ===== (V23・最終確定版) 上部コントロールボタン スタイル ===== */
+/* ===== (V28・最終確定版) 上部コントロールボタン スタイル ===== */
 /* ======================================================================== */
-/* このブロックがPC・スマホのレイアウトと全テーマの色・挙動を完全に管理します */
 
 /* --- 0. ボタンの基本構造 (全テーマ共通) --- */
 #filterToggleBtn,
@@ -2437,8 +2435,8 @@ body.body-scroll-locked {
 .reset-btn {
   display: inline-flex !important; align-items: center !important; justify-content: center !important;
   border: 1.5px solid !important; border-radius: 10px !important; font-weight: 500 !important;
-  line-height: 1 !important; white-space: nowrap !important; padding: 0 0.9em !important;
-  transition: background-color 0.1s ease, border-color 0.1s ease, color 0.1s ease, transform 0.1s ease !important;
+  line-height: 1 !important; white-space: nowrap !important;
+  transition: background-color 0.1s ease, border-color 0.1s ease, color 0.1s ease, transform 0.1s ease, opacity 0.2s ease !important;
   cursor: pointer !important; user-select: none !important;
   box-shadow: none !important;
 }
@@ -2451,20 +2449,32 @@ body.body-scroll-locked {
 #filterToggleBtn i, #favOnlyToggleBtn i, #randomBtn i {
   width: 1.1em !important; text-align: center !important;
 }
-.reset-btn::before {
-  font-size: 1.1em !important; transform: translateY(-0.02em) !important;
-}
+/* アイコン垂直位置の微調整 */
+#filterToggleBtn i { position: relative; top: 0.1em; }
+#favOnlyToggleBtn i { position: relative; top: 0.06em; }
+#randomBtn i { position: relative; top: 0.07em; }
+.reset-btn::before { font-size: 1.05em !important; position: relative; top: 0.08em; }
 
-/* --- 2. デバイスごとのレイアウトとフォントサイズ適用ルール --- */
+/* --- 2. デバイスごとのレイアウトとスタイル --- */
 /* スマホ (991px以下) */
 @media (max-width: 991px) {
   .search-row-controls { display: grid !important; grid-template-columns: repeat(4, 1fr) !important; gap: 6px !important; }
   .search-row-controls .sort-wrapper { grid-column: 1 / -1 !important; }
   #filterToggleBtn, #favOnlyToggleBtn, #randomBtn, .reset-btn {
     height: 42px !important;
-    /* ★★★ 最終修正 ★★★ CSSのclamp()で、はみ出さない安全な範囲で瞬時に自動調整 */
-    font-size: clamp(11px, 3.5vw, 14.5px) !important;
-    gap: 0.45em !important;
+    font-size: 14px !important;     /* JSが調整するまでの安全な初期サイズ */
+    padding: 0 6px !important;
+    gap: 0.35em !important;
+    visibility: hidden; /* ★計算完了まで完全に非表示 */
+    opacity: 0;
+  }
+  /* ★JSの準備完了合図で表示 */
+  body.buttons-ready #filterToggleBtn,
+  body.buttons-ready #favOnlyToggleBtn,
+  body.buttons-ready #randomBtn,
+  body.buttons-ready .reset-btn {
+    visibility: visible;
+    opacity: 1;
   }
   #filterToggleBtn::after { content: "フィルタ" !important; }
   .reset-btn::before { content: "↺" !important; }
@@ -2475,7 +2485,8 @@ body.body-scroll-locked {
   .search-row-controls .sort-wrapper { margin-left: auto !important; flex-grow: 1 !important; }
   #filterToggleBtn, #favOnlyToggleBtn, #randomBtn, .reset-btn {
     height: 40px !important;
-    font-size: 15.5px !important; /* PCでは固定サイズを使用 */
+    font-size: 15.5px !important;
+    padding: 0 0.9em !important;
     width: clamp(124px, 12vw, 144px) !important; flex: 0 0 auto !important;
     gap: 0.55em !important;
   }
@@ -2586,4 +2597,89 @@ body.theme-red #filterToggleBtn[aria-expanded="true"], body.theme-red #favOnlyTo
   white-space: normal !important; /* 文字の折り返しを許可する */
   word-break: break-all;         /* 長い単語でも枠の端で強制的に改行させる */
   vertical-align: initial !important; /* 縦位置をリセットして揃える */
+}
+
+/* ======================================================================== */
+/* ===== (V23.3) ボタンアイコンの個別・最終精密調整 ===== */
+/* ======================================================================== */
+
+/* 1. まず、全ての位置調整を一旦リセット */
+#filterToggleBtn i,
+#favOnlyToggleBtn i,
+#randomBtn i,
+.reset-btn::before {
+  position: static;
+  top: auto;
+  transform: none !important;
+}
+
+/* 2. 各アイコンのサイズと位置を個別に微調整 */
+
+/* 「フィルタ」アイコン (▼) */
+#filterToggleBtn i {
+  position: relative;
+  top: 0.035em; /* 他より少し下に配置 */
+}
+
+/* 「お気に入り」アイコン (☆) */
+#favOnlyToggleBtn i {
+  font-size: 1.00em !important; /* 他のアイコンと視覚的な大きさを合わせる */
+  position: relative;
+  top: 0em; /* わずかに下に */
+}
+
+/* 「ランダム」アイコン */
+#randomBtn i {
+  position: relative;
+  top: 0.02em; /* わずかに下に */
+}
+
+/* 「リセット」アイコン (↺) */
+.reset-btn::before {
+  font-size: 1.05em !important; /* 他のアイコンと視覚的な大きさを合わせる */
+  position: relative;
+  top: 0.02em; /* 少し下に */
+}
+
+/* ======================================================================== */
+/* ===== YouTubeプレイリスト作成ボタンのスタイル ===== */
+/* ======================================================================== */
+.results-count-under-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between; /* 件数とボタンを両端に配置 */
+  gap: 16px;
+}
+
+#createPlaylistBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #e52d27; /* YouTubeの赤 */
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 6px 14px;
+  font-size: 0.95em;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  white-space: nowrap;
+}
+
+#createPlaylistBtn:hover {
+  background-color: #c21d19;
+}
+
+/* ボタンがhidden属性を持つ場合は非表示にする */
+#createPlaylistBtn[hidden] {
+  display: none;
+}
+
+/* ダークモード時の調整 */
+body.dark-mode #createPlaylistBtn {
+  background-color: #ff4742;
+}
+body.dark-mode #createPlaylistBtn:hover {
+  background-color: #e52d27;
 }
