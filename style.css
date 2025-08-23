@@ -3177,3 +3177,94 @@ body[class*="theme-"] #favOnlyToggleBtn[aria-pressed="true"] {
     color: var(--btn-main) !important;
   }
 }
+
+/* ======================================================================== */
+/* ===== スマホでのホバー固定現象を解消する最終修正 ===== */
+/* ======================================================================== */
+/* マウスホバーができないタッチデバイスでのみ、ホバー時の色変化を無効化します */
+@media (hover: none) {
+  /* --- ライトモードのホバー色を無効化 --- */
+  body:not(.dark-mode):not([class*="theme-"]) #filterToggleBtn:hover,
+  body:not(.dark-mode):not([class*="theme-"]) #favOnlyToggleBtn:hover,
+  body:not(.dark-mode):not([class*="theme-"]) #randomBtn:hover,
+  body:not(.dark-mode):not([class*="theme-"]) .reset-btn:hover {
+    /* アクティブでない時のデフォルト色に戻す */
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    border-color: #dcdcdc !important;
+  }
+
+  /* --- ダークモードのホバー色を無効化 --- */
+  body.dark-mode #filterToggleBtn:hover,
+  body.dark-mode #favOnlyToggleBtn:hover,
+  body.dark-mode #randomBtn:hover,
+  body.dark-mode .reset-btn:hover {
+    /* アクティブでない時のデフォルト色に戻す */
+    background-color: #2f3640 !important;
+    color: #ffffff !important;
+    border-color: #4d6272 !important;
+  }
+
+  /* --- カラーテーマのホバー色を無効化 --- */
+  body[class*="theme-"] #filterToggleBtn:hover,
+  body[class*="theme-"] #favOnlyToggleBtn:hover,
+  body[class*="theme-"] #randomBtn:hover,
+  body[class*="theme-"] .reset-btn:hover {
+    /* アクティブでない時のデフォルト色に戻す */
+    background-color: var(--btn-bg) !important;
+    color: var(--btn-main) !important;
+    border-color: var(--history-card-bd) !important;
+  }
+
+  /* ただし、アクティブ状態（フィルターON、お気に入りON）の時は
+    その状態の色を維持するようにします。
+  */
+  body:not(.dark-mode):not([class*="theme-"]) #filterToggleBtn[aria-expanded="true"]:hover,
+  body:not(.dark-mode):not([class*="theme-"]) #favOnlyToggleBtn[aria-pressed="true"]:hover {
+    background-color: #000000 !important;
+    color: #ffffff !important;
+    border-color: #000000 !important;
+  }
+
+  body.dark-mode #filterToggleBtn[aria-expanded="true"]:hover,
+  body.dark-mode #favOnlyToggleBtn[aria-pressed="true"]:hover {
+    background-color: #ffffff !important;
+    color: #22272e !important;
+    border-color: #ffffff !important;
+  }
+
+  body[class*="theme-"] #filterToggleBtn[aria-expanded="true"]:hover,
+  body[class*="theme-"] #favOnlyToggleBtn[aria-pressed="true"]:hover {
+    background-color: #ffffff !important;
+    color: var(--bg-color) !important;
+    border-color: #ffffff !important;
+  }
+}
+
+/* ======================================================================== */
+/* ===== スマホでのカードホバー（発光）を無効化する修正 ===== */
+/* ======================================================================== */
+/* マウスホバーができないタッチデバイスでのみ、カードのホバーエフェクトを無効化します */
+@media (hover: none) {
+  /* --- ライトモードのホバーエフェクトを無効化 --- */
+  .episode-item:hover {
+    transform: none !important;
+    box-shadow: none !important;
+    background: var(--card-bg) !important;
+  }
+
+  /* --- ダークモードのホバーエフェクトを無効化 --- */
+  body.dark-mode .episode-item:hover {
+    border: 1px solid #33404c !important;
+    box-shadow: none !important;
+    background: #252c35 !important;
+  }
+
+  /* --- カラーテーマのホバーエフェクトを無効化 --- */
+  body[class*="theme-"] .episode-item:hover {
+    transform: none !important;
+    box-shadow: none !important;
+    background: var(--item-bg) !important;
+    border-color: var(--history-card-bd) !important;
+  }
+}

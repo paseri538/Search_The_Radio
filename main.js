@@ -68,23 +68,6 @@ $(function() {
     }
 });
 
-// --- Hard unlock: ensure page scroll is restored no matter what path was taken
-window.__hardUnlockScroll = function __hardUnlockScroll(){
-  try { window.__bodyLockCount = 0; } catch(e){}
-  try { document.body.classList.remove('modal-open'); } catch(e){}
-  try { document.body.classList.remove('scroll-lock'); } catch(e){}
-  try {
-    const top = document.body.style.top;
-    document.body.style.top = '';
-    if (top) { window.scrollTo(0, -parseInt(top,10) || 0); }
-  } catch(e){}
-};
-
-
-// main.js
-
-// ▼▼▼▼▼ 既存の __hardUnlockScroll と Global... body scroll locker を削除し、以下のコードに差し替え ▼▼▼▼▼
-
 // --- Hard unlock: どんな状況でもスクロールを復元する安全装置 (最終版)
 window.__hardUnlockScroll = function __hardUnlockScroll(){
   try { window.__bodyLockCount = 0; } catch(e){}
@@ -102,11 +85,8 @@ window.__hardUnlockScroll = function __hardUnlockScroll(){
   
   window.acquireBodyLock = function acquireBodyLock(){
     if (window.__bodyLockCount === 0){
-      // 1. スクロールバーの幅を計算し、その分だけ右に余白を追加してコンテンツの横ズレを防ぐ
       const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
       document.body.style.paddingRight = `${scrollbarWidth}px`;
-      
-      // 2. 新しい専用クラスをbodyに付与してスクロールを禁止する
       document.body.classList.add('body-scroll-locked');
     }
     window.__bodyLockCount++;
@@ -115,24 +95,19 @@ window.__hardUnlockScroll = function __hardUnlockScroll(){
   window.releaseBodyLock = function releaseBodyLock(){
     window.__bodyLockCount = Math.max(0, (window.__bodyLockCount||0) - 1);
     if (window.__bodyLockCount === 0){
-      // bodyからスタイルとクラスを削除して元の状態に完全に戻す
       document.body.style.paddingRight = '';
       document.body.classList.remove('body-scroll-locked');
     }
   };
 })();
 
-// ▲▲▲▲▲ ここまでを差し替え ▲▲▲▲▲
-
 // ===================================================
-// ★★★ データと状態管理（ここからが主な変更点）★★★
+// ★★★ データと状態管理 ★★★
 // ===================================================
 
-// --- グローバル変数を定義 ---
-let data = []; // episodes.json から読み込む
-let CUSTOM_READINGS = {}; // readings.json と keywords.json から結合して作成
-let READING_TO_LABEL = {}; // 読み仮名からの逆引きマップ
-
+let data = [];
+let CUSTOM_READINGS = {};
+let READING_TO_LABEL = {};
 let selectedGuests = [];
 let selectedCorners = [];
 let selectedOthers = [];
@@ -144,44 +119,34 @@ let clearAutocompleteSuggestions = () => {};
 let isSearchTriggered = false;
 let luckyButtonData = {};
 
-// --- データ読み込み関数 ---
 async function loadExternalData() {
     try {
-        // 4つのJSONファイルを並行して非同期で取得
         const [episodesRes, readingsRes, keywordsRes, luckyButtonRes] = await Promise.all([
             fetch('episodes.json'),
             fetch('readings.json'),
             fetch('keywords.json'),
             fetch('lucky-button.json')
         ]);
-
-        // 各レスポンスをJSONとして解析
         const episodesData = await episodesRes.json();
         const readingsData = await readingsRes.json();
         const keywordsData = await keywordsRes.json();
         luckyButtonData = await luckyButtonRes.json();
 
-        // グローバル変数にデータを格納
         data = episodesData;
-        CUSTOM_READINGS = { ...readingsData, ...keywordsData }; // 読みとキーワードを結合
+        CUSTOM_READINGS = { ...readingsData, ...keywordsData };
 
-        // 読み仮名からの逆引きマップを作成
         for (const kanji in CUSTOM_READINGS) {
             (CUSTOM_READINGS[kanji] || []).forEach(r => {
                 READING_TO_LABEL[normalize(r)] = kanji;
             });
         }
-        
         console.log("All data loaded successfully.");
-
     } catch (error) {
         console.error("Failed to load external data:", error);
-        // エラー発生時の処理（例: ユーザーにエラーメッセージを表示）
         const resultsEl = document.getElementById('results');
         if(resultsEl) {
             resultsEl.innerHTML = '<li class="no-results">データの読み込みに失敗しました。<br>ページを再読み込みしてください。</li>';
         }
-        // ローディング画面を非表示にする
         const loadingScreen = document.getElementById('loading-screen');
         if (loadingScreen) {
             loadingScreen.classList.add('fadeout');
@@ -190,37 +155,21 @@ async function loadExternalData() {
     }
 }
 
-// --- アプリケーション初期化関数 ---
 async function initializeApp() {
     await loadExternalData();
-
-    // データ読み込み後に実行したい処理をすべてここに記述
-    
-    // サムネイルのプリロード
     preloadThumbsFromData();
-
-    // 検索・UI関連の初期化
     if (!applyStateFromURL({ replace: true })) {
         search();
     }
-    
-    // イベントリスナーの設定
     setupEventListeners();
-    
-    // オートコンプリートの初期化
     initializeAutocomplete();
-    
     console.log("Application initialized.");
 }
-
-
-// --- ここから下の関数群は変更なし（ただし、データに依存するものは initializeApp 内から呼び出す） ---
 
 function preloadThumbsFromData() {
   try {
     const head = document.head || document.getElementsByTagName('head')[0];
     const seen = new Set();
-
     data.forEach((ep) => {
       if (!ep || !ep.link) return;
       let vid = null;
@@ -230,7 +179,6 @@ function preloadThumbsFromData() {
       } catch (_) {}
       if (!vid || seen.has(vid)) return;
       seen.add(vid);
-
       const l1 = document.createElement('link');
       l1.rel = 'preload';
       l1.as = 'image';
@@ -259,32 +207,30 @@ function saveFavs() { localStorage.setItem(FAV_KEY, JSON.stringify([...favorites
 function isFavorite(id) { return favorites.has(id); }
 function toggleFavorite(id) { favorites.has(id) ? favorites.delete(id) : favorites.add(id); saveFavs(); }
 
+const guestColorMap = {
+  "青山吉能": "#ff6496", "鈴代紗弓": "#fabe00", "水野朔": "#006ebe", "長谷川育美": "#e60046",
+  "内田真礼": "#f09110", "千本木彩花": "#bbc3b8", "和多田美咲": "#a8eef4", "小岩井ことり": "#494386"
+};
 
-    const guestColorMap = {
-      "青山吉能": "#ff6496", "鈴代紗弓": "#fabe00", "水野朔": "#006ebe", "長谷川育美": "#e60046",
-      "内田真礼": "#f09110", "千本木彩花": "#bbc3b8", "和多田美咲": "#a8eef4", "小岩井ことり": "#494386"
-    };
+function formatTitle(title) {
+return title.replace(/\u3000/g, '<br>');
+}
 
-    function formatTitle(title) {
-    return title.replace(/\u3000/g, '<br>');
-    }
-
-
-    function getThumbnail(url) {
-      const m = url.match(/[?&]v=([^&]+)/);
-      return m ? `https://img.youtube.com/vi/${m[1]}/hqdefault.jpg` : "";
-    }
-    function getHashNumber(title) {
-      const match = title.match(/#(\d+)/);
-      return match ? `#${match[1]}` : title;
-    }
-    function toHiragana(str) {
-      return str.replace(/[ァ-ン]/g, s => String.fromCharCode(s.charCodeAt(0) - 0x60));
-    }
-    function normalize(s){
-      return toHiragana(s.normalize("NFKC").toLowerCase().replace(/\s+/g,""));
-    }
-    const stripTimeSuffix = (s) => (s || '').replace(/[＠@]\s*\d{1,2}:\d{2}(?::\d{2})?\s*$/,'');
+function getThumbnail(url) {
+  const m = url.match(/[?&]v=([^&]+)/);
+  return m ? `https://img.youtube.com/vi/${m[1]}/hqdefault.jpg` : "";
+}
+function getHashNumber(title) {
+  const match = title.match(/#(\d+)/);
+  return match ? `#${match[1]}` : title;
+}
+function toHiragana(str) {
+  return str.replace(/[ァ-ン]/g, s => String.fromCharCode(s.charCodeAt(0) - 0x60));
+}
+function normalize(s){
+  return toHiragana(s.normalize("NFKC").toLowerCase().replace(/\s+/g,""));
+}
+const stripTimeSuffix = (s) => (s || '').replace(/[＠@]\s*\d{1,2}:\d{2}(?::\d{2})?\s*$/,'');
 
 let isRestoringURL = false;
 
@@ -299,24 +245,18 @@ function readMulti(params, key) {
 function buildURLFromState({ method = 'push' } = {}) {
   if (isRestoringURL) return;
   const params = new URLSearchParams();
-
   const q = $("#searchBox").val().trim();
   if (q) params.set('q', q);
-
   selectedGuests.forEach(v => params.append('g', v));
   selectedCorners.forEach(v => params.append('c', v));
   selectedOthers.forEach(v => params.append('o', v));
   selectedYears.forEach(y => params.append('y', String(y)));
-
   const sort = $("#sortSelect").val();
   if (sort) params.set('sort', sort);
-
   if (showFavoritesOnly) params.set('fav', '1');
   if (currentPage > 1) params.set('p', String(currentPage));
-
   const qs = params.toString();
   const url = qs ? `?${qs}` : location.pathname;
-
   const state = {
     q, selectedGuests, selectedCorners, selectedOthers, selectedYears,
     sort, fav: showFavoritesOnly, p: currentPage
@@ -329,36 +269,27 @@ function buildURLFromState({ method = 'push' } = {}) {
 function applyStateFromURL({ replace = false } = {}) {
   const params = new URLSearchParams(location.search);
   if (![...params.keys()].length) return false;
-
   isRestoringURL = true;
-
   const q = params.get('q') || '';
   $('#searchBox').val(q);
-
   selectedGuests = readMulti(params, 'g');
   selectedCorners = readMulti(params, 'c');
   selectedOthers  = readMulti(params, 'o');
   selectedYears   = readMulti(params, 'y').map(String);
-
   const sort = params.get('sort') || 'newest';
   $('#sortSelect').val(sort);
-
   showFavoritesOnly = params.get('fav') === '1';
   $('#favOnlyToggleBtn')
     .toggleClass('active', showFavoritesOnly)
     .attr('aria-pressed', showFavoritesOnly);
   document.body.classList.toggle('fav-only', showFavoritesOnly);
-
   updateGuestButtonStyles();
   updateCornerStyles();
   updateOtherStyles();
   updateYearStyles();
-
   const p = parseInt(params.get('p') || '1', 10);
   currentPage = Number.isFinite(p) && p > 0 ? p : 1;
-
   search({ gotoPage: currentPage });
-
   isRestoringURL = false;
   if (replace) buildURLFromState({ method: 'replace' });
   return true;
@@ -398,12 +329,10 @@ function findHitTime(item, rawQuery) {
   if (!rawQuery) return null;
   const qn = normalize(rawQuery);
   if (!qn) return null;
-
   for (const kw of (item.keywords || [])) {
     const p = parseKeywordTime(kw);
     if (!p) continue;
     const baseN = normalize(p.base);
-
     if (baseN.includes(qn) || qn.includes(baseN)) {
       return p;
     }
@@ -456,11 +385,8 @@ function renderPagination(totalCount) {
 }
 
 function search(opts = {}) {
-  // ▼ 目印を立て、検索候補をクリアする
   isSearchTriggered = true;
   clearAutocompleteSuggestions();
-
-  // 目印を少し後に自動で下ろすタイマーを設定
   setTimeout(() => {
     isSearchTriggered = false;
   }, 100);
@@ -469,7 +395,6 @@ function search(opts = {}) {
   const sort = $("#sortSelect").val();
   let res = [...data];
 
-  // ★★★★★ 隠し要素 ★★★★★
   if (normalize(raw).includes('いいね')) {
     rainGoodMarks();
   }
@@ -477,7 +402,6 @@ function search(opts = {}) {
   if (raw.length > 0) {
     const normalizedQuery = normalize(raw);
     const searchTerms = new Set([normalizedQuery]);
-
     for (const key in CUSTOM_READINGS) {
       const keyNorm = normalize(key);
       const readings = CUSTOM_READINGS[key].map(normalize);
@@ -495,16 +419,10 @@ function search(opts = {}) {
         readings.forEach(r => searchTerms.add(r));
       }
     }
-
     const searchWords = [...searchTerms].filter(Boolean);
     res = res.filter(it => {
       const keywordsWithoutTimestamp = (it.keywords || []).map(kw => stripTimeSuffix(kw));
-
-      const combined = [
-        it.title,
-        Array.isArray(it.guest) ? it.guest.join(" ") : it.guest,
-        keywordsWithoutTimestamp.join(" ")
-      ].join(" ");
+      const combined = [it.title, Array.isArray(it.guest) ? it.guest.join(" ") : it.guest, keywordsWithoutTimestamp.join(" ")].join(" ");
       const text = normalize(combined);
       return searchWords.some(word => text.includes(word));
     });
@@ -516,17 +434,11 @@ function search(opts = {}) {
         const hasKessoku = selectedGuests.includes("結束バンド");
         const hasOthers  = selectedGuests.includes("その他");
         const indivGuests = selectedGuests.filter(g => g !== "結束バンド" && g !== "その他");
-        
         let match = false;
-
-        // ★★★★★ ここからが修正箇所です ★★★★★
         if (indivGuests.length) {
-          // guest と keywords を結合した検索対象テキストを作成
           const searchableText = guestArr.join(' ') + ' ' + (it.keywords || []).join(' ');
           match = indivGuests.some(sel => searchableText.includes(sel));
         }
-        // ★★★★★ ここまでが修正箇所です ★★★★★
-
         if (hasKessoku) {
         const kessokuMembers = ["鈴代紗弓", "水野朔", "長谷川育美"];
         const isKessoku = kessokuMembers.every(m => guestArr.includes(m));
@@ -622,52 +534,31 @@ function renderResults(arr, page = 1) {
   ul.empty();
 
   if (!Array.isArray(arr) || arr.length === 0) {
-    // 顔文字アイコンのみを表示するように変更
-    $("#results").html(`
-      <li class="no-results">
-        <div class="no-results-icon">ﾉ°(6ᯅ9)</div>
-      </li>
-    `);
+    $("#results").html(`<li class="no-results"><div class="no-results-icon">ﾉ°(6ᯅ9)</div></li>`);
     return;
   }
 
   const startIdx = (page - 1) * pageSize, endIdx = page * pageSize;
   const qRaw = $("#searchBox").val().trim();
-  const cornerTarget =
-    Array.isArray(selectedCorners) && selectedCorners.length === 1
-      ? selectedCorners[0]
-      : null;
-
-  const isLuckyButtonSearch = (
-    normalize(qRaw) === "らっきーぼたん" || 
-    (Array.isArray(selectedCorners) && selectedCorners.includes("ラッキーボタン"))
-  );
+  const cornerTarget = Array.isArray(selectedCorners) && selectedCorners.length === 1 ? selectedCorners[0] : null;
+  const isLuckyButtonSearch = (normalize(qRaw) === "らっきーぼたん" || (Array.isArray(selectedCorners) && selectedCorners.includes("ラッキーボタン")));
 
   arr.slice(startIdx, endIdx).forEach((it, index) => {
     const thumb = getThumbnail(it.link);
     const hashOnly = getHashNumber(it.title);
-
-    // ★★★★★ ここからが修正箇所です ★★★★★
-    // 1. まず検索ボックスのキーワードでタイムスタンプを探す
     let hit = findHitTime(it, qRaw);
-
-    // 2. もし見つからなければ、選択中のゲストフィルターでタイムスタンプを探す
     if (!hit && selectedGuests.length > 0) {
       for (const guestName of selectedGuests) {
         const guestHit = findHitTime(it, guestName);
         if (guestHit) {
-          hit = guestHit; // マッチしたものが見つかったら採用
-          break; // 複数のゲストが選択されていても、最初に見つかったものを優先
+          hit = guestHit;
+          break;
         }
       }
     }
-
-    // 3.それでも見つからなければ、選択中のコーナーフィルターでタイムスタンプを探す
     if (!hit && cornerTarget) {
       hit = findHitTime(it, cornerTarget);
     }
-    // ★★★★★ ここまでが修正箇所です ★★★★★
-
     const finalLink = hit ? withTimeParam(it.link, hit.seconds) : it.link;
     let guestText = "";
     if (Array.isArray(it.guest)) guestText = "ゲスト：" + it.guest.join("、");
@@ -686,15 +577,10 @@ function renderResults(arr, page = 1) {
 
     ul.append(`
       <li class="episode-item" role="link" tabindex="0" ${animationStyle}> 
-        <a href="${finalLink}" target="_blank" rel="noopener"
-           style="display:flex;gap:13px;text-decoration:none;color:inherit;align-items:center;min-width:0;">
+        <a href="${finalLink}" target="_blank" rel="noopener" style="display:flex;gap:13px;text-decoration:none;color:inherit;align-items:center;min-width:0;">
           <div class="thumb-col">
             <img src="${thumb}" class="thumbnail" alt="サムネイル：${hashOnly}" loading="lazy">
-            ${hit ? `
-              <div class="ts-buttons">
-                <button class="ts-btn" data-url="${it.link}" data-ts="${hit.seconds}"
-                        aria-label="${hit.label} から再生">${hit.label}</button>
-              </div>` : ``}
+            ${hit ? `<div class="ts-buttons"><button class="ts-btn" data-url="${it.link}" data-ts="${hit.seconds}" aria-label="${hit.label} から再生">${hit.label}</button></div>` : ``}
           </div>
           <div style="min-width:0;">
             <div class="d-flex align-items-start justify-content-between" style="min-width:0;">
@@ -729,11 +615,7 @@ function renderResults(arr, page = 1) {
     const link = $(this).find('a').attr('href') || '';
     const id = getVideoId(link);
     const active = isFavorite(id);
-    $(this).append(
-      `<button class="fav-btn ${active ? 'active' : ''}" data-id="${id}" aria-label="お気に入り" title="お気に入り">
-         <i class="${active ? 'fa-solid' : 'fa-regular'} fa-star"></i>
-       </button>`
-    );
+    $(this).append(`<button class="fav-btn ${active ? 'active' : ''}" data-id="${id}" aria-label="お気に入り" title="お気に入り"><i class="${active ? 'fa-solid' : 'fa-regular'} fa-star"></i></button>`);
   });
 
   $('#results .episode-item').each(function(){
@@ -765,11 +647,9 @@ function resetSearch() {
     document.body.classList.remove('fav-only');
     $("#favOnlyToggleBtn").removeClass("active").attr("aria-pressed","false");
   }
-  $("#results .fav-btn.active").removeClass("active")
-    .find("i").removeClass("fa-solid").addClass("fa-regular");
+  $("#results .fav-btn.active").removeClass("active").find("i").removeClass("fa-solid").addClass("fa-regular");
   resetFilters();
   try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch (e) { window.scrollTo(0, 0); }
-
   const resetButton = document.getElementById('mainResetBtn');
   if (resetButton) resetButton.blur();
 }
@@ -809,74 +689,8 @@ function updateYearStyles() {
   });
 }
 
-function updateDrawerTop() {
-  const sbar = $(".sticky-search-area")[0];
-  const drawer = $("#filterDrawer")[0];
-  if (drawer && sbar) {
-    const rect = sbar.getBoundingClientRect();
-    const headerHeight = rect.height;
-    drawer.style.position="fixed";drawer.style.left="0";drawer.style.right="0";drawer.style.margin="0 auto";drawer.style.transform="";
-    drawer.style.top = "";
-    const winHeight = window.innerHeight;
-    const drawerHeight = drawer.offsetHeight || 340;
-    if ((rect.top + headerHeight + 8 + drawerHeight) > (winHeight - 12)) {
-      drawer.style.maxHeight = (winHeight - (rect.top + headerHeight + 20)) + "px";
-    } else {
-      drawer.style.maxHeight = "";
-    }
-  }
-}
-
-let filterDrawerOpen = false;
-function toggleFilterDrawer(force) {
-  if (force !== undefined) filterDrawerOpen = force;
-  else filterDrawerOpen = !filterDrawerOpen;
-  if (filterDrawerOpen) {
-    updateDrawerTop();
-    $("#filterDrawer")
-      .css({
-        left: "0",
-        right: "0",
-        margin: "0 auto",
-        transform: "",
-        display: "block"
-      })
-      .fadeIn(100);
-    $("#drawerBackdrop").addClass("show");
-    if (!document.body.classList.contains('modal-open')){
-      window._filterScrollY = window.scrollY || document.documentElement.scrollTop || 0;
-      window.acquireBodyLock && window.acquireBodyLock();
-      document.body.style.top = `-${window._filterScrollY}px`;
-    }
-    $("#filterToggleBtn").attr("aria-expanded", true).attr("aria-pressed", true);
-  } else {
-    $("#filterDrawer").fadeOut(90);
-    $("#drawerBackdrop").removeClass("show");
-    $("#filterToggleBtn").attr("aria-expanded", false).attr("aria-pressed", false);
-    window.__hardUnlockScroll && window.__hardUnlockScroll();
-    window.releaseBodyLock && window.releaseBodyLock();
-    if (document.body.classList.contains('modal-open')){
-      const top = document.body.style.top;
-      window.releaseBodyLock && window.releaseBodyLock();
-      document.body.style.top = '';
-      if (top) { try { window.scrollTo(0, -parseInt(top, 10)); } catch(e){} }
-    }
-  }
-}
-
 function setupEventListeners() {
-
-  // ▼▼▼▼▼ この一行を追加 ▼▼▼▼▼
-  $('#filterToggleBtn').attr('data-label', 'フィルタ');
-  // ▲▲▲▲▲ この一行を追加 ▲▲▲▲▲
-
-  // --- 1. ヘッダーボタンのイベント処理をここに集約 ---
-  
-  // 古いイベントリスナーを一度すべて解除して競合を防ぐ
-  $('#filterToggleBtn, #favOnlyToggleBtn, #randomBtn, .reset-btn, #drawerCloseBtn').off('click keypress');
-
-  // 【修正点】フィルタボタンの処理
-  $('#filterToggleBtn').on('click', function() {
+  $('#filterToggleBtn').off('click').on('click', function() {
     const $drawer = $('#filterDrawer');
     const $backdrop = $('#drawerBackdrop');
     const isOpening = $drawer.is(':hidden');
@@ -894,40 +708,32 @@ function setupEventListeners() {
     }
   });
   
-  // フィルター内の閉じるボタンも、メインのボタンをトリガーするように統一
-  $('#drawerCloseBtn').on('click', () => $('#filterToggleBtn').trigger('click'));
-  $('#drawerBackdrop').on('click', () => {
+  $('#drawerCloseBtn').off('click').on('click', () => $('#filterToggleBtn').trigger('click'));
+  $('#drawerBackdrop').off('click').on('click', () => {
     if ($('#filterDrawer').is(':visible')) {
       $('#filterToggleBtn').trigger('click');
     }
   });
 
-
-  // 【修正点】お気に入りボタンの処理
-  $('#favOnlyToggleBtn').on('click', function(){
+  $('#favOnlyToggleBtn').off('click').on('click', function(){
     showFavoritesOnly = !showFavoritesOnly;
     $(this).attr('aria-pressed', showFavoritesOnly).toggleClass('active', showFavoritesOnly);
     document.body.classList.toggle('fav-only', showFavoritesOnly);
     search({ gotoPage: 1 });
   });
 
-  // ランダムボタンの処理
-  $('#randomBtn').on('click', function(){
+  $('#randomBtn').off('click').on('click', function(){
     const pool = (Array.isArray(lastResults) && lastResults.length) ? lastResults : data;
     if (!pool.length) return;
     const pick = pool[Math.floor(Math.random() * pool.length)];
     window.open(pick.link, '_blank', 'noopener');
   });
   
-  // 【修正点】リセットボタンの処理
-  $('.reset-btn').on('click', function() {
+  $('.reset-btn').off('click').on('click', function() {
     if (typeof resetSearch === 'function') {
       resetSearch();
     }
   });
-
-
-  // --- 2. これより下は、フィルター内のボタンなど、既存の他のイベント処理です ---
 
   $(".guest-button").on("click keypress", function(e) {
     if(e.type==="click"||(e.type==="keypress"&&(e.key==="Enter"||e.key===" "))) {
@@ -1001,29 +807,23 @@ function setupEventListeners() {
     e.preventDefault(); e.stopPropagation();
     const id = $(this).data('id');
     toggleFavorite(id);
-    $(this).toggleClass('active')
-            .find('i').toggleClass('fa-regular fa-solid');
+    $(this).toggleClass('active').find('i').toggleClass('fa-regular fa-solid');
     const $li = $(this).closest('.episode-item');
     const favNow = isFavorite(id);
     $li.toggleClass('is-fav', !!favNow);
     if (showFavoritesOnly) search({ gotoPage: currentPage || 1 });
   });
 
-  // 初期表示時に各ボタンの状態を更新
   updateGuestButtonStyles();
   updateCornerStyles();
   updateOtherStyles();
   updateYearStyles();
 }
 
-// ページが読み込まれたらアプリケーションを初期化
 document.addEventListener('DOMContentLoaded', initializeApp);
 
-
-// 本番の dark-mode クラスが付いたらプレロード用を解除
 document.documentElement.classList.remove('dark-preload');
 document.documentElement.style.backgroundColor = "";
-
 var early = document.getElementById("early-dark-style");
 if (early) early.remove();
 
@@ -1041,35 +841,20 @@ document.addEventListener('DOMContentLoaded', () => {
   const aboutModal = document.getElementById('aboutModal');
   const aboutModalContent = document.getElementById('aboutModalContent');
   const aboutCloseBtn = document.getElementById('aboutCloseBtn');
-
-  if (!aboutLink || !aboutModal || !aboutModalContent || !aboutCloseBtn) {
-    return;
-  }
-
-  // lockScrollForAboutModal は不要になったので削除
+  if (!aboutLink || !aboutModal || !aboutModalContent || !aboutCloseBtn) return;
 
   const openModal = () => {
-    // 変更点：新しいロック関数を呼び出す
-    if (typeof window.acquireBodyLock === 'function') {
-      window.acquireBodyLock();
-    }
+    if (typeof window.acquireBodyLock === 'function') window.acquireBodyLock();
     aboutModal.classList.add('show');
     aboutCloseBtn.focus();
   };
 
   const closeModal = () => {
     if (!aboutModal.classList.contains('show')) return;
-    
-    // アニメーションを開始
     aboutModal.classList.remove('show');
-    
-    // 変更点：アニメーションの時間 (200ms) だけ待ってからロックを解除
     setTimeout(() => {
-      if (typeof window.releaseBodyLock === 'function') {
-        window.releaseBodyLock();
-      }
-    }, 200); // CSSのアニメーション時間と合わせる
-    
+      if (typeof window.releaseBodyLock === 'function') window.releaseBodyLock();
+    }, 200);
     aboutLink.focus();
   };
 
@@ -1081,7 +866,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (e.key === 'Escape' && aboutModal.classList.contains('show')) closeModal();
   });
 });
-
 
 document.addEventListener('contextmenu', function(e) { e.preventDefault(); });
 document.addEventListener('touchstart', function(e) {
@@ -1099,12 +883,9 @@ document.addEventListener('contextmenu', function(e) {
 
 const rcOk = document.getElementById('rcOk');
 const rcClose = document.getElementById('rcClose');
-
 const closeRc = () => { document.getElementById('rcModal').style.display = 'none'; };
-
 if (rcOk) rcOk.onclick = closeRc;
 if (rcClose) rcClose.onclick = closeRc;
-
 document.getElementById('rcModal').addEventListener('click', function(e){
   if(e.target === this) this.style.display='none';
 });
@@ -1119,22 +900,14 @@ window.addEventListener('DOMContentLoaded', function() {
   }, 400);
 });
 
-
-function updateScrollLock(){ if (typeof window.updateScrollLock === 'function') return window.updateScrollLock(); }
-
-
-
 (function () {
   const root = document.documentElement;
   function updateHeaderOffset() {
     const sticky = document.querySelector('.sticky-search-area');
     if (!sticky) return;
     const h = sticky.offsetHeight;
-    // ヘッダーの純粋な高さを --header-height に設定
-  root.style.setProperty('--header-height', h + 'px');
-  
-  // ヘッダーの高さ＋隙間を --header-offset に設定
-  root.style.setProperty('--header-offset', (h + 10) + 'px');
+    root.style.setProperty('--header-height', h + 'px');
+    root.style.setProperty('--header-offset', (h + 10) + 'px');
   }
   window.addEventListener('DOMContentLoaded', updateHeaderOffset);
   window.addEventListener('load', updateHeaderOffset);
@@ -1147,69 +920,20 @@ function updateScrollLock(){ if (typeof window.updateScrollLock === 'function') 
   }
   window.__updateHeaderOffset = updateHeaderOffset;
 })();
-
 window.__updateHeaderOffset && window.__updateHeaderOffset();
-
-(function () {
-  
-  })(window.resetSearch);
-  try {
-    const ids = (Array.isArray(data)?data:[]).map(it => (it.link||"").match(/watch\\?v=([\\w-]{11})/)?.[1]).filter(Boolean);
-    const seen = {};
-    ids.forEach(id => { seen[id]=(seen[id]||0)+1; });
-    Object.keys(seen).forEach(id => { if (seen[id] > 1) console.warn('[SearchTheRadio] Duplicate video id:', id, 'x'+seen[id]); });
-  } catch(e){}
-  updateScrollLock();
-
-
-(function(){
-  const MAP = {
-    newest : {full:'公開日時が新しい順', short:'公開日時が新しい順'},
-    oldest : {full:'公開日時が古い順',   short:'公開日時が古い順'},
-    longest: {full:'動画時間が長い順',   short:'動画時間が長い順'},
-    shortest:{full:'動画時間が短い順',   short:'動画時間が短い順'}
-  };
-  function applySortLabels(){
-    const sel = document.getElementById('sortSelect');
-    if(!sel) return;
-    const isSmall = window.matchMedia('(max-width:600px)').matches;
-    Object.entries(MAP).forEach(([val,labels])=>{
-      const opt = sel.querySelector(`option[value="${val}"]`);
-      if(opt) opt.textContent = isSmall ? labels.short : labels.full;
-    });
-  }
-  document.addEventListener('DOMContentLoaded', applySortLabels);
-
-  window.addEventListener('resize', applySortLabels);
-  window.addEventListener('orientationchange', applySortLabels);
-})();
-
-function clearAllFavorites(){
-  if (typeof favorites !== "undefined" && favorites instanceof Set) {
-    favorites = new Set();
-    if (typeof saveFavs === "function") saveFavs();
-    else if (typeof FAV_KEY !== "undefined") localStorage.setItem(FAV_KEY, "[]");
-  } else if (typeof FAV_KEY !== "undefined") {
-    localStorage.setItem(FAV_KEY, "[]");
-  }
-}
 
 function initializeAutocomplete() {
   const $input = document.getElementById('searchBox');
   const $box   = document.getElementById('autocomplete');
   if (!$input || !$box) return;
 
-  const toWide = (s)=> (s||'').normalize('NFKC');
-  const toHiragana = (s)=> toWide(s).replace(/[ァ-ン]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0x60));
-  const normalize = (s)=> toHiragana(s).toLowerCase().replace(/\s+/g,'');
+  const normalize = (s)=> (s||'').normalize('NFKC').replace(/[ァ-ン]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0x60)).toLowerCase().replace(/\s+/g,'');
   const hasKanji = (s)=> /[\p{sc=Han}]/u.test(s||'');
 
   const entriesByLabel = new Map();
   const ensureEntry = (label, type) => {
     if (!label) return null;
-    
     const baseLabel = stripTimeSuffix(label); 
-
     let e = entriesByLabel.get(baseLabel);
     if (!e) {
       e = { label: baseLabel, type: type || 'キーワード', norms: new Set() };
@@ -1217,14 +941,9 @@ function initializeAutocomplete() {
     } else {
       if (e.type !== '出演者' && type === '出演者') e.type = '出演者';
     }
-    
-    // ★★★★★ ここが修正点です ★★★★★
-    // タイムスタンプを取り除いた後のキーワード本体と、その読み仮名のみを検索対象とします。
     e.norms.add(normalize(baseLabel)); 
-    
     const rs = CUSTOM_READINGS[baseLabel];
     if (rs) rs.forEach(r => e.norms.add(normalize(r)));
-    // ★★★★★ ここまで ★★★★★
     return e;
   };
 
@@ -1242,7 +961,6 @@ function initializeAutocomplete() {
   const entries = Array.from(entriesByLabel.values());
   let cursor = -1;
   let viewItems = [];
-  let composing = false;
 
   const clear = () => {
     $box.innerHTML = '';
@@ -1250,7 +968,6 @@ function initializeAutocomplete() {
     cursor = -1;
     viewItems = [];
   };
-
   clearAutocompleteSuggestions = clear;
 
   const render = (items) => {
@@ -1276,7 +993,7 @@ function initializeAutocomplete() {
       }
       
       el.innerHTML = `<span class="type">${typeIcon}</span><span class="label">${html}</span>`;
-        el.addEventListener('mousedown', (e) => { e.preventDefault(); pick(idx); });
+      el.addEventListener('mousedown', (e) => { e.preventDefault(); pick(idx); });
       $box.appendChild(el);
     });
   };
@@ -1307,7 +1024,6 @@ function initializeAutocomplete() {
     const raw = $input.value;
     const normQ = normalize(raw);
     if (!normQ) { clear(); return; }
-
     const scored = [];
     for (const e of entries) {
       const s = scoreEntry(e, normQ, raw);
@@ -1315,7 +1031,6 @@ function initializeAutocomplete() {
       if (scored.length > 200) break;
     }
     scored.sort((a,b)=> b.s - a.s);
-    
     const itemsRaw = scored.slice(0, 20).map(({ e }) => {
         let label = e.label;
         const nlabel = normalize(label);
@@ -1324,7 +1039,6 @@ function initializeAutocomplete() {
         }
         return { label: label, fill: label, type: e.type };
     }).filter(Boolean);
-
     const seen = new Set();
     const items = [];
     for (const it of itemsRaw) {
@@ -1352,6 +1066,7 @@ function initializeAutocomplete() {
     }
   };
 
+  let composing = false;
   $input.addEventListener('compositionstart', ()=> composing = true);
   $input.addEventListener('compositionend', ()=> { composing = false; onInput(); });
   const debounce = (fn, ms=40) => { let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a),ms); }; };
@@ -1389,20 +1104,14 @@ function initializeAutocomplete() {
     { date: '2025-09-07', label: 'ぼっち・ざ・らじお！番組3周年', desc: '', url: '' },
   ];
 
-  // 「ひすとりー・おぶ・らじお！」モーダル関連の処理部分を修正
-
-  // ... (HISTORY 配列の定義などはそのまま) ...
-
   const $modal = document.getElementById('historyModal');
   const $close = document.getElementById('historyCloseBtn');
-  // let _scrollY = 0; は不要なので削除
 
   function openHistoryModal(){
     const overlay = document.getElementById('historyModal');
     if(!overlay) return;
     if (!$list?.dataset?.built && typeof buildTimeline === 'function') {
         buildTimeline(HISTORY);
-        if (typeof setupYearObserver === 'function') setupYearObserver();
         if ($list) $list.dataset.built = '1';
     }
     overlay.hidden = false;
@@ -1410,12 +1119,7 @@ function initializeAutocomplete() {
     requestAnimationFrame(() => overlay.classList.add('show'));
     const sc = overlay.querySelector('.history-modal');
     if (sc) sc.scrollTop = 0;
-    
-    // 変更点：新しいロック関数を呼び出す
-    if (typeof window.acquireBodyLock === 'function') {
-        window.acquireBodyLock();
-    }
-    
+    if (typeof window.acquireBodyLock === 'function') window.acquireBodyLock();
     try{ $toggle?.setAttribute('aria-expanded','true'); }catch(_){}
   }
 
@@ -1424,25 +1128,16 @@ function initializeAutocomplete() {
     if(!overlay || overlay.hidden) return;
     overlay.classList.add('closing');
     overlay.classList.remove('show');
-    
     const done = () => {
         overlay.hidden = true;
         overlay.classList.remove('closing');
         overlay.removeEventListener('animationend', done);
-        
-        // 変更点：アニメーション完了後にロックを解除
-        if (typeof window.releaseBodyLock === 'function') {
-            window.releaseBodyLock();
-        }
-        
+        if (typeof window.releaseBodyLock === 'function') window.releaseBodyLock();
         try{ $toggle?.setAttribute('aria-expanded','false'); }catch(_){}
     };
     overlay.addEventListener('animationend', done);
-    // 念のためタイムアウトも設定
     setTimeout(done, 260); 
   }
-
-  // lockBodyScroll と unlockBodyScroll は不要になったので削除
 
   $('#historyCloseBtn').off('click').on('click', closeHistoryModal);
   $('#historyModal').off('click').on('click', function(e){
@@ -1458,7 +1153,6 @@ function initializeAutocomplete() {
     e.preventDefault(); e.stopPropagation();
     openHistoryModal();
   });
-
   
   function buildTimeline(data){
     $list.innerHTML = '';
@@ -1501,51 +1195,6 @@ function initializeAutocomplete() {
     if (parts.length === 2) return `${parseInt(parts[1])}月`;
     return '';
   }
-
-  let yearObserver;
-  function setupYearObserver(){
-    const targets = [...$list.querySelectorAll('.history-year')];
-    if (!targets.length) return;
-    const rootEl = document.querySelector('.history-modal') || null;
-    const io = new IntersectionObserver((entries)=>{
-      const visible = entries
-        .filter(e => e.isIntersecting)
-        .sort((a,b) => a.boundingClientRect.top - b.boundingClientRect.top);
-      if (visible[0]) {
-        const y = visible[0].target.textContent.replace('年','');
-        setSubYear(y);
-      }
-    }, { root: rootEl, rootMargin: '-20% 0px -70% 0px', threshold: [0,1] });
-    targets.forEach(t => io.observe(t));
-    yearObserver = io;
-    updateHeaderYear();
-  }
-
-  function updateHeaderYear(){
-    const rootEl = document.querySelector('.history-modal');
-    if(!rootEl) return;
-    const rootTop = rootEl.getBoundingClientRect().top;
-    const headerOffset = 56;
-    let nearest = null, best = Infinity;
-    [...$list.querySelectorAll('.history-year')].forEach(y=>{
-      const rTop = y.getBoundingClientRect().top - rootTop - headerOffset;
-      const score = Math.abs(rTop);
-      if (score < best){ best = score; nearest = y; }
-    });
-    if (nearest){
-      setSubYear(nearest.textContent.replace('年',''));
-    }
-  }
-
-  function setSubYear(y){
-    const sticky = document.getElementById('historyStickyYear');
-    if (sticky) sticky.textContent = `${y}`;
-  }
-
-  window.addHistory = function(entry){
-    HISTORY.push(entry);
-    if ($list.dataset.built) { buildTimeline(HISTORY); setupYearObserver(); }
-  };
 })();
 
 ;(function(){
@@ -1562,123 +1211,6 @@ function initializeAutocomplete() {
   fb.href = `https://www.facebook.com/sharer/sharer.php?u=${u}`;
 })();
 
-
-
-// =================================================================
-// ===== ボタンフォントサイズの自動調整機能 (最終版) =====
-// =================================================================
-function autoFitControlButtonsGroup() {
-    // 調整対象となるボタン要素を取得
-    const elFilter = document.getElementById('filterToggleBtn');
-    const elFav = document.getElementById('favOnlyToggleBtn');
-    const elRand = document.getElementById('randomBtn');
-    const elReset = document.querySelector('.reset-btn');
-
-    // 要素が見つからない場合は何もしない
-    if (!elFilter || !elFav || !elRand || !elReset) {
-        console.warn("自動調整機能：対象のボタンが見つかりませんでした。");
-        return;
-    }
-
-    const targets = [elFilter, elFav, elRand, elReset];
-
-    // ボタンがはみ出さない最大のフォントサイズを見つけるための内部関数
-    function findOptimalFontSize(element, startSize = 15, minSize = 11) {
-        // 現在のフォントサイズをCSS変数に設定して、ブラウザに描画させる
-        element.style.setProperty('--ctl-fs', startSize + 'px');
-
-        // scrollWidth（内容全体の幅）が clientWidth（表示領域の幅）より大きいかチェック
-        // 少し余裕を持たせるために `+ 2` しています
-        if (element.scrollWidth > element.clientWidth + 2) {
-            const newSize = startSize - 1;
-            // 最小サイズより小さくならないようにする
-            if (newSize >= minSize) {
-                // はみ出している場合、サイズを1px小さくして再度チェック（再帰処理）
-                return findOptimalFontSize(element, newSize, minSize);
-            }
-            return minSize;
-        }
-        
-        // はみ出していなければ、現在のサイズが最適と判断
-        return startSize;
-    }
-
-    // すべてのボタンを調整するメインの関数
-    function fitAll() {
-        // PC表示（画面幅が768pxより大きい）の場合は、CSSで設定されたデフォルトサイズに戻す
-        if (!window.matchMedia('(max-width: 768px)').matches) {
-            targets.forEach(el => el.style.removeProperty('--ctl-fs'));
-            return;
-        }
-        
-        // 各ボタンにとって最適なフォントサイズをそれぞれ計算
-        const optimalSizes = targets.map(el => findOptimalFontSize(el));
-        
-        // すべてのボタンに収まるように、計算結果の中で最も小さいサイズを最終的なフォントサイズとする
-        const finalSize = Math.min(...optimalSizes);
-
-        // 最終的なフォントサイズをCSS変数 `--ctl-fs` に設定
-        // `style.css`側でこの変数を参照して、実際のフォントサイズが変更されます
-        targets.forEach(el => el.style.setProperty('--ctl-fs', finalSize + 'px'));
-    }
-
-    // ページの読み込み時、リサイズ時、スマホの画面回転時にこの調整機能を実行する
-    window.addEventListener('load', fitAll, { passive: true });
-    window.addEventListener('resize', fitAll, { passive: true });
-    window.addEventListener('orientationchange', fitAll, { passive: true });
-    
-    // 念のため、ページの描画が安定した少し後に一度実行
-    setTimeout(fitAll, 150);
-}
-
-// 上記で定義した自動調整機能を実行
-autoFitControlButtonsGroup();
-
-
-// 最後に、「フィルタ」ボタンにテキストを動的に設定します。
-// 以下のコードは、ページ読み込み完了時に一度だけ実行されます。
-document.addEventListener('DOMContentLoaded', function() {
-    const filterBtn = document.getElementById('filterToggleBtn');
-    if (filterBtn) {
-        filterBtn.setAttribute('data-label', 'フィルタ');
-    }
-});
-
-(function(){
-  const elFilter = document.getElementById('filterToggleBtn');
-  const elFav    = document.getElementById('favOnlyToggleBtn');
-  const elRand   = document.getElementById('randomBtn');
-  const elReset  = document.querySelector('.reset-btn');
-  if (!elFilter || !elFav || !elRand || !elReset) return;
-
-  const targets = [elFilter, elFav, elRand, elReset];
-  function neededFontSize(el, startPx=16, minPx=12){
-    el.style.setProperty('--ctl-fs', startPx + 'px');
-    for (let fs = startPx; fs >= minPx; fs--){
-      el.style.setProperty('--ctl-fs', fs + 'px');
-      if (el.scrollWidth <= el.clientWidth + 2) return fs;
-    }
-    return minPx;
-  }
-  function fitAll(){
-    if (!window.matchMedia('(max-width: 768px)').matches){
-      targets.forEach(el => el.style.removeProperty('--ctl-fs'));
-      return;
-    }
-    const sizes = targets.map(el => neededFontSize(el, 16, 12));
-    const groupFs = Math.min.apply(null, sizes);
-    targets.forEach(el => el.style.setProperty('--ctl-fs', groupFs + 'px'));
-    if (targets.some(el => el.scrollWidth > el.clientWidth + 2)){
-      const s = Math.max(12, groupFs - 1);
-      targets.forEach(el => el.style.setProperty('--ctl-fs', s + 'px'));
-    }
-  }
-  window.addEventListener('load', fitAll, { passive:true });
-  window.addEventListener('resize', fitAll, { passive:true });
-  window.addEventListener('orientationchange', fitAll, { passive:true });
-  setTimeout(fitAll, 120);
-})();
-
 ['filterToggleBtn','favOnlyToggleBtn','randomBtn','resetBtn','historyToggle'].forEach(id => {
   const el = document.getElementById(id);
   if (!el) return;
@@ -1687,52 +1219,6 @@ document.addEventListener('DOMContentLoaded', function() {
       setTimeout(() => el.blur(), 0);
     }
   });
-});
-
-document.addEventListener('DOMContentLoaded', () => {
-  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
-  const sticky = document.querySelector('.sticky-search-area');
-  if (sticky) {
-    const h = sticky.getBoundingClientRect().height;
-    document.documentElement.style.setProperty('--header-offset', Math.ceil(h + 12) + 'px');
-  }
-  const drawer = document.getElementById('filterDrawer');
-  const backdrop = document.getElementById('drawerBackdrop');
-  const toggleBtn = document.getElementById('filterToggleBtn');
-  function openDrawer() {
-    drawer.style.display = 'block';
-    backdrop.classList.add('show');
-    window.acquireBodyLock && window.acquireBodyLock();
-    toggleBtn?.setAttribute('aria-expanded', 'true');
-    toggleBtn?.setAttribute('aria-pressed', 'true');
-  }
-  function closeDrawer() {
-    window.__hardUnlockScroll && window.__hardUnlockScroll();
-    drawer.style.display = 'none';
-    backdrop.classList.remove('show');
-    window.releaseBodyLock && window.releaseBodyLock();
-    toggleBtn?.setAttribute('aria-expanded', 'false');
-    toggleBtn?.setAttribute('aria-pressed', 'false');
-  }
-  if (toggleBtn && drawer && backdrop) {
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') { closeDrawer(); window.__hardUnlockScroll && window.__hardUnlockScroll(); }
-    });
-  }
-  if (isStandalone) {
-    let lastY = window.scrollY;
-    let hideTimer = null;
-    const floating = [document.getElementById('toTopBtn'), document.getElementById('darkModeBtn')].filter(Boolean);
-    window.addEventListener('scroll', () => {
-      const diff = Math.abs(window.scrollY - lastY);
-      lastY = window.scrollY;
-      if (diff > 8) {
-        floating.forEach(el => el.style.opacity = '0');
-        clearTimeout(hideTimer);
-        hideTimer = setTimeout(() => floating.forEach(el => el.style.opacity = ''), 120);
-      }
-    }, { passive: true });
-  }
 });
 
 function extractVideoId(url) {
@@ -1819,29 +1305,75 @@ const preloadThumbnails = (episodes) => {
   obs.observe(drawer, { attributes: true, attributeFilter: ['style', 'class'] });
 })();
 
-/**
- * 「いいね」マークを画面に降らせる隠し機能
- */
 function rainGoodMarks() {
-  const count = 30; // 降らせるマークの数
+  const count = 30;
   const container = document.body;
-
   for (let i = 0; i < count; i++) {
     const goodMark = document.createElement('span');
     goodMark.className = 'good-mark';
     goodMark.textContent = '👍';
-
-    // 位置や動きをランダムにする
-    goodMark.style.left = Math.random() * 100 + 'vw'; // 横位置をランダムに
-    goodMark.style.animationDuration = (Math.random() * 2 + 3) + 's'; // 3〜5秒かけて落ちる
-    goodMark.style.animationDelay = Math.random() * 2 + 's'; // 0〜2秒遅れて落ち始める
-    goodMark.style.fontSize = (Math.random() * 1.5 + 1) + 'rem'; // 大きさも少しランダムに
-
-    // アニメーションが終わったら要素を削除する
+    goodMark.style.left = Math.random() * 100 + 'vw';
+    goodMark.style.animationDuration = (Math.random() * 2 + 3) + 's';
+    goodMark.style.animationDelay = Math.random() * 2 + 's';
+    goodMark.style.fontSize = (Math.random() * 1.5 + 1) + 'rem';
     goodMark.addEventListener('animationend', () => {
       goodMark.remove();
     });
-
     container.appendChild(goodMark);
   }
 }
+
+// =================================================================
+// ===== ボタンフォントサイズの自動調整機能 (最終版) =====
+// =================================================================
+function autoFitControlButtonsGroup() {
+    const elFilter = document.getElementById('filterToggleBtn');
+    const elFav = document.getElementById('favOnlyToggleBtn');
+    const elRand = document.getElementById('randomBtn');
+    const elReset = document.querySelector('.reset-btn');
+
+    if (!elFilter || !elFav || !elRand || !elReset) {
+        console.warn("自動調整機能：対象のボタンが見つかりませんでした。");
+        return;
+    }
+
+    const targets = [elFilter, elFav, elRand, elReset];
+
+    function findOptimalFontSize(element, startSize = 15, minSize = 11) {
+        element.style.setProperty('--ctl-fs', startSize + 'px');
+
+        if (element.scrollWidth > element.clientWidth + 2) {
+            const newSize = startSize - 1;
+            if (newSize >= minSize) {
+                return findOptimalFontSize(element, newSize, minSize);
+            }
+            return minSize;
+        }
+        return startSize;
+    }
+
+    function fitAll() {
+        if (!window.matchMedia('(max-width: 768px)').matches) {
+            targets.forEach(el => el.style.removeProperty('--ctl-fs'));
+            return;
+        }
+        
+        const optimalSizes = targets.map(el => findOptimalFontSize(el));
+        const finalSize = Math.min(...optimalSizes);
+        targets.forEach(el => el.style.setProperty('--ctl-fs', finalSize + 'px'));
+    }
+
+    window.addEventListener('load', fitAll, { passive: true });
+    window.addEventListener('resize', fitAll, { passive: true });
+    window.addEventListener('orientationchange', fitAll, { passive: true });
+    setTimeout(fitAll, 150);
+}
+
+autoFitControlButtonsGroup();
+
+document.addEventListener('DOMContentLoaded', function() {
+    const filterBtn = document.getElementById('filterToggleBtn');
+    if (filterBtn) {
+        filterBtn.setAttribute('data-label', 'フィルタ');
+    }
+});
