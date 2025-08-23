@@ -73,70 +73,161 @@ body {
   outline: none;
   background: #fff;
 }
-#filterToggleBtn {
-  display: flex; align-items: center; justify-content: center;
-  gap: 4px;
-  height: 2.5em;
-  font-size: 1.01em;
-  border-radius: 0.63em;
-  min-width: 98px;
-  padding: 0 0.7em;
-  font-weight: 500;
-  background: #fff;
-  border: 1.3px solid #dad4ff;
-  color: var(--btn-main);
-  transition: background var(--transition), border var(--transition), color var(--transition);
-  cursor: pointer;
-  outline: none;
-  z-index: 1;
-  flex: 1 0 0;
-  white-space: nowrap;
+/* ======================================================================== */
+/* ===== 上部コントロールボタン スタイル (V7・最終修正版) ===== */
+/* ======================================================================== */
+
+/* --- PC表示 (769px以上) のレイアウトとスタイル --- */
+@media (min-width: 769px){
+  .search-row-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: nowrap;
+  }
+  .search-row-controls .sort-wrapper {
+    margin-left: auto;
+    flex: 1 1 280px;
+    min-width: 240px;
+  }
+  .search-row-controls .sort-wrapper select {
+    width: 100%;
+  }
+  #filterToggleBtn, #favOnlyToggleBtn, #randomBtn, .reset-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 40px;
+    line-height: 1;
+    font-weight: 500;
+    font-size: 15.5px;
+    border-radius: 10px;
+    white-space: nowrap;
+    gap: 0;
+    flex: 0 0 clamp(124px, 12vw, 144px);
+  }
+  .reset-btn::before {
+    content:"↺";
+    margin-right: var(--ctl-gap, 0.5em);
+    font-size: 1em;
+    line-height: 1;
+    transform: translateY(-.02em);
+  }
+  #filterToggleBtn::after {
+    content:" フィルタ";
+    margin-left: var(--ctl-gap, 0.5em);
+    font-weight: 500;
+  }
 }
-#filterToggleBtn[aria-pressed="true"],
-#filterToggleBtn[aria-expanded="true"],
-#filterToggleBtn:hover,
-#filterToggleBtn:focus {
-  background: var(--filter-btn-active);
-  border-color: var(--btn-main);
-  color: var(--btn-hover);
+
+/* --- スマホ表示 (768px以下) のレイアウトとスタイル --- */
+@media (max-width: 768px){
+  .search-row-controls {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 6px;
+    align-items: stretch;
+  }
+  .search-row-controls .sort-wrapper {
+    grid-column: 1 / -1;
+  }
+  .search-row-controls .sort-wrapper select {
+    width: 100%;
+    min-height: 40px;
+  }
+  #filterToggleBtn, #favOnlyToggleBtn, #randomBtn, .reset-btn {
+    --ctl-fs: 15px; /* JSによる自動調整用の変数 */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 42px;
+    line-height: 1;
+    font-size: var(--ctl-fs);
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    border-radius: 10px;
+    gap: 0 !important;
+  }
+  #filterToggleBtn i, #favOnlyToggleBtn i, #randomBtn i {
+    font-size: calc(var(--ctl-fs) + 1px);
+    line-height: 1;
+  }
+  #filterToggleBtn::after {
+    content: attr(data-label);
+    margin-left: var(--ctl-gap, 0.5em) !important;
+    font-size: var(--ctl-fs);
+    font-weight: 500;
+    line-height: 1;
+  }
+  .reset-btn::before {
+    content: "↺";
+    margin-right: var(--ctl-gap, 0.5em);
+    font-size: calc(var(--ctl-fs) + 1px);
+    line-height: 1;
+    transform: translateY(-.02em);
+  }
 }
-.reset-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 2.5em;
-  font-size: 1.01em;
-  font-weight: 500;
-  border-radius: 0.63em;
-  background: var(--btn-reset-bg);
-  border: 1.2px solid var(--btn-reset-border);
-  color: var(--btn-reset-color);
-  transition: background var(--transition), border var(--transition), color var(--transition);
-  padding: 0 1.1em;
-  letter-spacing: 0.01em;
-  box-shadow: none;
-  text-align: center;
-  cursor: pointer;
-  outline: none;
-  z-index: 1;
-  min-width: 80px;
-  max-width: 120px;
-  width: auto;
-  flex: 0 0 auto;
-  white-space: nowrap;
+
+/* ======================================================================== */
+/* ===== (V6から名称変更) ボタンの共通スタイルと全テーマの色定義 ===== */
+/* ======================================================================== */
+:root { --ctl-gap: 0.5em; }
+#filterToggleBtn, #favOnlyToggleBtn, #randomBtn, .reset-btn {
+  padding-inline: 12px !important;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease !important;
 }
-.reset-btn:hover, .reset-btn:focus {
-  background: #e6eaf1;
-  color: #1e2633;
-  border-color: #6654e8;
+@media (min-width: 769px) { #filterToggleBtn, #favOnlyToggleBtn, #randomBtn, .reset-btn { padding-inline: 0.9em !important; } }
+#favOnlyToggleBtn span, #randomBtn span { margin-left: var(--ctl-gap) !important; }
+#filterToggleBtn:active, #favOnlyToggleBtn:active, #randomBtn:active, .reset-btn:active { transform: translateY(1px) !important; transition-duration: 0.05s !important; box-shadow: none !important; }
+
+/* --- 1. ライトモード --- */
+body:not(.dark-mode):not([class*="theme-"]) #filterToggleBtn,
+body:not(.dark-mode):not([class*="theme-"]) #favOnlyToggleBtn,
+body:not(.dark-mode):not([class*="theme-"]) #randomBtn,
+body:not(.dark-mode):not([class*="theme-"]) .reset-btn {
+  background-color: #ffffff !important; color: #000000 !important; border-color: #dcdcdc !important; box-shadow: 0 1px 2px rgba(0,0,0,0.05);
 }
-.sort-wrapper {
-  display: flex;
-  align-items: center;
-  gap: 0;
-  position: relative;
-  flex: 2 1 180px;
-  min-width: 0;
+body:not(.dark-mode):not([class*="theme-"]) #filterToggleBtn[aria-expanded="true"],
+body:not(.dark-mode):not([class*="theme-"]) #favOnlyToggleBtn[aria-pressed="true"] {
+  background-color: #000000 !important; color: #ffffff !important; border-color: #000000 !important; transform: none !important; box-shadow: none !important;
+}
+@media (hover: hover) {
+  body:not(.dark-mode):not([class*="theme-"]) #filterToggleBtn:not([aria-expanded="true"]):hover,
+  body:not(.dark-mode):not([class*="theme-"]) #favOnlyToggleBtn:not([aria-pressed="true"]):hover,
+  body:not(.dark-mode):not([class*="theme-"]) #randomBtn:hover,
+  body:not(.dark-mode):not([class*="theme-"]) .reset-btn:hover {
+    background-color: #f7f7f7 !important; border-color: #b0b0b0 !important; transform: translateY(-1px) !important; box-shadow: 0 4px 8px rgba(0,0,0,0.08) !important; color: #000000 !important;
+  }
+}
+
+/* --- 2. ダークモード --- */
+body.dark-mode #filterToggleBtn, body.dark-mode #favOnlyToggleBtn, body.dark-mode #randomBtn, body.dark-mode .reset-btn { background-color: #2f3640 !important; color: #ffffff !important; border-color: #4d6272 !important; }
+body.dark-mode #filterToggleBtn[aria-expanded="true"], body.dark-mode #favOnlyToggleBtn[aria-pressed="true"] { background-color: #ffffff !important; color: #22272e !important; border-color: #ffffff !important; transform: none !important; box-shadow: none !important; }
+@media (hover: hover) {
+  body.dark-mode #filterToggleBtn:not([aria-expanded="true"]):hover, body.dark-mode #favOnlyToggleBtn:not([aria-pressed="true"]):hover, body.dark-mode #randomBtn:hover, body.dark-mode .reset-btn:hover {
+    background-color: #3e4854 !important; border-color: #6b7f92 !important; transform: translateY(-1px) !important; box-shadow: 0 4px 10px rgba(0,0,0,0.2) !important; color: #ffffff !important;
+  }
+}
+
+/* --- 3. テーマカラー --- */
+body[class*="theme-"] #filterToggleBtn, body[class*="theme-"] #favOnlyToggleBtn, body[class*="theme-"] #randomBtn, body[class*="theme-"] .reset-btn { background-color: var(--btn-bg) !important; color: var(--btn-main) !important; border-color: var(--history-card-bd) !important; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+body[class*="theme-"] #filterToggleBtn[aria-expanded="true"], body[class*="theme-"] #favOnlyToggleBtn[aria-pressed="true"] { background-color: #ffffff !important; color: var(--bg-color) !important; border-color: #ffffff !important; transform: none !important; box-shadow: none !important; }
+@media (hover: hover) {
+  body[class*="theme-"] #filterToggleBtn:not([aria-expanded="true"]):hover, body[class*="theme-"] #favOnlyToggleBtn:not([aria-pressed="true"]):hover, body[class*="theme-"] #randomBtn:hover, body[class*="theme-"] .reset-btn:hover {
+    background-color: rgba(255, 255, 255, 0.15) !important; border-color: rgba(255, 255, 255, 0.8) !important; transform: translateY(-1px) !important; box-shadow: 0 4px 10px rgba(0,0,0,0.25) !important; color: var(--btn-main) !important;
+  }
+}
+
+/* --- 4. スマホでのホバー固定現象を解消する最終修正 --- */
+@media (hover: none) {
+  body:not(.dark-mode):not([class*="theme-"]) #filterToggleBtn:hover, body:not(.dark-mode):not([class*="theme-"]) #favOnlyToggleBtn:hover, body:not(.dark-mode):not([class*="theme-"]) #randomBtn:hover, body:not(.dark-mode):not([class*="theme-"]) .reset-btn:hover { background-color: #ffffff !important; color: #000000 !important; border-color: #dcdcdc !important; transform: none !important; box-shadow: 0 1px 2px rgba(0,0,0,0.05) !important; }
+  body.dark-mode #filterToggleBtn:hover, body.dark-mode #favOnlyToggleBtn:hover, body.dark-mode #randomBtn:hover, body.dark-mode .reset-btn:hover { background-color: #2f3640 !important; color: #ffffff !important; border-color: #4d6272 !important; transform: none !important; box-shadow: none !important; }
+  body[class*="theme-"] #filterToggleBtn:hover, body[class*="theme-"] #favOnlyToggleBtn:hover, body[class*="theme-"] #randomBtn:hover, body[class*="theme-"] .reset-btn:hover { background-color: var(--btn-bg) !important; color: var(--btn-main) !important; border-color: var(--history-card-bd) !important; transform: none !important; box-shadow: 0 1px 2px rgba(0,0,0,0.1) !important; }
+  body:not(.dark-mode):not([class*="theme-"]) #filterToggleBtn[aria-expanded="true"]:hover, body:not(.dark-mode):not([class*="theme-"]) #favOnlyToggleBtn[aria-pressed="true"]:hover { background-color: #000000 !important; color: #ffffff !important; border-color: #000000 !important; transform: none !important; box-shadow: none !important; }
+  body.dark-mode #filterToggleBtn[aria-expanded="true"]:hover, body.dark-mode #favOnlyToggleBtn[aria-pressed="true"]:hover { background-color: #ffffff !important; color: #22272e !important; border-color: #ffffff !important; transform: none !important; box-shadow: none !important; }
+  body[class*="theme-"] #filterToggleBtn[aria-expanded="true"]:hover, body[class*="theme-"] #favOnlyToggleBtn[aria-pressed="true"]:hover { background-color: #ffffff !important; color: var(--bg-color) !important; border-color: #ffffff !important; transform: none !important; box-shadow: none !important; }
 }
 .searchbox-select {
   width: 100%;
