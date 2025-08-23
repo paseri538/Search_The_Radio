@@ -3023,17 +3023,50 @@ body[class*="theme-"] #favOnlyToggleBtn[aria-pressed="true"] {
 
 
 /* ======================================================================== */
-/* ===== (改善版) 上部コントロールボタン スタイル V5 ===== */
+/* ===== (改善版) 上部コントロールボタン スタイル V6 ===== */
 /* ======================================================================== */
-/* これがボタンの見た目を制御する唯一のコードブロックになります */
+/* ★変更点: ボタン内の余白を調整し、より見やすくしました */
 
 /* --- 0. 全テーマ共通の基本設定 --- */
+
+/* アイコンとテキストの間の余白を定義 */
+:root {
+  --ctl-gap: 0.5em; /* 以前より少し広げました */
+}
+
 #filterToggleBtn,
 #favOnlyToggleBtn,
 #randomBtn,
 .reset-btn {
+  /* 左右の余白を調整 */
+  padding-inline: 12px !important;
   transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease !important;
 }
+
+/* PC表示では少し広めのem単位の余白に */
+@media (min-width: 769px) {
+  #filterToggleBtn,
+  #favOnlyToggleBtn,
+  #randomBtn,
+  .reset-btn {
+    padding-inline: 0.9em !important;
+  }
+}
+
+/* アイコンとテキストの間の余白を設定 */
+#filterToggleBtn::after,
+#favOnlyToggleBtn span,
+#randomBtn span {
+  margin-left: var(--ctl-gap) !important;
+}
+/* PC表示のリセットボタン用 */
+@media (min-width: 769px) {
+  .reset-btn::before {
+    margin-right: var(--ctl-gap) !important;
+  }
+}
+
+/* ボタンを押した瞬間の動き */
 #filterToggleBtn:active,
 #favOnlyToggleBtn:active,
 #randomBtn:active,
@@ -3042,6 +3075,7 @@ body[class*="theme-"] #favOnlyToggleBtn[aria-pressed="true"] {
   transition-duration: 0.05s !important;
   box-shadow: none !important;
 }
+
 
 /* --- 1. ライトモード --- */
 /* (A) デフォルト状態 */
@@ -3073,7 +3107,7 @@ body:not(.dark-mode):not([class*="theme-"]) #favOnlyToggleBtn[aria-pressed="true
     border-color: #b0b0b0 !important;
     transform: translateY(-1px) !important;
     box-shadow: 0 4px 8px rgba(0,0,0,0.08) !important;
-    color: #000000 !important; /* ★★★ 変更点: 文字色を黒に固定 ★★★ */
+    color: #000000 !important;
   }
 }
 
@@ -3106,7 +3140,7 @@ body.dark-mode #favOnlyToggleBtn[aria-pressed="true"] {
     border-color: #6b7f92 !important;
     transform: translateY(-1px) !important;
     box-shadow: 0 4px 10px rgba(0,0,0,0.2) !important;
-    color: #ffffff !important; /* ★★★ 変更点: 文字色を白に固定 ★★★ */
+    color: #ffffff !important;
   }
 }
 
@@ -3140,6 +3174,6 @@ body[class*="theme-"] #favOnlyToggleBtn[aria-pressed="true"] {
     border-color: rgba(255, 255, 255, 0.8) !important;
     transform: translateY(-1px) !important;
     box-shadow: 0 4px 10px rgba(0,0,0,0.25) !important;
-    color: var(--btn-main) !important; /* ★★★ 変更点: 文字色をデフォルト状態と同じに固定 ★★★ */
+    color: var(--btn-main) !important;
   }
 }

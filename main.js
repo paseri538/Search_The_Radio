@@ -1562,39 +1562,87 @@ function initializeAutocomplete() {
   fb.href = `https://www.facebook.com/sharer/sharer.php?u=${u}`;
 })();
 
-(function autoFitControlButtonsGroup(){
-  const elFilter = document.getElementById('filterToggleBtn');
-  const elFav    = document.getElementById('favOnlyToggleBtn');
-  const elRand   = document.getElementById('randomBtn');
-  const elReset  = document.querySelector('.reset-btn');
-  if (!elFilter || !elFav || !elRand || !elReset) return;
-  const targets = [elFilter, elFav, elRand, elReset];
-  function neededFontSize(el, startPx=16, minPx=12){
-    el.style.setProperty('--ctl-fs', startPx + 'px');
-    for (let fs = startPx; fs >= minPx; fs--){
-      el.style.setProperty('--ctl-fs', fs + 'px');
-      if (el.scrollWidth <= el.clientWidth + 2) return fs;
+
+
+// =================================================================
+// ===== ボタンフォントサイズの自動調整機能 (最終版) =====
+// =================================================================
+function autoFitControlButtonsGroup() {
+    // 調整対象となるボタン要素を取得
+    const elFilter = document.getElementById('filterToggleBtn');
+    const elFav = document.getElementById('favOnlyToggleBtn');
+    const elRand = document.getElementById('randomBtn');
+    const elReset = document.querySelector('.reset-btn');
+
+    // 要素が見つからない場合は何もしない
+    if (!elFilter || !elFav || !elRand || !elReset) {
+        console.warn("自動調整機能：対象のボタンが見つかりませんでした。");
+        return;
     }
-    return minPx;
-  }
-  function fitAll(){
-    if (!window.matchMedia('(max-width: 768px)').matches){
-      targets.forEach(el => el.style.removeProperty('--ctl-fs'));
-      return;
+
+    const targets = [elFilter, elFav, elRand, elReset];
+
+    // ボタンがはみ出さない最大のフォントサイズを見つけるための内部関数
+    function findOptimalFontSize(element, startSize = 15, minSize = 11) {
+        // 現在のフォントサイズをCSS変数に設定して、ブラウザに描画させる
+        element.style.setProperty('--ctl-fs', startSize + 'px');
+
+        // scrollWidth（内容全体の幅）が clientWidth（表示領域の幅）より大きいかチェック
+        // 少し余裕を持たせるために `+ 2` しています
+        if (element.scrollWidth > element.clientWidth + 2) {
+            const newSize = startSize - 1;
+            // 最小サイズより小さくならないようにする
+            if (newSize >= minSize) {
+                // はみ出している場合、サイズを1px小さくして再度チェック（再帰処理）
+                return findOptimalFontSize(element, newSize, minSize);
+            }
+            return minSize;
+        }
+        
+        // はみ出していなければ、現在のサイズが最適と判断
+        return startSize;
     }
-    const sizes = targets.map(el => neededFontSize(el, 16, 12));
-    const groupFs = Math.min.apply(null, sizes);
-    targets.forEach(el => el.style.setProperty('--ctl-fs', groupFs + 'px'));
-    if (targets.some(el => el.scrollWidth > el.clientWidth + 2)){
-      const s = Math.max(12, groupFs - 1);
-      targets.forEach(el => el.style.setProperty('--ctl-fs', s + 'px'));
+
+    // すべてのボタンを調整するメインの関数
+    function fitAll() {
+        // PC表示（画面幅が768pxより大きい）の場合は、CSSで設定されたデフォルトサイズに戻す
+        if (!window.matchMedia('(max-width: 768px)').matches) {
+            targets.forEach(el => el.style.removeProperty('--ctl-fs'));
+            return;
+        }
+        
+        // 各ボタンにとって最適なフォントサイズをそれぞれ計算
+        const optimalSizes = targets.map(el => findOptimalFontSize(el));
+        
+        // すべてのボタンに収まるように、計算結果の中で最も小さいサイズを最終的なフォントサイズとする
+        const finalSize = Math.min(...optimalSizes);
+
+        // 最終的なフォントサイズをCSS変数 `--ctl-fs` に設定
+        // `style.css`側でこの変数を参照して、実際のフォントサイズが変更されます
+        targets.forEach(el => el.style.setProperty('--ctl-fs', finalSize + 'px'));
     }
-  }
-  window.addEventListener('load', fitAll, { passive:true });
-  window.addEventListener('resize', fitAll, { passive:true });
-  window.addEventListener('orientationchange', fitAll, { passive:true });
-  setTimeout(fitAll, 120);
-})();
+
+    // ページの読み込み時、リサイズ時、スマホの画面回転時にこの調整機能を実行する
+    window.addEventListener('load', fitAll, { passive: true });
+    window.addEventListener('resize', fitAll, { passive: true });
+    window.addEventListener('orientationchange', fitAll, { passive: true });
+    
+    // 念のため、ページの描画が安定した少し後に一度実行
+    setTimeout(fitAll, 150);
+}
+
+// 上記で定義した自動調整機能を実行
+autoFitControlButtonsGroup();
+
+
+// 最後に、「フィルタ」ボタンにテキストを動的に設定します。
+// 以下のコードは、ページ読み込み完了時に一度だけ実行されます。
+document.addEventListener('DOMContentLoaded', function() {
+    const filterBtn = document.getElementById('filterToggleBtn');
+    if (filterBtn) {
+        filterBtn.setAttribute('data-label', 'フィルタ');
+    }
+});
 
 (function(){
   const elFilter = document.getElementById('filterToggleBtn');
