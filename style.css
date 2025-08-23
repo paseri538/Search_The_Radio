@@ -2787,37 +2787,6 @@ body[class*="theme-"] .btn-year.active {
 
 
 
-/* ===== ホバー可能なデバイス（PCなど）でのみエフェクトを適用 ===== */
-@media (hover: hover) {
-
-  /* --- 1. 基本となる浮き上がり・影を無効化 --- */
-  .episode-item:hover {
-    transform: none !important;
-    box-shadow: none !important;
-  }
-
-  /* --- 2. 各テーマでの枠線色の変化を定義 --- */
-
-  /* 通常（ライト）モードのホバー */
-  body:not(.dark-mode):not([class*="theme-"]) .episode-item:hover {
-    border-color: #000000 !important;
-    background-color: #f5f7fa;
-  }
-
-  /* ダークモードのホバー */
-  body.dark-mode .episode-item:hover,
-  body.dark-mode .episode-item:focus-visible {
-    border-color: #ffffff !important;
-    background: #27343b !important;
-    z-index: 2;
-  }
-
-  /* カラーテーマ（ピンク、イエローなど）のホバー */
-  body[class*="theme-"] .episode-item:hover {
-    border-color: var(--btn-main) !important;
-    background: var(--filter-btn-active) !important;
-  }
-}
 
 
 body.theme-pink .episode-item:hover,
@@ -3037,4 +3006,74 @@ body.dark-mode .history-item .label {
 /* 画面全体のスクロールを止めるための新しいスタイル (点滅しない方法) */
 body.body-scroll-locked {
   overflow: hidden !important;
+}
+
+
+/* style.css の一番最後に貼り付け */
+
+/* ===== スマホでのホバーエフェクトを無効化し、PCのみに適用する最終修正 ===== */
+/* マウスカーソルがあるデバイスでのみ、以下のホバー効果を適用します */
+@media (hover: hover) {
+
+  /* 1. エピソードカードのホバー効果 */
+  .episode-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 13px 32px -8px rgba(90, 67, 232, 0.15);
+    background-color: #f5f7fa;
+    border-color: #000000 !important;
+  }
+  body.dark-mode .episode-item:hover {
+    transform: translateY(-2px);
+    border: 1px solid #ffffff !important;
+    box-shadow: 0 13px 32px -8px rgba(23, 42, 51, 0.53);
+    background: #27343b !important;
+    z-index: 2;
+  }
+  body[class*="theme-"] .episode-item:hover {
+    transform: translateY(-2px) !important;
+    border-color: var(--btn-main) !important;
+    background: var(--filter-btn-active) !important;
+    box-shadow: none !important;
+  }
+
+  /* 2. ヘッダーのコントロールボタンのホバー効果 */
+  #filterToggleBtn:hover,
+  #favOnlyToggleBtn:hover,
+  #randomBtn:hover,
+  .reset-btn:hover,
+  #historyToggle:hover {
+    background: var(--filter-btn-active) !important;
+    border-color: var(--btn-main) !important;
+    color: var(--btn-hover) !important;
+  }
+  body[class*="theme-"] #filterToggleBtn:hover,
+  body[class*="theme-"] .reset-btn:hover,
+  body[class*="theme-"] #favOnlyToggleBtn:hover,
+  body[class*="theme-"] #randomBtn:hover {
+    background-color: rgba(255, 255, 255, 0.15) !important;
+  }
+
+  /* 3. その他のUI要素のホバー効果 */
+  .guest-button:not([aria-pressed="true"]):hover,
+  .btn-corner:not([aria-pressed="true"]):hover,
+  .btn-year:not([aria-pressed="true"]):hover {
+    transform: translateY(-1px) scale(1.02);
+    box-shadow: 0 4px 12px -4px rgba(0,0,0,0.1);
+  }
+  body.dark-mode .page-btn:not(.active):hover,
+  body.dark-mode .share-btn:hover,
+  body.dark-mode .history-toggle:hover {
+    background-color: #33414d !important;
+    border-color: #4a5967 !important;
+  }
+  body:not(.dark-mode):not([class*="theme-"]) .page-btn:not(.active):hover {
+    background: #dddddd !important;
+  }
+  .theme-btn:hover {
+    transform: translateY(-2px);
+  }
+  .share-btn:hover {
+    transform:translateY(-1px);
+    background:#f7f8ff;
+  }
 }
