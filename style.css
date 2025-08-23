@@ -907,8 +907,8 @@ body:not(.dark-mode) #filterToggleBtn[aria-expanded="true"] {
 }
 
 /* 「お気に入りだけ」ON 表示 */
-body:not(.dark-mode) #favOnlyToggleBtn.active,
-body:not(.dark-mode) #favOnlyToggleBtn[aria-pressed="true"] {
+body:not(.dark-mode):not([class*="theme-"]) #favOnlyToggleBtn.active,
+body:not(.dark-mode):not([class*="theme-"]) #favOnlyToggleBtn[aria-pressed="true"] {
   background: #eaf6ff !important;
   border-color: #5744D8 !important;
   color: #5744D8 !important;
@@ -2574,74 +2574,10 @@ body.dark-mode .more-btn:active {
 /* === ダークモードの水色を白に完全統一する最終修正（追記） === */
 
 
-/* === ダークモードのボタンアクティブ色を明確にする修正 === */
-body.dark-mode #favOnlyToggleBtn.active,
-body.dark-mode #filterToggleBtn[aria-expanded="true"] {
-  background-color: #ffffff !important; /* 背景を白に */
-  color: #22272e !important;            /* 文字をダークモードの背景色に */
-  border-color: #ffffff !important;      /* 枠線も白にして見えなくする */
-}
-
-/* 1. フィルター内のボタンにカーソルを合わせた際の文字色 */
-body.dark-mode .guest-button:hover, 
-body.dark-mode .btn-corner:hover, 
-body.dark-mode .btn-year:hover {
-  color: #ffffff !important;
-}
-
-/* 2. トップへ戻るボタンにカーソルを合わせた際の枠線 */
-body.dark-mode #toTopBtn:hover, 
-body.dark-mode #toTopBtn:focus {
-  border-color: #ffffff !important;
-}
-
-/* 3. 「ひすとりー・おぶ・らじお！」モーダル内の水色要素 */
-
-/* タイムラインの丸い点と影 */
-body.dark-mode .history-item::before {
-  background: #ffffff !important;
-  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.2) !important;
-}
-
-/* モーダルのタイトル、年の見出し、日付、固定ヘッダーの年 */
-body.dark-mode .history-modal .modal-title,
-body.dark-mode .history-year,
-body.dark-mode .history-item .date,
-body.dark-mode .history-sticky-year {
-  color: #ffffff !important;
-}
-
-
-/* === ダークモードの検索結果ホバー色を白に統一する修正 === */
-body.dark-mode .episode-item:hover, 
-body.dark-mode .episode-item:focus-visible {
-  border-color: #ffffff !important; /* 枠線を水色から白に変更 */
-}
 
 
 
-/* === 通常モードのアクセントカラーを黒に統一する最終確定版 === */
 
-/* 1. 基本となるカラー変数を黒/グレー系に変更 */
-body:not(.dark-mode):not([class*="theme-"]) {
-  --btn-main: #000000;
-  --btn-hover: #000000;
-  --filter-btn-active: #f0f0f0; /* ホバー/アクティブ時の背景を薄いグレーに */
-  --active-filter: #000000;     /* 選択中フィルターの背景を黒に */
-  --active-filter-text: #ffffff; /* 選択中フィルターの文字は白のまま */
-  
-  /* 「ひすとりー」モーダル用の変数も黒/グレー系に変更 */
-  --history-dot: #000000;
-  --history-dot-ring: 0, 0, 0;
-  --history-year: #000000;
-}
-
-/* 2. 変数を使っていない、または特殊な状態の個別上書き */
-
-/* ★修正★ フィルターDrawer内のタイトル文字 */
-body:not(.dark-mode):not([class*="theme-"]) .filter-title {
-  color: #000000 !important;
-}
 
 
 
@@ -3019,57 +2955,91 @@ body.body-scroll-locked {
 }
 
 
-/* style.css の一番最後に貼り付け */
-
-/* =================================================================== */
-/* ===== スマホ/PCでのホバーとアクティブ状態を制御する最終確定版 ===== */
-/* =================================================================== */
-
-/* --- Step 1: まず、すべてのホバー時の「動き」をリセット --- */
-/* これにより、スマホで触れただけの予期せぬアニメーションを防ぎます */
-.episode-item:hover,
-.guest-button:hover,
-.btn-corner:hover,
-.btn-year:hover {
-  transform: none !important;
-  box-shadow: none !important;
-}
-
-/* --- Step 2: マウスが使えるデバイスでのみ、ホバー効果を改めて有効化 --- */
-@media (hover: hover) {
-  
-  /* PCでのエピソードカードのホバー効果 */
-  .episode-item:hover {
-    transform: translateY(-2px) !important;
-    box-shadow: 0 13px 32px -8px rgba(90, 67, 232, 0.15) !important;
-  }
-  body.dark-mode .episode-item:hover {
-    box-shadow: 0 13px 32px -8px rgba(23, 42, 51, 0.53) !important;
-  }
-  
-  /* PCでのフィルター内ボタンのホバー効果 */
-  .guest-button:not([aria-pressed="true"]):hover,
-  .btn-corner:not([aria-pressed="true"]):hover,
-  .btn-year:not([aria-pressed="true"]):hover {
-    transform: translateY(-1px) scale(1.02) !important;
-    box-shadow: 0 4px 12px -4px rgba(0,0,0,0.1) !important;
-  }
-
-  /* PCでのその他ボタンのホバー効果 */
-  .theme-btn:hover {
-    transform: translateY(-2px) !important;
-  }
-  .share-btn:hover {
-    transform: translateY(-1px) !important;
-  }
-}
-
 /* style.css の一番最後に追加 */
 
-/* === テーマカラー時のボタンアクティブ色を明確にする修正 === */
-body[class*="theme-"] #favOnlyToggleBtn.active,
-body[class*="theme-"] #filterToggleBtn[aria-expanded="true"] {
-  background-color: #ffffff !important;     /* 背景を白に */
-  color: var(--bg-color) !important;       /* 文字色を各テーマのメインカラーに */
-  border-color: #ffffff !important;          /* 枠線も白にして見えなくする */
+/* ======================================================================== */
+/* ===== (最終確定版) 上部コントロールボタン スタイル V3 ===== */
+/* ======================================================================== */
+/* これがボタンの見た目を制御する唯一のコードブロックになります */
+
+/* --- 1. ライトモード --- */
+/* (A) デフォルト状態 */
+body:not(.dark-mode):not([class*="theme-"]) #filterToggleBtn,
+body:not(.dark-mode):not([class*="theme-"]) #favOnlyToggleBtn,
+body:not(.dark-mode):not([class*="theme-"]) #randomBtn,
+body:not(.dark-mode):not([class*="theme-"]) .reset-btn {
+  background-color: #ffffff !important;
+  color: #000000 !important;
+  border-color: #dcdcdc !important;
+}
+/* (B) アクティブ状態 (フィルタ/お気に入り) */
+body:not(.dark-mode):not([class*="theme-"]) #filterToggleBtn[aria-expanded="true"],
+body:not(.dark-mode):not([class*="theme-"]) #favOnlyToggleBtn[aria-pressed="true"] {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+  border-color: #000000 !important;
+}
+/* (C) ホバー状態 (PCのみ) */
+@media (hover: hover) {
+  body:not(.dark-mode):not([class*="theme-"]) #filterToggleBtn:not([aria-expanded="true"]):hover,
+  body:not(.dark-mode):not([class*="theme-"]) #favOnlyToggleBtn:not([aria-pressed="true"]):hover,
+  body:not(.dark-mode):not([class*="theme-"]) #randomBtn:hover,
+  body:not(.dark-mode):not([class*="theme-"]) .reset-btn:hover {
+    background-color: #f0f0f0 !important;
+    border-color: #bbbbbb !important;
+  }
+}
+
+/* --- 2. ダークモード --- */
+/* (A) デフォルト状態 */
+body.dark-mode #filterToggleBtn,
+body.dark-mode #favOnlyToggleBtn,
+body.dark-mode #randomBtn,
+body.dark-mode .reset-btn {
+  background-color: #2f3640 !important;
+  color: #ffffff !important;
+  border-color: #4d6272 !important;
+}
+/* (B) アクティブ状態 (フィルタ/お気に入り) */
+body.dark-mode #filterToggleBtn[aria-expanded="true"],
+body.dark-mode #favOnlyToggleBtn[aria-pressed="true"] {
+  background-color: #ffffff !important;
+  color: #22272e !important;
+  border-color: #ffffff !important;
+}
+/* (C) ホバー状態 (PCのみ) */
+@media (hover: hover) {
+  body.dark-mode #filterToggleBtn:not([aria-expanded="true"]):hover,
+  body.dark-mode #favOnlyToggleBtn:not([aria-pressed="true"]):hover,
+  body.dark-mode #randomBtn:hover,
+  body.dark-mode .reset-btn:hover {
+    background-color: #33414d !important;
+  }
+}
+
+/* --- 3. テーマカラー --- */
+/* (A) デフォルト状態 */
+body[class*="theme-"] #filterToggleBtn,
+body[class*="theme-"] #favOnlyToggleBtn,
+body[class*="theme-"] #randomBtn,
+body[class*="theme-"] .reset-btn {
+  background-color: var(--btn-bg) !important;
+  color: var(--btn-main) !important;
+  border-color: var(--history-card-bd) !important;
+}
+/* (B) アクティブ状態 (フィルタ/お気に入り) */
+body[class*="theme-"] #filterToggleBtn[aria-expanded="true"],
+body[class*="theme-"] #favOnlyToggleBtn[aria-pressed="true"] {
+  background-color: #ffffff !important;
+  color: var(--bg-color) !important;
+  border-color: #ffffff !important;
+}
+/* (C) ホバー状態 (PCのみ) */
+@media (hover: hover) {
+  body[class*="theme-"] #filterToggleBtn:not([aria-expanded="true"]):hover,
+  body[class*="theme-"] #favOnlyToggleBtn:not([aria-pressed="true"]):hover,
+  body[class*="theme-"] #randomBtn:hover,
+  body[class*="theme-"] .reset-btn:hover {
+    background-color: rgba(255, 255, 255, 0.15) !important;
+  }
 }

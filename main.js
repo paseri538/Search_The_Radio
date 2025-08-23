@@ -864,8 +864,67 @@ function toggleFilterDrawer(force) {
   }
 }
 
-// イベントリスナーをまとめる関数
 function setupEventListeners() {
+
+  // --- 1. ヘッダーボタンのイベント処理をここに集約 ---
+  
+  // 古いイベントリスナーを一度すべて解除して競合を防ぐ
+  $('#filterToggleBtn, #favOnlyToggleBtn, #randomBtn, .reset-btn, #drawerCloseBtn').off('click keypress');
+
+  // 【修正点】フィルタボタンの処理
+  $('#filterToggleBtn').on('click', function() {
+    const $drawer = $('#filterDrawer');
+    const $backdrop = $('#drawerBackdrop');
+    const isOpening = $drawer.is(':hidden');
+
+    if (isOpening) {
+      $drawer.show();
+      $backdrop.addClass('show');
+      $(this).attr({ 'aria-expanded': 'true', 'aria-pressed': 'true' });
+      if (window.acquireBodyLock) window.acquireBodyLock();
+    } else {
+      $drawer.hide();
+      $backdrop.removeClass('show');
+      $(this).attr({ 'aria-expanded': 'false', 'aria-pressed': 'false' });
+      if (window.releaseBodyLock) window.releaseBodyLock();
+    }
+  });
+  
+  // フィルター内の閉じるボタンも、メインのボタンをトリガーするように統一
+  $('#drawerCloseBtn').on('click', () => $('#filterToggleBtn').trigger('click'));
+  $('#drawerBackdrop').on('click', () => {
+    if ($('#filterDrawer').is(':visible')) {
+      $('#filterToggleBtn').trigger('click');
+    }
+  });
+
+
+  // 【修正点】お気に入りボタンの処理
+  $('#favOnlyToggleBtn').on('click', function(){
+    showFavoritesOnly = !showFavoritesOnly;
+    $(this).attr('aria-pressed', showFavoritesOnly).toggleClass('active', showFavoritesOnly);
+    document.body.classList.toggle('fav-only', showFavoritesOnly);
+    search({ gotoPage: 1 });
+  });
+
+  // ランダムボタンの処理
+  $('#randomBtn').on('click', function(){
+    const pool = (Array.isArray(lastResults) && lastResults.length) ? lastResults : data;
+    if (!pool.length) return;
+    const pick = pool[Math.floor(Math.random() * pool.length)];
+    window.open(pick.link, '_blank', 'noopener');
+  });
+  
+  // 【修正点】リセットボタンの処理
+  $('.reset-btn').on('click', function() {
+    if (typeof resetSearch === 'function') {
+      resetSearch();
+    }
+  });
+
+
+  // --- 2. これより下は、フィルター内のボタンなど、既存の他のイベント処理です ---
+
   $(".guest-button").on("click keypress", function(e) {
     if(e.type==="click"||(e.type==="keypress"&&(e.key==="Enter"||e.key===" "))) {
       const name = $(this).data("guest");
@@ -908,13 +967,6 @@ function setupEventListeners() {
       search();
     }
   });
-  $("#filterToggleBtn").on("click keypress", function(e){
-    if(e.type==="click"||(e.type==="keypress"&&(e.key==="Enter"||e.key===" "))) {
-      toggleFilterDrawer();
-    }
-  });
-  $("#drawerBackdrop").on("click", ()=>toggleFilterDrawer(false));
-  $(window).on("resize", updateDrawerTop);
   $("#paginationArea").on("click keypress", ".page-btn", function (e) {
     if (e.type === "click" || (e.type === "keypress" && (e.key === "Enter" || e.key === " "))) {
       const n = parseInt($(this).data("page"), 10) || 1;
@@ -941,23 +993,6 @@ function setupEventListeners() {
       search();
     }
   });
-  $(".reset-btn").on("click keypress", function(e) {
-    if(e.type==="click"||(e.type==="keypress"&&(e.key==="Enter"||e.key===" "))) {
-      resetSearch();
-    }
-  });
-  $(document).on("click", function(e){
-    if(filterDrawerOpen && !$(e.target).closest("#filterDrawer,#filterToggleBtn").length){
-      toggleFilterDrawer(false);
-    }
-  });
-  window.addEventListener("scroll", updateDrawerTop);
-  window.addEventListener("resize", updateDrawerTop);
-  updateGuestButtonStyles();
-  updateCornerStyles();
-  updateOtherStyles();
-  updateYearStyles();
-
   $('#results').on('click', '.fav-btn', function(e){
     e.preventDefault(); e.stopPropagation();
     const id = $(this).data('id');
@@ -970,20 +1005,11 @@ function setupEventListeners() {
     if (showFavoritesOnly) search({ gotoPage: currentPage || 1 });
   });
 
-  $('#favOnlyToggleBtn').on('click', function(){
-    showFavoritesOnly = !showFavoritesOnly;
-    $(this).attr('aria-pressed', showFavoritesOnly)
-            .toggleClass('active', showFavoritesOnly);
-    document.body.classList.toggle('fav-only', showFavoritesOnly);
-    search({ gotoPage: 1 });
-  });
-
-  $('#randomBtn').on('click', function(){
-    const pool = (Array.isArray(lastResults) && lastResults.length) ? lastResults : data;
-    if (!pool.length) return;
-    const pick = pool[Math.floor(Math.random() * pool.length)];
-    window.open(pick.link, '_blank', 'noopener');
-  });
+  // 初期表示時に各ボタンの状態を更新
+  updateGuestButtonStyles();
+  updateCornerStyles();
+  updateOtherStyles();
+  updateYearStyles();
 }
 
 // ページが読み込まれたらアプリケーションを初期化
@@ -1257,12 +1283,7 @@ window.__updateHeaderOffset && window.__updateHeaderOffset();
             });
         });
     });
-    ['#filterToggleBtn','#favOnlyToggleBtn','#randomBtn','.reset-btn'].forEach(sel => {
-        document.querySelectorAll(sel).forEach(btn => {
-            btn.addEventListener('mouseup', () => btn.classList.remove('active'));
-            btn.addEventListener('blur', () => btn.classList.remove('active'));
-        });
-    });
+
     ['favOnlyToggleBtn', 'randomBtn'].forEach(id => {
         const el = document.getElementById(id);
         const sp = el && el.querySelector('span');
