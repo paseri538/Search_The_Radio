@@ -81,28 +81,48 @@ window.__hardUnlockScroll = function __hardUnlockScroll(){
 };
 
 
-// === Global, reference-counted body scroll locker ===
+// main.js
+
+// ▼▼▼▼▼ 既存の __hardUnlockScroll と Global... body scroll locker を削除し、以下のコードに差し替え ▼▼▼▼▼
+
+// --- Hard unlock: どんな状況でもスクロールを復元する安全装置 (最終版)
+window.__hardUnlockScroll = function __hardUnlockScroll(){
+  try { window.__bodyLockCount = 0; } catch(e){}
+  document.body.style.paddingRight = '';
+  document.body.classList.remove('body-scroll-locked');
+  
+  // 念のため、古いクラスが残っていても削除
+  document.body.classList.remove('modal-open');
+  document.body.classList.remove('scroll-lock');
+};
+
+// === Global, reference-counted body scroll locker (最終版 - 点滅しない方法) ===
 (function(){
   if (!window.__bodyLockCount) window.__bodyLockCount = 0;
-  if (!window.__bodyLockScrollY) window.__bodyLockScrollY = 0;
+  
   window.acquireBodyLock = function acquireBodyLock(){
     if (window.__bodyLockCount === 0){
-      window.__bodyLockScrollY = window.scrollY || document.documentElement.scrollTop || 0;
-      document.body.classList.add('modal-open');
-      document.body.style.top = `-${window.__bodyLockScrollY}px`;
+      // 1. スクロールバーの幅を計算し、その分だけ右に余白を追加してコンテンツの横ズレを防ぐ
+      const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+      document.body.style.paddingRight = `${scrollbarWidth}px`;
+      
+      // 2. 新しい専用クラスをbodyに付与してスクロールを禁止する
+      document.body.classList.add('body-scroll-locked');
     }
     window.__bodyLockCount++;
   };
+  
   window.releaseBodyLock = function releaseBodyLock(){
     window.__bodyLockCount = Math.max(0, (window.__bodyLockCount||0) - 1);
     if (window.__bodyLockCount === 0){
-      document.body.classList.remove('modal-open');
-      const top = document.body.style.top;
-      document.body.style.top = '';
-      try { window.scrollTo(0, top ? -parseInt(top,10) : 0); } catch(e) {}
+      // bodyからスタイルとクラスを削除して元の状態に完全に戻す
+      document.body.style.paddingRight = '';
+      document.body.classList.remove('body-scroll-locked');
     }
   };
 })();
+
+// ▲▲▲▲▲ ここまでを差し替え ▲▲▲▲▲
 
 // ===================================================
 // ★★★ データと状態管理（ここからが主な変更点）★★★

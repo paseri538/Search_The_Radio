@@ -661,14 +661,7 @@ body.dark-mode #aboutCloseBtn {
   }
 }
 
-/* 画面全体のスクロールを止める用 */
-body.scroll-lock, body.modal-open{
-  position: fixed;
-  overflow: hidden;
-  width: 100%;
-  touch-action: none !important;
-  overscroll-behavior-y: contain;
-}
+
 
 
 /* 初期描画の一瞬だけ使うプレロード用フラグ */
@@ -1296,13 +1289,7 @@ body.dark-mode .modal-content.history-modal{
   z-index: 2;
 }
 
-/* 背景スクロール禁止用（JSで .modal-open を付与） */
-body.modal-open{
-  position: fixed;
-  inset: 0;
-  width: 100%;
-  overflow: hidden;
-}
+
 
 /* 追加：サイトのダーク切替でも色変数を上書き */
 body.dark-mode{
@@ -3047,3 +3034,7 @@ body.dark-mode .history-item .label {
   }
 }
 
+/* 画面全体のスクロールを止めるための新しいスタイル (点滅しない方法) */
+body.body-scroll-locked {
+  overflow: hidden !important;
+}
