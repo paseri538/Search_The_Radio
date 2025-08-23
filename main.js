@@ -1274,26 +1274,7 @@ window.__updateHeaderOffset && window.__updateHeaderOffset();
     });
   }
   document.addEventListener('DOMContentLoaded', applySortLabels);
-  document.addEventListener('DOMContentLoaded', () => {
-    ['#filterToggleBtn','#favOnlyToggleBtn'].forEach(sel => {
-        document.querySelectorAll(sel).forEach(btn => {
-            btn.addEventListener('click', () => {
-            const pressed = btn.getAttribute('aria-pressed') === 'true';
-            btn.setAttribute('aria-pressed', String(!pressed));
-            });
-        });
-    });
 
-    ['favOnlyToggleBtn', 'randomBtn'].forEach(id => {
-        const el = document.getElementById(id);
-        const sp = el && el.querySelector('span');
-        if (sp) sp.textContent = sp.textContent.trim();
-    });
-    const filterBtn = document.getElementById('filterToggleBtn');
-    if (filterBtn && !filterBtn.dataset.label) {
-        filterBtn.dataset.label = 'フィルタ';
-    }
-  });
   window.addEventListener('resize', applySortLabels);
   window.addEventListener('orientationchange', applySortLabels);
 })();
