@@ -3011,55 +3011,45 @@ body.body-scroll-locked {
 
 /* style.css の一番最後に貼り付け */
 
-/* ===== スマホでの意図しないホバーエフェクトを無効化する最終修正 Ver.3 ===== */
-/* タッチ操作がメインのデバイス（スマホ、タブレットなど）でのみ適用される、強制上書きスタイルです */
-@media (hover: none) {
+/* =================================================================== */
+/* ===== スマホ/PCでのホバーとアクティブ状態を制御する最終確定版 ===== */
+/* =================================================================== */
 
-  /* --- 1. エピソードカード (スクロールで光る問題の対策) --- */
-  /* ホバー時も「通常時」のスタイルを強制的に適用し、見た目の変化をなくします */
+/* --- Step 1: まず、すべてのホバー時の「動き」をリセット --- */
+/* これにより、スマホで触れただけの予期せぬアニメーションを防ぎます */
+.episode-item:hover,
+.guest-button:hover,
+.btn-corner:hover,
+.btn-year:hover {
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* --- Step 2: マウスが使えるデバイスでのみ、ホバー効果を改めて有効化 --- */
+@media (hover: hover) {
+  
+  /* PCでのエピソードカードのホバー効果 */
   .episode-item:hover {
-    transform: none !important;
-    box-shadow: none !important;
-    background-color: var(--card-bg) !important;
-    border-color: #e5e7ef !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 13px 32px -8px rgba(90, 67, 232, 0.15) !important;
   }
   body.dark-mode .episode-item:hover {
-    background-color: #252c35 !important;
-    border-color: #33404c !important;
+    box-shadow: 0 13px 32px -8px rgba(23, 42, 51, 0.53) !important;
   }
-  body[class*="theme-"] .episode-item:hover {
-    background-color: var(--item-bg) !important;
-    border-color: var(--history-card-bd) !important;
+  
+  /* PCでのフィルター内ボタンのホバー効果 */
+  .guest-button:not([aria-pressed="true"]):hover,
+  .btn-corner:not([aria-pressed="true"]):hover,
+  .btn-year:not([aria-pressed="true"]):hover {
+    transform: translateY(-1px) scale(1.02) !important;
+    box-shadow: 0 4px 12px -4px rgba(0,0,0,0.1) !important;
   }
 
-  /* --- 2. ヘッダーのボタン (色が戻らない問題の対策) --- */
-  /* こちらもホバー時に「通常時」のスタイルを強制適用します */
-  #filterToggleBtn:hover,
-  #favOnlyToggleBtn:hover,
-  #randomBtn:hover,
-  .reset-btn:hover {
-    transform: none !important;
-    box-shadow: none !important;
+  /* PCでのその他ボタンのホバー効果 */
+  .theme-btn:hover {
+    transform: translateY(-2px) !important;
   }
-  /* ライトモードボタンの通常状態 */
-  body:not(.dark-mode):not([class*="theme-"]) #filterToggleBtn:hover,
-  body:not(.dark-mode):not([class*="theme-"]) #favOnlyToggleBtn:hover,
-  body:not(.dark-mode):not([class*="theme-"]) #randomBtn:hover,
-  body:not(.dark-mode):not([class*="theme-"]) .reset-btn:hover {
-    background-color: #fff !important;
-  }
-  /* ダークモードボタンの通常状態 */
-  body.dark-mode #filterToggleBtn:hover,
-  body.dark-mode #favOnlyToggleBtn:hover,
-  body.dark-mode #randomBtn:hover,
-  body.dark-mode .reset-btn:hover {
-    background-color: #2f3640 !important;
-  }
-  /* カラーテーマボタンの通常状態 */
-   body[class*="theme-"] #filterToggleBtn:hover,
-   body[class*="theme-"] #favOnlyToggleBtn:hover,
-   body[class*="theme-"] #randomBtn:hover,
-   body[class*="theme-"] .reset-btn:hover {
-    background-color: var(--btn-bg) !important;
+  .share-btn:hover {
+    transform: translateY(-1px) !important;
   }
 }
