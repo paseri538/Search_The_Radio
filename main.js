@@ -638,18 +638,37 @@ function resetFilters() {
   search();
 }
 
+// main.js の既存の resetSearch 関数をこちらに置き換えてください
 function resetSearch() {
   $("#searchBox").val("");
   $("#sortSelect").val("newest");
-  if (typeof showFavoritesOnly !== "undefined" && showFavoritesOnly) {
-    clearAllFavorites();
+
+  // 「お気に入りだけ表示」がオンの時にリセットされた場合
+  if (showFavoritesOnly) {
+    // 1. メモリとお使いのブラウザのストレージからお気に入り情報を全て削除
+    favorites.clear();
+    saveFavs();
+    
+    // 2. 「お気に入りだけ表示」モードを解除
     showFavoritesOnly = false;
     document.body.classList.remove('fav-only');
     $("#favOnlyToggleBtn").removeClass("active").attr("aria-pressed","false");
+    
+    // 3. 画面に表示されている各カードの★マークを非アクティブ状態に戻す
+    $("#results .fav-btn.active")
+      .removeClass("active")
+      .find("i")
+      .removeClass("fa-solid")
+      .addClass("fa-regular");
   }
-  $("#results .fav-btn.active").removeClass("active").find("i").removeClass("fa-solid").addClass("fa-regular");
+
+  // 4. キーワード以外のフィルター（出演者、コーナーなど）をリセットして再検索
   resetFilters();
+  
+  // 5. ページの一番上までスクロール
   try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch (e) { window.scrollTo(0, 0); }
+  
+  // 6. ボタンからフォーカスを外す
   const resetButton = document.getElementById('mainResetBtn');
   if (resetButton) resetButton.blur();
 }
@@ -1323,53 +1342,8 @@ function rainGoodMarks() {
   }
 }
 
-// =================================================================
-// ===== ボタンフォントサイズの自動調整機能 (最終版) =====
-// =================================================================
-function autoFitControlButtonsGroup() {
-    const elFilter = document.getElementById('filterToggleBtn');
-    const elFav = document.getElementById('favOnlyToggleBtn');
-    const elRand = document.getElementById('randomBtn');
-    const elReset = document.querySelector('.reset-btn');
 
-    if (!elFilter || !elFav || !elRand || !elReset) {
-        console.warn("自動調整機能：対象のボタンが見つかりませんでした。");
-        return;
-    }
 
-    const targets = [elFilter, elFav, elRand, elReset];
-
-    function findOptimalFontSize(element, startSize = 15, minSize = 11) {
-        element.style.setProperty('--ctl-fs', startSize + 'px');
-
-        if (element.scrollWidth > element.clientWidth + 2) {
-            const newSize = startSize - 1;
-            if (newSize >= minSize) {
-                return findOptimalFontSize(element, newSize, minSize);
-            }
-            return minSize;
-        }
-        return startSize;
-    }
-
-    function fitAll() {
-        if (!window.matchMedia('(max-width: 768px)').matches) {
-            targets.forEach(el => el.style.removeProperty('--ctl-fs'));
-            return;
-        }
-        
-        const optimalSizes = targets.map(el => findOptimalFontSize(el));
-        const finalSize = Math.min(...optimalSizes);
-        targets.forEach(el => el.style.setProperty('--ctl-fs', finalSize + 'px'));
-    }
-
-    window.addEventListener('load', fitAll, { passive: true });
-    window.addEventListener('resize', fitAll, { passive: true });
-    window.addEventListener('orientationchange', fitAll, { passive: true });
-    setTimeout(fitAll, 150);
-}
-
-autoFitControlButtonsGroup();
 
 document.addEventListener('DOMContentLoaded', function() {
     const filterBtn = document.getElementById('filterToggleBtn');
@@ -1377,3 +1351,67 @@ document.addEventListener('DOMContentLoaded', function() {
         filterBtn.setAttribute('data-label', 'フィルタ');
     }
 });
+
+
+
+// =================================================================
+// ===== ローディング画面制御とボタンフォントサイズ調整（最終ポーリング版） =====
+// =================================================================
+(function() {
+
+    // --- ボタンフォントサイズの自動調整機能 ---
+    const autoFitControlButtons = () => {
+        const elFilter = document.getElementById('filterToggleBtn');
+        const elFav = document.getElementById('favOnlyToggleBtn');
+        const elRand = document.getElementById('randomBtn');
+        const elReset = document.querySelector('.reset-btn');
+
+        if (!elFilter || !elFav || !elRand || !elReset) return;
+        const targets = [elFilter, elFav, elRand, elReset];
+
+        const findOptimalFontSize = (element, startSize = 15, minSize = 10.5) => {
+            element.style.setProperty('--ctl-fs', startSize + 'px', 'important');
+            if (element.scrollWidth > element.clientWidth) {
+                const newSize = startSize - 0.5;
+                if (newSize >= minSize) return findOptimalFontSize(element, newSize, minSize);
+                return minSize;
+            }
+            return startSize;
+        };
+
+        const fitAll = () => {
+            requestAnimationFrame(() => {
+                const optimalSizes = targets.map(el => findOptimalFontSize(el));
+                const finalSize = Math.min(...optimalSizes);
+                document.documentElement.style.setProperty('--final-ctl-fs', finalSize + 'px');
+            });
+        };
+
+        // ポーリング（繰り返し）実行
+        // ページの読み込み開始直後から、完了後まで複数回実行し続けることで、
+        // どんなに遅い端末でもレイアウト確定後に必ず計算が実行されるようにする
+        const intervals = [50, 150, 300, 500, 800, 1200, 2000];
+        intervals.forEach(delay => setTimeout(fitAll, delay));
+
+        // 画面の向きが変わった時も実行
+        window.addEventListener('orientationchange', fitAll, { passive: true });
+    };
+
+    // --- ページの読み込み完了時の処理 ---
+    window.addEventListener('load', function() {
+        // ローディング画面をフェードアウトさせる
+        const loadingScreen = document.getElementById("loading-screen");
+        if (loadingScreen) {
+            setTimeout(function() {
+                loadingScreen.classList.add("fadeout");
+                setTimeout(function() {
+                    if (loadingScreen) loadingScreen.remove();
+                }, 1000);
+            }, 950);
+        }
+    });
+    
+    // 文字サイズ調整機能を実行開始
+    autoFitControlButtons();
+
+})();
