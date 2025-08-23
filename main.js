@@ -866,6 +866,10 @@ function toggleFilterDrawer(force) {
 
 function setupEventListeners() {
 
+  // ▼▼▼▼▼ この一行を追加 ▼▼▼▼▼
+  $('#filterToggleBtn').attr('data-label', 'フィルタ');
+  // ▲▲▲▲▲ この一行を追加 ▲▲▲▲▲
+
   // --- 1. ヘッダーボタンのイベント処理をここに集約 ---
   
   // 古いイベントリスナーを一度すべて解除して競合を防ぐ
@@ -1163,90 +1167,7 @@ $('#drawerBackdrop').on('click', function () {
 window.__updateHeaderOffset && window.__updateHeaderOffset();
 
 (function () {
-  if (window.__drawerPatched) return;
-  window.__drawerPatched = true;
-
-  let __scrollY = 0;
-  function lockScroll() {
-    if (document.body.classList.contains('scroll-lock')) return;
-    __scrollY = window.scrollY || document.documentElement.scrollTop || 0;
-    document.body.style.top = `-${__scrollY}px`;
-    document.body.classList.add('scroll-lock');
-  }
-  function unlockScroll() {
-    if (!document.body.classList.contains('scroll-lock')) return;
-    document.body.classList.remove('scroll-lock');
-    document.body.style.top = '';
-    window.scrollTo(0, __scrollY);
-  }
-  window.updateScrollLock = function updateScrollLock() {
-    const isFilterOpen = $('#filterDrawer').is(':visible');
-    const isAboutOpen  = $('#aboutModal').hasClass('show');
-    (isFilterOpen || isAboutOpen) ? lockScroll() : unlockScroll();
-  };
-  function updateDrawerTop() {
-    const sbar = document.querySelector('.sticky-search-area');
-    const drawer = document.getElementById('filterDrawer');
-    if (sbar && drawer) {
-      const rect = sbar.getBoundingClientRect();
-      drawer.style.position = 'fixed';
-      drawer.style.left = '50%';
-      drawer.style.transform = '';
-      drawer.style.right = '';
-      drawer.style.top = (rect.top + rect.height) + 'px';
-    }
-  }
-  function openDrawer() {
-    updateDrawerTop();
-    $('#filterDrawer').show();
-    $('#drawerBackdrop').addClass('show');
-    $('#filterToggleBtn').attr({ 'aria-expanded': true, 'aria-pressed': true });
-    updateScrollLock();
-  }
-  function closeDrawer() {
-    window.__hardUnlockScroll && window.__hardUnlockScroll();
-    $('#filterDrawer').hide();
-    $('#drawerBackdrop').removeClass('show');
-    $('#filterToggleBtn').attr({ 'aria-expanded': false, 'aria-pressed': false });
-    updateScrollLock();
-  }
-  window.__openDrawer = openDrawer;
-  window.__closeDrawer = closeDrawer;
-  $('#filterToggleBtn').off('click keypress').on('click keypress', function (e) {
-    if (e.type === 'click' || (e.type === 'keypress' && (e.key === 'Enter' || e.key === ' '))) {
-      $('#filterDrawer').is(':visible') ? closeDrawer() : openDrawer();
-    }
-  });
-  $('#drawerBackdrop').off('click').on('click', closeDrawer);
-  $(document).off('click.__drawer').on('click.__drawer', function(e){
-    if ($('#filterDrawer').is(':visible') && !$(e.target).closest('#filterDrawer,#filterToggleBtn').length) {
-      closeDrawer();
-    }
-  });
-  window.resetSearch = (function (orig) {
-    return function () {
-      const prev = isRestoringURL;
-      isRestoringURL = true;
-      if (typeof orig === "function") {
-        orig();
-      } else {
-        if ($("#searchBox").length) $("#searchBox").val("");
-        if ($("#sortSelect").length) $("#sortSelect").val("newest");
-        if (window.showFavoritesOnly) {
-          if (typeof clearAllFavorites === "function") clearAllFavorites();
-          window.showFavoritesOnly = false;
-          $("#favOnlyToggleBtn").removeClass("active").attr("aria-pressed", "false");
-          $("#results .fav-btn.active").removeClass("active").find("i").removeClass("fa-solid").addClass("fa-regular");
-        }
-        if (typeof resetFilters === "function") resetFilters();
-        else if (typeof search === "function") search();
-      }
-      currentPage = 1;
-      isRestoringURL = prev;
-      buildURLFromState({ method: 'replace' });
-      if (typeof closeDrawer === "function") closeDrawer();
-      if (typeof updateScrollLock === "function") updateScrollLock();
-    };
+  
   })(window.resetSearch);
   try {
     const ids = (Array.isArray(data)?data:[]).map(it => (it.link||"").match(/watch\\?v=([\\w-]{11})/)?.[1]).filter(Boolean);
@@ -1255,7 +1176,7 @@ window.__updateHeaderOffset && window.__updateHeaderOffset();
     Object.keys(seen).forEach(id => { if (seen[id] > 1) console.warn('[SearchTheRadio] Duplicate video id:', id, 'x'+seen[id]); });
   } catch(e){}
   updateScrollLock();
-})();
+
 
 (function(){
   const MAP = {
