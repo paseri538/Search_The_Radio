@@ -2573,6 +2573,15 @@ body.dark-mode .more-btn:active {
 
 /* === ダークモードの水色を白に完全統一する最終修正（追記） === */
 
+
+/* === ダークモードのボタンアクティブ色を明確にする修正 === */
+body.dark-mode #favOnlyToggleBtn.active,
+body.dark-mode #filterToggleBtn[aria-expanded="true"] {
+  background-color: #ffffff !important; /* 背景を白に */
+  color: #22272e !important;            /* 文字をダークモードの背景色に */
+  border-color: #ffffff !important;      /* 枠線も白にして見えなくする */
+}
+
 /* 1. フィルター内のボタンにカーソルを合わせた際の文字色 */
 body.dark-mode .guest-button:hover, 
 body.dark-mode .btn-corner:hover, 
@@ -2652,8 +2661,9 @@ body:not(.dark-mode):not([class*="theme-"]) #randomBtn:hover,
 body:not(.dark-mode):not([class*="theme-"]) .reset-btn:hover,
 body:not(.dark-mode):not([class*="theme-"]) #favOnlyToggleBtn.active,
 body:not(.dark-mode):not([class*="theme-"]) #filterToggleBtn[aria-expanded="true"] {
-  background-color: #f0f0f0 !important;
-  border-color: #bbbbbb !important;
+  background-color: #000000 !important; /* 背景を黒に */
+  color: #ffffff !important;            /* 文字を白に */
+  border-color: #000000 !important;      /* 枠線も黒にして見えなくする */
 }
 
 /* フィルターDrawer内のボタン (アクティブ時) */
@@ -3052,4 +3062,14 @@ body.body-scroll-locked {
   .share-btn:hover {
     transform: translateY(-1px) !important;
   }
+}
+
+/* style.css の一番最後に追加 */
+
+/* === テーマカラー時のボタンアクティブ色を明確にする修正 === */
+body[class*="theme-"] #favOnlyToggleBtn.active,
+body[class*="theme-"] #filterToggleBtn[aria-expanded="true"] {
+  background-color: #ffffff !important;     /* 背景を白に */
+  color: var(--bg-color) !important;       /* 文字色を各テーマのメインカラーに */
+  border-color: #ffffff !important;          /* 枠線も白にして見えなくする */
 }
