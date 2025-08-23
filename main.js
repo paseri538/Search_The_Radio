@@ -996,30 +996,30 @@ document.addEventListener('DOMContentLoaded', () => {
     return;
   }
 
-  let scrollY = 0;
-
-  const lockScrollForAboutModal = () => {
-    if (document.body.classList.contains('scroll-lock')) return;
-    scrollY = window.scrollY;
-    document.body.style.top = `-${scrollY}px`;
-    document.body.classList.add('scroll-lock');
-  };
+  // lockScrollForAboutModal は不要になったので削除
 
   const openModal = () => {
-    lockScrollForAboutModal();
+    // 変更点：新しいロック関数を呼び出す
+    if (typeof window.acquireBodyLock === 'function') {
+      window.acquireBodyLock();
+    }
     aboutModal.classList.add('show');
     aboutCloseBtn.focus();
   };
 
   const closeModal = () => {
     if (!aboutModal.classList.contains('show')) return;
-    void aboutModal.offsetHeight;
+    
+    // アニメーションを開始
     aboutModal.classList.remove('show');
+    
+    // 変更点：アニメーションの時間 (200ms) だけ待ってからロックを解除
     setTimeout(() => {
-      if (typeof window.__hardUnlockScroll === 'function') {
-        window.__hardUnlockScroll();
+      if (typeof window.releaseBodyLock === 'function') {
+        window.releaseBodyLock();
       }
-    }, 250);
+    }, 200); // CSSのアニメーション時間と合わせる
+    
     aboutLink.focus();
   };
 
@@ -1069,19 +1069,7 @@ window.addEventListener('DOMContentLoaded', function() {
   }, 400);
 });
 
-let __scrollY = 0;
-function lockScroll() {
-  if (document.body.classList.contains('scroll-lock')) return;
-  __scrollY = window.scrollY || document.documentElement.scrollTop || 0;
-  document.body.style.top = `-${__scrollY}px`;
-  document.body.classList.add('scroll-lock');
-}
-function unlockScroll() {
-  if (!document.body.classList.contains('scroll-lock')) return;
-  document.body.classList.remove('scroll-lock');
-  document.body.style.top = '';
-  window.scrollTo(0, __scrollY);
-}
+
 function updateScrollLock(){ if (typeof window.updateScrollLock === 'function') return window.updateScrollLock(); }
 
 $('#filterToggleBtn').on('click', function () {
@@ -1474,9 +1462,13 @@ function initializeAutocomplete() {
     { date: '2025-09-07', label: 'ぼっち・ざ・らじお！番組3周年', desc: '', url: '' },
   ];
 
+  // 「ひすとりー・おぶ・らじお！」モーダル関連の処理部分を修正
+
+  // ... (HISTORY 配列の定義などはそのまま) ...
+
   const $modal = document.getElementById('historyModal');
   const $close = document.getElementById('historyCloseBtn');
-  let _scrollY = 0;
+  // let _scrollY = 0; は不要なので削除
 
   function openHistoryModal(){
     const overlay = document.getElementById('historyModal');
@@ -1491,7 +1483,12 @@ function initializeAutocomplete() {
     requestAnimationFrame(() => overlay.classList.add('show'));
     const sc = overlay.querySelector('.history-modal');
     if (sc) sc.scrollTop = 0;
-    lockScroll();
+    
+    // 変更点：新しいロック関数を呼び出す
+    if (typeof window.acquireBodyLock === 'function') {
+        window.acquireBodyLock();
+    }
+    
     try{ $toggle?.setAttribute('aria-expanded','true'); }catch(_){}
   }
 
@@ -1500,16 +1497,25 @@ function initializeAutocomplete() {
     if(!overlay || overlay.hidden) return;
     overlay.classList.add('closing');
     overlay.classList.remove('show');
+    
     const done = () => {
         overlay.hidden = true;
         overlay.classList.remove('closing');
         overlay.removeEventListener('animationend', done);
-        unlockScroll();
+        
+        // 変更点：アニメーション完了後にロックを解除
+        if (typeof window.releaseBodyLock === 'function') {
+            window.releaseBodyLock();
+        }
+        
         try{ $toggle?.setAttribute('aria-expanded','false'); }catch(_){}
     };
     overlay.addEventListener('animationend', done);
-    setTimeout(done, 260);
+    // 念のためタイムアウトも設定
+    setTimeout(done, 260); 
   }
+
+  // lockBodyScroll と unlockBodyScroll は不要になったので削除
 
   $('#historyCloseBtn').off('click').on('click', closeHistoryModal);
   $('#historyModal').off('click').on('click', function(e){
@@ -1526,18 +1532,7 @@ function initializeAutocomplete() {
     openHistoryModal();
   });
 
-  function lockBodyScroll(){
-    _scrollY = window.scrollY || document.documentElement.scrollTop || 0;
-    window.acquireBodyLock && window.acquireBodyLock();
-    document.body.style.top = `-${_scrollY}px`;
-  }
-  function unlockBodyScroll(){
-    window.releaseBodyLock && window.releaseBodyLock();
-    const top = document.body.style.top;
-    document.body.style.top = '';
-    window.scrollTo(0, top ? -parseInt(top,10) : 0);
-  }
-
+  
   function buildTimeline(data){
     $list.innerHTML = '';
     const sorted = [...data].sort((a,b)=> (toDateKey(a.date) < toDateKey(b.date) ? -1 : 1));

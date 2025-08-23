@@ -667,6 +667,7 @@ body.scroll-lock, body.modal-open{
   overflow: hidden;
   width: 100%;
   touch-action: none !important;
+  overscroll-behavior-y: contain;
 }
 
 
@@ -3045,3 +3046,4 @@ body.dark-mode .history-item .label {
     margin-bottom: 12px;
   }
 }
+
