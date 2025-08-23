@@ -2472,6 +2472,11 @@ body[class*="theme-"]  {
   box-shadow: 0 12px 32px -8px rgba(0,0,0,0.2);
   text-align: center;
   border: 1px solid rgba(0,0,0,0.05);
+
+  /* ★★★★★ ここから追加 ★★★★★ */
+  max-height: calc(100vh - 40px); /* 画面の高さから上下20pxずつのマージンを引いた高さを最大値に */
+  overflow-y: auto;               /* 内容がはみ出した場合は、モーダル内をスクロール可能に */
+  /* ★★★★★ ここまで追加 ★★★★★ */
   
   /* ★重要: 本体が拡大・縮小するアニメーション */
   transform: scale(0.95);
@@ -3026,5 +3031,17 @@ body.dark-mode .history-item .label {
   to {
     transform: translateY(110vh) rotate(360deg); /* 画面の下端外まで移動し、回転する */
     opacity: 0;
+  }
+}
+
+/* 画面の高さが特に低いデバイス（例: 700px以下）では、余白をさらに詰めて見やすくする */
+@media (max-height: 700px) {
+  #aboutModalContent {
+    padding-top: 25px;
+    padding-bottom: 20px;
+  }
+  .about-logo {
+    width: 150px; /* ロゴも少し小さくする */
+    margin-bottom: 12px;
   }
 }
