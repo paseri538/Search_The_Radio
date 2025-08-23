@@ -1716,26 +1716,7 @@ function initializeAutocomplete() {
   const elRand   = document.getElementById('randomBtn');
   const elReset  = document.querySelector('.reset-btn');
   if (!elFilter || !elFav || !elRand || !elReset) return;
-  document.addEventListener('DOMContentLoaded', () => {
-    ['#filterToggleBtn','#favOnlyToggleBtn'].forEach(sel => {
-        document.querySelectorAll(sel).forEach(btn => {
-            btn.addEventListener('click', () => {
-            const pressed = btn.getAttribute('aria-pressed') === 'true';
-            btn.setAttribute('aria-pressed', String(!pressed));
-            });
-        });
-    });
-    ['#filterToggleBtn','#favOnlyToggleBtn','#randomBtn','.reset-btn'].forEach(sel => {
-        document.querySelectorAll(sel).forEach(btn => {
-            btn.addEventListener('mouseup', () => btn.classList.remove('active'));
-            btn.addEventListener('blur', () => btn.classList.remove('active'));
-        });
-    });
-    [elFav, elRand].forEach(el => {
-      const sp = el.querySelector('span'); if (sp) sp.textContent = sp.textContent.trim();
-    });
-    if (!elFilter.dataset.label) elFilter.dataset.label = 'フィルタ';
-  });
+
   const targets = [elFilter, elFav, elRand, elReset];
   function neededFontSize(el, startPx=16, minPx=12){
     el.style.setProperty('--ctl-fs', startPx + 'px');
