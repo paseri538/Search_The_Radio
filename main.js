@@ -1423,3 +1423,42 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 750); // 750ミリ秒待つことで、ほとんどの端末で描画が安定する
     });
 })();
+
+// ===== 堅牢なスクロールロック解除 (保険機能) =====
+(function() {
+    // 監視対象となるモーダル要素のIDリスト
+    const modalIds = ['filterDrawer', 'aboutModal', 'historyModal'];
+
+    // 監視する処理
+    const observerCallback = (mutationsList, observer) => {
+        for (const mutation of mutationsList) {
+            // 監視対象のスタイルが変更されたか、またはhidden属性が変更された場合
+            if (mutation.type === 'attributes' && (mutation.attributeName === 'style' || mutation.attributeName === 'hidden')) {
+                const targetElement = mutation.target;
+                const style = window.getComputedStyle(targetElement);
+
+                // 要素が非表示になったと判断された場合
+                if (style.display === 'none' || targetElement.hidden) {
+                    // console.log(targetElement.id + ' is hidden, trying to release lock.');
+                    if (window.releaseBodyLock) {
+                        window.releaseBodyLock();
+                    }
+                }
+            }
+        }
+    };
+
+    // オブザーバーのインスタンスを作成
+    const observer = new MutationObserver(observerCallback);
+
+    // 各モーダル要素に対して監視を開始
+    modalIds.forEach(id => {
+        const modalElement = document.getElementById(id);
+        if (modalElement) {
+            observer.observe(modalElement, {
+                attributes: true, // 属性の変更を監視
+                attributeFilter: ['style', 'hidden'] // styleとhidden属性に限定
+            });
+        }
+    });
+})();

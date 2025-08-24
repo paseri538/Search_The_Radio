@@ -2787,8 +2787,9 @@ body.dark-mode #createPlaylistBtn {
 }
 
 
-/* ===== モーダル内のスクロールバウンドを無効化 ===== */
-#filterDrawer,
-#historyBody {
-  overscroll-behavior: contain;
+/* ===== オーバーレイ上でのタッチ操作によるスクロールを防止 ===== */
+#drawerBackdrop,
+#aboutModal,
+#historyModal {
+  touch-action: none;
 }
