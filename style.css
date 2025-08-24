@@ -227,10 +227,16 @@ body {
   border-color: #6c60e8 !important;
   box-shadow: 0 0 0 2.5px rgba(79,70,229,0.19) !important;
 }
-.guest-button:hover, .btn-corner:hover, .btn-year:hover {
-  transform: translateY(-1px) scale(1.03); box-shadow: 0 6px 18px -6px #978df644; background: #f5f4ff;
-  color: #242943;
+
+/* ===== ★★★ 修正箇所 ★★★ ===== */
+/* ホバーエフェクトを、マウス操作が可能なデバイスにのみ適用します */
+@media (hover: hover) {
+  .guest-button:hover, .btn-corner:hover, .btn-year:hover {
+    transform: translateY(-1px) scale(1.03); box-shadow: 0 6px 18px -6px #978df644; background: #f5f4ff;
+    color: #242943;
+  }
 }
+
 .filter-section:last-child { margin-bottom: 0; }
 
 .main-content {
@@ -272,9 +278,15 @@ body {
   margin-bottom: 0; align-items: center; text-decoration: none; color: inherit;
   border: 1px solid #e5e7ef; cursor: pointer; min-width: 0;
 }
-.episode-item:hover {
-  transform: translateY(-2px); box-shadow: 0 13px 32px -8px #5843e825; background: #f5f7fa;
+
+/* ===== ★★★ 修正箇所 ★★★ ===== */
+/* カードのホバーエフェクトも、マウス操作が可能なデバイスにのみ適用します */
+@media (hover: hover) {
+  .episode-item:hover {
+    transform: translateY(-2px); box-shadow: 0 13px 32px -8px #5843e825; background: #f5f7fa;
+  }
 }
+
 .thumbnail {
   width: 120px; flex-shrink: 0; border-radius: 9px; object-fit: cover; aspect-ratio: 16/9;
   background: #f6f6ff;
@@ -378,12 +390,18 @@ body.dark-mode .btn-year.active {
   border-color: #96e5c4 !important;
   box-shadow: 0 0 0 2px #86e4e466 !important;
 }
-body.dark-mode .guest-button:hover, 
-body.dark-mode .btn-corner:hover, 
-body.dark-mode .btn-year:hover {
-  background: #384d5d !important;
-  color: #96e5c4 !important;
+
+/* ===== ★★★ 修正箇所 ★★★ ===== */
+/* ダークモードのホバーエフェクトも同様に制限します */
+@media (hover: hover) {
+  body.dark-mode .guest-button:hover, 
+  body.dark-mode .btn-corner:hover, 
+  body.dark-mode .btn-year:hover {
+    background: #384d5d !important;
+    color: #96e5c4 !important;
+  }
 }
+
 
 /* 選択ボタンアイコン */
 body.dark-mode .filter-title .fa,
@@ -420,12 +438,17 @@ body.dark-mode .episode-item {
   background: #252c35 !important;
 transition: border .16s, box-shadow .18s, background .14s, color .14s;
 }
-body.dark-mode .episode-item:hover, 
-body.dark-mode .episode-item:focus-visible {
-  border: 1px solid #8de0ee !important;
-  box-shadow: 0 0 0 4px #b2f7ee70, 0 13px 32px -8px #172a3388;
-  background: #27343b !important;
-  z-index: 2;
+
+/* ===== ★★★ 修正箇所 ★★★ ===== */
+/* ダークモードのカードホバーエフェクトも同様に制限します */
+@media (hover: hover) {
+  body.dark-mode .episode-item:hover, 
+  body.dark-mode .episode-item:focus-visible {
+    border: 1px solid #8de0ee !important;
+    box-shadow: 0 0 0 4px #b2f7ee70, 0 13px 32px -8px #172a3388;
+    background: #27343b !important;
+    z-index: 2;
+  }
 }
 
 body.dark-mode input::placeholder,
@@ -826,8 +849,10 @@ body.dark-mode .autocomplete-item .type { border-color: #415766; color: #96e5c4;
     0 0 0 4px rgba(var(--history-dot-ring), .18),
     0 10px 24px -8px rgba(16,16,64,.35);
 }
-.history-item:hover{
-  border-color: color-mix(in oklab, var(--history-card-bd), var(--history-dot) 20%);
+@media (hover: hover) {
+  .history-item:hover{
+    border-color: color-mix(in oklab, var(--history-card-bd), var(--history-dot) 20%);
+  }
 }
 
 .history-item .date{ font-weight:800; margin-bottom:4px; color: color-mix(in oklab, var(--history-year), #ffffff); font-size: 13.5px; }
@@ -903,10 +928,13 @@ body.dark-mode .history-sticky-year{
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.timeline-circle:hover {
-  transform: scale(1.2);
-  box-shadow: 0 0 0 3px #fff, 0 6px 16px rgba(0,0,0,0.25);
+@media (hover: hover) {
+  .timeline-circle:hover {
+    transform: scale(1.2);
+    box-shadow: 0 0 0 3px #fff, 0 6px 16px rgba(0,0,0,0.25);
+  }
 }
+
 
 /* Connectors */
 .timeline-connector {
@@ -1039,7 +1067,9 @@ body.dark-mode{
 
 .history-modal .modal-close i{ font-size:1.25rem; }
 
-.history-modal .modal-close:hover{ transform: scale(1.06); background: rgba(255,255,255,0.92); }
+@media (hover: hover) {
+  .history-modal .modal-close:hover{ transform: scale(1.06); background: rgba(255,255,255,0.92); }
+}
 .history-modal .modal-close:active{ transform: scale(0.98); }
 .history-modal .modal-close:focus-visible{ outline: 3px solid #8de0ee; outline-offset: 2px; }
 
@@ -1050,8 +1080,10 @@ body.dark-mode .history-modal .modal-close{
   border-color: #3b4552;
   box-shadow: 0 8px 24px -12px rgba(0,0,0,.6);
 }
-body.dark-mode .history-modal .modal-close:hover{
-  background: rgba(255,255,255,0.16);
+@media (hover: hover) {
+  body.dark-mode .history-modal .modal-close:hover{
+    background: rgba(255,255,255,0.16);
+  }
 }
 
 /* 余白を少し広げる＆タイトル右に×のスペース確保 */
@@ -1116,8 +1148,10 @@ body.dark-mode #historyModal .modal-close{
   border-color: #3b4552;
   box-shadow: 0 8px 24px -12px rgba(0,0,0,.6);
 }
-body.dark-mode #historyModal .modal-close:hover{
-  background: rgba(255,255,255,0.16);
+@media (hover: hover) {
+  body.dark-mode #historyModal .modal-close:hover{
+    background: rgba(255,255,255,0.16);
+  }
 }
 
 /* ライトテーマ時の閉じるボタン（落ち着いた中間トーン） */
@@ -1127,8 +1161,10 @@ body.dark-mode #historyModal .modal-close:hover{
   border: 1px solid #d3d8e0;      /* 薄い境界線で浮かないように */
   box-shadow: 0 8px 24px -12px rgba(20,30,55,.12);
 }
-#historyModal .modal-close:hover {
-  background: #f6f8fc;            /* うっすらホバー */
+@media (hover: hover) {
+  #historyModal .modal-close:hover {
+    background: #f6f8fc;            /* うっすらホバー */
+  }
 }
 
 
@@ -1207,7 +1243,9 @@ footer {
   transition:transform .15s, background .15s, box-shadow .15s;
   -webkit-tap-highlight-color: transparent; /* モバイルの青ハイライト除去 */
 }
-.share-btn:hover{ transform:translateY(-1px); background:#f7f8ff; }
+@media (hover: hover) {
+  .share-btn:hover{ transform:translateY(-1px); background:#f7f8ff; }
+}
 
 /* ダークモード調整 */
 body.dark-mode .share-btn{
@@ -1215,8 +1253,10 @@ body.dark-mode .share-btn{
   color:#a6e1fa;
   border-color:#33404c;
 }
-body.dark-mode .share-btn:hover{
-  background:#323a47;
+@media (hover: hover) {
+  body.dark-mode .share-btn:hover{
+    background:#323a47;
+  }
 }
 
 
@@ -1482,13 +1522,16 @@ body.fav-only .episode-item:not(.is-fav) {
 
 
 /* === Hover: 色変化のみ（ダークモード） === */
-body.dark-mode #historyToggle:hover {
-  background: var(--filter-btn-active) !important;
-  border-color: var(--btn-main) !important;
-  color: var(--btn-hover) !important;
-  transform: none !important;
-  box-shadow: none !important;
+@media (hover: hover) {
+  body.dark-mode #historyToggle:hover {
+    background: var(--filter-btn-active) !important;
+    border-color: var(--btn-main) !important;
+    color: var(--btn-hover) !important;
+    transform: none !important;
+    box-shadow: none !important;
+  }
 }
+
 
 /* === Buttons: focus-visible はアウトラインのみ（色は変えない） === */
 #historyToggle:focus-visible {
@@ -1669,10 +1712,12 @@ html[data-theme="dark"] #filterDrawer .drawer-footer{
   box-shadow: 0 2px 14px -10px rgba(0,0,0,.25);
   transition: background .15s, border .15s, transform .08s;
 }
-#filterDrawer .drawer-close-btn:hover,
-#filterDrawer .drawer-close-btn:focus{
-  background: #f1f5ff;
-  border-color: #6654e8;
+@media (hover: hover) {
+  #filterDrawer .drawer-close-btn:hover,
+  #filterDrawer .drawer-close-btn:focus{
+    background: #f1f5ff;
+    border-color: #6654e8;
+  }
 }
 #filterDrawer .drawer-close-btn:active{ transform: translateY(1px); }
 @media (max-width: 640px){
@@ -1730,8 +1775,10 @@ html[data-theme="dark"] #filterDrawer .drawer-footer{
   transition: transform 0.15s ease, box-shadow 0.15s ease;
   box-shadow: 0 2px 5px -2px rgba(0,0,0,0.2);
 }
-.theme-btn:hover {
-  transform: translateY(-2px);
+@media (hover: hover) {
+  .theme-btn:hover {
+    transform: translateY(-2px);
+  }
 }
 .theme-btn.active {
   box-shadow: 0 0 0 3px var(--btn-main, #6654e8);
@@ -1867,13 +1914,35 @@ body[class*="theme-"] #filterDrawer { background: var(--card-bg) !important; bor
 body[class*="theme-"] .filter-title { color: var(--btn-hover) !important; }
 body[class*="theme-"] .guest-button, body[class*="theme-"] .btn-corner, body[class*="theme-"] .btn-year { background: var(--btn-bg) !important; border-color: var(--history-card-bd) !important; color: var(--text-color) !important; }
 body[class*="theme-"] .guest-button.active, body[class*="theme-"] .btn-corner.active, body[class*="theme-"] .btn-year.active { border-color: var(--btn-main) !important; background: var(--filter-btn-active) !important; box-shadow: 0 0 0 2.5px var(--input-focus-shadow) !important; }
-body[class*="theme-"] .guest-button:hover, body[class*="theme-"] .btn-corner:hover, body[class*="theme-"] .btn-year:hover { background: var(--filter-btn-active) !important; border-color: var(--btn-main) !important; transform: none !important; box-shadow: none !important; }
+
+/* ===== ★★★ 修正箇所 ★★★ ===== */
+/* テーマカラーのホバーエフェクトも同様に制限します */
+@media (hover: hover) {
+  body[class*="theme-"] .guest-button:hover, 
+  body[class*="theme-"] .btn-corner:hover, 
+  body[class*="theme-"] .btn-year:hover { 
+    background: var(--filter-btn-active) !important; 
+    border-color: var(--btn-main) !important; 
+    transform: none !important; 
+    box-shadow: none !important; 
+  }
+}
+
 body[class*="theme-"] .episode-item { border-color: var(--history-card-bd) !important; background: var(--item-bg) !important; color: var(--text-color) !important; }
-body[class*="theme-"] .episode-item:hover { background: var(--filter-btn-active) !important; border-color: var(--btn-main) !important; transform: translateY(-2px) !important; box-shadow: none !important; }
+@media (hover: hover) {
+  body[class*="theme-"] .episode-item:hover { 
+    background: var(--filter-btn-active) !important; 
+    border-color: var(--btn-main) !important; 
+    transform: translateY(-2px) !important; 
+    box-shadow: none !important; 
+  }
+}
 body[class*="theme-"] .episode-meta, body[class*="theme-"] .fav-btn i { color: var(--muted) !important; }
 body[class*="theme-"] .page-btn, body[class*="theme-"] .more-btn { background: var(--btn-bg) !important; color: var(--btn-hover) !important; border: 1px solid var(--history-card-bd) !important; }
 body[class*="theme-"] .page-btn.active, body[class*="theme-"] .more-btn:active { background: var(--active-filter) !important; color: var(--active-filter-text) !important; border-color: var(--active-filter) !important; }
-body[class*="theme-"] .page-btn:not(.active):hover { background: var(--filter-btn-active) !important; }
+@media (hover: hover) {
+  body[class*="theme-"] .page-btn:not(.active):hover { background: var(--filter-btn-active) !important; }
+}
 body[class*="theme-"] .fav-btn { background: var(--btn-bg) !important; border-color: var(--history-card-bd) !important; }
 body[class*="theme-"] .fav-btn.active { background: var(--active-filter) !important; border-color: var(--active-filter) !important; }
 body[class*="theme-"] .fav-btn.active i { color: var(--active-filter-text) !important; }
@@ -1881,21 +1950,31 @@ body[class*="theme-"] .history-toggle { background: var(--history-card-bg) !impo
 body[class*="theme-"] .history-toggle .title, body[class*="theme-"] .history-modal .modal-title { color: var(--history-year) !important; }
 body[class*="theme-"] .filters-bar { background: var(--bg-color) !important; }
 body[class*="theme-"] .filter-tag { background: var(--active-filter) !important; color: var(--active-filter-text) !important; }
-body[class*="theme-"] #toTopBtn:hover { background: var(--filter-btn-active) !important; border-color: var(--btn-main) !important; }
+@media (hover: hover) {
+  body[class*="theme-"] #toTopBtn:hover { background: var(--filter-btn-active) !important; border-color: var(--btn-main) !important; }
+}
 body[class*="theme-"] .share-btn { background: var(--btn-bg) !important; color: var(--btn-main) !important; border-color: var(--history-card-bd) !important; }
-body[class*="theme-"] .share-btn:hover { border-color: var(--btn-main) !important; transform: translateY(-2px) !important; background: var(--filter-btn-active) !important;}
+@media (hover: hover) {
+  body[class*="theme-"] .share-btn:hover { border-color: var(--btn-main) !important; transform: translateY(-2px) !important; background: var(--filter-btn-active) !important;}
+}
 body[class*="theme-"] #filterDrawer .drawer-footer { background: var(--bg-color) !important; border-top-color: var(--history-card-bd) !important; backdrop-filter: none !important; }
 body[class*="theme-"] #filterDrawer .drawer-close-btn { background: var(--btn-bg) !important; border-color: var(--history-card-bd) !important; color: var(--btn-main) !important; }
-body[class*="theme-"] #filterDrawer .drawer-close-btn:hover { background: var(--filter-btn-active) !important; border-color: var(--btn-main) !important; }
+@media (hover: hover) {
+  body[class*="theme-"] #filterDrawer .drawer-close-btn:hover { background: var(--filter-btn-active) !important; border-color: var(--btn-main) !important; }
+}
 body[class*="theme-"] #results .no-results { background: var(--card-bg) !important; border: 1px solid var(--history-card-bd) !important; color: var(--text-color) !important; box-shadow: none !important; }
 body[class*="theme-"] .modal-content.history-modal, body[class*="theme-"] .history-modal .modal-header { background: var(--card-bg) !important; border-color: var(--history-card-bd) !important; }
 body[class*="theme-"] .history-item { background: var(--btn-bg) !important; border-color: var(--history-card-bd) !important; box-shadow: none !important; }
 body[class*="theme-"] #historyCloseBtn { background: var(--btn-bg) !important; color: var(--btn-main) !important; border-color: var(--history-card-bd) !important; }
-body[class*="theme-"] #historyCloseBtn:hover { background: var(--filter-btn-active) !important; }
+@media (hover: hover) {
+  body[class*="theme-"] #historyCloseBtn:hover { background: var(--filter-btn-active) !important; }
+}
 body[class*="theme-"] #aboutModalContent { background: var(--card-bg) !important; color: var(--text-color) !important; }
 body[class*="theme-"] #aboutModalContent b, body[class*="theme-"] #aboutModalContent a, body[class*="theme-"] #aboutCloseBtn, body[class*="theme-"] .about-title { color: var(--muted) !important; }
 body[class*="theme-"] .autocomplete { background: var(--btn-bg) !important; border-color: var(--history-card-bd) !important; }
-body[class*="theme-"] .autocomplete-item:hover, body[class*="theme-"] .autocomplete-item[aria-selected="true"] { background: var(--filter-btn-active) !important; }
+@media (hover: hover) {
+  body[class*="theme-"] .autocomplete-item:hover, body[class*="theme-"] .autocomplete-item[aria-selected="true"] { background: var(--filter-btn-active) !important; }
+}
 body[class*="theme-"] .autocomplete-item .type { border-color: var(--history-card-bd) !important; color: var(--muted) !important; }
 body[class*="theme-"] .autocomplete-item .match { color: var(--btn-main) !important; }
 body[class*="theme-"] .ts-btn { background-color: var(--active-filter) !important; color: var(--active-filter-text) !important; border-color: var(--active-filter) !important; }
@@ -2009,7 +2088,9 @@ body[class*="theme-"]  {
   border: none; background: transparent; font-size: 24px; color: #aaa;
   cursor: pointer; line-height: 1; padding: 0; transition: color 0.15s;
 }
-#aboutCloseBtn:hover { color: #333; }
+@media (hover: hover) {
+  #aboutCloseBtn:hover { color: #333; }
+}
 
 /* ロゴ・タイトル・本文 */
 .about-logo { width: 200px; margin-bottom: 16px; }
@@ -2049,10 +2130,12 @@ body.dark-mode .ts-btn {
 }
 
 /* ホバー時などに色が戻ってしまうのを防ぐための追加指定 */
-body.dark-mode #toTopBtn:hover,
-body.dark-mode #toTopBtn:focus,
-body.dark-mode .share-btn:hover {
-  color: #ffffff !important;
+@media (hover: hover) {
+  body.dark-mode #toTopBtn:hover,
+  body.dark-mode #toTopBtn:focus,
+  body.dark-mode .share-btn:hover {
+    color: #ffffff !important;
+  }
 }
 
 /* 1. 並び替えセレクトボックスの文字色を白に */
@@ -2106,11 +2189,14 @@ body:not(.dark-mode):not([class*="theme-"]) .btn-year[aria-pressed="true"] {
 }
 
 /* フィルターDrawer内のボタン (ホバー時) */
-body:not(.dark-mode):not([class*="theme-"]) .guest-button:hover,
-body:not(.dark-mode):not([class*="theme-"]) .btn-corner:hover,
-body:not(.dark-mode):not([class*="theme-"]) .btn-year:hover {
-  box-shadow: 0 6px 18px -6px rgba(0, 0, 0, 0.15) !important;
+@media (hover: hover) {
+  body:not(.dark-mode):not([class*="theme-"]) .guest-button:hover,
+  body:not(.dark-mode):not([class*="theme-"]) .btn-corner:hover,
+  body:not(.dark-mode):not([class*="theme-"]) .btn-year:hover {
+    box-shadow: 0 6px 18px -6px rgba(0, 0, 0, 0.15) !important;
+  }
 }
+
 
 /* タイムスタンプボタン */
 body:not(.dark-mode):not([class*="theme-"]) .ts-btn {
@@ -2135,10 +2221,13 @@ body:not(.dark-mode):not([class*="theme-"]) .more-btn:active {
   background: #000000 !important;
   color: #ffffff !important;
 }
-body:not(.dark-mode):not([class*="theme-"]) .page-btn:not(.active):hover, 
-body:not(.dark-mode):not([class*="theme-"]) .more-btn:not(:active):hover {
-  background: #dddddd !important;
+@media (hover: hover) {
+  body:not(.dark-mode):not([class*="theme-"]) .page-btn:not(.active):hover, 
+  body:not(.dark-mode):not([class*="theme-"]) .more-btn:not(:active):hover {
+    background: #dddddd !important;
+  }
 }
+
 
 /* 検索ボックスのフォーカスリング */
 body:not(.dark-mode):not([class*="theme-"]) .searchbox-input:focus {
@@ -2209,11 +2298,13 @@ body[class*="theme-"] .btn-year.active {
 
 /* --- 4. ホバー時のスタイルも調整（任意ですが推奨） --- */
 /* 選択されていないボタンのホバーエフェクトを少し抑えめにして、選択状態との差を明確にします */
-.guest-button:not([aria-pressed="true"]):hover,
-.btn-corner:not([aria-pressed="true"]):hover,
-.btn-year:not([aria-pressed="true"]):hover {
-  transform: translateY(-1px) scale(1.02);
-  box-shadow: 0 4px 12px -4px rgba(0,0,0,0.1);
+@media (hover: hover) {
+  .guest-button:not([aria-pressed="true"]):hover,
+  .btn-corner:not([aria-pressed="true"]):hover,
+  .btn-year:not([aria-pressed="true"]):hover {
+    transform: translateY(-1px) scale(1.02);
+    box-shadow: 0 4px 12px -4px rgba(0,0,0,0.1);
+  }
 }
 
 /* ===== 修正: スマホ表示時のテーマ選択ボタンの比率を修正 ===== */
@@ -2230,13 +2321,15 @@ body[class*="theme-"] .btn-year.active {
 
 
 
-body.theme-pink .episode-item:hover,
-body.theme-yellow .episode-item:hover,
-body.theme-blue .episode-item:hover,
-body.theme-red .episode-item:hover
-{
-transform: none !important; 
-box-shadow: none !important;  
+@media (hover: hover) {
+  body.theme-pink .episode-item:hover,
+  body.theme-yellow .episode-item:hover,
+  body.theme-blue .episode-item:hover,
+  body.theme-red .episode-item:hover
+  {
+  transform: none !important; 
+  box-shadow: none !important;  
+  }
 }
 
 
@@ -2667,9 +2760,12 @@ body.theme-red #filterToggleBtn[aria-expanded="true"], body.theme-red #favOnlyTo
   white-space: nowrap;
 }
 
-#createPlaylistBtn:hover {
-  background-color: #c21d19;
+@media (hover: hover) {
+  #createPlaylistBtn:hover {
+    background-color: #c21d19;
+  }
 }
+
 
 /* ボタンがhidden属性を持つ場合は非表示にする */
 #createPlaylistBtn[hidden] {
@@ -2680,6 +2776,8 @@ body.theme-red #filterToggleBtn[aria-expanded="true"], body.theme-red #favOnlyTo
 body.dark-mode #createPlaylistBtn {
   background-color: #ff4742;
 }
-body.dark-mode #createPlaylistBtn:hover {
-  background-color: #e52d27;
+@media (hover: hover) {
+  body.dark-mode #createPlaylistBtn:hover {
+    background-color: #e52d27;
+  }
 }
