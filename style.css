@@ -594,8 +594,11 @@ body.dark-mode #loading-screen {
   line-height: 1.4;
   white-space: normal !important;
   word-break: break-all !important;
-  overflow: visible !important;
-  max-width: 280px;
+  max-width: 100%;
+  
+  /* ▼▼▼ 以下2行を追加 ▼▼▼ */
+  min-width: 0; /* Flexboxレイアウト内で正しく縮むようにするおまじない */
+  overflow: hidden; /* この要素自体のはみ出しも防ぐ */
 }
 .guest-one-line {
   display: inline-block;
@@ -2684,12 +2687,13 @@ body.theme-red #filterToggleBtn[aria-expanded="true"], body.theme-red #favOnlyTo
 }
 
 /* ======================================================================== */
-/* ===== ゲスト名が長い場合のはみ出しを修正 ===== */
+/* ===== ゲスト名が長い場合に文字サイズを自動調整 ===== */
 /* ======================================================================== */
 .guest-one-line {
-  white-space: normal !important; /* 文字の折り返しを許可する */
-  word-break: break-all;         /* 長い単語でも枠の端で強制的に改行させる */
-  vertical-align: initial !important; /* 縦位置をリセットして揃える */
+  display: block; /* 親要素の幅いっぱいに広がるように設定 */
+  width: 100%;
+  white-space: nowrap; /* ★重要: 改行を禁止し、1行表示を強制 */
+  overflow: hidden; /* はみ出した部分を隠す */
 }
 
 /* ======================================================================== */

@@ -394,7 +394,7 @@ function createPlaylist() {
         alert('有効な動画IDが見つかりませんでした。');
         return;
     }
-    const playlistUrl = `https://www.youtube.com/watch_videos?video_ids=${videoIds.join(',')}`;
+    const playlistUrl = `https://www.youtube.com/watch?v=${videoIds[0]}&list=${videoIds.join(',')}`;
     window.open(playlistUrl, '_blank', 'noopener');
 }
 
@@ -531,7 +531,7 @@ function search(opts = {}) {
   if (!isRestoringURL) { buildURLFromState({ method: 'push' }); }
 
   renderResults(res, currentPage);
-  fitGuestLines();
+  setTimeout(fitGuestLines, 0);
   window.addEventListener('orientationchange', () => setTimeout(fitGuestLines, 120));
   renderPagination(res.length);
   updateActiveFilters();
@@ -540,11 +540,12 @@ function search(opts = {}) {
 
 function fitGuestLines() {
   document.querySelectorAll('.guest-one-line').forEach(el => {
-    el.style.fontSize = '';
+    el.style.fontSize = ''; // スタイルを一旦リセット
     const maxPx = parseFloat(getComputedStyle(el).fontSize) || 16;
     let size = maxPx;
-    const isMobile = window.innerWidth <= 900;
-    const minPx = isMobile ? 9 : 11;
+    const minPx = 9; // PC/スマホ共通で最小サイズを9pxに設定
+
+    // 要素の幅に収まるまで、フォントサイズを少しずつ小さくする
     while (el.scrollWidth > el.clientWidth && size > minPx) {
       size -= 0.5;
       el.style.fontSize = size + 'px';
@@ -592,7 +593,7 @@ function renderResults(arr, page = 1) {
       const episodeKey = it.episode === "02" && it.title.includes("京まふ") ? "京まふ" : it.episode;
       const luckyPerson = luckyButtonData[episodeKey];
       if (luckyPerson) {
-        guestText = `ラッキーボタン：${luckyPerson}`;
+        guestText = luckyPerson;
       }
     }
     
