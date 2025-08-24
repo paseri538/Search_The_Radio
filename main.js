@@ -122,7 +122,7 @@ let historyData = [];
 
 async function loadExternalData() {
     try {
-        const [episodesRes, readingsRes, keywordsRes, luckyButtonRes] = await Promise.all([
+        const [episodesRes,readingsRes,keywordsRes,luckyButtonRes,historyRes] = await Promise.all([
             fetch('episodes.json'),
             fetch('readings.json'),
             fetch('keywords.json'),

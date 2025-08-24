@@ -2785,3 +2785,10 @@ body.dark-mode #createPlaylistBtn {
     background-color: #e52d27;
   }
 }
+
+
+/* ===== モーダル内のスクロールバウンドを無効化 ===== */
+#filterDrawer,
+#historyBody {
+  overscroll-behavior: contain;
+}
