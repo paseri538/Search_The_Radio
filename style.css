@@ -2793,3 +2793,45 @@ body.dark-mode #createPlaylistBtn {
 #historyModal {
   touch-action: none;
 }
+
+/* style.css の一番下に追加してください */
+
+/* =================================================== */
+/* ★★★ PWA/モバイル対応強化スタイル ★★★ */
+/* =================================================== */
+
+/* --- PWAモードのセーフエリア対応 --- */
+/* :rootで定義済みのセーフエリア変数を活用します */
+:root {
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+}
+
+/* PWAモードで起動された場合のみ、ヘッダーの上の余白を調整 */
+.is-standalone .sticky-search-area {
+  padding-top: calc(0.38rem + var(--safe-top));
+}
+
+/* PWAモードで起動された場合のみ、コンテンツ全体の左右の余白を調整 */
+.is-standalone .main-content {
+  padding-left: max(15px, var(--safe-left));
+  padding-right: max(15px, var(--safe-right));
+}
+
+/* PWAモードで起動された場合のみ、画面下のボタン等がホームバーに被らないように調整 */
+.is-standalone .pagination-area,
+.is-standalone footer {
+  padding-bottom: var(--safe-bottom);
+}
+.is-standalone #theme-toggle-btn {
+  bottom: calc(18px + var(--safe-bottom));
+}
+
+/* --- 100vh問題対策 --- */
+/* JSで設定した --vh 変数を使ってローディング画面の高さを設定 */
+#loading-screen {
+  height: calc(var(--vh, 1vh) * 100);
+}
+
