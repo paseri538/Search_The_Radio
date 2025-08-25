@@ -733,19 +733,24 @@ function setupModals() {
         let closeTimer = null;
 
         const openModal = () => {
-            // 既に開いている、または閉じるアニメーション中なら何もしない
             if (modal.classList.contains('show') || modal.classList.contains('closing')) return;
-            
-            // 閉じるアニメーションのクラスが残っていれば削除
+
+            // ★ここからが修正箇所です
+            // アニメーションをリセットするために、一度クラスを確実に削除します
+            modal.classList.remove('show');
             modal.classList.remove('closing');
-            
+
+            // ブラウザに上記の変更を強制的に認識させます（アニメーションリセットのおまじないです）
+            void modal.offsetWidth;
+            // ★ここまでが修正箇所です
+
             if (modalId === 'historyModal' && !modal.dataset.built) {
                 buildTimeline(historyData);
                 modal.dataset.built = 'true';
             }
-            
+
             modal.hidden = false;
-            
+
             requestAnimationFrame(() => {
                 modal.classList.add('show');
             });
