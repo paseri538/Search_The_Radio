@@ -752,22 +752,39 @@ function setupModals() {
         
         const closeModal = () => {
             if (!modal.classList.contains('show')) return;
-
+        
             modal.classList.add('closing');
             modal.classList.remove('show');
-
-            // 'animationend' イベントを一度だけリッスンして、アニメーション完了後に処理を行う
-            const onAnimationEnd = () => {
+        
+            let isClosed = false;
+        
+            // 閉じる処理の本体
+            const finishClose = () => {
+                if (isClosed) return; // 処理が重複しないようにガード
+                isClosed = true;
+        
                 modal.hidden = true;
                 modal.classList.remove('closing');
+        
+                // 念のため、イベントリスナーを解除
                 modal.removeEventListener('animationend', onAnimationEnd);
+                
+                window.releaseBodyLock();
             };
-
+        
+            // アニメーション完了を待つリスナー
+            const onAnimationEnd = (e) => {
+                // イベントの発生元がモーダル自身の場合のみ処理する
+                if (e.target === modal) {
+                    finishClose();
+                }
+            };
+        
             modal.addEventListener('animationend', onAnimationEnd);
-
-            window.releaseBodyLock();
+        
+            // animationendが発火しない場合の安全策としてタイマーを設定
+            setTimeout(finishClose, 300); // 300ミリ秒後に強制実行
         };
-
         openTrigger.addEventListener('click', e => { e.preventDefault(); openModal(); });
         closeBtn.addEventListener('click', closeModal);
         modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
@@ -1042,12 +1059,19 @@ function initializeAutocomplete() {
   };
 
   const pick = (index) => {
-    if (!viewItems[index]) return;
-    inputEl.value = viewItems[index].label;
-    clear();
-    search();
-    inputEl.focus();
-  };
+        if (!viewItems[index]) return;
+        inputEl.value = viewItems[index].label;
+        clear();
+        search();
+        
+        // requestAnimationFrame を使い、ブラウザの描画更新後にフォーカスを当てる
+        requestAnimationFrame(() => {
+          inputEl.focus();
+          // iOSでキーボードが正しく表示されない場合があるため、カーソル位置を明示的に末尾に設定
+          const len = inputEl.value.length;
+          inputEl.setSelectionRange(len, len);
+        });
+      };
 
   const scoreEntry = (entry, normQ, raw) => {
     let prefix = false, part = false;

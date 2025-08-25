@@ -2851,3 +2851,8 @@ body.dark-mode #createPlaylistBtn {
 #aboutModal.closing #aboutModalContent {
   animation: modalPopOut .18s ease-in forwards;
 }
+
+
+html {
+  scroll-padding-top: var(--header-offset, 186px);
+}
