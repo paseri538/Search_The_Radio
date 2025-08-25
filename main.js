@@ -1,3 +1,5 @@
+let isInputFocused = false;
+
 /**
  * ===================================================
  * ★★★ データと状態管理 ★★★
@@ -1058,19 +1060,18 @@ function initializeAutocomplete() {
     boxEl.appendChild(fragment);
   };
 
-  const pick = (index) => {
+ const pick = (index) => {
         if (!viewItems[index]) return;
         inputEl.value = viewItems[index].label;
         clear();
-        search();
-        
-        // requestAnimationFrame を使い、ブラウザの描画更新後にフォーカスを当てる
-        requestAnimationFrame(() => {
+
+        // ★変更点: 検索とフォーカスの処理をsetTimeoutで分離し、競合を防ぐ
+        setTimeout(() => {
+          search();
           inputEl.focus();
-          // iOSでキーボードが正しく表示されない場合があるため、カーソル位置を明示的に末尾に設定
           const len = inputEl.value.length;
           inputEl.setSelectionRange(len, len);
-        });
+        }, 0);
       };
 
   const scoreEntry = (entry, normQ, raw) => {
@@ -1152,9 +1153,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // モバイルブラウザの100vh問題を解決
   const setVh = () => {
+    // ★変更点: 入力中はvhの更新をスキップして揺れを防ぐ
+    if (isInputFocused) return;
     document.documentElement.style.setProperty('--vh', `${window.innerHeight * 0.01}px`);
   };
   setVh();
   window.addEventListener('resize', setVh, { passive: true });
   window.addEventListener('orientationchange', setVh, { passive: true });
+
+  // ★追加: 入力欄のフォーカス状態を監視
+  document.addEventListener('DOMContentLoaded', () => {
+    const searchInput = document.getElementById('searchBox');
+    if (searchInput) {
+      searchInput.addEventListener('focus', () => { isInputFocused = true; });
+      searchInput.addEventListener('blur', () => {
+        isInputFocused = false;
+        // フォーカスが外れたらvhを再計算
+        setTimeout(setVh, 100); 
+      });
+    }
+  });
 })();
