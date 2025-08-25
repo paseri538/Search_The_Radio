@@ -51,25 +51,42 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// 3. fetchイベントの処理（リクエストへの応答）
+// sw.js のこの部分を丸ごと差し替えてください
+
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // Stale-While-Revalidate戦略を適用するファイルの拡張子
-  const staleWhileRevalidate = ['.css', '.js', '.json', '.png', '.jpg', '.jpeg', '.gif', '.ico', '.webmanifest'];
-  const isSWR = staleWhileRevalidate.some(ext => url.pathname.endsWith(ext));
-  
-  // YouTubeサムネイルのリクエストか判定
+  // --- ▼▼▼ ここからが変更箇所です ▼▼▼ ---
+
+  // 1. JSONデータファイルは「Network First」戦略を適用
+  //    (常に最新の情報を取得しにいく)
+  if (url.pathname.endsWith('.json')) {
+    event.respondWith(networkFirstStrategy(request));
+    return; // このリクエストの処理はここまで
+  }
+
+  // 2. CSS, JS, 画像ファイルなどは「Stale-While-Revalidate」戦略を適用
+  //    (表示速度を優先し、裏側で更新)
+  const staleWhileRevalidateExtensions = ['.css', '.js', '.png', '.jpg', '.jpeg', '.gif', '.ico', '.webmanifest'];
+  const isSWR = staleWhileRevalidateExtensions.some(ext => url.pathname.endsWith(ext));
   const isYoutubeThumb = url.hostname.includes('i.ytimg.com');
 
   if (isSWR || isYoutubeThumb) {
-    // CSS, JS, JSON, 画像ファイルには Stale-While-Revalidate 戦略を使用
     event.respondWith(staleWhileRevalidateStrategy(request));
-  } else if (request.mode === 'navigate') {
-    // ページのナビゲーションリクエスト (index.htmlなど) には Network First 戦略を使用
-    event.respondWith(networkFirstStrategy(request));
+    return; // このリクエストの処理はここまで
   }
+
+  // 3. ページのナビゲーションリクエスト (HTML) は「Network First」戦略を適用
+  //    (ページ自体は常に最新版を試みる)
+  if (request.mode === 'navigate') {
+    event.respondWith(networkFirstStrategy(request));
+    return; // このリクエストの処理はここまで
+  }
+
+  // --- ▲▲▲ ここまでが変更箇所です ▲▲▲ ---
+
+  // 上記のいずれにも当てはまらないリクエストは、ブラウザのデフォルトの動作に任せます。
 });
 
 /**

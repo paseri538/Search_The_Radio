@@ -731,11 +731,11 @@ function setupModals() {
         let closeTimer = null;
 
         const openModal = () => {
-            if (closeTimer) {
-                clearTimeout(closeTimer);
-                closeTimer = null;
-            }
-            if (modal.classList.contains('show')) return;
+            // 既に開いている、または閉じるアニメーション中なら何もしない
+            if (modal.classList.contains('show') || modal.classList.contains('closing')) return;
+            
+            // 閉じるアニメーションのクラスが残っていれば削除
+            modal.classList.remove('closing');
             
             if (modalId === 'historyModal' && !modal.dataset.built) {
                 buildTimeline(historyData);
@@ -744,9 +744,6 @@ function setupModals() {
             
             modal.hidden = false;
             
-            // ★ 変更点: アニメーションの最適化
-            modalContent.style.willChange = 'transform, opacity';
-
             requestAnimationFrame(() => {
                 modal.classList.add('show');
             });
@@ -756,17 +753,17 @@ function setupModals() {
         const closeModal = () => {
             if (!modal.classList.contains('show')) return;
 
+            modal.classList.add('closing');
             modal.classList.remove('show');
-            
-            // ★ 変更点: アニメーション終了後に will-change を解除
-            modalContent.addEventListener('transitionend', () => {
-                modalContent.style.willChange = '';
-            }, { once: true });
 
-            closeTimer = setTimeout(() => {
+            // 'animationend' イベントを一度だけリッスンして、アニメーション完了後に処理を行う
+            const onAnimationEnd = () => {
                 modal.hidden = true;
-                closeTimer = null; 
-            }, 300); 
+                modal.classList.remove('closing');
+                modal.removeEventListener('animationend', onAnimationEnd);
+            };
+
+            modal.addEventListener('animationend', onAnimationEnd);
 
             window.releaseBodyLock();
         };
@@ -1049,6 +1046,7 @@ function initializeAutocomplete() {
     inputEl.value = viewItems[index].label;
     clear();
     search();
+    inputEl.focus();
   };
 
   const scoreEntry = (entry, normQ, raw) => {
