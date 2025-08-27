@@ -2845,102 +2845,79 @@ html {
   scroll-padding-top: var(--header-offset, 186px);
 }
 
-/* =================================================================== */
-/* ★★★ PWA (ホーム画面起動) UI改善 ★★★ */
-/* =================================================================== */
-
-/* --- PWAモードかつスマホ表示 (991px以下) の場合に適用 --- */
-@media (max-width: 991px) {
-
-  /* PWAモードの時だけ、コントロールボタンのスタイルを上書き */
-  .is-standalone .search-row-controls {
-    /* コンテナをアプリのナビゲーションバー風に */
-    padding-top: 6px;
-    padding-bottom: 2px; /* iOSのホームバーなどを考慮し、下は少し詰める */
-    border-top: 1px solid rgba(128, 128, 128, 0.2);
-    margin-top: 4px;
-    gap: 0; /* ボタン間のgapをリセット */
-  }
-
-  /* PWAモード時の4つのボタン共通スタイル */
-  .is-standalone #filterToggleBtn,
-  .is-standalone #favOnlyToggleBtn,
-  .is-standalone #randomBtn,
-  .is-standalone .reset-btn {
-    /* 既存のスタイルをリセット */
-    background: none !important;
-    border: none !important;
-    box-shadow: none !important;
-    height: auto !important; /* 高さを自動調整に */
-    padding: 4px 2px 6px 2px !important;
-    border-radius: 8px !important; /* タップ範囲を示すための角丸 */
-    gap: 4px !important; /* アイコンとテキストの間隔 */
-
-    /* アイコンとテキストを縦に並べる */
-    flex-direction: column;
-
-    /* テキストの色をデフォルトで少し薄く */
-    color: #888 !important;
-    transition: background-color 0.2s ease, color 0.2s ease !important;
-  }
+/* ======================================================================== */
+/* ===== (V2.1) スマホ表示時: コントロールボタンのデザインを微調整 ===== */
+/* ======================================================================== */
+@media (max-width: 768px) {
   
-  /* PWAモード時のアイコンのスタイル */
-  .is-standalone #filterToggleBtn i,
-  .is-standalone #favOnlyToggleBtn i,
-  .is-standalone #randomBtn i,
-  .is-standalone .reset-btn::before {
-    font-size: 22px !important; /* アイコンを大きく */
+  /* 4つのボタンに共通の縦並びレイアウトを適用 */
+  .search-row-controls #filterToggleBtn,
+  .search-row-controls #favOnlyToggleBtn,
+  .search-row-controls #randomBtn,
+  .search-row-controls .reset-btn {
+    flex-direction: column !important;
+    height: auto !important;
+    min-height: 60px;
+    padding: 8px 4px !important;
+    gap: 4px !important;
+  }
+
+  /* アイコンのスタイルを調整 */
+  #filterToggleBtn i,
+  #favOnlyToggleBtn i,
+  #randomBtn i,
+  .reset-btn::before {
+    font-size: 22px !important;
     line-height: 1 !important;
     margin: 0 !important;
-    height: 24px; /* アイコンの高さを揃える */
+    width: auto !important;
+    font-weight: 900 !important;
+  }
+  
+  /* リセットボタンのアイコンをFontAwesomeに統一 */
+  .reset-btn::before {
+      font-family: "Font Awesome 6 Free" !important;
+      content: "\f2ea" !important; /* fa-rotate-left アイコン */
   }
 
-  /* PWAモード時のテキストラベルのスタイル */
-  .is-standalone #filterToggleBtn::after,
-  .is-standalone #favOnlyToggleBtn span,
-  .is-standalone #randomBtn span,
-  .is-standalone .reset-btn {
-    font-size: 10px !important; /* テキストを小さく */
+  /* 各アイコンの垂直位置を個別に微調整 */
+  #filterToggleBtn i {
+    position: relative;
+    top: 0.05em;
+  }
+  #favOnlyToggleBtn i {
+    position: relative;
+    top: 0.02em;
+  }
+  #randomBtn i {
+    position: relative;
+    top: 0.05em;
+  }
+  .reset-btn::before {
+    position: relative;
+    top: 0.10em; /* ★変更点: 0.02emから0.05emに調整し、アイコンを少し下に移動 */
+  }
+
+  /* テキスト部分のスタイルを調整 */
+  #filterToggleBtn::after,
+  #favOnlyToggleBtn span,
+  #randomBtn span,
+  .reset-btn {
+    font-size: 11px !important;
     font-weight: 500 !important;
+  }
+
+  .reset-btn {
     line-height: 1.2 !important;
   }
-  
-  /* リセットボタンのテキストは非表示にし、アイコン(::before)とテキスト(::after)で再構成 */
-  .is-standalone .reset-btn {
-    font-size: 0 !important; /* 元のテキストを消す */
-  }
-  .is-standalone .reset-btn::after {
-    content: "リセット"; /* 擬似要素でテキストを再生成 */
-    font-size: 10px !important;
-    display: block;
-  }
-  
-  /* アクティブ状態のボタンのスタイル (フィルタを開いている時、お気に入りONの時) */
-  .is-standalone #filterToggleBtn[aria-expanded="true"],
-  .is-standalone #favOnlyToggleBtn[aria-pressed="true"] {
-    color: var(--btn-main, #6654e8) !important; /* アクティブカラー */
-  }
+}
 
-  /* ダークモード時のアクティブカラー */
-  .is-standalone.dark-mode #filterToggleBtn[aria-expanded="true"],
-  .is-standalone.dark-mode #favOnlyToggleBtn[aria-pressed="true"] {
-    color: #fff !important; /* ダークモードでは白に */
-  }
 
-  /* ホバーやアクティブ時の視覚効果をシンプルに */
-  @media (hover: hover) {
-    .is-standalone #filterToggleBtn:hover,
-    .is-standalone #favOnlyToggleBtn:hover,
-    .is-standalone #randomBtn:hover,
-    .is-standalone .reset-btn:hover {
-      background-color: rgba(128, 128, 128, 0.1) !important;
-    }
-  }
-  .is-standalone #filterToggleBtn:active,
-  .is-standalone #favOnlyToggleBtn:active,
-  .is-standalone #randomBtn:active,
-  .is-standalone .reset-btn:active {
-      transform: scale(0.96) !important;
-      background-color: rgba(128, 128, 128, 0.15) !important;
-  }
+/* ======================================================================== */
+/* ===== 全画面共通: お気に入りボタンのアイコンを塗りつぶしに統一 ===== */
+/* ======================================================================== */
+
+/* お気に入りボタンのアイコンを常にSolidスタイル(塗りつぶし)で表示 */
+#favOnlyToggleBtn i {
+  font-weight: 900 !important;
 }
