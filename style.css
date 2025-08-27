@@ -2844,3 +2844,103 @@ body.dark-mode #createPlaylistBtn {
 html {
   scroll-padding-top: var(--header-offset, 186px);
 }
+
+/* =================================================================== */
+/* ★★★ PWA (ホーム画面起動) UI改善 ★★★ */
+/* =================================================================== */
+
+/* --- PWAモードかつスマホ表示 (991px以下) の場合に適用 --- */
+@media (max-width: 991px) {
+
+  /* PWAモードの時だけ、コントロールボタンのスタイルを上書き */
+  .is-standalone .search-row-controls {
+    /* コンテナをアプリのナビゲーションバー風に */
+    padding-top: 6px;
+    padding-bottom: 2px; /* iOSのホームバーなどを考慮し、下は少し詰める */
+    border-top: 1px solid rgba(128, 128, 128, 0.2);
+    margin-top: 4px;
+    gap: 0; /* ボタン間のgapをリセット */
+  }
+
+  /* PWAモード時の4つのボタン共通スタイル */
+  .is-standalone #filterToggleBtn,
+  .is-standalone #favOnlyToggleBtn,
+  .is-standalone #randomBtn,
+  .is-standalone .reset-btn {
+    /* 既存のスタイルをリセット */
+    background: none !important;
+    border: none !important;
+    box-shadow: none !important;
+    height: auto !important; /* 高さを自動調整に */
+    padding: 4px 2px 6px 2px !important;
+    border-radius: 8px !important; /* タップ範囲を示すための角丸 */
+    gap: 4px !important; /* アイコンとテキストの間隔 */
+
+    /* アイコンとテキストを縦に並べる */
+    flex-direction: column;
+
+    /* テキストの色をデフォルトで少し薄く */
+    color: #888 !important;
+    transition: background-color 0.2s ease, color 0.2s ease !important;
+  }
+  
+  /* PWAモード時のアイコンのスタイル */
+  .is-standalone #filterToggleBtn i,
+  .is-standalone #favOnlyToggleBtn i,
+  .is-standalone #randomBtn i,
+  .is-standalone .reset-btn::before {
+    font-size: 22px !important; /* アイコンを大きく */
+    line-height: 1 !important;
+    margin: 0 !important;
+    height: 24px; /* アイコンの高さを揃える */
+  }
+
+  /* PWAモード時のテキストラベルのスタイル */
+  .is-standalone #filterToggleBtn::after,
+  .is-standalone #favOnlyToggleBtn span,
+  .is-standalone #randomBtn span,
+  .is-standalone .reset-btn {
+    font-size: 10px !important; /* テキストを小さく */
+    font-weight: 500 !important;
+    line-height: 1.2 !important;
+  }
+  
+  /* リセットボタンのテキストは非表示にし、アイコン(::before)とテキスト(::after)で再構成 */
+  .is-standalone .reset-btn {
+    font-size: 0 !important; /* 元のテキストを消す */
+  }
+  .is-standalone .reset-btn::after {
+    content: "リセット"; /* 擬似要素でテキストを再生成 */
+    font-size: 10px !important;
+    display: block;
+  }
+  
+  /* アクティブ状態のボタンのスタイル (フィルタを開いている時、お気に入りONの時) */
+  .is-standalone #filterToggleBtn[aria-expanded="true"],
+  .is-standalone #favOnlyToggleBtn[aria-pressed="true"] {
+    color: var(--btn-main, #6654e8) !important; /* アクティブカラー */
+  }
+
+  /* ダークモード時のアクティブカラー */
+  .is-standalone.dark-mode #filterToggleBtn[aria-expanded="true"],
+  .is-standalone.dark-mode #favOnlyToggleBtn[aria-pressed="true"] {
+    color: #fff !important; /* ダークモードでは白に */
+  }
+
+  /* ホバーやアクティブ時の視覚効果をシンプルに */
+  @media (hover: hover) {
+    .is-standalone #filterToggleBtn:hover,
+    .is-standalone #favOnlyToggleBtn:hover,
+    .is-standalone #randomBtn:hover,
+    .is-standalone .reset-btn:hover {
+      background-color: rgba(128, 128, 128, 0.1) !important;
+    }
+  }
+  .is-standalone #filterToggleBtn:active,
+  .is-standalone #favOnlyToggleBtn:active,
+  .is-standalone #randomBtn:active,
+  .is-standalone .reset-btn:active {
+      transform: scale(0.96) !important;
+      background-color: rgba(128, 128, 128, 0.15) !important;
+  }
+}
