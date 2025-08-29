@@ -73,7 +73,7 @@
 <meta name="apple-mobile-web-app-title" content="さーち・ざ・らじお！">
 
 
-<link rel="manifest" href="./site.webmanifest?v=20250829e">
+<link rel="manifest" href="./site.webmanifest?v=20250829f">
 
 
 
@@ -84,7 +84,7 @@
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet" />
 <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
 <link rel="preconnect" href="https://code.jquery.com" crossorigin>
-  <link href="style.css?v=20250829e" rel="stylesheet" />
+  <link href="style.css?v=20250829f" rel="stylesheet" />
 
 
   <link rel="preconnect" href="https://i.ytimg.com" crossorigin>
@@ -277,13 +277,13 @@
     </footer>
   </div>
 
-  <script src="main.js?v=20250829e" defer></script>
+  <script src="main.js?v=20250829f" defer></script>
 
   <script>
   // ---- Service Worker register (network-first) ----
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', function () {
-      navigator.serviceWorker.register('/sw.js?20250829e').then(function(reg) {
+      navigator.serviceWorker.register('/sw.js?20250829f').then(function(reg) {
         return navigator.serviceWorker.ready;
       }).then(function(reg) {
         if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });

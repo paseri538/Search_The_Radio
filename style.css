@@ -2973,7 +2973,7 @@ html {
     margin-left: 12px;
   }
   #results h5.mb-1 {
-    font-size: 12px;
+    font-size: clamp(0.9rem, 3.8vw, 0.98rem);
     line-height: 1.25;
     margin-bottom: 4px;
   }
