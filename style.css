@@ -459,12 +459,12 @@ body.dark-mode .searchbox-input::placeholder {
 
 @media (min-width: 900px) {
   .main-content {
-    max-width: 1040px;
+    max-width: 1160px;
   }
   .search-card,
   .filters-bar,
   .results-count-under-bar {
-    max-width: 1040px;
+    max-width: 1160px;
   }
 }
 
@@ -592,8 +592,6 @@ body.dark-mode #loading-screen {
   font-weight: 600;
   margin-bottom: 2px;
   line-height: 1.25;
-  white-space: normal !important;
-  word-break: break-all !important;
   max-width: 100%;
   
   /* ▼▼▼ 以下2行を追加 ▼▼▼ */
@@ -2932,12 +2930,217 @@ html {
 }
 
 /* ======================================================================== */
-/* ===== (V3) ゲスト名が長い場合のレイアウト崩れを修正 ===== */
+/* ===== (最終・確定版) カードレイアウト 全デバイス強制修正 ===== */
 /* ======================================================================== */
 
+/* --- 1. まず、既存のカードスタイルの一部をリセット --- */
+.episode-item,
+.episode-item > a,
+.episode-item .thumb-col,
+.episode-item a > div:last-of-type {
+  gap: 0;
+  flex: none;
+}
+#results h5.mb-1,
+.episode-meta {
+  margin: 0;
+}
 
-/* 2. すべてのカードの最低限の高さを固定し、統一感を出す */
+/* --- 2. カード全体の基本設定 --- */
 .episode-item {
-  min-height: 80px; /* この高さを基準に全てのカードが揃います */
+  padding: 12px;
+}
 
+/* --- 3. リンクエリアのレイアウトを再構築 (最重要) --- */
+.episode-item > a {
+  display: flex !important; /* JSのinline styleを維持しつつflexを確実に */
+  align-items: center !important;
+  gap: 0 !important; /* JSのinline styleのgapを無効化 */
+  width: 100%;
+}
+
+/* --- 4. サムネイルの領域を固定 --- */
+.episode-item .thumb-col {
+  flex-shrink: 0; /* 縮まない */
+}
+
+/* --- 5. テキストエリアをマージンで強制的に配置 --- */
+.episode-item a > div:last-of-type {
+  flex-grow: 1; /* 残りのスペースを全て確保 */
+  min-width: 0; /* はみ出し防止 */
+}
+
+/* ======================================================================== */
+/* ===== スマホ表示 (幅 900px 以下) ===== */
+/* ======================================================================== */
+@media (max-width: 900px) {
+  /* (ここには前回のスマホ用のスタイルが既にあります) */
+  .episode-item .thumbnail {
+    width: 120px;
+  }
+  .episode-item a > div:last-of-type {
+    margin-left: 12px;
+  }
+  #results h5.mb-1 {
+    font-size: clamp(0.95rem, 4vw, 1rem);
+    line-height: 1.25;
+    margin-bottom: 4px;
+  }
+  .episode-meta {
+    font-size: clamp(0.8rem, 3.3vw, 0.98rem);
+    line-height: 1.35;
+  }
+
+  /* 以前に設定した強制的な折り返し設定をリセットします */
+.episode-item a > div:last-of-type,
+.episode-item h5.mb-1 {
+  word-break: normal;
+  overflow-wrap: normal;
+}
+
+/* ゲスト名が表示されるspanタグに、省略スタイルを適用します */
+.guest-one-line {
+  display: block !important;
+  width: 100% !important;
+  
+  /* ↓↓↓ テキストを強制的に1行に保ち、はみ出したら「...」で省略する設定 ↓↓↓ */
+  white-space: nowrap !important;
+  overflow: hidden !important;        /* ★追加: はみ出した部分を隠します */
+}
+}
+
+/* ======================================================================== */
+/* ===== PC/iPad表示 (幅 901px 以上) ===== */
+/* ======================================================================== */
+@media (min-width: 901px) {
+  .episode-item {
+    padding: 14px;
+  }
+  /* サムネイル */
+  .episode-item .thumbnail {
+    width: 150px;
+  }
+  /* ★テキストエリアの左側に余白を作成 */
+  .episode-item a > div:last-of-type {
+    margin-left: 14px;
+    height: 84px; /* 高さを固定 */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  /* テキストのスタイル */
+  #results h5.mb-1 {
+    font-size: 1.05rem;
+    line-height: 1.35;
+    margin-bottom: 6px;
+  }
+  .episode-meta {
+    font-size: 0.9rem;
+    line-height: 1.4;
+  }
+}
+
+/* ======================================================================== */
+/* ===== (最終・確定コード) ゲスト名のはみ出しを絶対に防ぐ最終手段 ===== */
+/* ======================================================================== */
+.guest-one-line {
+  display: block;          /* 常に独立した行として表示します */
+  width: 100%;             /* 親の幅いっぱいに広がります */
+  white-space: nowrap;     /* テキストの折り返しを禁止します */
+  overflow: hidden;        /* はみ出した部分を完全に隠します */
+  text-overflow: ellipsis; /* 隠れた部分を「...」で省略表示します */
+}
+
+
+/* ======================================================================== */
+/* ===== (最終・確定コード) ゲスト名がはみ出す問題の根本対策 ===== */
+/* ======================================================================== */
+
+/*
+ 1. テキストエリアのコンテナ(div)が、サムネイルを除いた
+    残りの幅を全て使うように設定し(flex: 1)、
+    自身のコンテンツではみ出さないように強制します(min-width: 0)。
+*/
+.episode-item > a > div:last-of-type {
+  flex: 1;
+  min-width: 0;
+}
+
+/*
+ 2. テキストエリア内のタイトル(h5)の幅を、
+    親要素であるコンテナの幅に合わせます(width: 100%)。
+*/
+.episode-item h5.mb-1 {
+  width: 100%;
+}
+
+/*
+ 3. ゲスト名の省略表示スタイルを、!importantを付けて再度定義し、
+    他のどのスタイルよりも優先されるようにします。
+*/
+.guest-one-line {
+  display: block !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  width: 100% !important;
+}
+
+/* ======================================================================== */
+/* ===== (再修正) タイムスタンプをサムネイル右下に表示 (PC/SP両対応) ===== */
+/* ======================================================================== */
+
+/* --- 基本設定 (全デバイス共通) --- */
+
+/* 1. サムネイルを含む親要素(.thumb-col)を、絶対位置指定の基準点にします */
+.thumb-col {
+  position: relative;
+  /* display:flexやflex-directionをリセットし、シンプルな箱にします */
+  display: block;
+  flex-shrink: 0;
+}
+
+/* 2. タイムスタンプのコンテナを、親要素の右下に絶対配置します */
+.ts-buttons {
+  position: absolute;
+  bottom: 5px;
+  right: 5px;
+  margin-top: 0;
+  z-index: 1; /* 画像の上に確実に表示されるように念のため指定 */
+}
+
+/* 3. タイムスタンプボタンの見た目を調整します */
+.ts-btn {
+  background-color: rgba(0, 0, 0, 0.75);
+  color: white;
+  border: none;
+  font-size: 0.8em;
+  font-weight: bold;
+  padding: 3px 7px;
+  border-radius: 4px;
+  backdrop-filter: blur(2px);
+}
+
+/* 4. ダークモードでも同じスタイルを適用します */
+body.dark-mode .ts-btn {
+  background-color: rgba(0, 0, 0, 0.75) !important;
+  color: white !important;
+  border-color: transparent !important;
+}
+
+
+/* --- デバイスごとの幅調整 --- */
+
+/* 5. SP表示 (幅 900px 以下) のコンテナ幅をサムネイルに合わせます */
+@media (max-width: 900px) {
+  .thumb-col {
+    width: 120px;
+  }
+}
+
+/* 6. PC表示 (幅 901px 以上) のコンテナ幅をサムネイルに合わせます */
+@media (min-width: 901px) {
+  .thumb-col {
+    width: 150px;
+  }
 }

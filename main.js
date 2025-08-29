@@ -312,7 +312,7 @@ function renderResults(arr, page = 1) {
     li.style.setProperty('--i', index.toString());
 
     li.innerHTML = `
-      <a href="${finalLink}" target="_blank" rel="noopener" style="display:flex;gap:13px;text-decoration:none;color:inherit;align-items:center;min-width:0;">
+      <a href="${finalLink}" target="_blank" rel="noopener" style="display:flex;text-decoration:none;color:inherit;align-items:center;min-width:0;">
         <div class="thumb-col">
           <img src="${thumbUrl}" class="thumbnail" alt="サムネイル：${hashOnly}" loading="lazy" decoding="async">
           ${hit ? `<div class="ts-buttons"><button class="ts-btn" data-url="${it.link}" data-ts="${hit.seconds}" aria-label="${hit.label} から再生">${hit.label}</button></div>` : ''}
@@ -340,7 +340,8 @@ function renderResults(arr, page = 1) {
   });
 
   ul.appendChild(fragment);
-  setTimeout(fitGuestLines, 0);
+  // 画面の描画が完了した最適なタイミングで文字サイズ調整を実行します
+  setTimeout(fitGuestLines, 300);
 }
 
 function renderPagination(totalCount) {
@@ -406,48 +407,39 @@ function updateFilterButtonStyles() {
     btn.setAttribute('aria-pressed', String(active));
   });
 }
-
+/**
+ * ========================================================================
+ * ===== ゲスト名が長い場合に文字サイズを自動調整 =====
+ * ========================================================================
+ */
 function fitGuestLines() {
-  const elements = Array.from(document.querySelectorAll('.guest-one-line'));
-  if (elements.length === 0) return;
+  // 調整対象となるすべてのゲスト名要素を取得します
+  const guestLines = document.querySelectorAll('.guest-one-line');
 
-  // STEP 1: 最初にすべての計算情報をまとめて読み取る
-  const measurements = elements.map(el => {
-    el.style.fontSize = ''; // スタイルを一旦リセット
-    return {
-      el,
-      clientWidth: el.clientWidth,
-      scrollWidth: el.scrollWidth,
-      maxPx: parseFloat(getComputedStyle(el).fontSize) || 16,
-    };
-  });
+  guestLines.forEach(line => {
+    // 一旦、インラインで設定されたfont-sizeをリセットして、CSS本来のサイズに戻します
+    line.style.fontSize = '';
 
-  // STEP 2: DOMに触らずに、新しいフォントサイズを計算する
-  const newStyles = measurements.map(m => {
-    const { el, clientWidth, scrollWidth, maxPx } = m;
-    const minPx = 9;
-    let size = maxPx;
+    const parent = line.parentElement;
+    if (!parent) return;
+
+    // CSSから計算された現在のフォントサイズを取得します
+    let currentSize = parseFloat(window.getComputedStyle(line).fontSize);
     
-    // scrollWidth が clientWidth を超えている場合のみ計算
-    if (scrollWidth > clientWidth) {
-      // 比率を使って最適なサイズを一発で計算（微調整ループをなくす）
-      size = Math.max(minPx, maxPx * (clientWidth / scrollWidth) - 0.5);
+    // 親要素の幅（テキストが収まるべき最大幅）を取得します
+    const parentWidth = parent.clientWidth;
+
+    // これ以上は小さくしない、という最小フォントサイズを定義します
+    const MIN_FONT_SIZE = 10; // 10px
+
+    // テキストの実際の幅が親要素の幅を超える限り、ループして文字を小さくします
+    while (line.scrollWidth > parentWidth && currentSize > MIN_FONT_SIZE) {
+      // フォントサイズを0.5pxずつ小さくします
+      currentSize -= 0.5;
+      line.style.fontSize = currentSize + 'px';
     }
-    
-    return {
-      el,
-      size: Math.floor(size * 2) / 2 // 0.5px単位に丸める
-    };
-  });
-  
-  // STEP 3: 計算結果をまとめてDOMに書き込む
-  requestAnimationFrame(() => {
-    newStyles.forEach(({ el, size }) => {
-      el.style.fontSize = `${size}px`;
-    });
   });
 }
-
 
 function updatePlaylistButtonVisibility() {
     const btn = document.getElementById('createPlaylistBtn');
@@ -658,6 +650,14 @@ function setupEventListeners() {
       });
     }
   });
+
+  // 画面のリサイズ時にも文字サイズを調整するようにイベントリスナーを追加
+  let resizeTimer;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    // リサイズ操作が終わった少し後に実行することで、処理の負荷を軽減します
+    resizeTimer = setTimeout(fitGuestLines, 150);
+  }, { passive: true });
 }
 
 /**
