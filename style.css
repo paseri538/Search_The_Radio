@@ -270,7 +270,7 @@ body {
 #results {
   display: grid; grid-template-columns: 1fr 1fr; gap: 13px 10px; margin: 0; padding: 0;
 }
-@media (max-width: 900px) {
+@media (max-width: 767px) {
   #results { grid-template-columns: 1fr; gap: 9px 0; }
 }
 .episode-item {
@@ -2973,7 +2973,7 @@ html {
     margin-left: 12px;
   }
   #results h5.mb-1 {
-    font-size: clamp(0.9rem, 3.8vw, 0.98rem);
+    font-size: clamp(0.88rem, 3.7vw, 0.96rem);
     line-height: 1.25;
     margin-bottom: 4px;
   }

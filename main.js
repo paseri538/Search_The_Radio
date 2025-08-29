@@ -121,14 +121,16 @@ function preloadThumbsFromData() {
   try {
     const head = document.head;
     const seen = new Set();
-    data.forEach(ep => {
+    // ★変更点：全データ(data)ではなく、最初の20件(1ページ分)だけを対象にします
+    const preloadData = data.slice(0, 20);
+
+    preloadData.forEach(ep => {
       const vid = getVideoId(ep.link);
       if (!vid || seen.has(vid)) return;
       seen.add(vid);
       const link = document.createElement('link');
       link.rel = 'preload';
       link.as = 'image';
-      // ★ 変更点: こちらも mqdefault.jpg に合わせる
       link.href = `https://i.ytimg.com/vi/${vid}/mqdefault.jpg`;
       link.crossOrigin = 'anonymous';
       head.appendChild(link);
@@ -280,7 +282,10 @@ function renderResults(arr, page = 1) {
 
   arr.slice(startIdx, endIdx).forEach((it, index) => {
     const videoId = getVideoId(it.link);
-    const thumbUrl = getThumbnailUrl(it.link);
+    // ★変更点: JPG版とWebP版、両方のURLを生成します
+    const thumbUrlJpg = videoId ? `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg` : "";
+    const thumbUrlWebp = videoId ? `https://i.ytimg.com/vi_webp/${videoId}/mqdefault.webp` : "";
+
     const hashOnly = getHashNumber(it.title);
 
     let hit = findHitTime(it, qRaw);
@@ -314,7 +319,12 @@ function renderResults(arr, page = 1) {
     li.innerHTML = `
       <a href="${finalLink}" target="_blank" rel="noopener" style="display:flex;text-decoration:none;color:inherit;align-items:center;min-width:0;">
         <div class="thumb-col">
-          <img src="${thumbUrl}" class="thumbnail" alt="サムネイル：${hashOnly}" loading="lazy" decoding="async">
+          
+          <picture>
+            <source srcset="${thumbUrlWebp}" type="image/webp">
+            <img src="${thumbUrlJpg}" class="thumbnail" alt="サムネイル：${hashOnly}" loading="lazy" decoding="async">
+          </picture>
+          
           ${hit ? `<div class="ts-buttons"><button class="ts-btn" data-url="${it.link}" data-ts="${hit.seconds}" aria-label="${hit.label} から再生">${hit.label}</button></div>` : ''}
         </div>
         <div style="min-width:0;">
