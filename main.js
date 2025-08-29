@@ -684,23 +684,42 @@ function setupEventListeners() {
  * ★★★ その他のUI機能 ★★★
  * ===================================================
  */
+/* main.js の scrollLockModule をこのコードで置き換えてください */
+
 (function scrollLockModule() {
   let lockCount = 0;
+  const htmlElement = document.documentElement;
+  const stickyHeader = document.querySelector('.sticky-search-area');
+
   window.acquireBodyLock = () => {
     if (lockCount === 0) {
-      const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
-      document.body.style.paddingRight = `${scrollbarWidth}px`;
-      document.body.classList.add('body-scroll-locked');
+      // スクロールバーの幅を計算
+      const scrollbarWidth = window.innerWidth - htmlElement.clientWidth;
+      
+      // スクロールバーが消えることによるレイアウトのズレを防止
+      if (scrollbarWidth > 0 && stickyHeader) {
+        stickyHeader.style.paddingRight = `${scrollbarWidth}px`;
+      }
+      
+      // html要素にクラスを付与してスクロールを禁止
+      htmlElement.classList.add('scroll-locked');
     }
     lockCount++;
   };
+
   window.releaseBodyLock = () => {
     lockCount = Math.max(0, lockCount - 1);
     if (lockCount === 0) {
-      document.body.style.paddingRight = '';
-      document.body.classList.remove('body-scroll-locked');
+      // ズレ防止のpaddingを元に戻す
+      if (stickyHeader) {
+        stickyHeader.style.paddingRight = '';
+      }
+      
+      // スクロール禁止を解除
+      htmlElement.classList.remove('scroll-locked');
     }
   };
+  
   window.__hardUnlockScroll = () => {
     lockCount = 0;
     window.releaseBodyLock();

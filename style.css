@@ -437,7 +437,6 @@ body.dark-mode .more-btn:disabled {
 body.dark-mode .episode-item {
   border: 1px solid #33404c !important;
   background: #252c35 !important;
-transition: border .16s, box-shadow .18s, background .14s, color .14s;
 }
 
 /* ===== ★★★ 修正箇所 ★★★ ===== */
@@ -445,7 +444,6 @@ transition: border .16s, box-shadow .18s, background .14s, color .14s;
 @media (hover: hover) {
   body.dark-mode .episode-item:hover, 
   body.dark-mode .episode-item:focus-visible {
-    /* 変更前は transform, box-shadow, border でしたが、以下のように変更します */
     background: #27343b !important;
     border: 1px solid #4a5967 !important;
   }
@@ -3141,4 +3139,20 @@ body.dark-mode .ts-btn {
 /* ======================================================================== */
 .guest-one-line.needs-ellipsis {
   text-overflow: ellipsis !important;
+}
+
+
+/* style.css に追記 */
+body.body-scroll-locked {
+  position: fixed; /* ページを完全に固定 */
+  overflow: hidden;
+  width: 100%;
+  height: 100%;
+}
+
+/* =================================================== */
+/* ★★★ モーダル表示中の背景スクロールを安定的に禁止 ★★★ */
+/* =================================================== */
+html.scroll-locked {
+  overflow: hidden !important;
 }
