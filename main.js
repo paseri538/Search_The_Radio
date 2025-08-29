@@ -409,34 +409,35 @@ function updateFilterButtonStyles() {
 }
 /**
  * ========================================================================
- * ===== ゲスト名が長い場合に文字サイズを自動調整 =====
+ * ===== ゲスト名表示の最適化 (サイズ調整 → それでもダメなら省略) =====
  * ========================================================================
  */
 function fitGuestLines() {
-  // 調整対象となるすべてのゲスト名要素を取得します
   const guestLines = document.querySelectorAll('.guest-one-line');
 
   guestLines.forEach(line => {
-    // 一旦、インラインで設定されたfont-sizeをリセットして、CSS本来のサイズに戻します
+    // 1. 初期化：インラインスタイルと、前回付与した可能性のあるクラスをリセットします
     line.style.fontSize = '';
+    line.classList.remove('needs-ellipsis');
 
     const parent = line.parentElement;
     if (!parent) return;
 
-    // CSSから計算された現在のフォントサイズを取得します
+    // 2. はみ出しチェックとフォントサイズ調整
     let currentSize = parseFloat(window.getComputedStyle(line).fontSize);
-    
-    // 親要素の幅（テキストが収まるべき最大幅）を取得します
     const parentWidth = parent.clientWidth;
+    const MIN_FONT_SIZE = 10; // 最小フォントサイズ
 
-    // これ以上は小さくしない、という最小フォントサイズを定義します
-    const MIN_FONT_SIZE = 10; // 10px
-
-    // テキストの実際の幅が親要素の幅を超える限り、ループして文字を小さくします
+    // はみ出している場合にフォントサイズを調整します
     while (line.scrollWidth > parentWidth && currentSize > MIN_FONT_SIZE) {
-      // フォントサイズを0.5pxずつ小さくします
       currentSize -= 0.5;
       line.style.fontSize = currentSize + 'px';
+    }
+
+    // 3. 最終手段の判定：最小フォントサイズにしてもまだはみ出しているかチェック
+    if (line.scrollWidth > parentWidth && currentSize <= MIN_FONT_SIZE) {
+      // はみ出している場合は、CSSで省略表示を有効にするためのクラスを付与します
+      line.classList.add('needs-ellipsis');
     }
   });
 }
