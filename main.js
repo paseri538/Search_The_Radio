@@ -417,37 +417,45 @@ function updateFilterButtonStyles() {
     btn.setAttribute('aria-pressed', String(active));
   });
 }
+
 /**
  * ========================================================================
- * ===== ゲスト名表示の最適化 (サイズ調整 → それでもダメなら省略) =====
+ * ===== ゲスト名表示の最適化 (高効率な計算ロジックに更新) =====
  * ========================================================================
  */
 function fitGuestLines() {
   const guestLines = document.querySelectorAll('.guest-one-line');
 
   guestLines.forEach(line => {
-    // 1. 初期化：インラインスタイルと、前回付与した可能性のあるクラスをリセットします
+    // 1. 初期化
     line.style.fontSize = '';
     line.classList.remove('needs-ellipsis');
 
     const parent = line.parentElement;
     if (!parent) return;
 
-    // 2. はみ出しチェックとフォントサイズ調整
-    let currentSize = parseFloat(window.getComputedStyle(line).fontSize);
     const parentWidth = parent.clientWidth;
-    const MIN_FONT_SIZE = 10; // 最小フォントサイズ
+    const currentWidth = line.scrollWidth;
+    const MIN_FONT_SIZE = 10;
 
-    // はみ出している場合にフォントサイズを調整します
-    while (line.scrollWidth > parentWidth && currentSize > MIN_FONT_SIZE) {
-      currentSize -= 0.5;
-      line.style.fontSize = currentSize + 'px';
-    }
+    // 2. はみ出しているか、一度だけチェック
+    if (currentWidth > parentWidth) {
+      const originalSize = parseFloat(window.getComputedStyle(line).fontSize);
 
-    // 3. 最終手段の判定：最小フォントサイズにしてもまだはみ出しているかチェック
-    if (line.scrollWidth > parentWidth && currentSize <= MIN_FONT_SIZE) {
-      // はみ出している場合は、CSSで省略表示を有効にするためのクラスを付与します
-      line.classList.add('needs-ellipsis');
+      // 3. 最適な文字サイズを比率で一発計算
+      let newSize = (parentWidth / currentWidth) * originalSize;
+
+      // 4. 最小サイズを下回らないように制御
+      if (newSize < MIN_FONT_SIZE) {
+        newSize = MIN_FONT_SIZE;
+        line.style.fontSize = newSize + 'px';
+        // 最小サイズでもはみ出す場合は、省略記号クラスを付与
+        if (line.scrollWidth > parentWidth) {
+          line.classList.add('needs-ellipsis');
+        }
+      } else {
+        line.style.fontSize = newSize + 'px';
+      }
     }
   });
 }

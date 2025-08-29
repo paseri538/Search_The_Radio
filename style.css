@@ -283,7 +283,8 @@ body {
 /* カードのホバーエフェクトも、マウス操作が可能なデバイスにのみ適用します */
 @media (hover: hover) {
   .episode-item:hover {
-    transform: translateY(-2px); box-shadow: 0 13px 32px -8px #5843e825; background: #f5f7fa;
+    background: #f5f7fa;
+    border-color: #d0d7de;
   }
 }
 
@@ -444,10 +445,9 @@ transition: border .16s, box-shadow .18s, background .14s, color .14s;
 @media (hover: hover) {
   body.dark-mode .episode-item:hover, 
   body.dark-mode .episode-item:focus-visible {
-    border: 1px solid #8de0ee !important;
-    box-shadow: 0 0 0 4px #b2f7ee70, 0 13px 32px -8px #172a3388;
+    /* 変更前は transform, box-shadow, border でしたが、以下のように変更します */
     background: #27343b !important;
-    z-index: 2;
+    border: 1px solid #4a5967 !important;
   }
 }
 
