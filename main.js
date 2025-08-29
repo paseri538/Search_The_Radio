@@ -314,7 +314,7 @@ function renderResults(arr, page = 1) {
     li.innerHTML = `
       <a href="${finalLink}" target="_blank" rel="noopener" style="display:flex;gap:13px;text-decoration:none;color:inherit;align-items:center;min-width:0;">
         <div class="thumb-col">
-          <img src="${thumbUrl}" class="thumbnail" alt="サムネイル：${hashOnly}" loading="lazy">
+          <img src="${thumbUrl}" class="thumbnail" alt="サムネイル：${hashOnly}" loading="lazy" decoding="async">
           ${hit ? `<div class="ts-buttons"><button class="ts-btn" data-url="${it.link}" data-ts="${hit.seconds}" aria-label="${hit.label} から再生">${hit.label}</button></div>` : ''}
         </div>
         <div style="min-width:0;">
