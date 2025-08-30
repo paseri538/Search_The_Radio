@@ -3157,3 +3157,8 @@ html.scroll-locked {
 .modal-content.history-modal {
   will-change: transform, opacity;
 }
+
+.sort-wrapper {
+  display: block;
+  position: relative;
+}

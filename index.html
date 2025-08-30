@@ -73,7 +73,7 @@
 <meta name="apple-mobile-web-app-title" content="さーち・ざ・らじお！">
 
 
-<link rel="manifest" href="./site.webmanifest?v=20250830c">
+<link rel="manifest" href="./site.webmanifest?v=20250830d">
 
 
 
@@ -86,7 +86,7 @@
 
 <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
 <link rel="preconnect" href="https://code.jquery.com" crossorigin>
-  <link href="style.css?v=20250830c" rel="stylesheet" />
+  <link href="style.css?v=20250830d" rel="stylesheet" />
 
 
   <link rel="preconnect" href="https://i.ytimg.com" crossorigin>
@@ -117,9 +117,8 @@
     <div class="search-card">
       <div class="search-row search-row-keyword">
         <input type="text" id="searchBox" class="form-control searchbox-input"
-          placeholder="キーワード入力"
-          onkeydown="if(event.key==='Enter'){search(); event.preventDefault();}" 
-          aria-label="検索キーワード" autocomplete="off" />
+  placeholder="キーワード入力"
+  aria-label="検索キーワード" autocomplete="off" />
 
           <div id="autocomplete" class="autocomplete" role="listbox" aria-label="検索候補" hidden></div>
 
@@ -140,7 +139,7 @@
 
         <button class="reset-btn" id="mainResetBtn" onclick="resetSearch()" title="すべてリセット" tabindex="0">リセット</button>
         <span class="sort-wrapper">
-          <select id="sortSelect" class="form-select searchbox-select" onchange="search()" aria-label="並び替え" title="並び替え">
+          <select id="sortSelect" class="form-select searchbox-select" aria-label="並び替え" title="並び替え">
             <option value="newest">公開日時が新しい順</option>
             <option value="oldest">公開日時が古い順</option>
             <option value="longest">動画時間が長い順</option>
@@ -279,13 +278,13 @@
     </footer>
   </div>
 
-  <script src="main.js?v=20250830c" defer></script>
+  <script src="main.js?v=20250830d" defer></script>
 
   <script>
   // ---- Service Worker register (network-first) ----
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', function () {
-      navigator.serviceWorker.register('/sw.js?20250830c').then(function(reg) {
+      navigator.serviceWorker.register('/sw.js?20250830d').then(function(reg) {
         return navigator.serviceWorker.ready;
       }).then(function(reg) {
         if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });

@@ -255,6 +255,11 @@ function resetSearch() {
 
   resetFilters();
   try { window.scrollTo({ top: 0, behavior: 'auto' }); } catch (e) { window.scrollTo(0, 0); }
+
+  // もしフィルターモーダルが開いていたら、閉じる処理を呼び出します。
+  if (typeof window.toggleFilterDrawer === 'function') {
+    window.toggleFilterDrawer(false);
+  }
   document.getElementById('mainResetBtn')?.blur();
 }
 
@@ -530,6 +535,19 @@ function applyStateFromURL({ replace = false } = {}) {
   if (replace) buildURLFromState({ method: 'replace' });
   return true;
 }
+/**
+ * ===================================================
+ * ★★★ ユーティリティ関数（追記） ★★★
+ * ===================================================
+ */
+function scrollToResultsTop() {
+  const mainContent = document.querySelector('.main-content');
+  if (mainContent) {
+    // ヘッダーの高さを考慮して、結果リストの先頭にスクロール
+    const top = mainContent.getBoundingClientRect().top + window.pageYOffset - 24;
+    window.scrollTo({ top: Math.max(0, top), behavior: 'auto' });
+  }
+}
 
 /**
  * ===================================================
@@ -587,6 +605,7 @@ function setupEventListeners() {
       index > -1 ? collection.splice(index, 1) : collection.push(value);
       updateFilterButtonStyles();
       search();
+      scrollToResultsTop();
   };
 
   document.querySelector('.guest-button-group').addEventListener('click', e => handleFilterClick(e, selectedGuests, 'guest'));
@@ -618,6 +637,7 @@ function setupEventListeners() {
     else if (type === 'year') selectedYears = selectedYears.filter(y => y !== String(value));
     updateFilterButtonStyles();
     search();
+    scrollToResultsTop();
   });
 
   document.getElementById('results').addEventListener('click', e => {
@@ -675,6 +695,21 @@ function setupEventListeners() {
     // リサイズ操作が終わった少し後に実行することで、処理の負荷を軽減します
     resizeTimer = setTimeout(fitGuestLines, 150);
   }, { passive: true });
+
+  // キーワード入力ボックスでEnterキーが押された時の処理
+  document.getElementById('searchBox').addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+      e.preventDefault(); // フォームの送信をキャンセル
+      search();
+      scrollToResultsTop();
+    }
+  });
+
+  // 並び替えセレクトボックスが変更された時の処理
+  document.getElementById('sortSelect').addEventListener('change', () => {
+    search();
+    scrollToResultsTop();
+  });
 }
 
 /**
@@ -1106,9 +1141,10 @@ function initializeAutocomplete() {
         inputEl.value = viewItems[index].label;
         clear();
 
-        // ★変更点: 検索とフォーカスの処理をsetTimeoutで分離し、競合を防ぐ
+        
         setTimeout(() => {
           search();
+          scrollToResultsTop(); 
           inputEl.focus();
           const len = inputEl.value.length;
           inputEl.setSelectionRange(len, len);
