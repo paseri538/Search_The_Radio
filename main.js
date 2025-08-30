@@ -442,7 +442,7 @@ function fitGuestLines() {
     if (currentWidth > parentWidth) {
       const originalSize = parseFloat(window.getComputedStyle(line).fontSize);
 
-      // 3. 最適な文字サイズを比率で一発計算
+      // 3. 最適な文字サイズを比率で一発計算 (ループを回避)
       let newSize = (parentWidth / currentWidth) * originalSize;
 
       // 4. 最小サイズを下回らないように制御

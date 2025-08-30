@@ -144,8 +144,6 @@ body {
   position: fixed;
   inset: 0;
   z-index: 2045 !important;
-  background: rgba(90,80,180,0.14);
-  backdrop-filter: blur(4px);
   transition: opacity 0.22s;
 }
 .drawer-backdrop.show { display: block; opacity: 1; }
@@ -2050,7 +2048,6 @@ body[class*="theme-"]  {
   inset: 0;
   z-index: 4000;
   background: rgba(30, 29, 52, 0.25);
-  backdrop-filter: blur(4px);
   
   /* 競合の原因だった transition と opacity は削除しました */
 }
