@@ -1193,7 +1193,7 @@ function initializeAutocomplete() {
   };
 
   const debounce = (fn, ms=40) => { let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a),ms); }; };
-  inputEl.addEventListener('input', debounce(onInput, 250));
+  inputEl.addEventListener('input', debounce(onInput, 150));
   inputEl.addEventListener('keydown', onKeyDown);
   document.addEventListener('click', (e) => {
     if (e.target !== inputEl && !boxEl.contains(e.target)) clear();
