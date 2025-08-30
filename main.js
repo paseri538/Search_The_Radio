@@ -254,7 +254,7 @@ function resetSearch() {
   }
 
   resetFilters();
-  try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch (e) { window.scrollTo(0, 0); }
+  try { window.scrollTo({ top: 0, behavior: 'auto' }); } catch (e) { window.scrollTo(0, 0); }
   document.getElementById('mainResetBtn')?.blur();
 }
 
@@ -282,7 +282,6 @@ function renderResults(arr, page = 1) {
 
   arr.slice(startIdx, endIdx).forEach((it, index) => {
     const videoId = getVideoId(it.link);
-    // ★変更点: JPG版とWebP版、両方のURLを生成します
     const thumbUrlJpg = videoId ? `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg` : "";
     const thumbUrlWebp = videoId ? `https://i.ytimg.com/vi_webp/${videoId}/mqdefault.webp` : "";
 
@@ -322,7 +321,7 @@ function renderResults(arr, page = 1) {
           
           <picture>
             <source srcset="${thumbUrlWebp}" type="image/webp">
-            <img src="${thumbUrlJpg}" class="thumbnail" alt="サムネイル：${hashOnly}" loading="lazy" decoding="async">
+            <img src="${thumbUrlJpg}" class="thumbnail" alt="サムネイル：${hashOnly}" loading="lazy" decoding="async" onerror="this.onerror=null; this.src='./thumb-fallback.svg'; this.closest('picture').querySelector('source').srcset='./thumb-fallback.svg';">
           </picture>
           
           ${hit ? `<div class="ts-buttons"><button class="ts-btn" data-url="${it.link}" data-ts="${hit.seconds}" aria-label="${hit.label} から再生">${hit.label}</button></div>` : ''}
@@ -350,7 +349,6 @@ function renderResults(arr, page = 1) {
   });
 
   ul.appendChild(fragment);
-  // 画面の描画が完了した最適なタイミングで文字サイズ調整を実行します
   setTimeout(fitGuestLines, 300);
 }
 
@@ -604,7 +602,7 @@ function setupEventListeners() {
       const mainContent = document.querySelector('.main-content');
       if (mainContent) {
         const top = mainContent.getBoundingClientRect().top + window.pageYOffset - 24;
-        window.scrollTo({ top, behavior: 'smooth' });
+        window.scrollTo({ top, behavior: 'auto' });
       }
     }
   });
@@ -1159,7 +1157,7 @@ function initializeAutocomplete() {
   };
 
   const debounce = (fn, ms=40) => { let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a),ms); }; };
-  inputEl.addEventListener('input', debounce(onInput, 30));
+  inputEl.addEventListener('input', debounce(onInput, 250));
   inputEl.addEventListener('keydown', onKeyDown);
   document.addEventListener('click', (e) => {
     if (e.target !== inputEl && !boxEl.contains(e.target)) clear();

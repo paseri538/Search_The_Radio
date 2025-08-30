@@ -618,7 +618,10 @@ body.dark-mode #loading-screen {
 
 /* 全体に少し動き：カードのフェードアップ */
 @keyframes rise{ from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:translateY(0)} }
-#results .episode-item{ animation:rise .24s ease both; }
+#results .episode-item{
+  animation:rise .24s ease both;
+  animation-delay: calc(var(--i) * 20ms);
+}
 
 
 /* === Dark mode variable overrides for hover colors === */
@@ -779,7 +782,6 @@ body.dark-mode .autocomplete-item .type { border-color: #415766; color: #96e5c4;
   width: 100%; display:flex; align-items:center; gap:12px;
   padding: 16px 18px; border-radius: 14px; border: 1px solid var(--history-card-bd);
   background: var(--history-card-bg); color: inherit; cursor: pointer;
-  box-shadow: 0 10px 30px -18px rgba(20,20,70,.25);
   font-weight: 750; letter-spacing: .01em;
 }
 .history-toggle .icon{ font-size: 1.15em; }
@@ -826,7 +828,6 @@ body.dark-mode .autocomplete-item .type { border-color: #415766; color: #96e5c4;
 .history-item{
   position: relative; padding: 12px 14px 14px 16px; margin: 12px 0 14px;
   background: var(--history-card-bg); border: 1px solid var(--history-card-bd); border-radius: 12px;
-  box-shadow: 0 14px 36px -20px rgba(26, 26, 80, .28);
   transform: translateZ(0);
   animation: historyFade .35s ease both;
 }
@@ -881,13 +882,12 @@ body.dark-mode .autocomplete-item .type { border-color: #415766; color: #96e5c4;
 /* ダークモード強化（ヒストリー一式） */
 body.dark-mode .history-toggle{
   background:#2d333b !important; border-color:#3b4552 !important;
-  color:#e9f2f6 !important; box-shadow: 0 10px 30px -18px #000c !important;
+  color:#e9f2f6 !important;
 }
 body.dark-mode .history-timeline::before{ background:#3a4452 !important; }
 body.dark-mode .history-year{ color:#9ad9de !important; }
 body.dark-mode .history-item{
   background:#2d333b !important; border-color:#3b4552 !important;
-  box-shadow: 0 14px 36px -20px #000f !important;
 }
 body.dark-mode .history-item::before{
   background:#90c9ce !important; box-shadow:0 0 0 4px rgba(144,201,206,.18) !important;
@@ -992,7 +992,6 @@ body.theme-red .modal-overlay {
   max-height: min(80vh, calc(100vh - 80px));
   border: 1px solid var(--history-card-bd);
   border-radius: 16px;
-  box-shadow: 0 18px 48px -12px rgba(20,20,70,.33);
   overflow: auto;
   position: relative;
 }
@@ -1524,18 +1523,6 @@ body.fav-only .episode-item:not(.is-fav) {
 /* >=641pxでも検索結果枠の外側に同じ余白を付与 */
 @media (min-width: 641px) {
   .main-content { padding-left: 15px; padding-right: 15px; }
-}
-
-
-/* === Hover: 色変化のみ（ダークモード） === */
-@media (hover: hover) {
-  body.dark-mode #historyToggle:hover {
-    background: var(--filter-btn-active) !important;
-    border-color: var(--btn-main) !important;
-    color: var(--btn-hover) !important;
-    transform: none !important;
-    box-shadow: none !important;
-  }
 }
 
 
@@ -2436,8 +2423,7 @@ body.dark-mode .more-btn:active {
 /* --- ホバー時のスタイル --- */
 @media (hover: hover) {
   body.dark-mode .page-btn:not(.active):hover,
-  body.dark-mode .share-btn:hover,
-  body.dark-mode .history-toggle:hover {
+  body.dark-mode .share-btn:hover {
     background-color: #33414d !important; /* 選択中ボタンと同じ背景色に */
     border-color: #4a5967 !important;
   }
@@ -3152,4 +3138,22 @@ body.body-scroll-locked {
 /* =================================================== */
 html.scroll-locked {
   overflow: hidden !important;
+}
+
+/* =================================================== */
+/* ★★★ アニメーションを滑らかにする ★★★ */
+/* =================================================== */
+
+/*
+  ブラウザに対して、これらの要素の変形(transform)や
+  透明度(opacity)が変わることを事前に通知します。
+  これにより、ブラウザがアニメーションの準備を事前に行い、
+  カクつきを抑えることができます。
+*/
+#filterDrawer,
+#aboutModal,
+#historyModal,
+#aboutModalContent,
+.modal-content.history-modal {
+  will-change: transform, opacity;
 }
