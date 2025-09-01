@@ -321,28 +321,30 @@ function renderResults(arr, page = 1) {
     li.style.setProperty('--i', index.toString());
 
     li.innerHTML = `
-      <a href="${finalLink}" target="_blank" rel="noopener" style="display:flex;text-decoration:none;color:inherit;align-items:center;min-width:0;">
-        <div class="thumb-col">
-          
-          <picture>
-            <source srcset="${thumbUrlWebp}" type="image/webp">
-            <img src="${thumbUrlJpg}" class="thumbnail" alt="サムネイル：${hashOnly}" loading="lazy" decoding="async" onerror="this.onerror=null; this.src='./thumb-fallback.svg'; this.closest('picture').querySelector('source').srcset='./thumb-fallback.svg';">
-          </picture>
-          
-          ${hit ? `<div class="ts-buttons"><button class="ts-btn" data-url="${it.link}" data-ts="${hit.seconds}" aria-label="${hit.label} から再生">${hit.label}</button></div>` : ''}
-        </div>
-        <div style="min-width:0;">
-          <div class="d-flex align-items-start justify-content-between" style="min-width:0;">
-            <h5 class="mb-1">
-              ${hashOnly}${/\u3000/.test(it.title) ? "<br>" : " "}
-              <span class="guest-one-line" aria-label="${guestText}">${guestText}</span>
-            </h5>
-          </div>
-          <p class="episode-meta">公開日時：${it.date}<br>動画時間：${it.duration || "?"}</p>
-        </div>
-      </a>
-      <button class="fav-btn" data-id="${videoId}" aria-label="お気に入り" title="お気に入り"><i class="fa-regular fa-star"></i></button>
-    `;
+  <a href="${finalLink}" target="_blank" rel="noopener" style="display:flex;text-decoration:none;color:inherit;align-items:center;min-width:0;">
+    <div class="thumb-col">
+      <picture>
+        <source srcset="${thumbUrlWebp}" type="image/webp">
+        <img src="${thumbUrlJpg}" class="thumbnail" alt="サムネイル：${hashOnly}" 
+             ${index < 4 ? '' : 'loading="lazy"'} 
+             decoding="async" 
+             onload="this.classList.add('loaded')"
+             onerror="this.onerror=null; this.src='./thumb-fallback.svg'; this.classList.add('loaded'); this.closest('picture').querySelector('source').srcset='./thumb-fallback.svg';">
+      </picture>
+      ${hit ? `<div class="ts-buttons"><button class="ts-btn" data-url="${it.link}" data-ts="${hit.seconds}" aria-label="${hit.label} から再生">${hit.label}</button></div>` : ''}
+    </div>
+    <div style="min-width:0;">
+      <div class="d-flex align-items-start justify-content-between" style="min-width:0;">
+        <h5 class="mb-1">
+          ${hashOnly}${/\u3000/.test(it.title) ? "<br>" : " "}
+          <span class="guest-one-line" aria-label="${guestText}">${guestText}</span>
+        </h5>
+      </div>
+      <p class="episode-meta">公開日時：${it.date}<br>動画時間：${it.duration || "?"}</p>
+    </div>
+  </a>
+  <button class="fav-btn" data-id="${videoId}" aria-label="お気に入り" title="お気に入り"><i class="fa-regular fa-star"></i></button>
+`;
     
     if (isFavorite(videoId)) {
       const favBtn = li.querySelector('.fav-btn');
