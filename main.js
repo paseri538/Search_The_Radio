@@ -163,11 +163,17 @@ function search(opts = {}) {
 
   // Keyword search
   if (raw.length > 0) {
-    const searchWords = raw.split(/\s+/).filter(Boolean).map(normalize);
-        
-        res = res.filter(it => {
-            return searchWords.every(word => it.searchText.includes(word));
-        });
+    const normalizedQuery = normalize(raw);
+        const searchTerms = new Set([normalizedQuery]);
+        for (const key in CUSTOM_READINGS) {
+            if (normalize(key).includes(normalizedQuery) || CUSTOM_READINGS[key].some(r => normalize(r).includes(normalizedQuery))) {
+                searchTerms.add(normalize(key));
+                CUSTOM_READINGS[key].forEach(r => searchTerms.add(normalize(r)));
+            }
+        }
+        const searchWords = [...searchTerms].filter(Boolean);
+        res = res.filter(it => searchWords.some(word => it.searchText.includes(word)));
+        // ★★★↑このブロックまでを...
   }
 
   // Filters
