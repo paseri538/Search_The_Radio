@@ -163,16 +163,11 @@ function search(opts = {}) {
 
   // Keyword search
   if (raw.length > 0) {
-    const normalizedQuery = normalize(raw);
-    const searchTerms = new Set([normalizedQuery]);
-    for (const key in CUSTOM_READINGS) {
-      if (normalize(key).includes(normalizedQuery) || CUSTOM_READINGS[key].some(r => normalize(r).includes(normalizedQuery))) {
-        searchTerms.add(normalize(key));
-        CUSTOM_READINGS[key].forEach(r => searchTerms.add(normalize(r)));
-      }
-    }
-    const searchWords = [...searchTerms].filter(Boolean);
-    res = res.filter(it => searchWords.some(word => it.searchText.includes(word)));
+    const searchWords = raw.split(/\s+/).filter(Boolean).map(normalize);
+        
+        res = res.filter(it => {
+            return searchWords.every(word => it.searchText.includes(word));
+        });
   }
 
   // Filters
@@ -295,6 +290,12 @@ function renderResults(arr, page = 1) {
     let hit = findHitTime(it, qRaw);
     if (!hit && selectedGuests.length > 0) {
         for(const guest of selectedGuests) {
+            // ★★★↓ここから下を追加↓★★★
+            // 「結束バンド」と「その他」はタイムスタンプ検索の対象から除外
+            if (guest === "結束バンド" || guest === "その他") {
+                continue;
+            }
+            // ★★★↑ここまで↑★★★
             hit = findHitTime(it, guest);
             if(hit) break;
         }
@@ -1163,11 +1164,81 @@ function initializeAutocomplete() {
     return (prefix ? 4 : 0) + (part ? 1 : 0) + (!hasKanji(raw) && hasKanji(entry.label) ? 2 : 0) + (entry.type === '出演者' ? 1 : 0);
   };
 
-  const onInput = () => {
+const onInput = () => {
     const raw = inputEl.value;
     const normQ = normalize(raw);
     if (!normQ) { clear(); return; }
-    
+
+    // --- ここからが新しいロジック ---
+
+    // 1. 入力がエピソード番号かどうかを判定
+    // #を削除し、全角数字を半角に変換
+    const episodeQuery = raw.replace('#', '').trim().replace(/[０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0));
+
+    // 数字のみで構成されているかチェック
+    if (/^\d+$/.test(episodeQuery)) {
+      const episodeNumber = parseInt(episodeQuery, 10);
+      
+      // 該当するエピソードを検索
+      const targetEpisode = data.find(ep => parseInt(ep.episode, 10) === episodeNumber);
+
+      if (targetEpisode && targetEpisode.keywords && targetEpisode.keywords.length > 0) {
+        // --- ここからが新しいロジック ---
+
+        // 1. 除外対象となる出演者関連の "全" キーワードリストを作成
+        const guestKeywordsToExclude = new Set();
+        
+        // サイトが知っている主要な出演者とその愛称をすべてリストに追加
+        const mainGuests = Object.keys(guestColorMap);
+        mainGuests.forEach(guestName => {
+            guestKeywordsToExclude.add(guestName); // 本人名を追加
+            // 辞書データ(readings.json)にあれば、関連キーワード(愛称など)もすべて追加
+            if (CUSTOM_READINGS[guestName]) {
+                CUSTOM_READINGS[guestName].forEach(alias => guestKeywordsToExclude.add(alias));
+            }
+        });
+
+        // その回固有のゲストとその愛称もリストに追加
+        const episodeGuests = Array.isArray(targetEpisode.guest) ? targetEpisode.guest : [targetEpisode.guest];
+        episodeGuests.forEach(guestName => {
+            if (guestName) {
+                guestKeywordsToExclude.add(guestName); // 本人名を追加
+                if (CUSTOM_READINGS[guestName]) {
+                    CUSTOM_READINGS[guestName].forEach(alias => guestKeywordsToExclude.add(alias));
+                }
+            }
+        });
+
+        // 2. キーワードリストから、出演者関連のキーワードを完全に除外
+        const filteredKeywords = targetEpisode.keywords.filter(kw => {
+          const cleanKeyword = stripTimeSuffix(kw).trim();
+          return !guestKeywordsToExclude.has(cleanKeyword);
+        });
+
+        // --- ここまでが新しいロジック ---
+        
+        // 3. 除外後のキーワードを候補として整形 (ここは変更なし)
+        const keywordsAsEntries = filteredKeywords.map(kw => ({
+          label: stripTimeSuffix(kw),
+          type: `第${targetEpisode.episode}回`
+        }));
+        
+        // 重複するキーワードを除去 (ここも変更なし)
+        const seen = new Set();
+        const uniqueEntries = keywordsAsEntries.filter(el => {
+            const duplicate = seen.has(el.label);
+            seen.add(el.label);
+            return !duplicate;
+        });
+
+        render(uniqueEntries);
+        return;
+      }
+    }
+
+    // --- ここまでが新しいロジック ---
+
+    // 3. 通常のキーワード検索ロジック (入力がエピソード番号でなかった場合)
     const scored = entries.map(e => ({ e, s: scoreEntry(e, normQ, raw) })).filter(item => item.s !== null);
     scored.sort((a, b) => b.s - a.s);
     
