@@ -3208,3 +3208,173 @@ html.scroll-locked {
 }
 
 
+/* style.css に追記 */
+
+/* =================================================== */
+/* ★★★ 検索ボックスのクリアボタン ★★★ */
+/* =================================================== */
+
+/* inputとボタンを囲むラッパー */
+.search-input-wrapper {
+  position: relative;
+  width: 100%; /* 横幅いっぱいに広がるように */
+}
+
+/* 既存のinputスタイルはそのままに、クリアボタンのスペースを確保 */
+.search-input-wrapper .searchbox-input {
+  width: 100%;
+  /* 右側のpaddingを増やしてボタンと文字が被らないようにします */
+  padding-right: 38px !important; 
+}
+
+/* クリアボタンのスタイル */
+.clear-search-btn {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  transform: translateY(-50%);
+  
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  
+  background-color: #d1d5db; /* 少し濃いめのグレー */
+  color: #4b5563;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  
+  /* 初期状態は非表示 */
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.15s, visibility 0.15s, background-color 0.15s;
+}
+
+/* JavaScriptによってhidden属性が外されたら表示する */
+.clear-search-btn:not([hidden]) {
+  opacity: 1;
+  visibility: visible;
+}
+
+@media (hover: hover) {
+  .clear-search-btn:hover {
+    background-color: #9ca3af;
+    color: #ffffff;
+  }
+}
+
+/* --- ダークモード対応 --- */
+body.dark-mode .clear-search-btn {
+  background-color: #4b5563;
+  color: #e5ecec;
+}
+
+@media (hover: hover) {
+  body.dark-mode .clear-search-btn:hover {
+    background-color: #6b7280;
+  }
+}
+
+/* --- カラーテーマ対応 --- */
+body[class*="theme-"] .clear-search-btn {
+    background-color: var(--filter-btn-active);
+    color: var(--btn-main);
+}
+    
+@media (hover: hover) {
+    body[class*="theme-"] .clear-search-btn:hover {
+        background-color: var(--active-filter);
+        color: var(--active-filter-text);
+    }
+}
+
+/* style.css に追記（既存のクリアボタンのスタイルもこちらで上書き・調整します） */
+
+/* =================================================== */
+/* ★★★ 検索ボックス内ボタン (クリア＆検索) ★★★ */
+/* =================================================== */
+
+/* 2つのボタンを配置するため、入力欄の右側の余白を広げます */
+.search-input-wrapper .searchbox-input {
+  /* 以前は38pxでしたが、72pxに拡張します */
+  padding-right: 72px !important; 
+}
+
+/* クリアボタンの位置を、新しい検索ボタンの左隣に調整します */
+.clear-search-btn {
+  /* 以前は right: 8px でしたが、44px に変更します */
+  right: 44px;
+  
+  /* 以下は既存のスタイルですが、念のため記載します */
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  background-color: #d1d5db;
+  color: #4b5563;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.15s, visibility 0.15s, background-color 0.15s;
+}
+
+/* ★★★↓ここから新しい検索ボタンのスタイルを追加します↓★★★ */
+.main-search-btn {
+  position: absolute;
+  top: 50%;
+  right: 8px; /* 右端に配置 */
+  transform: translateY(-50%);
+  
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  
+  background-color: transparent;
+  color: #5f6e86;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background-color 0.15s, color 0.15s;
+}
+
+@media (hover: hover) {
+  .main-search-btn:hover {
+    background-color: #f0f2f5; /* ほんのり背景色を付ける */
+  }
+}
+
+/* --- ダークモード対応 --- */
+body.dark-mode .main-search-btn {
+  color: #bdc6d2;
+}
+@media (hover: hover) {
+  body.dark-mode .main-search-btn:hover {
+    background-color: #394150;
+  }
+}
+
+/* --- カラーテーマ対応 --- */
+body[class*="theme-"] .main-search-btn {
+  color: var(--muted);
+}
+@media (hover: hover) {
+  body[class*="theme-"] .main-search-btn:hover {
+    background-color: var(--filter-btn-active);
+  }
+}

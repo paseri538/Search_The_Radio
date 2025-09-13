@@ -60,6 +60,18 @@ function toggleFavorite(id) {
   saveFavs();
 }
 
+function debounce(fn, ms = 40) {
+  let timerId;
+  const debouncedFn = (...args) => {
+    clearTimeout(timerId);
+    timerId = setTimeout(() => fn(...args), ms);
+  };
+  debouncedFn.cancel = () => {
+    clearTimeout(timerId);
+  };
+  return debouncedFn;
+}
+
 /**
  * ===================================================
  * ★★★ データ読み込みとアプリケーション初期化 ★★★
@@ -232,6 +244,7 @@ function resetSearch() {
   const searchBox = document.getElementById('searchBox');
   const sortSelect = document.getElementById('sortSelect');
   if (searchBox) searchBox.value = "";
+  searchBox.dispatchEvent(new Event('input'));
   if (sortSelect) sortSelect.value = "newest";
 
   if (showFavoritesOnly) {
@@ -644,6 +657,7 @@ function setupEventListeners() {
     else if (type === 'corner') selectedCorners = selectedCorners.filter(c => c !== value);
     else if (type === 'other') selectedOthers = selectedOthers.filter(o => o !== value);
     else if (type === 'year') selectedYears = selectedYears.filter(y => y !== String(value));
+    searchBox.dispatchEvent(new Event('input'));
     updateFilterButtonStyles();
     search();
     scrollToResultsTop();
@@ -705,20 +719,53 @@ function setupEventListeners() {
     resizeTimer = setTimeout(fitGuestLines, 150);
   }, { passive: true });
 
-  // キーワード入力ボックスでEnterキーが押された時の処理
-  document.getElementById('searchBox').addEventListener('keydown', e => {
-    if (e.key === 'Enter') {
-      e.preventDefault(); // フォームの送信をキャンセル
-      search();
-      scrollToResultsTop();
-    }
-  });
+
 
   // 並び替えセレクトボックスが変更された時の処理
   document.getElementById('sortSelect').addEventListener('change', () => {
     search();
     scrollToResultsTop();
   });
+
+  // ===================================================
+  // ★★★ 検索ボックスのクリアボタン機能 ★★★
+  // ===================================================
+  const searchBoxForClear = document.getElementById('searchBox');
+  const clearSearchBtn = document.getElementById('clearSearchBtn');
+
+  if (searchBoxForClear && clearSearchBtn) {
+    // ボタンの表示/非表示を切り替える関数
+    const toggleClearBtn = () => {
+      clearSearchBtn.hidden = !searchBoxForClear.value;
+    };
+
+    // 入力があるたびに、表示をチェック
+    searchBoxForClear.addEventListener('input', toggleClearBtn);
+
+    // ボタンがクリックされた時の処理
+    clearSearchBtn.addEventListener('click', () => {
+      searchBoxForClear.value = ''; // 入力欄を空にする
+      toggleClearBtn(); // ボタンを非表示にする
+      search(); // 検索を再実行して結果をリセット
+      searchBoxForClear.focus(); // 続けて入力できるようフォーカスを戻す
+    });
+
+    // ページ読み込み時（URLから復元された場合など）にも一度チェック
+    toggleClearBtn();
+  }
+
+  // ===================================================
+  // ★★★ 検索ボックス内の検索ボタン機能 ★★★
+  // ===================================================
+  const mainSearchBtn = document.getElementById('mainSearchBtn');
+  if (mainSearchBtn) {
+    mainSearchBtn.addEventListener('click', () => {
+      // 既存の検索関数とスクロール関数を呼び出すだけ
+      search();
+      scrollToResultsTop();
+      mainSearchBtn.blur(); // クリック後にボタンのフォーカスを外す
+    });
+  }
 }
 
 /**
@@ -1174,6 +1221,7 @@ const onInput = () => {
     const raw = inputEl.value;
     const normQ = normalize(raw);
     if (!normQ) { clear(); return; }
+    
 
     // --- ここからが新しいロジック ---
 
@@ -1263,16 +1311,46 @@ const onInput = () => {
     render(items.slice(0, 12));
   };
   
+  const debouncedOnInput = debounce(onInput, 150); // ★先に定義する
+
   const onKeyDown = (e) => {
+    // Enterキーが押された時の包括的な処理
+    if (e.key === 'Enter') {
+      // 日本語入力変換中（文字の下に線がある状態）のEnterは、
+      // 検索ではなく文字の確定を優先するため、ここで処理を中断する
+      if (e.isComposing) {
+        return;
+      }
+
+      e.preventDefault();
+      
+      // 候補が選択されていれば、その候補を選択する
+      if (!boxEl.hidden && cursor >= 0) {
+        pick(cursor);
+      } else {
+        // そうでなければ、通常の検索を実行する
+        
+        // 1. これから実行される可能性のある「候補表示の予約」をキャンセル
+        debouncedOnInput.cancel();
+        
+        // 2. 表示されている候補があれば、即座にクリア
+        clear();
+        
+        // 3. 検索を実行
+        search();
+        scrollToResultsTop();
+      }
+      return; // Enterキーの処理はここで終了
+    }
+
+    // --- 以下はEnterキー以外のキー処理（変更なし） ---
     if (boxEl.hidden) return;
     if (e.key === 'ArrowDown') { e.preventDefault(); cursor = (cursor + 1) % viewItems.length; render(viewItems); } 
     else if (e.key === 'ArrowUp') { e.preventDefault(); cursor = (cursor - 1 + viewItems.length) % viewItems.length; render(viewItems); } 
-    else if (e.key === 'Enter') { if (cursor >= 0) { e.preventDefault(); pick(cursor); } } 
     else if (e.key === 'Escape') { clear(); }
   };
 
-  const debounce = (fn, ms=40) => { let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a),ms); }; };
-  inputEl.addEventListener('input', debounce(onInput, 150));
+  inputEl.addEventListener('input', debouncedOnInput); 
   inputEl.addEventListener('keydown', onKeyDown);
   document.addEventListener('click', (e) => {
     if (e.target !== inputEl && !boxEl.contains(e.target)) clear();

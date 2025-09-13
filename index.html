@@ -73,7 +73,7 @@
 <meta name="apple-mobile-web-app-title" content="さーち・ざ・らじお！">
 
 
-<link rel="manifest" href="./site.webmanifest?v=20250913a">
+<link rel="manifest" href="./site.webmanifest?v=20250913b">
 
 
 
@@ -87,7 +87,7 @@
 <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
 <link rel="preconnect" href="https://code.jquery.com" crossorigin>
 <link rel="preconnect" href="https://i.ytimg.com" crossorigin>
-  <link href="style.css?v=20250913a" rel="stylesheet" />
+  <link href="style.css?v=20250913b" rel="stylesheet" />
 
 </head>
 <body>
@@ -114,13 +114,19 @@
 
   <div class="sticky-search-area" aria-label="検索とフィルター">
     <div class="search-card">
-      <div class="search-row search-row-keyword">
+<div class="search-row search-row-keyword">
+        <div class="search-input-wrapper">
         <input type="text" id="searchBox" class="form-control searchbox-input"
-  placeholder="キーワード入力"
-  aria-label="検索キーワード" autocomplete="off" />
-
-          <div id="autocomplete" class="autocomplete" role="listbox" aria-label="検索候補" hidden></div>
-
+          placeholder="キーワード入力"
+          aria-label="検索キーワード" autocomplete="off" />
+        <button id="clearSearchBtn" class="clear-search-btn" aria-label="検索キーワードをクリア" hidden>
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+        <button id="mainSearchBtn" class="main-search-btn" aria-label="検索">
+          <i class="fa-solid fa-magnifying-glass"></i>
+        </button>
+        </div>
+        <div id="autocomplete" class="autocomplete" role="listbox" aria-label="検索候補" hidden></div>
       </div>
       <div class="search-row search-row-controls">
         <button class="btn" id="filterToggleBtn" type="button" aria-expanded="false" aria-pressed="false" tabindex="0" title="フィルター条件を選択">
@@ -277,13 +283,13 @@
     </footer>
   </div>
 
-  <script src="main.js?v=20250913a" defer></script>
+  <script src="main.js?v=20250913b" defer></script>
 
   <script>
   // ---- Service Worker register (network-first) ----
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', function () {
-      navigator.serviceWorker.register('/sw.js?20250913a').then(function(reg) {
+      navigator.serviceWorker.register('/sw.js?20250913b').then(function(reg) {
         return navigator.serviceWorker.ready;
       }).then(function(reg) {
         if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
