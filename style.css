@@ -3488,3 +3488,58 @@ body[class*="theme-"] #bottom-nav > #filterToggleBtn[aria-expanded="true"],
 body[class*="theme-"] #bottom-nav > #favOnlyToggleBtn[aria-pressed="true"] {
   color: var(--btn-hover, #ffffff) !important;
 }
+
+/* =================================================== */
+/* ★★★ UI微調整 (V2) ★★★ */
+/* =================================================== */
+
+/* --- 1. PWAモード時のリセットボタン文字色を他のボタンと統一 --- */
+.is-standalone #bottom-nav > .reset-btn {
+    color: var(--muted, #7c8798) !important;
+}
+
+.is-standalone.dark-mode #bottom-nav > .reset-btn {
+    color: var(--muted, #9aa4b2) !important;
+}
+
+/* --- 2. ダークモード時の並び替えセレクトボックスのスタイル --- */
+body.dark-mode .searchbox-select {
+  background: #2d333b !important;
+  color: #e6f0f3 !important;
+  border-color: #394150 !important;
+}
+
+/* --- 3. ページ全体の最小高さを確保し、レイアウト崩れを防止 --- */
+body {
+  display: flex;
+  flex-direction: column;
+  min-height: calc(var(--vh, 1vh) * 100);
+}
+.main-content {
+  flex: 1 0 auto; /* コンテンツエリアが残りの高さを全て埋めるように */
+}
+footer.site-footer {
+  flex-shrink: 0; /* フッターが縮まないように */
+}
+
+/* PWAモードではメインコンテンツのpaddingで調整するため、フッターのpaddingをリセット */
+.is-standalone footer.site-footer {
+    padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* --- 4. PWAモード時のテーマ変更ボタンの位置を調整 --- */
+.is-standalone #theme-toggle-btn {
+  /* (バーの高さ + 余白 + ホームバーの高さ)分だけ上に移動 */
+  bottom: calc(65px + 15px + env(safe-area-inset-bottom));
+}
+
+.is-standalone .floating-panel {
+  /* テーマ選択パネルも同様に上に移動 */
+  bottom: calc(65px + 15px + 55px + 12px + env(safe-area-inset-bottom));
+}
+
+/* --- 5. PWAモード時にフィルターメニューがバーに隠れないように調整 --- */
+.is-standalone #filterDrawer {
+  /* メニューの下端を、ボトムナビゲーションバーの高さ分だけ上に設定 */
+  bottom: calc(65px + env(safe-area-inset-bottom)) !important;
+}
