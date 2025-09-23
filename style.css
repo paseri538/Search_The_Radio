@@ -3378,3 +3378,113 @@ body[class*="theme-"] .main-search-btn {
     background-color: var(--filter-btn-active);
   }
 }
+
+
+/* =================================================== */
+/* ★★★ PWAモード用 ボトムナビゲーションUI ★★★ */
+/* =================================================== */
+
+/* --- 1. ナビゲーションバー本体 --- */
+#bottom-nav {
+  /* 通常は非表示にしておく */
+  display: none;
+}
+
+/* PWAモード(.is-standalone)で起動された場合のみ、以下のスタイルを適用 */
+.is-standalone #bottom-nav {
+  /* 表示設定 */
+  display: flex;
+  align-items: stretch; /* ボタンの高さを均等に */
+  justify-content: space-around;
+
+  /* 位置とサイズ */
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: calc(65px + env(safe-area-inset-bottom)); /* iOSのホームバーを考慮 */
+  padding-bottom: env(safe-area-inset-bottom);
+  z-index: 2100; /* サイト内の他の要素より手前に表示 */
+
+  /* デザイン */
+  background: var(--card-bg, #ffffff);
+  border-top: 1.5px solid var(--btn-reset-border, #bfc8d6);
+  box-shadow: 0 -4px 20px -8px rgba(0, 0, 0, 0.1);
+  transition: background-color 0.2s;
+}
+
+/* --- 2. バーの中のボタン --- */
+.is-standalone #bottom-nav > button {
+  /* レイアウト */
+  flex: 1; /* 4つのボタンで幅を均等に分割 */
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 4px !important;
+
+  /* サイズと形 */
+  width: auto !important;
+  height: 100% !important;
+  padding: 6px 4px !important;
+  border: none !important;
+  border-radius: 0 !important;
+
+  /* 文字とアイコン */
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  color: var(--muted, #7c8798) !important;
+  background-color: transparent !important;
+}
+
+/* ボタン内のアイコン */
+.is-standalone #bottom-nav > button i,
+.is-standalone #bottom-nav > button .reset-btn::before {
+  font-size: 22px !important;
+  line-height: 1 !important;
+  margin: 0 !important;
+  font-weight: 900 !important; /* アイコンを太く */
+}
+
+/* ボタン内のテキスト */
+.is-standalone #bottom-nav > button::after,
+.is-standalone #bottom-nav > button span {
+  font-size: 11px !important;
+}
+
+/* --- 3. アクティブ時のスタイル --- */
+/* 「フィルタ」「お気に入り」がONの時に色を変える */
+.is-standalone #bottom-nav > #filterToggleBtn[aria-expanded="true"],
+.is-standalone #bottom-nav > #favOnlyToggleBtn[aria-pressed="true"] {
+  color: var(--btn-main, #6654e8) !important;
+}
+
+/* --- 4. コンテンツがバーに隠れないように調整 --- */
+.is-standalone .main-content {
+  /* バーの高さ分だけ、コンテンツの一番下に余白を追加 */
+  padding-bottom: 80px !important;
+}
+.is-standalone footer {
+  padding-bottom: calc(8px + 65px + env(safe-area-inset-bottom));
+}
+
+/* --- 5. 元のボタンがあった場所のレイアウト調整 --- */
+.is-standalone .search-row-controls {
+  justify-content: flex-end; /* 並び替えセレクタを右寄せに */
+}
+
+/* --- 6. ダークモードと各テーマへの対応 --- */
+.dark-mode #bottom-nav,
+body[class*="theme-"] #bottom-nav {
+  border-top-color: var(--history-card-bd, #394150) !important;
+}
+.dark-mode #bottom-nav > button,
+body[class*="theme-"] #bottom-nav > button {
+  color: var(--muted, #9aa4b2) !important;
+}
+.dark-mode #bottom-nav > #filterToggleBtn[aria-expanded="true"],
+.dark-mode #bottom-nav > #favOnlyToggleBtn[aria-pressed="true"],
+body[class*="theme-"] #bottom-nav > #filterToggleBtn[aria-expanded="true"],
+body[class*="theme-"] #bottom-nav > #favOnlyToggleBtn[aria-pressed="true"] {
+  color: var(--btn-hover, #ffffff) !important;
+}

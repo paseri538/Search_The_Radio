@@ -1372,7 +1372,7 @@ document.addEventListener('DOMContentLoaded', () => {
   new MutationObserver(updateHeaderOffset).observe(document.querySelector('.sticky-search-area'), { childList: true, subtree: true, attributes: true });
 });
 
-// main.js の一番下など、分かりやすい場所に追加してください。
+// main.js の一番下にある enhanceMobileExperience 関数を、これで置き換えてください
 
 /**
  * ===================================================
@@ -1380,14 +1380,39 @@ document.addEventListener('DOMContentLoaded', () => {
  * ===================================================
  */
 (function enhanceMobileExperience() {
+
+  // PWAモードでUIをセットアップする関数
+  function setupPwaBottomNav() {
+    const bottomNav = document.getElementById('bottom-nav');
+    if (!bottomNav) return;
+
+    // 移動対象のボタンIDリスト
+    const buttonIds = ['filterToggleBtn', 'favOnlyToggleBtn', 'randomBtn', 'mainResetBtn'];
+    
+    buttonIds.forEach(id => {
+      const button = document.getElementById(id);
+      if (button) {
+        // 元の場所から新しいボトムナビゲーションバーへ要素を移動させます
+        bottomNav.appendChild(button);
+      }
+    });
+
+    // 元のボタンがあったコンテナから不要なクラスを削除し、レイアウト崩れを防ぎます
+    const originalContainer = document.querySelector('.search-row-controls');
+    if(originalContainer) {
+      originalContainer.style.display = 'flex';
+    }
+  }
+
   // PWAモード（スタンドアロン表示）を検出してクラスを付与
   if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone) {
     document.documentElement.classList.add('is-standalone');
+    // DOMの準備ができたら、PWA用のUIセットアップを実行
+    document.addEventListener('DOMContentLoaded', setupPwaBottomNav);
   }
 
   // モバイルブラウザの100vh問題を解決
   const setVh = () => {
-    // ★変更点: 入力中はvhの更新をスキップして揺れを防ぐ
     if (isInputFocused) return;
     document.documentElement.style.setProperty('--vh', `${window.innerHeight * 0.01}px`);
   };
@@ -1395,14 +1420,12 @@ document.addEventListener('DOMContentLoaded', () => {
   window.addEventListener('resize', setVh, { passive: true });
   window.addEventListener('orientationchange', setVh, { passive: true });
 
-  // ★追加: 入力欄のフォーカス状態を監視
   document.addEventListener('DOMContentLoaded', () => {
     const searchInput = document.getElementById('searchBox');
     if (searchInput) {
       searchInput.addEventListener('focus', () => { isInputFocused = true; });
       searchInput.addEventListener('blur', () => {
         isInputFocused = false;
-        // フォーカスが外れたらvhを再計算
         setTimeout(setVh, 100); 
       });
     }
