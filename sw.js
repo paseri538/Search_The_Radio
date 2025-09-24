@@ -15,9 +15,13 @@ const CORE_ASSETS = [
   'readings.json',
   'keywords.json',
   'lucky-button.json',
+  'history.json', // ← 追加
   'logo.png',
   'favicon.ico',
-  'site.webmanifest'
+  'apple-touch-icon.png', // ← 追加
+  'site.webmanifest',
+  'https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css', // ← 追加
+  'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css' // ← 追加
 ];
 
 // 1. Service Workerのインストール処理

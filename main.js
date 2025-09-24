@@ -346,7 +346,6 @@ function renderResults(arr, page = 1) {
       <picture>
         <source srcset="${thumbUrlWebp}" type="image/webp">
         <img src="${thumbUrlJpg}" class="thumbnail" alt="サムネイル：${hashOnly}" 
-             ${index < 4 ? '' : 'loading="lazy"'} 
              decoding="async" 
              onload="this.classList.add('loaded')"
              onerror="this.onerror=null; this.src='./thumb-fallback.svg'; this.classList.add('loaded'); this.closest('picture').querySelector('source').srcset='./thumb-fallback.svg';">

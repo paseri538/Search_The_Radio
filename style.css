@@ -3181,15 +3181,15 @@ html.scroll-locked {
 
 /* サムネイル画像の初期状態 */
 .thumbnail {
-  /* 読み込み中は少し透明にしておく */
-  opacity: 0;
-  /* 透明度が変化する際に0.3秒のアニメーションを適用 */
-  transition: opacity 0.3s ease-in-out;
+  /* 常に不透明で表示 */
+  opacity: 1;
+  /* アニメーションは不要なため削除 */
+  transition: none;
 }
 
 /* 読み込みが完了した画像に適用するスタイル */
 .thumbnail.loaded {
-  /* 透明度を1に戻し、画像をフワッと表示させる */
+  /* 常に不透明なので、この指定は不要 */
   opacity: 1;
 }
 
