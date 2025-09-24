@@ -3517,3 +3517,23 @@ body[class*="theme-"] .nav-btn.active {
   bottom: calc(65px + var(--safe-bottom) + 72px) !important;
   transition: bottom 0.2s ease-out;
 }
+
+/* =================================================== */
+/* ★★★ PWAデザイン追加修正 ★★★ */
+/* =================================================== */
+
+/* --- コンテンツが少ない場合のレイアウト崩れを防止 --- */
+.is-standalone .main-content {
+  /* JSで計算した最小高さを適用し、常に画面いっぱいに広がるようにする */
+  min-height: var(--main-content-min-height, auto);
+  
+  /* flexboxを使い、フッターを最下部に配置する準備 */
+  display: flex;
+  flex-direction: column;
+}
+
+/* --- フッター（コピーライト表記など）を常に最下部に固定 --- */
+.is-standalone .main-content footer.site-footer {
+  /* main-content内の残りの垂直方向のスペースを全てフッターの上に確保 */
+  margin-top: auto;
+}

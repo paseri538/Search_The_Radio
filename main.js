@@ -940,9 +940,20 @@ function updateHeaderOffset() {
   const root = document.documentElement;
   const sticky = document.querySelector('.sticky-search-area');
   if (!sticky) return;
+
   const h = sticky.offsetHeight;
   root.style.setProperty('--header-height', h + 'px');
   root.style.setProperty('--header-offset', (h + 10) + 'px');
+
+  // PWAモードの場合、main-contentの最小高さを計算して設定
+  if (root.classList.contains('is-standalone')) {
+    // main-contentの最小高さを「ビューポートの高さ - ヘッダーの高さ」に設定
+    const minHeight = `calc(calc(var(--vh, 1vh) * 100) - ${h}px)`;
+    root.style.setProperty('--main-content-min-height', minHeight);
+  } else {
+    // PWAでない場合はリセット
+    root.style.setProperty('--main-content-min-height', 'auto');
+  }
 }
 window.__updateHeaderOffset = updateHeaderOffset;
 
