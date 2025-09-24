@@ -267,6 +267,8 @@ function resetFilters() {
   search();
 }
 
+// 既存の resetSearch 関数を、以下のコードに丸ごと置き換えてください
+
 function resetSearch() {
   const searchBox = document.getElementById('searchBox');
   const sortSelect = document.getElementById('sortSelect');
@@ -295,18 +297,6 @@ function resetSearch() {
     window.toggleFilterDrawer(false);
   }
   document.getElementById('mainResetBtn')?.blur();
-
-  // PWAモードでナビゲーションバーのレンダリングを強制的に再計算させる
-  const nav = document.getElementById('app-bottom-nav');
-  if (nav && document.documentElement.classList.contains('is-standalone')) {
-    // 一瞬非表示にしてから再表示することで、ブラウザに再描画を促し、固定が外れるバグを修正
-    requestAnimationFrame(() => {
-      nav.style.visibility = 'hidden';
-      requestAnimationFrame(() => {
-        nav.style.visibility = 'visible';
-      });
-    });
-  }
 }
 
 /**
@@ -320,6 +310,18 @@ function renderResults(arr, page = 1) {
 
   if (!arr || arr.length === 0) {
     ul.innerHTML = `<li class="no-results"><div class="no-results-icon">ﾉ°(6ᯅ9)</div></li>`;
+    
+    // ▼▼▼ 以下を追加 ▼▼▼
+    // 結果が0件の場合でも再描画処理を実行
+    const nav = document.getElementById('app-bottom-nav');
+    if (nav && document.documentElement.classList.contains('is-standalone')) {
+      requestAnimationFrame(() => {
+        nav.style.visibility = 'hidden';
+        requestAnimationFrame(() => {
+          nav.style.visibility = 'visible';
+        });
+      });
+    }
     return;
   }
 
@@ -405,6 +407,17 @@ function renderResults(arr, page = 1) {
 
   ul.appendChild(fragment);
   setTimeout(fitGuestLines, 300);
+
+  // PWAモードでナビゲーションバーのレンダリングを強制的に再計算させる
+  const nav = document.getElementById('app-bottom-nav');
+  if (nav && document.documentElement.classList.contains('is-standalone')) {
+    requestAnimationFrame(() => {
+      nav.style.visibility = 'hidden';
+      requestAnimationFrame(() => {
+        nav.style.visibility = 'visible';
+      });
+    });
+  }
 }
 
 function renderPagination(totalCount) {
