@@ -3468,3 +3468,52 @@ body[class*="theme-"] .nav-btn {
 body[class*="theme-"] .nav-btn.active {
   color: var(--btn-main) !important;
 }
+
+
+/* =================================================== */
+/* ★★★ PWAデザイン修正 ★★★ */
+/* =================================================== */
+
+/* --- 1. 並び替えボタンの再表示 --- */
+/* PWAモードで非表示になっていた並び替えボタンを再表示します */
+.is-standalone .search-row-controls {
+  display: grid !important;
+}
+
+/* PWAモードでは、上部のコントロールボタン（4つ）のみ非表示にします */
+.is-standalone #filterToggleBtn,
+.is-standalone #favOnlyToggleBtn,
+.is-standalone #randomBtn,
+.is-standalone .reset-btn {
+  display: none !important;
+}
+
+/* 残った並び替えボタンが全幅を占めるようにレイアウトを調整します */
+.is-standalone .sort-wrapper {
+  grid-column: 1 / -1 !important;
+  width: 100%;
+}
+
+
+/* --- 2. 下部ナビゲーションバーの固定化 --- */
+/* スクロールしてもナビゲーションバーが画面下に追従するように固定を強化します */
+.is-standalone .app-bottom-nav {
+  position: fixed !important; /* 固定を最優先 */
+  transform: translateZ(0);    /* iOSでの描画バグ対策 */
+}
+
+
+/* --- 3. テーマ変更ボタンの位置調整 --- */
+/* 下部ナビゲーションバーに隠れないよう、テーマ変更ボタンの位置を上に移動します */
+.is-standalone #theme-toggle-btn {
+  /* ナビゲーションバーの高さ(65px) + 余白(10px) */
+  bottom: calc(65px + var(--safe-bottom) + 10px) !important;
+  transition: bottom 0.2s ease-out;
+}
+
+/* テーマ選択パネルも同様に上に移動します */
+.is-standalone .floating-panel {
+  /* (ナビ高さ65px + 余白10px) + トリガーボタンからの距離(80px - 18px) を目安に調整 */
+  bottom: calc(65px + var(--safe-bottom) + 72px) !important;
+  transition: bottom 0.2s ease-out;
+}
