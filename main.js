@@ -277,9 +277,7 @@ function resetSearch() {
   if (showFavoritesOnly) {
     showFavoritesOnly = false;
     document.body.classList.remove('fav-only');
-    
     updateFavButtonState();
-
     document.querySelectorAll("#results .fav-btn.active").forEach(btn => {
       btn.classList.remove("active");
       const icon = btn.querySelector("i");
@@ -297,6 +295,18 @@ function resetSearch() {
     window.toggleFilterDrawer(false);
   }
   document.getElementById('mainResetBtn')?.blur();
+
+  // PWAモードでナビゲーションバーのレンダリングを強制的に再計算させる
+  const nav = document.getElementById('app-bottom-nav');
+  if (nav && document.documentElement.classList.contains('is-standalone')) {
+    // 一瞬非表示にしてから再表示することで、ブラウザに再描画を促し、固定が外れるバグを修正
+    requestAnimationFrame(() => {
+      nav.style.visibility = 'hidden';
+      requestAnimationFrame(() => {
+        nav.style.visibility = 'visible';
+      });
+    });
+  }
 }
 
 /**

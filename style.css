@@ -3537,3 +3537,18 @@ body[class*="theme-"] .nav-btn.active {
   /* main-content内の残りの垂直方向のスペースを全てフッターの上に確保 */
   margin-top: auto;
 }
+
+/* --- 1. ページ全体の高さを常に画面いっぱいに保つ --- */
+/* これにより、コンテンツが少ない場合でもレイアウトが安定します */
+body {
+  /* 常に画面の高さいっぱいに広がるように最小の高さを指定 */
+  min-height: 100vh;
+  min-height: 100dvh; /* より正確な高さを取得 (新しいブラウザ向け) */
+}
+
+/* --- 2. 下部ナビゲーションバーの固定を再強化 --- */
+/* レンダリングバグを回避するためのスタイルを追加 */
+.is-standalone .app-bottom-nav {
+  backface-visibility: hidden; /* GPUレンダリングを促し、描画を安定させる */
+  -webkit-backface-visibility: hidden;
+}
