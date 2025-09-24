@@ -3378,3 +3378,93 @@ body[class*="theme-"] .main-search-btn {
     background-color: var(--filter-btn-active);
   }
 }
+
+
+/* style.css の一番下に追加 */
+
+/* =================================================== */
+/* ★★★ PWA用 フッターナビゲーション ★★★ */
+/* =================================================== */
+
+.app-bottom-nav {
+  /* 通常は非表示 */
+  display: none;
+}
+
+/* --- PWAモードで起動された場合のみ適用 --- */
+.is-standalone .app-bottom-nav {
+  display: flex;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: calc(65px + var(--safe-bottom)); /* ホームバーを避けるための高さを確保 */
+  padding-bottom: var(--safe-bottom);
+  background-color: var(--card-bg, #fff);
+  border-top: 1px solid var(--btn-reset-border, #bfc8d6);
+  box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+  z-index: 2000;
+  align-items: flex-start;
+}
+
+.is-standalone .nav-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding-top: 8px;
+  background: none;
+  border: none;
+  color: var(--muted, #7c8798);
+  font-size: 11px;
+  gap: 4px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent; /* タップ時のハイライトを無効化 */
+}
+
+.is-standalone .nav-btn i {
+  font-size: 22px;
+  line-height: 1;
+}
+
+.is-standalone .nav-btn.active {
+  color: var(--btn-main, #6654e8);
+}
+
+/* PWAモードでは、上部のコントロールボタンを非表示にする */
+.is-standalone .search-row-controls {
+  display: none !important;
+}
+
+/* PWAモードでは、コンテンツがフッターナビに隠れないように下部に余白を追加 */
+.is-standalone .main-content {
+  padding-bottom: 80px; /* フッターの高さ + α */
+}
+
+/* --- カラーテーマ対応 --- */
+
+/* ダークモード */
+body.dark-mode .app-bottom-nav {
+  background-color: #252c35;
+  border-top-color: #2e3640;
+}
+body.dark-mode .nav-btn {
+  color: #9aa4b2;
+}
+body.dark-mode .nav-btn.active {
+  color: #ffffff;
+}
+
+/* ピンク・イエロー・ブルー・レッドテーマ */
+body[class*="theme-"] .app-bottom-nav {
+  background-color: var(--card-bg) !important;
+  border-top-color: var(--history-card-bd) !important;
+}
+body[class*="theme-"] .nav-btn {
+  color: var(--muted) !important;
+}
+body[class*="theme-"] .nav-btn.active {
+  color: var(--btn-main) !important;
+}
