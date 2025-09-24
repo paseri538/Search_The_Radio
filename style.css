@@ -3552,3 +3552,64 @@ body {
   backface-visibility: hidden; /* GPUレンダリングを促し、描画を安定させる */
   -webkit-backface-visibility: hidden;
 }
+
+
+
+/* =================================================== */
+/* ★★★ PWAデザイン根本修正 (ナビゲーションバー固定 & 文字崩れ) ★★★ */
+/* =================================================== */
+
+
+
+/* --- 1. ナビゲーションバー固定問題の根本対策 --- */
+
+/* PWAモードのとき、ページ全体を画面にフィットさせ、スクロールを禁止 */
+.is-standalone,
+.is-standalone body {
+  height: 100%;
+  max-height: 100%;
+  overflow: hidden;
+}
+
+.is-standalone body {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh; /* iOS 15.4+ でより正確なビューポート高を取得 */
+  height: calc(var(--vh, 1vh) * 100); /* 古いブラウザ用のフォールバック */
+}
+
+/* ヘッダーの固定を解除し、レイアウトの一部として配置 */
+.is-standalone .sticky-search-area {
+  position: static;
+  flex-shrink: 0;
+}
+
+/* メインコンテンツエリアが残りの高さを全て使い、スクロールを担当 */
+.is-standalone .main-content {
+  flex-grow: 1;
+  overflow-y: auto; /* この要素内でのみ縦スクロールを許可 */
+  -webkit-overflow-scrolling: touch; /* iOSでの慣性スクロールを有効化 */
+  padding-top: 10px !important; /* ヘッダーとの間に適切な余白を確保 */
+  min-height: auto !important; /* 以前の最小高さ指定をリセット */
+}
+
+/* 下部ナビゲーションバーの固定を解除し、レイアウトの一部として配置 */
+.is-standalone .app-bottom-nav {
+  position: static;
+  flex-shrink: 0;
+}
+
+
+/* --- 2. 「ひすとりー」ボタンの文字崩れ修正 --- */
+
+/* ボタン内の要素（アイコンとタイトル）をグループとして中央に配置 */
+.is-standalone .history-toggle {
+    justify-content: center;
+}
+
+/* タイトルの中央揃え方法を変更し、文字崩れを防止 */
+.is-standalone .history-toggle .title {
+    position: static !important;
+    transform: none !important;
+    white-space: nowrap !important; /* 折り返しを強制的に禁止 */
+}
