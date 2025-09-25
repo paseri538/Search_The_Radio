@@ -1,7 +1,7 @@
 // sw.js (ファイル全体をこのコードで上書きしてください)
 
 // キャッシュの名前を定義します。バージョンを更新すると古いキャッシュは自動的に削除されます。
-const SW_VERSION = 'v20250925c'; // ★バージョンを更新
+const SW_VERSION = 'v20250925d'; // ★バージョンを更新
 const CACHE_NAME = `radio-cache-${SW_VERSION}`;
 
 
@@ -23,6 +23,105 @@ const CORE_ASSETS = [
   'https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css',
   'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css'
 ];
+
+// 【重要】ここに、生成した全サムネイルのURLリストを貼り付けます
+const THUMBNAIL_ASSETS = [
+'https://i.ytimg.com/vi/t6GPhBCRh8s/mqdefault.jpg',
+'https://i.ytimg.com/vi/q4hfV8moFiI/mqdefault.jpg',
+'https://i.ytimg.com/vi/AuLI_rwkx9Y/mqdefault.jpg',
+'https://i.ytimg.com/vi/aZjDfJ_CSn0/mqdefault.jpg',
+'https://i.ytimg.com/vi/4l77d67EiPc/mqdefault.jpg',
+'https://i.ytimg.com/vi/LcPFWQ5JdoU/mqdefault.jpg',
+'https://i.ytimg.com/vi/IdEStksoFaM/mqdefault.jpg',
+'https://i.ytimg.com/vi/FA7BqhR_AkQ/mqdefault.jpg',
+'https://i.ytimg.com/vi/saAS_RHRhDI/mqdefault.jpg',
+'https://i.ytimg.com/vi/QHmGJKLGJs4/mqdefault.jpg',
+'https://i.ytimg.com/vi/sZ0ElkxOwkY/mqdefault.jpg',
+'https://i.ytimg.com/vi/uJy5FqDPumk/mqdefault.jpg',
+'https://i.ytimg.com/vi/8tnv8TFsyTs/mqdefault.jpg',
+'https://i.ytimg.com/vi/yA90NiAGuF8/mqdefault.jpg',
+'https://i.ytimg.com/vi/hHfpdyDFN6U/mqdefault.jpg',
+'https://i.ytimg.com/vi/IaN7fW-RJPo/mqdefault.jpg',
+'https://i.ytimg.com/vi/oLdNIIz3qWw/mqdefault.jpg',
+'https://i.ytimg.com/vi/P0ifdqZm8wo/mqdefault.jpg',
+'https://i.ytimg.com/vi/16fCDsC2Aks/mqdefault.jpg',
+'https://i.ytimg.com/vi/_x5aMdhpeW8/mqdefault.jpg',
+'https://i.ytimg.com/vi/_U9gzTHBSNo/mqdefault.jpg',
+'https://i.ytimg.com/vi/xcJYrnd1lmM/mqdefault.jpg',
+'https://i.ytimg.com/vi/Z1Jp0XgIjhY/mqdefault.jpg',
+'https://i.ytimg.com/vi/VOa30rMc_A8/mqdefault.jpg',
+'https://i.ytimg.com/vi/vEZPauFTld0/mqdefault.jpg',
+'https://i.ytimg.com/vi/SlqA0WLMIJY/mqdefault.jpg',
+'https://i.ytimg.com/vi/qGlRPIDpQpQ/mqdefault.jpg',
+'https://i.ytimg.com/vi/Auf-ShZED9A/mqdefault.jpg',
+'https://i.ytimg.com/vi/w0v3hA1u_lw/mqdefault.jpg',
+'https://i.ytimg.com/vi/fTtmFkt7dh8/mqdefault.jpg',
+'https://i.ytimg.com/vi/uUlbEGKij0k/mqdefault.jpg',
+'https://i.ytimg.com/vi/aJS3Gn27ecQ/mqdefault.jpg',
+'https://i.ytimg.com/vi/zNSZqWpbCjg/mqdefault.jpg',
+'https://i.ytimg.com/vi/jWQZeh5QBEA/mqdefault.jpg',
+'https://i.ytimg.com/vi/UH2tnm8-zFg/mqdefault.jpg',
+'https://i.ytimg.com/vi/D6h2j9TK95U/mqdefault.jpg',
+'https://i.ytimg.com/vi/7yENoBuBn6k/mqdefault.jpg',
+'https://i.ytimg.com/vi/35i46aXGr_U/mqdefault.jpg',
+'https://i.ytimg.com/vi/bJNWOULhxFA/mqdefault.jpg',
+'https://i.ytimg.com/vi/e2ZTylMTA9A/mqdefault.jpg',
+'https://i.ytimg.com/vi/JxVrbUUC8uk/mqdefault.jpg',
+'https://i.ytimg.com/vi/F_ydWMhlg9s/mqdefault.jpg',
+'https://i.ytimg.com/vi/nSO14XAm2GI/mqdefault.jpg',
+'https://i.ytimg.com/vi/ZHabLKrF-Aw/mqdefault.jpg',
+'https://i.ytimg.com/vi/0nHtK3Zokmg/mqdefault.jpg',
+'https://i.ytimg.com/vi/EoW2sRMJeYs/mqdefault.jpg',
+'https://i.ytimg.com/vi/eBa39x7Y-wU/mqdefault.jpg',
+'https://i.ytimg.com/vi/QOt1T9L3pwU/mqdefault.jpg',
+'https://i.ytimg.com/vi/QYL0t78oGTY/mqdefault.jpg',
+'https://i.ytimg.com/vi/FHYxRO_3_VE/mqdefault.jpg',
+'https://i.ytimg.com/vi/Ej1RFoHLtdg/mqdefault.jpg',
+'https://i.ytimg.com/vi/mmHhbqnSoWs/mqdefault.jpg',
+'https://i.ytimg.com/vi/uB_S_JdKmkM/mqdefault.jpg',
+'https://i.ytimg.com/vi/gkgQkrTc0qU/mqdefault.jpg',
+'https://i.ytimg.com/vi/NQx1S6RyK38/mqdefault.jpg',
+'https://i.ytimg.com/vi/ghFq5nTxOwQ/mqdefault.jpg',
+'https://i.ytimg.com/vi/OL8SskfX6eA/mqdefault.jpg',
+'https://i.ytimg.com/vi/0TiPEETSxUo/mqdefault.jpg',
+'https://i.ytimg.com/vi/Fv_9fQ3PFRY/mqdefault.jpg',
+'https://i.ytimg.com/vi/JmSomKpSL-M/mqdefault.jpg',
+'https://i.ytimg.com/vi/Xg1ozrPAwDI/mqdefault.jpg',
+'https://i.ytimg.com/vi/_SUn0OWQo2k/mqdefault.jpg',
+'https://i.ytimg.com/vi/HqKaV7V4L7A/mqdefault.jpg',
+'https://i.ytimg.com/vi/L8mHUOlAw64/mqdefault.jpg',
+'https://i.ytimg.com/vi/WsfRhqaLO_k/mqdefault.jpg',
+'https://i.ytimg.com/vi/efXr9X648so/mqdefault.jpg',
+'https://i.ytimg.com/vi/_8-sk4OwB78/mqdefault.jpg',
+'https://i.ytimg.com/vi/mwJeACqV2Oc/mqdefault.jpg',
+'https://i.ytimg.com/vi/kUbnGEpkT6E/mqdefault.jpg',
+'https://i.ytimg.com/vi/VN95H7KjuL0/mqdefault.jpg',
+'https://i.ytimg.com/vi/cAx6-HQejSI/mqdefault.jpg',
+'https://i.ytimg.com/vi/VN5u1Jc3H5I/mqdefault.jpg',
+'https://i.ytimg.com/vi/YTAG14wJsc0/mqdefault.jpg',
+'https://i.ytimg.com/vi/bCNwtnv-3Qk/mqdefault.jpg',
+'https://i.ytimg.com/vi/Xz8iTj-5Ndw/mqdefault.jpg',
+'https://i.ytimg.com/vi/SonCPSaBlKA/mqdefault.jpg',
+'https://i.ytimg.com/vi/8zIajtpgosA/mqdefault.jpg',
+'https://i.ytimg.com/vi/yqHK0r7qhvk/mqdefault.jpg',
+'https://i.ytimg.com/vi/gzKy7Y10h4g/mqdefault.jpg',
+'https://i.ytimg.com/vi/-bgKWbqNyN0/mqdefault.jpg',
+'https://i.ytimg.com/vi/OKHnZk0o9lM/mqdefault.jpg',
+'https://i.ytimg.com/vi/0Vz-WHfPrI4/mqdefault.jpg',
+'https://i.ytimg.com/vi/JQ_xgtun1kQ/mqdefault.jpg',
+'https://i.ytimg.com/vi/f18K3nc2wAw/mqdefault.jpg',
+'https://i.ytimg.com/vi/4hcPzIW8MfE/mqdefault.jpg',
+'https://i.ytimg.com/vi/ieCOGEOXxr8/mqdefault.jpg',
+'https://i.ytimg.com/vi/4c_DVoq-9oU/mqdefault.jpg',
+'https://i.ytimg.com/vi/kct8627dspo/mqdefault.jpg',
+'https://i.ytimg.com/vi/EDay9btUsKw/mqdefault.jpg',
+'https://i.ytimg.com/vi/__P57MTTjyw/mqdefault.jpg',
+];
+
+// インストール時にキャッシュする全アセット
+const PRECACHE_ASSETS = [...CORE_ASSETS, ...THUMBNAIL_ASSETS];
+
+
 
 // 1. Service Workerのインストール処理
 self.addEventListener('install', (event) => {
