@@ -25,9 +25,6 @@ let favorites = loadFavs();
 let showFavoritesOnly = false;
 let isRestoringURL = false;
 
-// PWA用フッターナビボタン
-let navFilterBtn, navFavBtn, navRandomBtn, navResetBtn;
-
 // Guest colors (for active filters)
 const guestColorMap = {
   "青山吉能": "#ff6496", "鈴代紗弓": "#fabe00", "水野朔": "#006ebe", "長谷川育美": "#e60046",
@@ -117,11 +114,6 @@ async function loadExternalData() {
 }
 
 async function initializeApp() {
-  navFilterBtn = document.getElementById('nav-filter-btn');
-  navFavBtn = document.getElementById('nav-fav-btn');
-  navRandomBtn = document.getElementById('nav-random-btn');
-  navResetBtn = document.getElementById('nav-reset-btn');
-
   await loadExternalData();
   preloadThumbsFromData();
   if (!applyStateFromURL({ replace: true })) {
@@ -141,8 +133,8 @@ function preloadThumbsFromData() {
   try {
     const head = document.head;
     const seen = new Set();
-    // ★変更点：全データ(data)ではなく、最初の20件(1ページ分)だけを対象にします
-    const preloadData = data.slice(0, 20);
+    
+    const preloadData = data;
 
     preloadData.forEach(ep => {
       const vid = getVideoId(ep.link);
@@ -165,26 +157,6 @@ function preloadThumbsFromData() {
  * ★★★ 検索とフィルタリング ★★★
  * ===================================================
  */
-
-function updateFavButtonState() {
-    const isActive = showFavoritesOnly;
-    // 元のボタン
-    const favOnlyToggleBtn = document.getElementById('favOnlyToggleBtn');
-    if(favOnlyToggleBtn) {
-        favOnlyToggleBtn.setAttribute('aria-pressed', String(isActive));
-        favOnlyToggleBtn.classList.toggle('active', isActive);
-    }
-    // 新しいフッターボタン
-    if(navFavBtn) {
-        navFavBtn.classList.toggle('active', isActive);
-        const favIcon = navFavBtn.querySelector('i');
-        if (favIcon) {
-            favIcon.classList.toggle('fa-solid', isActive);
-            favIcon.classList.toggle('fa-regular', !isActive);
-        }
-    }
-}
-
 function search(opts = {}) {
   isSearchTriggered = true;
   if (typeof clearAutocompleteSuggestions === 'function') clearAutocompleteSuggestions();
@@ -213,6 +185,7 @@ function search(opts = {}) {
         }
         const searchWords = [...searchTerms].filter(Boolean);
         res = res.filter(it => searchWords.some(word => it.searchText.includes(word)));
+        // ★★★↑このブロックまでを...
   }
 
   // Filters
@@ -267,8 +240,6 @@ function resetFilters() {
   search();
 }
 
-// 既存の resetSearch 関数を、以下のコードに丸ごと置き換えてください
-
 function resetSearch() {
   const searchBox = document.getElementById('searchBox');
   const sortSelect = document.getElementById('sortSelect');
@@ -277,9 +248,15 @@ function resetSearch() {
   if (sortSelect) sortSelect.value = "newest";
 
   if (showFavoritesOnly) {
+    favorites.clear();
+    saveFavs();
     showFavoritesOnly = false;
     document.body.classList.remove('fav-only');
-    updateFavButtonState();
+    const favBtn = document.getElementById("favOnlyToggleBtn");
+    if (favBtn) {
+      favBtn.classList.remove("active");
+      favBtn.setAttribute("aria-pressed", "false");
+    }
     document.querySelectorAll("#results .fav-btn.active").forEach(btn => {
       btn.classList.remove("active");
       const icon = btn.querySelector("i");
@@ -293,6 +270,7 @@ function resetSearch() {
   resetFilters();
   try { window.scrollTo({ top: 0, behavior: 'auto' }); } catch (e) { window.scrollTo(0, 0); }
 
+  // もしフィルターモーダルが開いていたら、閉じる処理を呼び出します。
   if (typeof window.toggleFilterDrawer === 'function') {
     window.toggleFilterDrawer(false);
   }
@@ -308,25 +286,8 @@ function renderResults(arr, page = 1) {
   const ul = document.getElementById("results");
   ul.innerHTML = "";
 
-  const reRenderFixedElements = () => {
-    const header = document.querySelector('.sticky-search-area');
-    const footer = document.getElementById('app-bottom-nav');
-    if (document.documentElement.classList.contains('is-standalone')) {
-        [header, footer].forEach(el => {
-            if (!el) return;
-            requestAnimationFrame(() => {
-                el.style.visibility = 'hidden';
-                requestAnimationFrame(() => {
-                    el.style.visibility = 'visible';
-                });
-            });
-        });
-    }
-  };
-
   if (!arr || arr.length === 0) {
     ul.innerHTML = `<li class="no-results"><div class="no-results-icon">ﾉ°(6ᯅ9)</div></li>`;
-    reRenderFixedElements(); // 結果が0件でも実行
     return;
   }
 
@@ -348,9 +309,12 @@ function renderResults(arr, page = 1) {
     let hit = findHitTime(it, qRaw);
     if (!hit && selectedGuests.length > 0) {
         for(const guest of selectedGuests) {
+            // ★★★↓ここから下を追加↓★★★
+            // 「結束バンド」と「その他」はタイムスタンプ検索の対象から除外
             if (guest === "結束バンド" || guest === "その他") {
                 continue;
             }
+            // ★★★↑ここまで↑★★★
             hit = findHitTime(it, guest);
             if(hit) break;
         }
@@ -412,9 +376,6 @@ function renderResults(arr, page = 1) {
 
   ul.appendChild(fragment);
   setTimeout(fitGuestLines, 300);
-
-  // PWAモードで固定要素のレンダリングを強制的に再計算させる
-  reRenderFixedElements();
 }
 
 function renderPagination(totalCount) {
@@ -490,6 +451,7 @@ function fitGuestLines() {
   const guestLines = document.querySelectorAll('.guest-one-line');
 
   guestLines.forEach(line => {
+    // 1. 初期化
     line.style.fontSize = '';
     line.classList.remove('needs-ellipsis');
 
@@ -500,13 +462,18 @@ function fitGuestLines() {
     const currentWidth = line.scrollWidth;
     const MIN_FONT_SIZE = 10;
 
+    // 2. はみ出しているか、一度だけチェック
     if (currentWidth > parentWidth) {
       const originalSize = parseFloat(window.getComputedStyle(line).fontSize);
+
+      // 3. 最適な文字サイズを比率で一発計算 (ループを回避)
       let newSize = (parentWidth / currentWidth) * originalSize;
 
+      // 4. 最小サイズを下回らないように制御
       if (newSize < MIN_FONT_SIZE) {
         newSize = MIN_FONT_SIZE;
         line.style.fontSize = newSize + 'px';
+        // 最小サイズでもはみ出す場合は、省略記号クラスを付与
         if (line.scrollWidth > parentWidth) {
           line.classList.add('needs-ellipsis');
         }
@@ -576,11 +543,11 @@ function applyStateFromURL({ replace = false } = {}) {
   selectedOthers = readMulti('o');
   selectedYears = readMulti('y').map(String);
   document.getElementById('sortSelect').value = params.get('sort') || 'newest';
-  
   showFavoritesOnly = params.get('fav') === '1';
-  updateFavButtonState(); // 状態更新を共通関数に
+  const favBtn = document.getElementById('favOnlyToggleBtn');
+  favBtn.classList.toggle('active', showFavoritesOnly);
+  favBtn.setAttribute('aria-pressed', showFavoritesOnly);
   document.body.classList.toggle('fav-only', showFavoritesOnly);
-
   updateFilterButtonStyles();
   currentPage = parseInt(params.get('p') || '1', 10) || 1;
 
@@ -597,6 +564,7 @@ function applyStateFromURL({ replace = false } = {}) {
 function scrollToResultsTop() {
   const mainContent = document.querySelector('.main-content');
   if (mainContent) {
+    // ヘッダーの高さを考慮して、結果リストの先頭にスクロール
     const top = mainContent.getBoundingClientRect().top + window.pageYOffset - 24;
     window.scrollTo({ top: Math.max(0, top), behavior: 'auto' });
   }
@@ -621,7 +589,6 @@ function setupEventListeners() {
     backdrop.classList.toggle('show', isOpening);
     filterToggleBtn.setAttribute('aria-expanded', String(isOpening));
     filterToggleBtn.setAttribute('aria-pressed', String(isOpening));
-    if (navFilterBtn) navFilterBtn.classList.toggle('active', isOpening);
 
     if (isOpening) window.acquireBodyLock();
     else window.releaseBodyLock();
@@ -633,8 +600,10 @@ function setupEventListeners() {
   backdrop.addEventListener('click', () => toggleFilterDrawer(false));
 
   document.getElementById('favOnlyToggleBtn').addEventListener('click', (e) => {
+    const btn = e.currentTarget;
     showFavoritesOnly = !showFavoritesOnly;
-    updateFavButtonState();
+    btn.setAttribute('aria-pressed', String(showFavoritesOnly));
+    btn.classList.toggle('active', showFavoritesOnly);
     document.body.classList.toggle('fav-only', showFavoritesOnly);
     search({ gotoPage: 1 });
   });
@@ -727,6 +696,7 @@ function setupEventListeners() {
 
   document.getElementById('createPlaylistBtn').addEventListener('click', createPlaylist);
   window.addEventListener('popstate', () => applyStateFromURL({ replace: false }));
+  // ★ 変更点: passive: true を追加してスクロール性能を向上
   window.addEventListener('orientationchange', () => setTimeout(fitGuestLines, 120), { passive: true });
 
   ['filterToggleBtn', 'favOnlyToggleBtn', 'randomBtn', 'mainResetBtn', 'historyToggle'].forEach(id => {
@@ -740,62 +710,60 @@ function setupEventListeners() {
     }
   });
 
+  // 画面のリサイズ時にも文字サイズを調整するようにイベントリスナーを追加
   let resizeTimer;
   window.addEventListener('resize', () => {
     clearTimeout(resizeTimer);
+    // リサイズ操作が終わった少し後に実行することで、処理の負荷を軽減します
     resizeTimer = setTimeout(fitGuestLines, 150);
   }, { passive: true });
 
+
+
+  // 並び替えセレクトボックスが変更された時の処理
   document.getElementById('sortSelect').addEventListener('change', () => {
     search();
     scrollToResultsTop();
   });
 
+  // ===================================================
+  // ★★★ 検索ボックスのクリアボタン機能 ★★★
+  // ===================================================
   const searchBoxForClear = document.getElementById('searchBox');
   const clearSearchBtn = document.getElementById('clearSearchBtn');
 
   if (searchBoxForClear && clearSearchBtn) {
+    // ボタンの表示/非表示を切り替える関数
     const toggleClearBtn = () => {
       clearSearchBtn.hidden = !searchBoxForClear.value;
     };
+
+    // 入力があるたびに、表示をチェック
     searchBoxForClear.addEventListener('input', toggleClearBtn);
+
+    // ボタンがクリックされた時の処理
     clearSearchBtn.addEventListener('click', () => {
-      searchBoxForClear.value = '';
-      toggleClearBtn();
-      search();
-      searchBoxForClear.focus();
+      searchBoxForClear.value = ''; // 入力欄を空にする
+      toggleClearBtn(); // ボタンを非表示にする
+      search(); // 検索を再実行して結果をリセット
+      searchBoxForClear.focus(); // 続けて入力できるようフォーカスを戻す
     });
+
+    // ページ読み込み時（URLから復元された場合など）にも一度チェック
     toggleClearBtn();
   }
 
+  // ===================================================
+  // ★★★ 検索ボックス内の検索ボタン機能 ★★★
+  // ===================================================
   const mainSearchBtn = document.getElementById('mainSearchBtn');
   if (mainSearchBtn) {
     mainSearchBtn.addEventListener('click', () => {
+      // 既存の検索関数とスクロール関数を呼び出すだけ
       search();
       scrollToResultsTop();
-      mainSearchBtn.blur();
+      mainSearchBtn.blur(); // クリック後にボタンのフォーカスを外す
     });
-  }
-
-  // --- PWA用フッターナビのイベントリスナー ---
-  if (navFilterBtn) {
-    navFilterBtn.addEventListener('click', () => toggleFilterDrawer());
-  }
-  if (navFavBtn) {
-    navFavBtn.addEventListener('click', (e) => {
-        showFavoritesOnly = !showFavoritesOnly;
-        updateFavButtonState();
-        document.body.classList.toggle('fav-only', showFavoritesOnly);
-        search({ gotoPage: 1 });
-    });
-  }
-  if (navRandomBtn) {
-    navRandomBtn.addEventListener('click', () => {
-        document.getElementById('randomBtn')?.click();
-    });
-  }
-  if (navResetBtn) {
-    navResetBtn.addEventListener('click', resetSearch);
   }
 }
 
@@ -804,6 +772,8 @@ function setupEventListeners() {
  * ★★★ その他のUI機能 ★★★
  * ===================================================
  */
+/* main.js の scrollLockModule をこのコードで置き換えてください */
+
 (function scrollLockModule() {
   let lockCount = 0;
   const htmlElement = document.documentElement;
@@ -811,10 +781,15 @@ function setupEventListeners() {
 
   window.acquireBodyLock = () => {
     if (lockCount === 0) {
+      // スクロールバーの幅を計算
       const scrollbarWidth = window.innerWidth - htmlElement.clientWidth;
+      
+      // スクロールバーが消えることによるレイアウトのズレを防止
       if (scrollbarWidth > 0 && stickyHeader) {
         stickyHeader.style.paddingRight = `${scrollbarWidth}px`;
       }
+      
+      // html要素にクラスを付与してスクロールを禁止
       htmlElement.classList.add('scroll-locked');
     }
     lockCount++;
@@ -823,9 +798,12 @@ function setupEventListeners() {
   window.releaseBodyLock = () => {
     lockCount = Math.max(0, lockCount - 1);
     if (lockCount === 0) {
+      // ズレ防止のpaddingを元に戻す
       if (stickyHeader) {
         stickyHeader.style.paddingRight = '';
       }
+      
+      // スクロール禁止を解除
       htmlElement.classList.remove('scroll-locked');
     }
   };
@@ -878,11 +856,19 @@ function setupModals() {
         const closeBtn = document.getElementById(closeBtnId);
         if (!modal || !openTrigger || !closeBtn || !modalContent) return { openModal: ()=>{}, closeModal: ()=>{} };
 
+        let closeTimer = null;
+
         const openModal = () => {
             if (modal.classList.contains('show') || modal.classList.contains('closing')) return;
 
-            modal.classList.remove('show', 'closing');
+            // ★ここからが修正箇所です
+            // アニメーションをリセットするために、一度クラスを確実に削除します
+            modal.classList.remove('show');
+            modal.classList.remove('closing');
+
+            // ブラウザに上記の変更を強制的に認識させます（アニメーションリセットのおまじないです）
             void modal.offsetWidth;
+            // ★ここまでが修正箇所です
 
             if (modalId === 'historyModal' && !modal.dataset.built) {
                 buildTimeline(historyData);
@@ -890,7 +876,10 @@ function setupModals() {
             }
 
             modal.hidden = false;
-            requestAnimationFrame(() => modal.classList.add('show'));
+
+            requestAnimationFrame(() => {
+                modal.classList.add('show');
+            });
             window.acquireBodyLock();
         };
         
@@ -901,17 +890,33 @@ function setupModals() {
             modal.classList.remove('show');
         
             let isClosed = false;
+        
+            // 閉じる処理の本体
             const finishClose = () => {
-                if (isClosed) return;
+                if (isClosed) return; // 処理が重複しないようにガード
                 isClosed = true;
+        
                 modal.hidden = true;
                 modal.classList.remove('closing');
+        
+                // 念のため、イベントリスナーを解除
                 modal.removeEventListener('animationend', onAnimationEnd);
+                
                 window.releaseBodyLock();
             };
-            const onAnimationEnd = (e) => { if (e.target === modal) finishClose(); };
+        
+            // アニメーション完了を待つリスナー
+            const onAnimationEnd = (e) => {
+                // イベントの発生元がモーダル自身の場合のみ処理する
+                if (e.target === modal) {
+                    finishClose();
+                }
+            };
+        
             modal.addEventListener('animationend', onAnimationEnd);
-            setTimeout(finishClose, 300);
+        
+            // animationendが発火しない場合の安全策としてタイマーを設定
+            setTimeout(finishClose, 300); // 300ミリ秒後に強制実行
         };
         openTrigger.addEventListener('click', e => { e.preventDefault(); openModal(); });
         closeBtn.addEventListener('click', closeModal);
@@ -960,20 +965,9 @@ function updateHeaderOffset() {
   const root = document.documentElement;
   const sticky = document.querySelector('.sticky-search-area');
   if (!sticky) return;
-
   const h = sticky.offsetHeight;
   root.style.setProperty('--header-height', h + 'px');
   root.style.setProperty('--header-offset', (h + 10) + 'px');
-
-  // PWAモードの場合、main-contentの最小高さを計算して設定
-  if (root.classList.contains('is-standalone')) {
-    // main-contentの最小高さを「ビューポートの高さ - ヘッダーの高さ」に設定
-    const minHeight = `calc(calc(var(--vh, 1vh) * 100) - ${h}px)`;
-    root.style.setProperty('--main-content-min-height', minHeight);
-  } else {
-    // PWAでない場合はリセット
-    root.style.setProperty('--main-content-min-height', 'auto');
-  }
 }
 window.__updateHeaderOffset = updateHeaderOffset;
 
@@ -1138,6 +1132,7 @@ function rainGoodMarks() {
     });
 })();
 
+// Autocomplete is already native JS, so we include it here.
 function initializeAutocomplete() {
   const inputEl = document.getElementById('searchBox');
   const boxEl = document.getElementById('autocomplete');
@@ -1226,41 +1221,62 @@ const onInput = () => {
     const normQ = normalize(raw);
     if (!normQ) { clear(); return; }
     
+
+    // --- ここからが新しいロジック ---
+
+    // 1. 入力がエピソード番号かどうかを判定
+    // #を削除し、全角数字を半角に変換
     const episodeQuery = raw.replace('#', '').trim().replace(/[０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0));
 
+    // 数字のみで構成されているかチェック
     if (/^\d+$/.test(episodeQuery)) {
       const episodeNumber = parseInt(episodeQuery, 10);
+      
+      // 該当するエピソードを検索
       const targetEpisode = data.find(ep => parseInt(ep.episode, 10) === episodeNumber);
 
       if (targetEpisode && targetEpisode.keywords && targetEpisode.keywords.length > 0) {
+        // --- ここからが新しいロジック ---
+
+        // 1. 除外対象となる出演者関連の "全" キーワードリストを作成
         const guestKeywordsToExclude = new Set();
+        
+        // サイトが知っている主要な出演者とその愛称をすべてリストに追加
         const mainGuests = Object.keys(guestColorMap);
         mainGuests.forEach(guestName => {
-            guestKeywordsToExclude.add(guestName);
+            guestKeywordsToExclude.add(guestName); // 本人名を追加
+            // 辞書データ(readings.json)にあれば、関連キーワード(愛称など)もすべて追加
             if (CUSTOM_READINGS[guestName]) {
                 CUSTOM_READINGS[guestName].forEach(alias => guestKeywordsToExclude.add(alias));
             }
         });
+
+        // その回固有のゲストとその愛称もリストに追加
         const episodeGuests = Array.isArray(targetEpisode.guest) ? targetEpisode.guest : [targetEpisode.guest];
         episodeGuests.forEach(guestName => {
             if (guestName) {
-                guestKeywordsToExclude.add(guestName);
+                guestKeywordsToExclude.add(guestName); // 本人名を追加
                 if (CUSTOM_READINGS[guestName]) {
                     CUSTOM_READINGS[guestName].forEach(alias => guestKeywordsToExclude.add(alias));
                 }
             }
         });
 
+        // 2. キーワードリストから、出演者関連のキーワードを完全に除外
         const filteredKeywords = targetEpisode.keywords.filter(kw => {
           const cleanKeyword = stripTimeSuffix(kw).trim();
           return !guestKeywordsToExclude.has(cleanKeyword);
         });
+
+        // --- ここまでが新しいロジック ---
         
+        // 3. 除外後のキーワードを候補として整形 (ここは変更なし)
         const keywordsAsEntries = filteredKeywords.map(kw => ({
           label: stripTimeSuffix(kw),
           type: `第${targetEpisode.episode}回`
         }));
         
+        // 重複するキーワードを除去 (ここも変更なし)
         const seen = new Set();
         const uniqueEntries = keywordsAsEntries.filter(el => {
             const duplicate = seen.has(el.label);
@@ -1273,6 +1289,9 @@ const onInput = () => {
       }
     }
 
+    // --- ここまでが新しいロジック ---
+
+    // 3. 通常のキーワード検索ロジック (入力がエピソード番号でなかった場合)
     const scored = entries.map(e => ({ e, s: scoreEntry(e, normQ, raw) })).filter(item => item.s !== null);
     scored.sort((a, b) => b.s - a.s);
     
@@ -1291,26 +1310,39 @@ const onInput = () => {
     render(items.slice(0, 12));
   };
   
-  const debouncedOnInput = debounce(onInput, 150);
+  const debouncedOnInput = debounce(onInput, 150); // ★先に定義する
 
   const onKeyDown = (e) => {
+    // Enterキーが押された時の包括的な処理
     if (e.key === 'Enter') {
+      // 日本語入力変換中（文字の下に線がある状態）のEnterは、
+      // 検索ではなく文字の確定を優先するため、ここで処理を中断する
       if (e.isComposing) {
         return;
       }
+
       e.preventDefault();
       
+      // 候補が選択されていれば、その候補を選択する
       if (!boxEl.hidden && cursor >= 0) {
         pick(cursor);
       } else {
+        // そうでなければ、通常の検索を実行する
+        
+        // 1. これから実行される可能性のある「候補表示の予約」をキャンセル
         debouncedOnInput.cancel();
+        
+        // 2. 表示されている候補があれば、即座にクリア
         clear();
+        
+        // 3. 検索を実行
         search();
         scrollToResultsTop();
       }
-      return;
+      return; // Enterキーの処理はここで終了
     }
 
+    // --- 以下はEnterキー以外のキー処理（変更なし） ---
     if (boxEl.hidden) return;
     if (e.key === 'ArrowDown') { e.preventDefault(); cursor = (cursor + 1) % viewItems.length; render(viewItems); } 
     else if (e.key === 'ArrowUp') { e.preventDefault(); cursor = (cursor - 1 + viewItems.length) % viewItems.length; render(viewItems); } 
@@ -1339,21 +1371,22 @@ document.addEventListener('DOMContentLoaded', () => {
   new MutationObserver(updateHeaderOffset).observe(document.querySelector('.sticky-search-area'), { childList: true, subtree: true, attributes: true });
 });
 
+// main.js の一番下など、分かりやすい場所に追加してください。
+
 /**
  * ===================================================
  * ★★★ PWA/モバイル対応強化 ★★★
  * ===================================================
  */
 (function enhanceMobileExperience() {
+  // PWAモード（スタンドアロン表示）を検出してクラスを付与
   if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone) {
     document.documentElement.classList.add('is-standalone');
-    const bottomNav = document.getElementById('app-bottom-nav');
-    if (bottomNav) {
-        bottomNav.hidden = false;
-    }
   }
 
+  // モバイルブラウザの100vh問題を解決
   const setVh = () => {
+    // ★変更点: 入力中はvhの更新をスキップして揺れを防ぐ
     if (isInputFocused) return;
     document.documentElement.style.setProperty('--vh', `${window.innerHeight * 0.01}px`);
   };
@@ -1361,28 +1394,15 @@ document.addEventListener('DOMContentLoaded', () => {
   window.addEventListener('resize', setVh, { passive: true });
   window.addEventListener('orientationchange', setVh, { passive: true });
 
+  // ★追加: 入力欄のフォーカス状態を監視
   document.addEventListener('DOMContentLoaded', () => {
     const searchInput = document.getElementById('searchBox');
     if (searchInput) {
       searchInput.addEventListener('focus', () => { isInputFocused = true; });
       searchInput.addEventListener('blur', () => {
         isInputFocused = false;
-        // キーボードが閉じた後にレイアウトを再計算・安定化させる
-        setTimeout(() => {
-            setVh();
-
-            const header = document.querySelector('.sticky-search-area');
-            const footer = document.getElementById('app-bottom-nav');
-            if (document.documentElement.classList.contains('is-standalone')) {
-                [header, footer].forEach(el => {
-                    if (!el) return;
-                    // Safariのレンダリングバグを回避するための強力な再描画ハック
-                    el.style.display = 'none';
-                    el.offsetHeight; // リフローを強制
-                    el.style.display = '';
-                });
-            }
-        }, 300); // キーボードのアニメーション完了を待つための遅延
+        // フォーカスが外れたらvhを再計算
+        setTimeout(setVh, 100); 
       });
     }
   });

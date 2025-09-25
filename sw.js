@@ -1,11 +1,10 @@
-// sw.js (Stale-While-Revalidate & Network First)
+// sw.js (ファイル全体をこのコードで上書きしてください)
 
 // キャッシュの名前を定義します。バージョンを更新すると古いキャッシュは自動的に削除されます。
-const SW_VERSION = 'v20250823b'; // バージョンを更新
+const SW_VERSION = 'v20250925a'; // ★バージョンを新しいものに変更しました
 const CACHE_NAME = `radio-cache-${SW_VERSION}`;
 
 // キャッシュするファイルのリスト
-// ここに含めたファイルは、インストール時にキャッシュされ、オフラインでも利用可能になります。
 const CORE_ASSETS = [
   '/',
   'index.html',
@@ -15,21 +14,19 @@ const CORE_ASSETS = [
   'readings.json',
   'keywords.json',
   'lucky-button.json',
-  'history.json', // ← 追加
+  'history.json',
   'logo.png',
   'favicon.ico',
-  'apple-touch-icon.png', // ← 追加
+  'apple-touch-icon.png',
   'site.webmanifest',
-  'https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css', // ← 追加
-  'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css' // ← 追加
+  'https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css',
+  'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css'
 ];
 
 // 1. Service Workerのインストール処理
 self.addEventListener('install', (event) => {
   console.log('[SW] Install event');
-  // skipWaiting() を呼び出し、古いService Workerを待たずに新しいものをすぐに有効化します。
   self.skipWaiting();
-  
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       console.log('[SW] Caching core assets');
@@ -41,7 +38,6 @@ self.addEventListener('install', (event) => {
 // 2. Service Workerの有効化処理
 self.addEventListener('activate', (event) => {
   console.log('[SW] Activate event');
-  // 新しいService Workerが有効になったら、古いバージョンのキャッシュを削除します。
   event.waitUntil(
     caches.keys().then((keys) => {
       return Promise.all(keys
@@ -49,96 +45,112 @@ self.addEventListener('activate', (event) => {
         .map(key => caches.delete(key))
       );
     }).then(() => {
-      // すべてのクライアント（タブ）の制御を即座に開始します。
       return self.clients.claim();
     })
   );
 });
 
-// sw.js のこの部分を丸ごと差し替えてください
-
+// 3. ネットワークリクエストへの介入処理
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // --- ▼▼▼ ここからが変更箇所です ▼▼▼ ---
-
-  // 1. JSONデータファイルは「Network First」戦略を適用
-  //    (常に最新の情報を取得しにいく)
+  // JSONデータファイルは「Network First」
   if (url.pathname.endsWith('.json')) {
     event.respondWith(networkFirstStrategy(request));
-    return; // このリクエストの処理はここまで
+    return;
   }
 
-  // 2. CSS, JS, 画像ファイルなどは「Stale-While-Revalidate」戦略を適用
-  //    (表示速度を優先し、裏側で更新)
-  const staleWhileRevalidateExtensions = ['.css', '.js', '.png', '.jpg', '.jpeg', '.gif', '.ico', '.webmanifest'];
-  const isSWR = staleWhileRevalidateExtensions.some(ext => url.pathname.endsWith(ext));
-  const isYoutubeThumb = url.hostname.includes('i.ytimg.com');
+  // ★★★ YouTubeサムネイルは「Cache First」戦略に変更 ★★★
+  if (url.hostname.includes('i.ytimg.com')) {
+    event.respondWith(cacheFirstStrategy(request));
+    return;
+  }
 
-  if (isSWR || isYoutubeThumb) {
+  // CSS, JS, manifestなどは「Stale-While-Revalidate」
+  const swrExtensions = ['.css', '.js', '.webmanifest'];
+  if (swrExtensions.some(ext => url.pathname.endsWith(ext))) {
     event.respondWith(staleWhileRevalidateStrategy(request));
-    return; // このリクエストの処理はここまで
+    return;
   }
 
-  // 3. ページのナビゲーションリクエスト (HTML) は「Network First」戦略を適用
-  //    (ページ自体は常に最新版を試みる)
+  // ページのナビゲーションリクエスト (HTML) は「Network First」
   if (request.mode === 'navigate') {
     event.respondWith(networkFirstStrategy(request));
-    return; // このリクエストの処理はここまで
+    return;
   }
-
-  // --- ▲▲▲ ここまでが変更箇所です ▲▲▲ ---
-
-  // 上記のいずれにも当てはまらないリクエストは、ブラウザのデフォルトの動作に任せます。
+  
+  // 上記以外のアセット（フォントなど）は Stale-While-Revalidate を使う
+  event.respondWith(staleWhileRevalidateStrategy(request));
 });
 
+
+// ===================================================
+// ★★★ キャッシュ戦略の関数群 ★★★
+// ===================================================
+
 /**
- * Stale-While-Revalidate 戦略
- * 1. まずキャッシュから応答を試みます (高速表示のため)。
- * 2. キャッシュがあればそれを返し、同時にネットワークからリソースを再取得してキャッシュを更新します。
- * 3. キャッシュがなければ、ネットワークから取得し、キャッシュに保存して返します。
+ * Cache First 戦略 (オフライン表示を最優先)
+ * 1. まずキャッシュにリソースがあるか確認します。
+ * 2. あれば、即座にキャッシュから返します。
+ * 3. なければ、ネットワークにリクエストし、取得したリソースをキャッシュに保存してから返します。
+ */
+async function cacheFirstStrategy(request) {
+  const cache = await caches.open(CACHE_NAME);
+  const cachedResponse = await cache.match(request);
+
+  if (cachedResponse) {
+    return cachedResponse;
+  }
+
+  try {
+    const networkResponse = await fetch(request);
+    if (networkResponse.ok) {
+      cache.put(request, networkResponse.clone());
+    }
+    return networkResponse;
+  } catch (error) {
+    console.error('[SW] Network fetch failed and no cache for:', request.url, error);
+    // オフラインでキャッシュにもない場合、空の応答を返す
+    return new Response('', { status: 404, statusText: 'Not Found' });
+  }
+}
+
+/**
+ * Stale-While-Revalidate 戦略 (表示速度を優先しつつ、裏側で更新)
  */
 async function staleWhileRevalidateStrategy(request) {
   const cache = await caches.open(CACHE_NAME);
   const cachedResponse = await cache.match(request);
   
   const fetchPromise = fetch(request).then(networkResponse => {
-    // ネットワークから正常に取得できたら、キャッシュを更新
     if (networkResponse.ok) {
       cache.put(request, networkResponse.clone());
     }
     return networkResponse;
   });
 
-  // キャッシュがあればそれを返し、裏側でネットワーク取得を実行。なければネットワーク取得を待つ。
   return cachedResponse || fetchPromise;
 }
 
 /**
- * Network First 戦略
- * 1. まずネットワークから応答を試みます (常に最新版を取得するため)。
- * 2. ネットワークから取得できれば、それを返します。
- * 3. ネットワークが利用できない場合（オフライン時など）は、キャッシュから応答を試みます。
+ * Network First 戦略 (情報の鮮度を優先)
  */
 async function networkFirstStrategy(request) {
   try {
-    // まずネットワークからの取得を試みる
     const networkResponse = await fetch(request);
-    // 取得成功したらキャッシュも更新しておく
-    const cache = await caches.open(CACHE_NAME);
-    cache.put(request, networkResponse.clone());
+    if (networkResponse.ok) {
+      const cache = await caches.open(CACHE_NAME);
+      cache.put(request, networkResponse.clone());
+    }
     return networkResponse;
   } catch (error) {
-    // ネットワークエラー（オフラインなど）の場合はキャッシュから探す
     console.log('[SW] Network failed, falling back to cache for:', request.url);
-    const cachedResponse = await caches.match(request);
-    // キャッシュにもなければ、オフライン用のページなどを返すことも可能
-    return cachedResponse || caches.match('/'); 
+    return await caches.match(request) || caches.match('/');
   }
 }
 
-// SKIP_WAITINGメッセージを受け取った際の処理 (省略可能ですが推奨)
+// SKIP_WAITINGメッセージを受け取った際の処理
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
