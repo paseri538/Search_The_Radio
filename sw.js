@@ -1,7 +1,7 @@
 // sw.js (ファイル全体をこのコードで上書きしてください)
 
 // キャッシュの名前を定義します。バージョンを更新すると古いキャッシュは自動的に削除されます。
-const SW_VERSION = 'v20250925d'; // ★バージョンを更新
+const SW_VERSION = 'v20250925e'; // ★バージョンを更新
 const CACHE_NAME = `radio-cache-${SW_VERSION}`;
 
 
@@ -161,9 +161,9 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // ★★★ YouTubeサムネイルは「Cache First」戦略に変更 ★★★
+  // ★★★ YouTubeサムネイルは「Stale-While-Revalidate」戦略に変更 ★★★
   if (url.hostname.includes('i.ytimg.com')) {
-    event.respondWith(cacheFirstStrategy(request));
+    event.respondWith(staleWhileRevalidateStrategy(request)); // ← ここを変更！
     return;
   }
 
@@ -189,36 +189,7 @@ self.addEventListener('fetch', (event) => {
 // ★★★ キャッシュ戦略の関数群 ★★★
 // ===================================================
 
-/**
- * Cache First 戦略 (オフライン表示を最優先)
- * 1. まずキャッシュにリソースがあるか確認します。
- * 2. あれば、即座にキャッシュから返します。
- * 3. なければ、ネットワークにリクエストし、取得したリソースをキャッシュに保存してから返します。
- */
-async function cacheFirstStrategy(request) {
-  const cache = await caches.open(CACHE_NAME);
-  const cachedResponse = await cache.match(request);
-
-  if (cachedResponse) {
-    return cachedResponse;
-  }
-
-  try {
-    const networkResponse = await fetch(request);
-    if (networkResponse.ok) {
-      cache.put(request, networkResponse.clone());
-    }
-    return networkResponse;
-  } catch (error) {
-    console.error('[SW] Network fetch failed and no cache for:', request.url, error);
-    // オフラインでキャッシュにもない場合、空の応答を返す
-    return new Response('', { status: 404, statusText: 'Not Found' });
-  }
-}
-
-/**
- * Stale-While-Revalidate 戦略 (表示速度を優先しつつ、裏側で更新)
- */
+// Stale-While-Revalidate 戦略 (Cache First戦略は不要になったので削除してOKです)
 async function staleWhileRevalidateStrategy(request) {
   const cache = await caches.open(CACHE_NAME);
   const cachedResponse = await cache.match(request);
@@ -228,14 +199,17 @@ async function staleWhileRevalidateStrategy(request) {
       cache.put(request, networkResponse.clone());
     }
     return networkResponse;
+  }).catch(err => {
+    // ネットワークエラーが発生した場合のフォールバック
+    console.warn(`[SW] Fetch failed for ${request.url}; relying on cache.`, err);
   });
 
+  // キャッシュがあればそれを返し、裏でネットワークリクエストを実行
+  // キャッシュがなければネットワークリクエストの結果を待つ
   return cachedResponse || fetchPromise;
 }
 
-/**
- * Network First 戦略 (情報の鮮度を優先)
- */
+// Network First 戦略 (変更なし)
 async function networkFirstStrategy(request) {
   try {
     const networkResponse = await fetch(request);
@@ -246,9 +220,12 @@ async function networkFirstStrategy(request) {
     return networkResponse;
   } catch (error) {
     console.log('[SW] Network failed, falling back to cache for:', request.url);
-    return await caches.match(request) || caches.match('/');
+    const cachedResponse = await caches.match(request);
+    // ページ自体(navigate)のリクエストが失敗した場合、トップページを返す
+    return cachedResponse || await caches.match('/');
   }
 }
+
 
 // SKIP_WAITINGメッセージを受け取った際の処理
 self.addEventListener('message', (event) => {
