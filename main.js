@@ -308,20 +308,25 @@ function renderResults(arr, page = 1) {
   const ul = document.getElementById("results");
   ul.innerHTML = "";
 
+  const reRenderFixedElements = () => {
+    const header = document.querySelector('.sticky-search-area');
+    const footer = document.getElementById('app-bottom-nav');
+    if (document.documentElement.classList.contains('is-standalone')) {
+        [header, footer].forEach(el => {
+            if (!el) return;
+            requestAnimationFrame(() => {
+                el.style.visibility = 'hidden';
+                requestAnimationFrame(() => {
+                    el.style.visibility = 'visible';
+                });
+            });
+        });
+    }
+  };
+
   if (!arr || arr.length === 0) {
     ul.innerHTML = `<li class="no-results"><div class="no-results-icon">ﾉ°(6ᯅ9)</div></li>`;
-    
-    // ▼▼▼ 以下を追加 ▼▼▼
-    // 結果が0件の場合でも再描画処理を実行
-    const nav = document.getElementById('app-bottom-nav');
-    if (nav && document.documentElement.classList.contains('is-standalone')) {
-      requestAnimationFrame(() => {
-        nav.style.visibility = 'hidden';
-        requestAnimationFrame(() => {
-          nav.style.visibility = 'visible';
-        });
-      });
-    }
+    reRenderFixedElements(); // 結果が0件でも実行
     return;
   }
 
@@ -408,16 +413,8 @@ function renderResults(arr, page = 1) {
   ul.appendChild(fragment);
   setTimeout(fitGuestLines, 300);
 
-  // PWAモードでナビゲーションバーのレンダリングを強制的に再計算させる
-  const nav = document.getElementById('app-bottom-nav');
-  if (nav && document.documentElement.classList.contains('is-standalone')) {
-    requestAnimationFrame(() => {
-      nav.style.visibility = 'hidden';
-      requestAnimationFrame(() => {
-        nav.style.visibility = 'visible';
-      });
-    });
-  }
+  // PWAモードで固定要素のレンダリングを強制的に再計算させる
+  reRenderFixedElements();
 }
 
 function renderPagination(totalCount) {
@@ -1370,7 +1367,22 @@ document.addEventListener('DOMContentLoaded', () => {
       searchInput.addEventListener('focus', () => { isInputFocused = true; });
       searchInput.addEventListener('blur', () => {
         isInputFocused = false;
-        setTimeout(setVh, 100); 
+        // キーボードが閉じた後にレイアウトを再計算・安定化させる
+        setTimeout(() => {
+            setVh();
+
+            const header = document.querySelector('.sticky-search-area');
+            const footer = document.getElementById('app-bottom-nav');
+            if (document.documentElement.classList.contains('is-standalone')) {
+                [header, footer].forEach(el => {
+                    if (!el) return;
+                    // Safariのレンダリングバグを回避するための強力な再描画ハック
+                    el.style.display = 'none';
+                    el.offsetHeight; // リフローを強制
+                    el.style.display = '';
+                });
+            }
+        }, 300); // キーボードのアニメーション完了を待つための遅延
       });
     }
   });

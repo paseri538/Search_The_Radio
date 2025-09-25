@@ -3571,3 +3571,25 @@ body {
     transform: none !important;
     flex: 0 1 auto !important; /* 過剰にスペースを確保しないように設定 */
 }
+
+
+/* =================================================== */
+/* ★★★ PWA 固定ヘッダー/フッター安定化修正 ★★★ */
+/* =================================================== */
+
+/* --- 1. 上部ヘッダーを 'position: sticky' に変更して安定化 --- */
+/* PWAモードでのみ適用 */
+.is-standalone .sticky-search-area {
+  position: -webkit-sticky; /* iOS Safari向け */
+  position: sticky;       /* 標準の固定指定 */
+  top: 0;                 /* 画面上部に固定 */
+
+  /* 描画の最適化をブラウザに促す */
+  will-change: transform;
+}
+
+/* --- 2. 下部ナビゲーションバーの描画を安定化 --- */
+.is-standalone .app-bottom-nav {
+  /* 描画の最適化をブラウザに促す */
+  will-change: transform;
+}
