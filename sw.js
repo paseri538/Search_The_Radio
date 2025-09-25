@@ -1,7 +1,7 @@
 // sw.js (ファイル全体をこのコードで上書きしてください)
 
 // キャッシュの名前を定義します。バージョンを更新すると古いキャッシュは自動的に削除されます。
-const SW_VERSION = 'v20250925e'; // ★バージョンを更新
+const SW_VERSION = 'v20250925f'; // ★バージョンを更新
 const CACHE_NAME = `radio-cache-${SW_VERSION}`;
 
 
@@ -130,7 +130,7 @@ self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       console.log('[SW] Caching core assets');
-      return cache.addAll(CORE_ASSETS);
+      return cache.addAll(PRECACHE_ASSETS);
     })
   );
 });
