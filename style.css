@@ -3593,3 +3593,58 @@ body {
   /* 描画の最適化をブラウザに促す */
   will-change: transform;
 }
+
+/* =================================================== */
+/* ★★★ iOS Safari bottomプロパティ バグ対応 ★★★ */
+/* =================================================== */
+
+/*
+  現象: iOSのSafariで position:fixed と bottom を併用すると、
+        スクロール時に要素が画面中央に固定されるバグへの対策。
+  対策: bottomプロパティの使用をやめ、代わりに top と transform を使って
+        要素を画面下部に配置します。
+*/
+
+/* --- 1. 下部ナビゲーションバー (PWAモード) --- */
+.is-standalone .app-bottom-nav {
+  bottom: auto !important; /* 既存のbottom指定を無効化 */
+  top: 100vh;              /* まず画面の上端をビューポートの下端に合わせる */
+  top: 100dvh;             /* モダンブラウザ向けにより正確な高さを指定 */
+  
+  /* 要素自身の高さ分だけ上に引き上げることで、画面下部にぴったり配置 */
+  transform: translateY(-100%) !important;
+}
+
+
+/* --- 2. テーマ変更ボタン (全モード共通) --- */
+#theme-toggle-btn,
+.is-standalone #theme-toggle-btn { /* PWAモードの上書きも含めて一括で対応 */
+  bottom: auto !important;
+  top: 100vh;
+  top: 100dvh;
+
+  /* ボタン自身の高さ(100%) + 下からの余白(18px) + ホームバーの高さ の分だけ上に移動 */
+  transform: translateY(calc(-100% - 18px - var(--safe-bottom)));
+}
+
+/* PWAモードでは、下部ナビの高さ(65px)と追加の余白(10px)分、さらに上に移動 */
+.is-standalone #theme-toggle-btn {
+  transform: translateY(calc(-100% - 18px - var(--safe-bottom) - 65px - 10px));
+}
+
+
+/* --- 3. テーマ選択パネル (全モード共通) --- */
+.floating-panel,
+.is-standalone .floating-panel {
+  bottom: auto !important;
+  top: 100vh;
+  top: 100dvh;
+
+  /* パネル自身の高さ(100%) + 下からの余白(80px) + ホームバーの高さ の分だけ上に移動 */
+  transform: translateY(calc(-100% - 80px - var(--safe-bottom)));
+}
+
+/* PWAモードでは、下部ナビの高さと追加の余白分、さらに上に移動 */
+.is-standalone .floating-panel {
+  transform: translateY(calc(-100% - 80px - var(--safe-bottom) - 65px - 10px));
+}
