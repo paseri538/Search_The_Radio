@@ -1,21 +1,29 @@
 {
   "name": "さーち・ざ・らじお！",
-  "short_name": "さーち・ざ・らじお！",
-  "start_url": "/?v=20250817b",
+  "short_name": "SearchTheRadio",
+  "start_url": "/",
   "display": "standalone",
   "theme_color": "#1f2937",
   "background_color": "#111827",
   "description": "『ぼっち・ざ・らじお！』のエピソード検索サイト。",
   "icons": [
     {
-      "src": "/favicon-32.png",
-      "sizes": "32x32",
-      "type": "image/png"
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
     },
     {
-      "src": "/favicon-16.png",
-      "sizes": "16x16",
-      "type": "image/png"
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ]
 }

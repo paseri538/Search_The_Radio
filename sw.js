@@ -1,8 +1,9 @@
 // sw.js (ファイル全体をこのコードで上書きしてください)
 
 // キャッシュの名前を定義します。バージョンを更新すると古いキャッシュは自動的に削除されます。
-const SW_VERSION = 'v20250925a'; // ★バージョンを新しいものに変更しました
+const SW_VERSION = 'v20250925c'; // ★バージョンを更新
 const CACHE_NAME = `radio-cache-${SW_VERSION}`;
+
 
 // キャッシュするファイルのリスト
 const CORE_ASSETS = [
