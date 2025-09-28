@@ -73,7 +73,7 @@
 <meta name="apple-mobile-web-app-title" content="さーち・ざ・らじお！">
 
 
-<link rel="manifest" href="./site.webmanifest?v=20250925f">
+<link rel="manifest" href="./site.webmanifest?v=20250928a">
 
 
 
@@ -87,7 +87,7 @@
 <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
 <link rel="preconnect" href="https://code.jquery.com" crossorigin>
 <link rel="preconnect" href="https://i.ytimg.com" crossorigin>
-  <link href="style.css?v=20250925f" rel="stylesheet" />
+  <link href="style.css?v=20250928a" rel="stylesheet" />
 
 </head>
 <body>
@@ -277,19 +277,20 @@
 
 <footer class="site-footer">
       ©はまじあき／芳文社・アニプレックス<br>
-      <a href="https://x.com/paseri_538" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;">Developed by paseri_538</a>
-      <span class="footer-sep">・</span>
+      <!-- 非表示
+        <a href="https://x.com/paseri_538" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;">Developed by paseri_538</a>
+      <span class="footer-sep">・</span> -->
       <a href="#" id="aboutSiteLink" style="color:inherit;text-decoration:underline;">このサイトについて</a>
     </footer>
   </div>
 
-  <script src="main.js?v=20250925f" defer></script>
+  <script src="main.js?v=20250928a" defer></script>
 
   <script>
   // ---- Service Worker register (network-first) ----
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', function () {
-      navigator.serviceWorker.register('/sw.js?20250925f').then(function(reg) {
+      navigator.serviceWorker.register('/sw.js?20250928a').then(function(reg) {
         return navigator.serviceWorker.ready;
       }).then(function(reg) {
         if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
