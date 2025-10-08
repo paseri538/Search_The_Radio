@@ -126,6 +126,7 @@ async function initializeApp() {
   setupShareButtons();
   setupRightClickModal();
   updateHeaderOffset();
+  setupReleasePopup();
   console.log("Application initialized.");
 }
 
@@ -820,9 +821,9 @@ function setupThemeSwitcher() {
   if (!toggleBtn || !panel) return;
 
   const THEME_KEY = 'site_theme_v1';
-  const allThemeClasses = ['dark-mode', 'theme-pink', 'theme-yellow', 'theme-blue', 'theme-red'];
+  const allThemeClasses = ['dark-mode', 'theme-pink', 'theme-yellow', 'theme-blue', 'theme-red', 'theme-green'];
 
-  const applyTheme = (themeName) => {
+  applyTheme = (themeName) => {
     document.body.classList.remove(...allThemeClasses);
     if (themeName === 'dark') document.body.classList.add('dark-mode');
     else if (themeName && themeName !== 'light') document.body.classList.add(`theme-${themeName}`);
@@ -1407,3 +1408,60 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 })();
+
+
+/* =================================================== */
+/* ★★★ お知らせポップアップの制御 ★★★ */
+/* =================================================== */
+function setupReleasePopup() {
+  const POPUP_SHOWN_KEY = 'release_popup_shown_bocchi_tour_2025'; // ポップアップ表示履歴のキー
+  const popup = document.getElementById('releasePopup');
+  const closeBtn = document.getElementById('releasePopupCloseBtn');
+  const applyBtn = document.getElementById('applyGreenThemeBtn');
+
+  if (!popup || !closeBtn || !applyBtn) return;
+
+  // --- 表示すべきか判定 ---
+  // localStorageにキーがなければ表示
+  const shouldShow = !localStorage.getItem(POPUP_SHOWN_KEY);
+
+  if (!shouldShow) {
+    return; // 表示済みなら何もしない
+  }
+
+  // --- ポップアップの開閉ロジック ---
+  const openPopup = () => {
+    popup.hidden = false;
+    // 既存のアニメーションを適用
+    popup.classList.add('show');
+    popup.querySelector('.modal-content').style.animation = 'modalPop .24s cubic-bezier(0.34, 1.56, 0.64, 1) both';
+
+    window.acquireBodyLock(); // 背景スクロールを禁止
+    // 表示したことを記録
+    localStorage.setItem(POPUP_SHOWN_KEY, 'true');
+  };
+
+  const closePopup = () => {
+    popup.classList.add('closing');
+    popup.addEventListener('animationend', () => {
+      popup.hidden = true;
+      popup.classList.remove('show', 'closing');
+    }, { once: true });
+    
+    window.releaseBodyLock(); // 背景スクロールを許可
+  };
+
+  // --- イベントリスナーを設定 ---
+  closeBtn.addEventListener('click', closePopup);
+  applyBtn.addEventListener('click', () => {
+    // グローバルスコープにある applyTheme 関数を呼び出す
+    if (typeof applyTheme === 'function') {
+      applyTheme('green');
+    }
+    closePopup();
+  });
+
+  // --- 準備ができたらポップアップを表示 ---
+  // 少し遅延させることで、メインコンテンツの表示を妨げないようにします
+  setTimeout(openPopup, 1000);
+}

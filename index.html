@@ -73,7 +73,7 @@
 <meta name="apple-mobile-web-app-title" content="さーち・ざ・らじお！">
 
 
-<link rel="manifest" href="./site.webmanifest?v=20250928a">
+<link rel="manifest" href="./site.webmanifest?v=20251009a">
 
 
 
@@ -87,8 +87,18 @@
 <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
 <link rel="preconnect" href="https://code.jquery.com" crossorigin>
 <link rel="preconnect" href="https://i.ytimg.com" crossorigin>
-  <link href="style.css?v=20250928a" rel="stylesheet" />
+  <link href="style.css?v=20251009a" rel="stylesheet" />
 
+  <script>
+    (function(d) {
+      var config = {
+        kitId: 'bmo6cgb',
+        scriptTimeout: 3000,
+        async: true
+      },
+      h=d.documentElement,t=setTimeout(function(){h.className=h.className.replace(/\bwf-loading\b/g,"")+" wf-inactive";},config.scriptTimeout),tk=d.createElement("script"),f=false,s=d.getElementsByTagName("script")[0],a;h.className+=" wf-loading";tk.src='https://use.typekit.net/'+config.kitId+'.js';tk.async=true;tk.onload=tk.onreadystatechange=function(){a=this.readyState;if(f||a&&a!="complete"&&a!="loaded")return;f=true;clearTimeout(t);try{Typekit.load(config)}catch(e){}};s.parentNode.insertBefore(tk,s)
+    })(document);
+  </script>
 </head>
 <body>
   <div id="rcModal" style="display:none; position:fixed; z-index:3000; left:0; top:0; width:100vw; height:100vh; background:rgba(0,0,0,0.22); backdrop-filter:blur(2px); align-items:center; justify-content:center;">
@@ -277,20 +287,20 @@
 
 <footer class="site-footer">
       ©はまじあき／芳文社・アニプレックス<br>
-      <!-- 非表示
+      
         <a href="https://x.com/paseri_538" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline;">Developed by paseri_538</a>
-      <span class="footer-sep">・</span> -->
+      <span class="footer-sep">・</span>
       <a href="#" id="aboutSiteLink" style="color:inherit;text-decoration:underline;">このサイトについて</a>
     </footer>
   </div>
 
-  <script src="main.js?v=20250928a" defer></script>
+  <script src="main.js?v=20251009a" defer></script>
 
   <script>
   // ---- Service Worker register (network-first) ----
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', function () {
-      navigator.serviceWorker.register('/sw.js?20250928a').then(function(reg) {
+      navigator.serviceWorker.register('/sw.js?20251009a').then(function(reg) {
         return navigator.serviceWorker.ready;
       }).then(function(reg) {
         if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
@@ -311,7 +321,27 @@
   <button class="theme-btn" data-theme="yellow" title="イエローテーマ" style="background-color: #fabe00;"></button>
   <button class="theme-btn" data-theme="blue" title="ブルーテーマ" style="background-color: #006ebe;"></button>
   <button class="theme-btn" data-theme="red" title="レッドテーマ" style="background-color: #e60046;"></button>
+
+  <button class="theme-btn" data-theme="green" title="グリーンテーマ" style="background-color: #13a286;"></button>
+
 </div>
 
+<div id="releasePopup" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="releasePopupTitle" hidden>
+  <div id="releasePopupContent" class="modal-content">
+    <button id="releasePopupCloseBtn" class="modal-close" aria-label="閉じる">
+      <i class="fa-solid fa-xmark"></i>
+    </button>
+    <h2 id="releasePopupTitle" class="popup-title">🎉お知らせ🎉</h2>
+    <p class="popup-body">
+      <b>『結束バンド TOUR “We will B”』</b><br>
+      Blu-ray＆DVD発売を記念して<br>
+      期間限定カラー「<b>グリーン</b>」を追加しました！
+    </p>
+    <button id="applyGreenThemeBtn" class="popup-cta-btn">
+      <i class="fa-solid fa-brush"></i>
+      <span>さっそく試してみる</span>
+    </button>
+  </div>
+</div>
 </body>
 </html>
