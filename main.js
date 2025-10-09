@@ -325,10 +325,24 @@ function renderResults(arr, page = 1) {
     }
     const finalLink = hit ? withTimeParam(it.link, hit.seconds) : it.link;
 
-    let guestText = "";
-    if (Array.isArray(it.guest)) guestText = "ゲスト：" + it.guest.join("、");
-    else if (it.guest === "青山吉能") guestText = "パーソナリティ：青山吉能";
-    else if (it.guest && it.guest !== "その他") guestText = `ゲスト：${it.guest}`;
+// main.js に記述する新しいコード
+let guestText = "";
+// ★ここからが変更点です★
+// episodeが「京まふ大作戦」または「CENTRALSTATION」の場合の特別処理
+if (it.episode === "京まふ大作戦" || it.episode === "CENTRALSTATION") {
+  // ゲストリストの先頭に「青山吉能」を追加します
+  const members = ["青山吉能", ...(Array.isArray(it.guest) ? it.guest : [it.guest].filter(Boolean))];
+  // 「出演：」という接頭辞で表示します
+  guestText = "出演：" + members.join("、");
+}
+// ★ここまでが変更点です★
+else if (Array.isArray(it.guest)) {
+  guestText = "ゲスト：" + it.guest.join("、");
+} else if (it.guest === "青山吉能") {
+  guestText = "パーソナリティ：青山吉能";
+} else if (it.guest && it.guest !== "その他") {
+  guestText = `ゲスト：${it.guest}`;
+}
 
     if (isLuckyButtonSearch) {
       const episodeKey = it.episode === "02" && it.title.includes("京まふ") ? "京まふ" : it.episode;

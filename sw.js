@@ -1,7 +1,7 @@
 // sw.js (ファイル全体をこのコードで上書きしてください)
 
 // キャッシュの名前を定義します。バージョンを更新すると古いキャッシュは自動的に削除されます。
-const SW_VERSION = 'v20251009a'; // ★バージョンを更新
+const SW_VERSION = 'v20251010a'; // ★バージョンを更新
 const CACHE_NAME = `radio-cache-${SW_VERSION}`;
 
 
@@ -41,6 +41,9 @@ const THUMBNAIL_ASSETS = [
 'https://i.ytimg.com/vi/uJy5FqDPumk/mqdefault.jpg',
 'https://i.ytimg.com/vi/8tnv8TFsyTs/mqdefault.jpg',
 'https://i.ytimg.com/vi/yA90NiAGuF8/mqdefault.jpg',
+
+'https://i.ytimg.com/vi/mnAzbaVC8Vw/mqdefault.jpg',
+
 'https://i.ytimg.com/vi/hHfpdyDFN6U/mqdefault.jpg',
 'https://i.ytimg.com/vi/IaN7fW-RJPo/mqdefault.jpg',
 'https://i.ytimg.com/vi/oLdNIIz3qWw/mqdefault.jpg',
