@@ -1386,22 +1386,23 @@ document.addEventListener('DOMContentLoaded', () => {
   new MutationObserver(updateHeaderOffset).observe(document.querySelector('.sticky-search-area'), { childList: true, subtree: true, attributes: true });
 });
 
-// main.js の一番下など、分かりやすい場所に追加してください。
-
 /**
  * ===================================================
  * ★★★ PWA/モバイル対応強化 ★★★
  * ===================================================
  */
 (function enhanceMobileExperience() {
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+
   // PWAモード（スタンドアロン表示）を検出してクラスを付与
-  if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone) {
+  if (isStandalone) {
     document.documentElement.classList.add('is-standalone');
+    // DOMの準備が整ってからナビゲーションバーをセットアップ
+    document.addEventListener('DOMContentLoaded', setupPwaBottomNav);
   }
 
   // モバイルブラウザの100vh問題を解決
   const setVh = () => {
-    // ★変更点: 入力中はvhの更新をスキップして揺れを防ぐ
     if (isInputFocused) return;
     document.documentElement.style.setProperty('--vh', `${window.innerHeight * 0.01}px`);
   };
@@ -1409,18 +1410,72 @@ document.addEventListener('DOMContentLoaded', () => {
   window.addEventListener('resize', setVh, { passive: true });
   window.addEventListener('orientationchange', setVh, { passive: true });
 
-  // ★追加: 入力欄のフォーカス状態を監視
   document.addEventListener('DOMContentLoaded', () => {
     const searchInput = document.getElementById('searchBox');
     if (searchInput) {
       searchInput.addEventListener('focus', () => { isInputFocused = true; });
       searchInput.addEventListener('blur', () => {
         isInputFocused = false;
-        // フォーカスが外れたらvhを再計算
-        setTimeout(setVh, 100); 
+        setTimeout(setVh, 100);
       });
     }
   });
+
+  /**
+   * PWAモード専用の下部ナビゲーションバーをセットアップする関数
+   */
+  function setupPwaBottomNav() {
+    // 1. ナビゲーションバーのコンテナを作成
+    const bottomNav = document.createElement('nav');
+    bottomNav.className = 'pwa-bottom-nav';
+    bottomNav.id = 'pwa-bottom-nav';
+
+    // 2. 移動させたいボタンの情報を定義
+    const buttonConfig = [
+      { id: 'filterToggleBtn', label: 'フィルタ', icon: 'fa-solid fa-filter' },
+      { id: 'favOnlyToggleBtn', label: 'お気に入り', icon: 'fa-solid fa-star' },
+      { id: 'randomBtn', label: 'ランダム', icon: 'fa-solid fa-shuffle' },
+      { id: 'mainResetBtn', label: 'リセット', icon: 'fa-solid fa-rotate-left' }
+    ];
+
+    // 3. 設定に基づいて新しいボタンを生成し、ナビゲーションバーに追加
+    buttonConfig.forEach(config => {
+      const originalButton = document.getElementById(config.id);
+      if (!originalButton) return;
+
+      const newButton = document.createElement('button');
+      newButton.className = 'pwa-bottom-nav-btn';
+      newButton.innerHTML = `
+        <i class="${config.icon}"></i>
+        <span>${config.label}</span>
+      `;
+
+      // 新しいボタンがクリックされたら、元のボタンのクリックイベントを発火させる
+      newButton.addEventListener('click', () => {
+        originalButton.click();
+      });
+
+      // 元のボタンの状態（アクティブ/非アクティブ）を監視し、新しいボタンの見た目に反映させる
+      const observer = new MutationObserver(() => {
+        const isPressed = originalButton.getAttribute('aria-pressed') === 'true';
+        const isExpanded = originalButton.getAttribute('aria-expanded') === 'true';
+        newButton.classList.toggle('is-active', isPressed || isExpanded);
+      });
+      observer.observe(originalButton, { attributes: true, attributeFilter: ['aria-pressed', 'aria-expanded'] });
+      
+      // 初期状態を同期
+      const isPressed = originalButton.getAttribute('aria-pressed') === 'true';
+      const isExpanded = originalButton.getAttribute('aria-expanded') === 'true';
+      newButton.classList.toggle('is-active', isPressed || isExpanded);
+
+      bottomNav.appendChild(newButton);
+    });
+
+    // 4. 完成したナビゲーションバーをbodyの末尾に追加
+    if (bottomNav.hasChildNodes()) {
+      document.body.appendChild(bottomNav);
+    }
+  }
 })();
 
 

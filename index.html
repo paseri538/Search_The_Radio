@@ -73,7 +73,7 @@
 <meta name="apple-mobile-web-app-title" content="さーち・ざ・らじお！">
 
 
-<link rel="manifest" href="./site.webmanifest?v=20251012a">
+<link rel="manifest" href="./site.webmanifest?v=20251013a">
 
 
 
@@ -87,7 +87,7 @@
 <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
 <link rel="preconnect" href="https://code.jquery.com" crossorigin>
 <link rel="preconnect" href="https://i.ytimg.com" crossorigin>
-  <link href="style.css?v=20251012a" rel="stylesheet" />
+  <link href="style.css?v=20251013a" rel="stylesheet" />
 
   <script>
     (function(d) {
@@ -142,12 +142,16 @@
         <button class="btn" id="filterToggleBtn" type="button" aria-expanded="false" aria-pressed="false" tabindex="0" title="フィルター条件を選択">
           <i class="fa fa-filter"></i>
         </button>
+        
         <button class="icon-btn" id="favOnlyToggleBtn" aria-pressed="false" title="お気に入りだけ表示">
-          <i class="fa-regular fa-star"></i><span>お気に入り</span>
-        </button>
-        <button class="icon-btn" id="randomBtn" title="ランダムで1本開く">
-          <i class="fa fa-shuffle"></i><span>ランダム</span>
-        </button>
+  <i class="fa-regular fa-star"></i><span>お気に入り</span>
+</button>
+
+<button class="icon-btn" id="randomBtn" title="ランダムで1本開く">
+  <i class="fa fa-shuffle"></i><span>ランダム</span>
+</button>
+
+
         <button class="reset-btn" id="mainResetBtn" onclick="resetSearch()" title="すべてリセット" tabindex="0">リセット</button>
         <span class="sort-wrapper">
           <select id="sortSelect" class="form-select searchbox-select" aria-label="並び替え" title="並び替え">
@@ -290,32 +294,13 @@
     </footer>
   </div>
 
-  <nav class="bottom-nav">
-    <button class="nav-btn" id="filterToggleBtn" aria-label="フィルター">
-      <i class="fa-solid fa-filter"></i>
-      <span>フィルタ</span>
-    </button>
-    <button class="nav-btn" id="favOnlyToggleBtn" aria-label="お気に入り" aria-pressed="false">
-      <i class="fa-regular fa-star"></i>
-      <span>お気に入り</span>
-    </button>
-    <button class="nav-btn" id="randomBtn" aria-label="ランダム">
-      <i class="fa-solid fa-shuffle"></i>
-      <span>ランダム</span>
-    </button>
-    <button class="nav-btn" id="mainResetBtn" aria-label="リセット">
-      <i class="fa-solid fa-rotate-left"></i>
-      <span>リセット</span>
-    </button>
-  </nav>
-
-  <script src="main.js?v=20251012a" defer></script>
+  <script src="main.js?v=20251013a" defer></script>
 
   <script>
   // ---- Service Worker register (network-first) ----
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', function () {
-      navigator.serviceWorker.register('/sw.js?20251012a').then(function(reg) {
+      navigator.serviceWorker.register('/sw.js?20251013a').then(function(reg) {
         return navigator.serviceWorker.ready;
       }).then(function(reg) {
         if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
