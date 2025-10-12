@@ -600,13 +600,23 @@ function setupEventListeners() {
     const isVisible = style.display !== 'none';
     const isOpening = forceOpen === true || (forceOpen !== false && !isVisible);
 
+    // ★PWA下部ナビゲーションを取得
+    const pwaNav = document.getElementById('pwa-bottom-nav');
+
     drawer.style.display = isOpening ? 'block' : 'none';
     backdrop.classList.toggle('show', isOpening);
     filterToggleBtn.setAttribute('aria-expanded', String(isOpening));
     filterToggleBtn.setAttribute('aria-pressed', String(isOpening));
 
-    if (isOpening) window.acquireBodyLock();
-    else window.releaseBodyLock();
+    if (isOpening) {
+      window.acquireBodyLock();
+      // ★Drawerが開くとき、下部ナビを非表示にする
+      if (pwaNav) pwaNav.classList.add('is-hidden-by-drawer');
+    } else {
+      window.releaseBodyLock();
+      // ★Drawerが閉じるとき、下部ナビを再表示する
+      if (pwaNav) pwaNav.classList.remove('is-hidden-by-drawer');
+    }
   };
   window.toggleFilterDrawer = toggleFilterDrawer;
 
@@ -1388,20 +1398,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
 /**
  * ===================================================
- * ★★★ PWA/モバイル対応強化 ★★★
+ * ★★★ PWA/モバイル対応強化 (修正版) ★★★
  * ===================================================
  */
 (function enhanceMobileExperience() {
   const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
 
-  // PWAモード（スタンドアロン表示）を検出してクラスを付与
   if (isStandalone) {
     document.documentElement.classList.add('is-standalone');
-    // DOMの準備が整ってからナビゲーションバーをセットアップ
     document.addEventListener('DOMContentLoaded', setupPwaBottomNav);
   }
 
-  // モバイルブラウザの100vh問題を解決
   const setVh = () => {
     if (isInputFocused) return;
     document.documentElement.style.setProperty('--vh', `${window.innerHeight * 0.01}px`);
@@ -1422,56 +1429,60 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   /**
-   * PWAモード専用の下部ナビゲーションバーをセットアップする関数
+   * PWAモード専用の下部ナビゲーションバーをセットアップする関数 (修正版)
    */
   function setupPwaBottomNav() {
-    // 1. ナビゲーションバーのコンテナを作成
     const bottomNav = document.createElement('nav');
     bottomNav.className = 'pwa-bottom-nav';
     bottomNav.id = 'pwa-bottom-nav';
 
-    // 2. 移動させたいボタンの情報を定義
     const buttonConfig = [
       { id: 'filterToggleBtn', label: 'フィルタ', icon: 'fa-solid fa-filter' },
       { id: 'favOnlyToggleBtn', label: 'お気に入り', icon: 'fa-solid fa-star' },
+      { id: 'theme-toggle-btn', label: 'テーマ', icon: 'fa-solid fa-palette', isCenter: true },
       { id: 'randomBtn', label: 'ランダム', icon: 'fa-solid fa-shuffle' },
       { id: 'mainResetBtn', label: 'リセット', icon: 'fa-solid fa-rotate-left' }
     ];
 
-    // 3. 設定に基づいて新しいボタンを生成し、ナビゲーションバーに追加
     buttonConfig.forEach(config => {
       const originalButton = document.getElementById(config.id);
       if (!originalButton) return;
 
       const newButton = document.createElement('button');
-      newButton.className = 'pwa-bottom-nav-btn';
-      newButton.innerHTML = `
-        <i class="${config.icon}"></i>
-        <span>${config.label}</span>
-      `;
+      newButton.className = config.isCenter ? 'pwa-bottom-nav-btn is-center' : 'pwa-bottom-nav-btn';
+      newButton.innerHTML = `<i class="${config.icon}"></i><span>${config.label}</span>`;
 
-      // 新しいボタンがクリックされたら、元のボタンのクリックイベントを発火させる
-      newButton.addEventListener('click', () => {
-        originalButton.click();
-      });
-
-      // 元のボタンの状態（アクティブ/非アクティブ）を監視し、新しいボタンの見た目に反映させる
-      const observer = new MutationObserver(() => {
+      if (config.id === 'theme-toggle-btn') {
+        const themePanel = document.getElementById('floating-theme-panel');
+        if (themePanel) {
+          newButton.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isOpening = !themePanel.classList.contains('show');
+            themePanel.classList.toggle('show', isOpening);
+            newButton.classList.toggle('is-active', isOpening);
+          });
+          document.addEventListener('click', (e) => {
+            if (themePanel.classList.contains('show') && !newButton.contains(e.target) && !themePanel.contains(e.target)) {
+              themePanel.classList.remove('show');
+              newButton.classList.remove('is-active');
+            }
+          });
+        }
+      } else {
+        newButton.addEventListener('click', () => originalButton.click());
+        const observer = new MutationObserver(() => {
+          const isPressed = originalButton.getAttribute('aria-pressed') === 'true';
+          const isExpanded = originalButton.getAttribute('aria-expanded') === 'true';
+          newButton.classList.toggle('is-active', isPressed || isExpanded);
+        });
+        observer.observe(originalButton, { attributes: true, attributeFilter: ['aria-pressed', 'aria-expanded'] });
         const isPressed = originalButton.getAttribute('aria-pressed') === 'true';
         const isExpanded = originalButton.getAttribute('aria-expanded') === 'true';
         newButton.classList.toggle('is-active', isPressed || isExpanded);
-      });
-      observer.observe(originalButton, { attributes: true, attributeFilter: ['aria-pressed', 'aria-expanded'] });
-      
-      // 初期状態を同期
-      const isPressed = originalButton.getAttribute('aria-pressed') === 'true';
-      const isExpanded = originalButton.getAttribute('aria-expanded') === 'true';
-      newButton.classList.toggle('is-active', isPressed || isExpanded);
-
+      }
       bottomNav.appendChild(newButton);
     });
 
-    // 4. 完成したナビゲーションバーをbodyの末尾に追加
     if (bottomNav.hasChildNodes()) {
       document.body.appendChild(bottomNav);
     }
