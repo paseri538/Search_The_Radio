@@ -3534,10 +3534,9 @@ body[class*="theme-"] #releasePopupContent {
 }
 
 
-/* style.css の一番下に追加してください */
 
 /* =================================================== */
-/* ★★★ PWA/モバイル対応強化スタイル (修正版) ★★★ */
+/* ★★★ PWA/モバイル対応強化スタイル (再修正版) ★★★ */
 /* =================================================== */
 
 /* --- PWAモードのセーフエリア対応 --- */
@@ -3548,6 +3547,7 @@ body[class*="theme-"] #releasePopupContent {
   --safe-left: env(safe-area-inset-left, 0px);
 }
 
+/* JSでhtmlタグに .is-standalone クラスが付与されることを前提とします */
 html.is-standalone .sticky-search-area {
   padding-top: calc(0.38rem + var(--safe-top));
 }
@@ -3555,8 +3555,7 @@ html.is-standalone .sticky-search-area {
 html.is-standalone .main-content {
   padding-left: max(15px, var(--safe-left));
   padding-right: max(15px, var(--safe-right));
-  /* コンテンツの最下部がナビゲーションバーに隠れないように余白を確保 */
-  padding-bottom: 80px;
+  padding-bottom: 80px; /* コンテンツ最下部がナビゲーションバーに隠れないように */
 }
 
 /* --- 100vh問題対策 --- */
@@ -3564,14 +3563,11 @@ html.is-standalone .main-content {
   height: calc(var(--vh, 1vh) * 100);
 }
 
-/* --- PWA専用 下部ナビゲーション スタイル --- */
-
-/* ナビゲーションバーを通常は非表示に */
+/* --- PWA専用 下部ナビゲーション --- */
 .pwa-bottom-nav {
   display: none;
 }
 
-/* PWAモードの時だけ表示し、スタイルを適用 */
 html.is-standalone .pwa-bottom-nav {
   display: flex;
   position: fixed;
@@ -3584,9 +3580,18 @@ html.is-standalone .pwa-bottom-nav {
   border-top: 1px solid var(--btn-reset-border, #e5e7eb);
   box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.06);
   z-index: 3000;
+  /* ★修正点: 表示/非表示をスムーズにするアニメーションを追加 */
+  transition: transform 0.25s ease-in-out;
 }
 
-/* ナビゲーションバー内の各ボタンのスタイル */
+/*
+ * ★★★ 不具合修正点 1 (解決策) ★★★
+ * モーダル表示中 (html.scroll-locked) は、ナビゲーションバーを画面下に隠す
+ */
+html.is-standalone.scroll-locked .pwa-bottom-nav {
+  transform: translateY(100%);
+}
+
 html.is-standalone .pwa-bottom-nav-btn {
   flex: 1;
   display: flex;
@@ -3605,15 +3610,9 @@ html.is-standalone .pwa-bottom-nav-btn {
   transition: color 0.15s ease;
 }
 
-html.is-standalone .pwa-bottom-nav-btn i {
-  font-size: 20px;
-}
+html.is-standalone .pwa-bottom-nav-btn i { font-size: 20px; }
+html.is-standalone .pwa-bottom-nav-btn.is-active { color: var(--btn-main, #6654e8); }
 
-html.is-standalone .pwa-bottom-nav-btn.is-active {
-  color: var(--btn-main, #6654e8);
-}
-
-/* PWAモードの時、元々あった上部のボタンを非表示にする */
 html.is-standalone .search-row-controls #filterToggleBtn,
 html.is-standalone .search-row-controls #favOnlyToggleBtn,
 html.is-standalone .search-row-controls #randomBtn,
@@ -3621,60 +3620,40 @@ html.is-standalone .search-row-controls #mainResetBtn {
   display: none !important;
 }
 
-/* PWAモードの時、並び替えボタンが横幅いっぱいになるように調整 */
-html.is-standalone .search-row-controls {
-  grid-template-columns: 1fr !important;
-}
+html.is-standalone .search-row-controls { grid-template-columns: 1fr !important; }
 
-/*
- * ★★★ 不具合修正点 1: ナビゲーションバーのテーマカラー対応 ★★★
- * CSSセレクタを `html.is-standalone body.dark-mode` のように修正し、
- * テーマクラスが `body` に付与された場合でも正しく色が反映されるようにします。
-*/
-
+/* --- テーマカラー対応 (前回同様) --- */
 /* ダークモード */
 html.is-standalone body.dark-mode .pwa-bottom-nav {
   background-color: #252c35;
   border-top-color: #394150;
   box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.2);
 }
-html.is-standalone body.dark-mode .pwa-bottom-nav-btn {
-  color: #8ca2b3;
-}
-html.is-standalone body.dark-mode .pwa-bottom-nav-btn.is-active {
-  color: #ffffff;
-}
+html.is-standalone body.dark-mode .pwa-bottom-nav-btn { color: #8ca2b3; }
+html.is-standalone body.dark-mode .pwa-bottom-nav-btn.is-active { color: #ffffff; }
 
-/* その他のカラーテーマ */
+/* その他カラーテーマ */
 html.is-standalone body[class*="theme-"] .pwa-bottom-nav {
   background-color: var(--card-bg);
   border-top-color: var(--history-card-bd);
 }
-html.is-standalone body[class*="theme-"] .pwa-bottom-nav-btn {
-  color: var(--muted);
-}
-html.is-standalone body[class*="theme-"] .pwa-bottom-nav-btn.is-active {
-  color: var(--btn-main);
-}
+html.is-standalone body[class*="theme-"] .pwa-bottom-nav-btn { color: var(--muted); }
+html.is-standalone body[class*="theme-"] .pwa-bottom-nav-btn.is-active { color: var(--btn-main); }
+
 
 /*
- * ★★★ 不具合修正点 2: カラー変更ボタンの位置調整 ★★★
- * ナビゲーションバーの高さ(60px)を考慮して、ボタンの表示位置を上にずらします。
-*/
+ * ★★★ 不具合修正点 2 (解決策) ★★★
+ * カラー変更ボタンの位置を、!important を付けて確実に上書き
+ */
 html.is-standalone #theme-toggle-btn {
-  /* ナビバーの高さ(60px) + 元々の余白(18px) + ホームバーの高さ */
-  bottom: calc(60px + 18px + var(--safe-bottom));
+  bottom: calc(60px + 18px + var(--safe-bottom)) !important;
 }
-/* テーマパネルも同様に上にずらします */
+/* テーマパネルも同様に上にずらす */
 html.is-standalone .floating-panel {
-    bottom: calc(60px + 80px + var(--safe-bottom));
+  bottom: calc(60px + 80px + var(--safe-bottom)) !important;
 }
 
-
-/*
- * ★★★ 不具合修正点 3: フィルタードロワーの位置調整 ★★★
- * ドロワーの下端がナビゲーションバーの上端にぴったり合うように調整します。
-*/
+/* フィルタードロワーの下端指定は、ナビバーが隠れるようになったため不要になりましたが、念のため残しておきます */
 html.is-standalone #filterDrawer {
-  bottom: calc(60px + var(--safe-bottom, 0px)) !important;
+  bottom: 0 !important; /* ドロワー自体は画面下端まで広がるように戻します */
 }
