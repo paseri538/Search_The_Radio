@@ -1342,7 +1342,183 @@ body.dark-mode .share-btn:focus-visible {
 
 
 
+/* ===== SP: 4ボタン等幅 + 並び替えは下段（gridで統一） ===== */
+@media (max-width: 768px){
+  .search-row-controls{
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 6px;                        /* 横・縦の間隔＝行間もこれで調整 */
+    align-items: stretch;
+  }
 
+  /* 4ボタンを完全等幅に（既存の min-width を無効化） */
+  .search-row-controls #filterToggleBtn,
+  .search-row-controls #favOnlyToggleBtn,
+  .search-row-controls #randomBtn,
+  .search-row-controls .reset-btn{
+    min-width: 0 !important;
+    max-width: none !important;
+    width: 100% !important;
+    padding-left: .4em;
+    padding-right: .4em;
+  }
+
+  /* 並び替えは2段目で全幅、行間は gap にまかせる */
+  .search-row-controls .sort-wrapper{
+    grid-column: 1 / -1;
+    margin-top: 0;
+  }
+  .search-row-controls .sort-wrapper select{
+    width: 100%;
+    min-height: 40px;
+  }
+
+  /* レイアウト切替時の“にゅるっ”を防ぐ（保険） */
+  .search-row-controls > * { transition: none !important; }
+}
+
+
+
+
+  /* 2) 「フィルタ」はアイコンのみなので擬似要素でテキストを追加 */
+  #filterToggleBtn{
+    display: flex; align-items: center; justify-content: center; gap: .35em;
+  }
+  #filterToggleBtn::after{
+    content: " フィルタ";            /* ←お好みで「フィルター」に */
+    font-size: .95em;
+    font-weight: 500;
+  }
+
+  /* 3) 他のボタンも中央寄せ（見た目を揃える） */
+  #favOnlyToggleBtn,
+  #randomBtn,
+  .reset-btn{
+    display: flex; align-items: center; justify-content: center; gap: .35em;
+  }
+
+
+/* === Controls: 自動調整用の共通サイズ変数＋形崩れ防止 === */
+@media (max-width: 768px){
+  /* 文字サイズを JS から上書きするための CSS 変数（初期値 15px） */
+  .search-row-controls #filterToggleBtn,
+  .search-row-controls #favOnlyToggleBtn,
+  .search-row-controls #randomBtn,
+  .search-row-controls .reset-btn{
+    --ctl-fs: 15px;                 /* ← JS がここを書き換えます */
+    font-size: var(--ctl-fs);
+    white-space: nowrap;            /* ぜったい改行しない */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    gap: .45em;
+    height: 37px;                   /* 高さは固定 → 形崩れしない */
+    line-height: 1;                 /* アイコンと文字のベース */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding-inline: 10px;
+  }
+
+  /* アイコンの大きさも文字と一緒に縮む */
+  #filterToggleBtn i,
+  #favOnlyToggleBtn i,
+  #randomBtn i{
+    font-size: calc(var(--ctl-fs) + 1px);
+    line-height: 1;
+  }
+
+  /* フィルタのラベルは ::after で付与しているので、サイズ連動 */
+  #filterToggleBtn::after{
+    content: attr(data-label);      /* JSで data-label="フィルタ" を付けます */
+    font-size: var(--ctl-fs);
+    font-weight: 600;
+    margin-left: .35em;
+  }
+
+  /* リセットにも記号を追加して左右バランスを統一（FontAwesome不要） */
+
+}
+
+/* === SPボタン: 見た目の統一（アイコン行高/記号サイズ） === */
+@media (max-width: 768px){
+  /* 自動調整フォント用 変数（JSで更新） */
+  .search-row-controls #filterToggleBtn,
+  .search-row-controls #favOnlyToggleBtn,
+  .search-row-controls #randomBtn,
+  .search-row-controls .reset-btn{
+    --ctl-fs: 15px;                 /* JSがここを上書き */
+    font-size: var(--ctl-fs);
+    line-height: 1;
+    height: 37px;                   /* 高さ固定で形崩れ防止 */
+  }
+
+  /* FAアイコンの行高をきっちり揃える */
+  #favOnlyToggleBtn i,
+  #randomBtn i,
+  #filterToggleBtn i{
+    font-size: calc(var(--ctl-fs) + 1px);
+    line-height: 1;
+  }
+
+  /* リセットにも記号（↺）— 他と同サイズに */
+
+}
+
+
+/* ===== SP: 4ボタンの太さと余白を完全統一 ===== */
+:root { --ctl-gap: .38em; }  /* アイコンと文字の統一間隔 */
+
+@media (max-width: 768px){
+  /* 4ボタンの太さはすべて同じ（500）に統一。余白は margin で管理 */
+  .search-row-controls #filterToggleBtn,
+  .search-row-controls #favOnlyToggleBtn,
+  .search-row-controls #randomBtn,
+  .search-row-controls .reset-btn{
+    font-weight: 500 !important;
+    gap: 0 !important;                /* gapに依存せず margin に統一 */
+  }
+
+  /* フィルタのラベル（::after）は太さ/間隔を統一 */
+  #filterToggleBtn::after{
+    margin-left: var(--ctl-gap) !important;
+    font-weight: 500 !important;      /* ←600になっていたのを上書き */
+  }
+
+  /* 既存 <span> ラベルは左マージンで統一（先頭スペース除去はJS側で） */
+  #favOnlyToggleBtn span,
+  #randomBtn span{
+    display: inline !important;
+    margin-left: var(--ctl-gap);
+    line-height: 1;
+  }
+
+  /* リセットの記号（↺）も同スケール・同間隔に */
+
+}
+
+
+/* === Desktop: 4ボタンの見た目を統一（並び替えは上段のまま） === */
+:root{
+  --ctl-gap-d: .45em;          /* アイコンと文字の間隔（PC） */
+  --ctl-fs-d: 15.5px;          /* ボタンの基準フォントサイズ（PC） */
+}
+
+
+
+
+/* ===== PC: 4ボタンは等幅／余りは並び替えが吸収 ===== */
+:root{
+  /* 4ボタンの共通幅（画面に応じて少しだけ伸縮） */
+  --pc-btn-w: clamp(124px, 12vw, 144px);
+}
+
+
+
+/* ===== Controls (Unified) — SP/PC 共通の見た目・間隔・幅 ===== */
+:root{
+  --pc-btn-w: clamp(124px, 12vw, 144px);
+  --ctl-gap: .38em;
+}
 
 
 /* 「お気に入りだけ」ON時の保険（JSがクラス付与する前提） */
@@ -2346,7 +2522,148 @@ body.dark-mode .history-item .label {
 body.body-scroll-locked {
   overflow: hidden !important;
 }
+/* ======================================================================== */
+/* ===== (V28・最終確定版) 上部コントロールボタン スタイル ===== */
+/* ======================================================================== */
 
+/* --- 0. ボタンの基本構造 (全テーマ共通) --- */
+#filterToggleBtn,
+#favOnlyToggleBtn,
+#randomBtn,
+.reset-btn {
+  display: inline-flex !important; align-items: center !important; justify-content: center !important;
+  border: 1.5px solid !important; border-radius: 10px !important; font-weight: 500 !important;
+  line-height: 1 !important; white-space: nowrap !important;
+  transition: background-color 0.1s ease, border-color 0.1s ease, color 0.1s ease, transform 0.1s ease, opacity 0.2s ease !important;
+  cursor: pointer !important; user-select: none !important;
+  box-shadow: none !important;
+}
+
+/* --- 1. アイコンとテキストのスタイル調整 (全テーマ共通) --- */
+#filterToggleBtn i, #favOnlyToggleBtn i, #randomBtn i,
+#filterToggleBtn::after, #favOnlyToggleBtn span, #randomBtn span, .reset-btn {
+  font-size: 1em !important; margin: 0 !important; flex-shrink: 0 !important;
+}
+#filterToggleBtn i, #favOnlyToggleBtn i, #randomBtn i {
+  width: 1.1em !important; text-align: center !important;
+}
+/* アイコン垂直位置の微調整 */
+#filterToggleBtn i { position: relative; top: 0.1em; }
+#favOnlyToggleBtn i { position: relative; top: 0.06em; }
+#randomBtn i { position: relative; top: 0.07em; }
+.reset-btn::before { font-size: 1.05em !important; position: relative; top: 0.08em; }
+
+/* --- 2. デバイスごとのレイアウトとスタイル --- */
+/* スマホ (991px以下) */
+@media (max-width: 991px) {
+  .search-row-controls { display: grid !important; grid-template-columns: repeat(4, 1fr) !important; gap: 6px !important; }
+  .search-row-controls .sort-wrapper { grid-column: 1 / -1 !important; }
+  #filterToggleBtn, #favOnlyToggleBtn, #randomBtn, .reset-btn {
+    height: 42px !important;
+    font-size: 14px !important;     /* JSが調整するまでの安全な初期サイズ */
+    padding: 0 6px !important;
+    gap: 0.35em !important;
+    visibility: hidden; /* ★計算完了まで完全に非表示 */
+    opacity: 0;
+  }
+  /* ★JSの準備完了合図で表示 */
+  body.buttons-ready #filterToggleBtn,
+  body.buttons-ready #favOnlyToggleBtn,
+  body.buttons-ready #randomBtn,
+  body.buttons-ready .reset-btn {
+    visibility: visible;
+    opacity: 1;
+  }
+  #filterToggleBtn::after { content: "フィルタ" !important; }
+  .reset-btn::before { content: "↺" !important; }
+}
+/* PC (992px以上) */
+@media (min-width: 992px) {
+  .search-row-controls { display: flex !important; gap: 8px !important; }
+  .search-row-controls .sort-wrapper { margin-left: auto !important; flex-grow: 1 !important; }
+  #filterToggleBtn, #favOnlyToggleBtn, #randomBtn, .reset-btn {
+    height: 40px !important;
+    font-size: 15.5px !important;
+    padding: 0 0.9em !important;
+    width: clamp(124px, 12vw, 144px) !important; flex: 0 0 auto !important;
+    gap: 0.55em !important;
+  }
+  #filterToggleBtn::after { content: "フィルタ" !important; }
+  .reset-btn::before { content: "↺" !important; }
+  #filterToggleBtn { gap: 0 !important; }
+  #filterToggleBtn::after { margin-left: 0.55em !important; }
+}
+
+/* --- 3. ボタンを押した瞬間の共通動作 --- */
+#filterToggleBtn:active, #favOnlyToggleBtn:active, #randomBtn:active, .reset-btn:active {
+  transform: translateY(1px) !important;
+}
+
+/* ================================================= */
+/* ===== テーマごとの色設定と挙動定義 (変更なし) ===== */
+/* ================================================= */
+
+/* --- 1. ライトモード --- */
+body:not(.dark-mode):not([class*="theme-"]) #filterToggleBtn,
+body:not(.dark-mode):not([class*="theme-"]) #favOnlyToggleBtn,
+body:not(.dark-mode):not([class*="theme-"]) #randomBtn,
+body:not(.dark-mode):not([class*="theme-"]) .reset-btn {
+  background-color: #ffffff !important; color: #22272e !important; border-color: #d0d7de !important;
+}
+body:not(.dark-mode):not([class*="theme-"]) #filterToggleBtn[aria-expanded="true"],
+body:not(.dark-mode):not([class*="theme-"]) #favOnlyToggleBtn[aria-pressed="true"] {
+  background-color: #22272e !important; color: #ffffff !important; border-color: #22272e !important;
+}
+@media (hover: hover) {
+  body:not(.dark-mode):not([class*="theme-"]) #filterToggleBtn:hover,
+  body:not(.dark-mode):not([class*="theme-"]) #favOnlyToggleBtn:hover,
+  body:not(.dark-mode):not([class*="theme-"]) #randomBtn:hover,
+  body:not(.dark-mode):not([class*="theme-"]) .reset-btn:hover {
+    background-color: #22272e !important; color: #ffffff !important; border-color: #22272e !important; transform: none !important;
+  }
+}
+
+/* --- 2. ダークモード --- */
+body.dark-mode #filterToggleBtn, body.dark-mode #favOnlyToggleBtn, body.dark-mode #randomBtn, body.dark-mode .reset-btn {
+  background-color: #2d333b !important; color: #e5ecec !important; border-color: #394150 !important;
+}
+body.dark-mode #filterToggleBtn[aria-expanded="true"], body.dark-mode #favOnlyToggleBtn[aria-pressed="true"] {
+  background-color: #e5ecec !important; color: #22272e !important; border-color: #e5ecec !important;
+}
+@media (hover: hover) {
+  body.dark-mode #filterToggleBtn:hover, body.dark-mode #favOnlyToggleBtn:hover, body.dark-mode #randomBtn:hover, body.dark-mode .reset-btn:hover {
+    background-color: #e5ecec !important; color: #22272e !important; border-color: #e5ecec !important; transform: none !important;
+  }
+}
+
+/* --- 3. カラーテーマ共通 --- */
+body[class*="theme-"] #filterToggleBtn,
+body[class*="theme-"] #favOnlyToggleBtn,
+body[class*="theme-"] #randomBtn,
+body[class*="theme-"] .reset-btn {
+  background-color: var(--btn-control-bg) !important;
+  color: var(--btn-control-text) !important;
+  border-color: var(--btn-control-bg) !important;
+}
+
+body[class*="theme-"] #filterToggleBtn[aria-expanded="true"],
+body[class*="theme-"] #favOnlyToggleBtn[aria-pressed="true"] {
+  background-color: var(--btn-control-bg-active) !important;
+  color: var(--btn-control-text-active) !important;
+  border-color: var(--btn-control-bg-active) !important;
+}
+
+@media (hover: hover) {
+  body[class*="theme-"] #filterToggleBtn:hover,
+  body[class*="theme-"] #favOnlyToggleBtn:hover,
+  body[class*="theme-"] #randomBtn:hover,
+  body[class*="theme-"] .reset-btn:hover {
+    background-color: var(--btn-control-bg-active) !important;
+    color: var(--btn-control-text-active) !important;
+    border-color: var(--btn-control-bg-active) !important;
+    transform: none !important;
+  }
+}
 
 /* ======================================================================== */
 /* ===== (V23.3) ボタンアイコンの個別・最終精密調整 ===== */
@@ -2510,323 +2827,854 @@ html {
 }
 
 /* ======================================================================== */
-/* ===== (V28・最終確定版) 上部コントロールボタン スタイル ===== */
+/* ===== (V2.1) スマホ表示時: コントロールボタンのデザインを微調整 ===== */
 /* ======================================================================== */
+@media (max-width: 768px) {
 
-/* --- 0. ボタンの基本構造 (全テーマ共通) --- */
-#filterToggleBtn,
-#favOnlyToggleBtn,
-#randomBtn,
-.reset-btn {
-  display: inline-flex !important; align-items: center !important; justify-content: center !important;
-  border: 1.5px solid !important; border-radius: 10px !important; font-weight: 500 !important;
-  line-height: 1 !important; white-space: nowrap !important;
-  transition: background-color 0.1s ease, border-color 0.1s ease, color 0.1s ease, transform 0.1s ease, opacity 0.2s ease !important;
-  cursor: pointer !important; user-select: none !important;
-  box-shadow: none !important;
+  /* 4つのボタンに共通の縦並びレイアウトを適用 */
+  .search-row-controls #filterToggleBtn,
+  .search-row-controls #favOnlyToggleBtn,
+  .search-row-controls #randomBtn,
+  .search-row-controls .reset-btn {
+    flex-direction: column !important;
+    height: auto !important;
+    min-height: 60px;
+    padding: 8px 4px !important;
+    gap: 4px !important;
+  }
+
+  /* アイコンのスタイルを調整 */
+  #filterToggleBtn i,
+  #favOnlyToggleBtn i,
+  #randomBtn i,
+  .reset-btn::before {
+    font-size: 22px !important;
+    line-height: 1 !important;
+    margin: 0 !important;
+    width: auto !important;
+    font-weight: 900 !important;
+  }
+
+  /* リセットボタンのアイコンをFontAwesomeに統一 */
+  .reset-btn::before {
+      font-family: "Font Awesome 6 Free" !important;
+      content: "\f2ea" !important; /* fa-rotate-left アイコン */
+  }
+
+  /* 各アイコンの垂直位置を個別に微調整 */
+  #filterToggleBtn i {
+    position: relative;
+    top: 0.05em;
+  }
+  #favOnlyToggleBtn i {
+    position: relative;
+    top: 0.02em;
+  }
+  #randomBtn i {
+    position: relative;
+    top: 0.05em;
+  }
+  .reset-btn::before {
+    position: relative;
+    top: 0.10em; /* ★変更点: 0.02emから0.05emに調整し、アイコンを少し下に移動 */
+  }
+
+  /* テキスト部分のスタイルを調整 */
+  #filterToggleBtn::after,
+  #favOnlyToggleBtn span,
+  #randomBtn span,
+  .reset-btn {
+    font-size: 11px !important;
+    font-weight: 500 !important;
+  }
+
+  .reset-btn {
+    line-height: 1.2 !important;
+  }
 }
 
-/* --- 1. アイコンとテキストのスタイル調整 (全テーマ共通) --- */
-#filterToggleBtn i, #favOnlyToggleBtn i, #randomBtn i,
-#filterToggleBtn::after, #favOnlyToggleBtn span, #randomBtn span, .reset-btn {
-  font-size: 1em !important; margin: 0 !important; flex-shrink: 0 !important;
-}
-#filterToggleBtn i, #favOnlyToggleBtn i, #randomBtn i {
-  width: 1.1em !important; text-align: center !important;
-}
-.reset-btn::before { font-size: 1.05em !important; position: relative; top: 0.08em; }
 
-/* 2. 各アイコンのサイズと位置を個別に微調整 */
-#filterToggleBtn i { position: relative; top: 0.035em; }
-#favOnlyToggleBtn i { font-size: 1.00em !important; position: relative; top: 0em; }
-#randomBtn i { position: relative; top: 0.02em; }
-.reset-btn::before { font-size: 1.05em !important; position: relative; top: 0.02em; }
+/* ======================================================================== */
+/* ===== 全画面共通: お気に入りボタンのアイコンを塗りつぶしに統一 ===== */
+/* ======================================================================== */
 
 /* お気に入りボタンのアイコンを常にSolidスタイル(塗りつぶし)で表示 */
 #favOnlyToggleBtn i {
   font-weight: 900 !important;
 }
 
+/* ======================================================================== */
+/* ===== (最終・確定版) カードレイアウト 全デバイス強制修正 ===== */
+/* ======================================================================== */
 
-/* --- 2. デバイスごとのレイアウトとスタイル --- */
-/* スマホ (991px以下) */
-@media (max-width: 991px) {
-  .search-row-controls { display: grid !important; grid-template-columns: repeat(4, 1fr) !important; gap: 6px !important; }
-  .search-row-controls .sort-wrapper { grid-column: 1 / -1 !important; }
-  #filterToggleBtn, #favOnlyToggleBtn, #randomBtn, .reset-btn {
-    height: 44px !important; /* ★ボタンの高さを44pxに確保 */
-    font-size: 14px !important;
-    padding: 0 6px !important;
-    gap: 0.35em !important;
-    visibility: hidden;
-    opacity: 0;
+/* --- 1. まず、既存のカードスタイルの一部をリセット --- */
+.episode-item,
+.episode-item > a,
+.episode-item .thumb-col,
+.episode-item a > div:last-of-type {
+  gap: 0;
+  flex: none;
+}
+#results h5.mb-1,
+.episode-meta {
+  margin: 0;
+}
+
+/* --- 2. カード全体の基本設定 --- */
+.episode-item {
+  padding: 12px;
+}
+
+/* --- 3. リンクエリアのレイアウトを再構築 (最重要) --- */
+.episode-item > a {
+  display: flex !important; /* JSのinline styleを維持しつつflexを確実に */
+  align-items: center !important;
+  gap: 0 !important; /* JSのinline styleのgapを無効化 */
+  width: 100%;
+}
+
+/* --- 4. サムネイルの領域を固定 --- */
+.episode-item .thumb-col {
+  flex-shrink: 0; /* 縮まない */
+}
+
+/* --- 5. テキストエリアをマージンで強制的に配置 --- */
+.episode-item a > div:last-of-type {
+  flex-grow: 1; /* 残りのスペースを全て確保 */
+  min-width: 0; /* はみ出し防止 */
+}
+
+/* ======================================================================== */
+/* ===== スマホ表示 (幅 900px 以下) ===== */
+/* ======================================================================== */
+@media (max-width: 900px) {
+  /* (ここには前回のスマホ用のスタイルが既にあります) */
+  .episode-item .thumbnail {
+    width: 120px;
   }
-  /* ★JSの準備完了合図で表示 */
-  body.buttons-ready #filterToggleBtn,
-  body.buttons-ready #favOnlyToggleBtn,
-  body.buttons-ready #randomBtn,
-  body.buttons-ready .reset-btn {
-    visibility: visible;
-    opacity: 1;
+  .episode-item a > div:last-of-type {
+    margin-left: 12px;
   }
-  #filterToggleBtn::after { content: "フィルタ" !important; }
-  .reset-btn::before { content: "↺" !important; }
-}
-/* PC (992px以上) */
-@media (min-width: 992px) {
-  .search-row-controls { display: flex !important; gap: 8px !important; }
-  .search-row-controls .sort-wrapper { margin-left: auto !important; flex-grow: 1 !important; }
-  #filterToggleBtn, #favOnlyToggleBtn, #randomBtn, .reset-btn {
-    height: 40px !important;
-    font-size: 15.5px !important;
-    padding: 0 0.9em !important;
-    width: clamp(124px, 12vw, 144px) !important; flex: 0 0 auto !important;
-    gap: 0.55em !important;
+  #results h5.mb-1 {
+    font-size: clamp(0.88rem, 3.7vw, 0.96rem);
+    line-height: 1.25;
+    margin-bottom: 4px;
   }
-  #filterToggleBtn::after { content: "フィルタ" !important; }
-  .reset-btn::before { content: "↺" !important; }
-  #filterToggleBtn { gap: 0 !important; }
-  #filterToggleBtn::after { margin-left: 0.55em !important; }
-}
-
-/* --- 3. ボタンを押した瞬間の共通動作 --- */
-#filterToggleBtn:active, #favOnlyToggleBtn:active, #randomBtn:active, .reset-btn:active {
-  transform: translateY(1px) !important;
-}
-
-/* ================================================= */
-/* ===== テーマごとの色設定と挙動定義 ===== */
-/* ================================================= */
-
-/* --- 1. ライトモード --- */
-body:not(.dark-mode):not([class*="theme-"]) #filterToggleBtn,
-body:not(.dark-mode):not([class*="theme-"]) #favOnlyToggleBtn,
-body:not(.dark-mode):not([class*="theme-"]) #randomBtn,
-body:not(.dark-mode):not([class*="theme-"]) .reset-btn {
-  background-color: #ffffff !important; color: #22272e !important; border-color: #d0d7de !important;
-}
-body:not(.dark-mode):not([class*="theme-"]) #filterToggleBtn[aria-expanded="true"],
-body:not(.dark-mode):not([class*="theme-"]) #favOnlyToggleBtn[aria-pressed="true"] {
-  background-color: #22272e !important; color: #ffffff !important; border-color: #22272e !important;
-}
-@media (hover: hover) {
-  body:not(.dark-mode):not([class*="theme-"]) #filterToggleBtn:not([aria-expanded="true"]):hover,
-  body:not(.dark-mode):not([class*="theme-"]) #favOnlyToggleBtn:not([aria-pressed="true"]):hover,
-  body:not(.dark-mode):not([class*="theme-"]) #randomBtn:hover,
-  body:not(.dark-mode):not([class*="theme-"]) .reset-btn:hover {
-    background-color: #f0f2f5 !important; border-color: #a0a7b0 !important;
+  .episode-meta {
+    font-size: clamp(0.8rem, 3.3vw, 0.98rem);
+    line-height: 1.35;
   }
+
+  /* 以前に設定した強制的な折り返し設定をリセットします */
+.episode-item a > div:last-of-type,
+.episode-item h5.mb-1 {
+  word-break: normal;
+  overflow-wrap: normal;
 }
 
-/* --- 2. ダークモード --- */
-body.dark-mode #filterToggleBtn, body.dark-mode #favOnlyToggleBtn, body.dark-mode #randomBtn, body.dark-mode .reset-btn {
-  background-color: #2d333b !important; color: #e5ecec !important; border-color: #394150 !important;
+/* ゲスト名が表示されるspanタグに、省略スタイルを適用します */
+.guest-one-line {
+  display: block !important;
+  width: 100% !important;
+
+  /* ↓↓↓ テキストを強制的に1行に保ち、はみ出したら「...」で省略する設定 ↓↓↓ */
+  white-space: nowrap !important;
+  overflow: hidden !important;        /* ★追加: はみ出した部分を隠します */
 }
-body.dark-mode #filterToggleBtn[aria-expanded="true"], body.dark-mode #favOnlyToggleBtn[aria-pressed="true"] {
-  background-color: #e5ecec !important; color: #22272e !important; border-color: #e5ecec !important;
 }
-@media (hover: hover) {
-  body.dark-mode #filterToggleBtn:not([aria-expanded="true"]):hover,
-  body.dark-mode #favOnlyToggleBtn:not([aria-pressed="true"]):hover,
-  body.dark-mode #randomBtn:hover, body.dark-mode .reset-btn:hover {
-     background-color: #394150 !important; border-color: #505a69 !important;
+
+/* ======================================================================== */
+/* ===== PC/iPad表示 (幅 901px 以上) ===== */
+/* ======================================================================== */
+@media (min-width: 901px) {
+  .episode-item {
+    padding: 14px;
   }
-}
-
-/* --- 3. カラーテーマ共通 --- */
-body[class*="theme-"] #filterToggleBtn,
-body[class*="theme-"] #favOnlyToggleBtn,
-body[class*="theme-"] #randomBtn,
-body[class*="theme-"] .reset-btn {
-  background-color: var(--btn-control-bg) !important;
-  color: var(--btn-control-text) !important;
-  border-color: var(--btn-control-bg) !important;
-}
-body[class*="theme-"] #filterToggleBtn[aria-expanded="true"],
-body[class*="theme-"] #favOnlyToggleBtn[aria-pressed="true"] {
-  background-color: var(--btn-control-bg-active) !important;
-  color: var(--btn-control-text-active) !important;
-  border-color: var(--btn-control-bg-active) !important;
-}
-@media (hover: hover) {
-  body[class*="theme-"] #filterToggleBtn:not([aria-expanded="true"]):hover,
-  body[class*="theme-"] #favOnlyToggleBtn:not([aria-pressed="true"]):hover,
-  body[class*="theme-"] #randomBtn:hover,
-  body[class*="theme-"] .reset-btn:hover {
-     opacity: 0.85;
+  /* サムネイル */
+  .episode-item .thumbnail {
+    width: 150px;
+  }
+  /* ★テキストエリアの左側に余白を作成 */
+  .episode-item a > div:last-of-type {
+    margin-left: 14px;
+    height: 84px; /* 高さを固定 */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  /* テキストのスタイル */
+  #results h5.mb-1 {
+    font-size: 1.05rem;
+    line-height: 1.35;
+    margin-bottom: 6px;
+  }
+  .episode-meta {
+    font-size: 0.9rem;
+    line-height: 1.4;
   }
 }
 
 /* ======================================================================== */
-/* ===== YouTubeプレイリスト作成ボタンのスタイル ===== */
+/* ===== (最終・確定コード) ゲスト名のはみ出しを絶対に防ぐ最終手段 ===== */
 /* ======================================================================== */
-.results-count-under-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
+.guest-one-line {
+  display: block;          /* 常に独立した行として表示します */
+  width: 100%;             /* 親の幅いっぱいに広がります */
+  white-space: nowrap;     /* テキストの折り返しを禁止します */
+  overflow: hidden;        /* はみ出した部分を完全に隠します */
+  text-overflow: ellipsis; /* 隠れた部分を「...」で省略表示します */
 }
-#createPlaylistBtn {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  background-color: #e52d27;
+
+
+/* ======================================================================== */
+/* ===== (最終・確定コード) ゲスト名がはみ出す問題の根本対策 ===== */
+/* ======================================================================== */
+
+/*
+ 1. テキストエリアのコンテナ(div)が、サムネイルを除いた
+    残りの幅を全て使うように設定し(flex: 1)、
+    自身のコンテンツではみ出さないように強制します(min-width: 0)。
+*/
+.episode-item > a > div:last-of-type {
+  flex: 1;
+  min-width: 0;
+}
+
+/*
+ 2. テキストエリア内のタイトル(h5)の幅を、
+    親要素であるコンテナの幅に合わせます(width: 100%)。
+*/
+.episode-item h5.mb-1 {
+  width: 100%;
+}
+
+/*
+ 3. ゲスト名の省略表示スタイルを、!importantを付けて再度定義し、
+    他のどのスタイルよりも優先されるようにします。
+*/
+.guest-one-line {
+  display: block !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  width: 100% !important;
+}
+
+/* ======================================================================== */
+/* ===== (再修正) タイムスタンプをサムネイル右下に表示 (PC/SP両対応) ===== */
+/* ======================================================================== */
+
+/* --- 基本設定 (全デバイス共通) --- */
+
+/* 1. サムネイルを含む親要素(.thumb-col)を、絶対位置指定の基準点にします */
+.thumb-col {
+  position: relative;
+  /* display:flexやflex-directionをリセットし、シンプルな箱にします */
+  display: block;
+  flex-shrink: 0;
+}
+
+/* 2. タイムスタンプのコンテナを、親要素の右下に絶対配置します */
+.ts-buttons {
+  position: absolute;
+  bottom: 5px;
+  right: 5px;
+  margin-top: 0;
+  z-index: 1; /* 画像の上に確実に表示されるように念のため指定 */
+}
+
+/* 3. タイムスタンプボタンの見た目を調整します */
+.ts-btn {
+  background-color: rgba(0, 0, 0, 0.75);
   color: white;
   border: none;
-  border-radius: 8px;
-  padding: 6px 14px;
-  font-size: 0.95em;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background-color 0.2s;
-  white-space: nowrap;
+  font-size: 0.8em;
+  font-weight: bold;
+  padding: 3px 7px;
+  border-radius: 4px;
+  backdrop-filter: blur(2px);
 }
-@media (hover: hover) {
-  #createPlaylistBtn:hover { background-color: #c21d19; }
+
+/* 4. ダークモードでも同じスタイルを適用します */
+body.dark-mode .ts-btn {
+  background-color: rgba(0, 0, 0, 0.75) !important;
+  color: white !important;
+  border-color: transparent !important;
 }
-#createPlaylistBtn[hidden] { display: none; }
-body.dark-mode #createPlaylistBtn { background-color: #ff4742; }
-@media (hover: hover) {
-  body.dark-mode #createPlaylistBtn:hover { background-color: #e52d27; }
+
+
+/* --- デバイスごとの幅調整 --- */
+
+/* 5. SP表示 (幅 900px 以下) のコンテナ幅をサムネイルに合わせます */
+@media (max-width: 900px) {
+  .thumb-col {
+    width: 120px;
+  }
+}
+
+/* 6. PC表示 (幅 901px 以上) のコンテナ幅をサムネイルに合わせます */
+@media (min-width: 901px) {
+  .thumb-col {
+    width: 150px;
+  }
+}
+
+/* ======================================================================== */
+/* ===== (JS連携) 最小フォントでも収まらない場合に省略表示を適用 ===== */
+/* ======================================================================== */
+.guest-one-line.needs-ellipsis {
+  text-overflow: ellipsis !important;
+}
+
+
+/* style.css に追記 */
+body.body-scroll-locked {
+  position: fixed; /* ページを完全に固定 */
+  overflow: hidden;
+  width: 100%;
+  height: 100%;
 }
 
 /* =================================================== */
-/* ★★★ モーダル、スクロールロック、PWA関連のスタイル ★★★ */
+/* ★★★ モーダル表示中の背景スクロールを安定的に禁止 ★★★ */
 /* =================================================== */
-
-/* オーバーレイ上でのタッチ操作によるスクロールを防止 */
-#drawerBackdrop, #aboutModal, #historyModal {
-  touch-action: none;
-}
 html.scroll-locked {
   overflow: hidden !important;
 }
 
-/* PWAモードのセーフエリア対応 */
-.is-standalone .sticky-search-area {
+.sort-wrapper {
+  display: block;
+  position: relative;
+}
+
+
+
+/* =================================================== */
+/* ★★★ 全体的な左右の余白を統一 ★★★ */
+/* =================================================== */
+.results-count-under-bar,
+.filters-bar,
+.main-content {
+  /* 左右に15pxの余白を追加して、全体の縦のラインを揃えます */
+  padding-left: 15px !important;
+  padding-right: 15px !important;
+
+  /* 余白を追加してもレイアウトが崩れないようにします */
+  box-sizing: border-box !important;
+}
+
+
+/* style.css に追記 */
+
+/* =================================================== */
+/* ★★★ 検索ボックスのクリアボタン ★★★ */
+/* =================================================== */
+
+/* inputとボタンを囲むラッパー */
+.search-input-wrapper {
+  position: relative;
+  width: 100%; /* 横幅いっぱいに広がるように */
+}
+
+/* 既存のinputスタイルはそのままに、クリアボタンのスペースを確保 */
+.search-input-wrapper .searchbox-input {
+  width: 100%;
+  /* 右側のpaddingを増やしてボタンと文字が被らないようにします */
+  padding-right: 38px !important;
+}
+
+/* クリアボタンのスタイル */
+.clear-search-btn {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  transform: translateY(-50%);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 26px;
+  height: 26px;
+  padding: 0;
+
+  background-color: #d1d5db; /* 少し濃いめのグレー */
+  color: #4b5563;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+
+  /* 初期状態は非表示 */
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.15s, visibility 0.15s, background-color 0.15s;
+}
+
+/* JavaScriptによってhidden属性が外されたら表示する */
+.clear-search-btn:not([hidden]) {
+  opacity: 1;
+  visibility: visible;
+}
+
+@media (hover: hover) {
+  .clear-search-btn:hover {
+    background-color: #9ca3af;
+    color: #ffffff;
+  }
+}
+
+/* --- ダークモード対応 --- */
+body.dark-mode .clear-search-btn {
+  background-color: #4b5563;
+  color: #e5ecec;
+}
+
+@media (hover: hover) {
+  body.dark-mode .clear-search-btn:hover {
+    background-color: #6b7280;
+  }
+}
+
+/* --- カラーテーマ対応 --- */
+body[class*="theme-"] .clear-search-btn {
+    background-color: var(--filter-btn-active);
+    color: var(--btn-main);
+}
+
+@media (hover: hover) {
+    body[class*="theme-"] .clear-search-btn:hover {
+        background-color: var(--active-filter);
+        color: var(--active-filter-text);
+    }
+}
+
+/* style.css に追記（既存のクリアボタンのスタイルもこちらで上書き・調整します） */
+
+/* =================================================== */
+/* ★★★ 検索ボックス内ボタン (クリア＆検索) ★★★ */
+/* =================================================== */
+
+/* 2つのボタンを配置するため、入力欄の右側の余白を広げます */
+.search-input-wrapper .searchbox-input {
+  /* 以前は38pxでしたが、72pxに拡張します */
+  padding-right: 72px !important;
+}
+
+/* クリアボタンの位置を、新しい検索ボタンの左隣に調整します */
+.clear-search-btn {
+  /* 以前は right: 8px でしたが、44px に変更します */
+  right: 44px;
+
+  /* 以下は既存のスタイルですが、念のため記載します */
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  background-color: #d1d5db;
+  color: #4b5563;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.15s, visibility 0.15s, background-color 0.15s;
+}
+
+/* ★★★↓ここから新しい検索ボタンのスタイルを追加します↓★★★ */
+.main-search-btn {
+  position: absolute;
+  top: 50%;
+  right: 8px; /* 右端に配置 */
+  transform: translateY(-50%);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 32px;
+  height: 32px;
+  padding: 0;
+
+  background-color: transparent;
+  color: #5f6e86;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background-color 0.15s, color 0.15s;
+}
+
+@media (hover: hover) {
+  .main-search-btn:hover {
+    background-color: #f0f2f5; /* ほんのり背景色を付ける */
+  }
+}
+
+/* --- ダークモード対応 --- */
+body.dark-mode .main-search-btn {
+  color: #bdc6d2;
+}
+@media (hover: hover) {
+  body.dark-mode .main-search-btn:hover {
+    background-color: #394150;
+  }
+}
+
+/* --- カラーテーマ対応 --- */
+body[class*="theme-"] .main-search-btn {
+  color: var(--muted);
+}
+@media (hover: hover) {
+  body[class*="theme-"] .main-search-btn:hover {
+    background-color: var(--filter-btn-active);
+  }
+}
+
+/* =================================================== */
+/* ★★★ フォントの太さを使い分ける設定 ★★★ */
+/* =================================================== */
+
+/* 見出しやボタンなど、強調したいテキストに太いフォントを適用します */
+h1, h2, h3, h4, h5,
+b, strong,
+.filter-title,
+.guest-button, .btn-corner, .btn-year,
+.page-btn, .more-btn,
+.history-toggle .title,
+.history-item .label,
+#createPlaylistBtn,
+.drawer-close-btn,
+.about-title {
+  font-family: fot-udkakugoc80-pro, 'Segoe UI', system-ui, -apple-system, sans-serif;
+  /* 他のスタイル設定に確実に打ち勝って太字にするため、
+    font-weight に !important を付けています。
+  */
+  font-weight: 700 !important;
+}
+
+/* =================================================== */
+/* ★★★ お知らせポップアップのスタイル ★★★ */
+/* =================================================== */
+
+/* モーダル本体のスタイル */
+#releasePopupContent {
+  background: #fdfdff;
+  border-radius: 16px;
+  padding: 24px 28px 28px;
+  width: 90vw;
+  max-width: 480px;
+  box-shadow: 0 12px 32px -8px rgba(0,0,0,0.2);
+  text-align: center;
+  border: 1px solid rgba(0,0,0,0.05);
+  position: relative; /* 閉じるボタンの基準点 */
+}
+
+/* タイトル */
+.popup-title {
+  font-family: fot-udkakugoc80-pro, sans-serif; /* 太い方のフォント */
+  font-weight: 700;
+  font-size: 1.5rem;
+  margin-bottom: 16px;
+}
+
+/* 本文 */
+.popup-body {
+  font-size: 1rem;
+  line-height: 1.8;
+  margin-bottom: 24px;
+}
+
+/* 「試してみる」ボタン */
+.popup-cta-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 12px 16px;
+  border: none;
+  border-radius: 12px;
+  background-color: #13a286; /* グリーンテーマの色 */
+  color: #ffffff;
+  font-family: fot-udkakugoc80-pro, sans-serif; /* 太い方のフォント */
+  font-size: 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.1s;
+}
+@media (hover: hover) {
+  .popup-cta-btn:hover {
+    background-color: #108a72;
+  }
+}
+.popup-cta-btn:active {
+  transform: translateY(1px);
+}
+
+/* 閉じるボタンの位置調整 */
+#releasePopupCloseBtn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+}
+
+/* ダークモード対応 */
+body.dark-mode #releasePopupContent {
+  background: #23242d;
+  color: #e5ecec;
+}
+
+/* カラーテーマ対応 */
+body[class*="theme-"] #releasePopupContent {
+  background: var(--card-bg);
+  color: var(--text-color);
+}
+
+
+/* =================================================== */
+/* ★★★ PWA専用 下部ナビゲーション スタイル ★★★ */
+/* =================================================== */
+
+/* 下部ナビゲーションバーを通常は非表示に */
+.pwa-bottom-nav {
+  display: none;
+}
+
+/* PWAモード(.is-standalone)の時だけ表示し、スタイルを適用 */
+.is-standalone .pwa-bottom-nav {
+  display: flex;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: calc(60px + var(--safe-bottom, 0px)); /* iPhoneのホームバーエリアを考慮 */
+  padding-bottom: var(--safe-bottom, 0px);
+  background-color: var(--card-bg, #ffffff);
+  border-top: 1px solid var(--btn-reset-border, #e5e7eb);
+  box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.06);
+  z-index: 3000;
+}
+
+/* ナビゲーションバー内の各ボタンのスタイル */
+.is-standalone .pwa-bottom-nav-btn {
+  flex: 1; /* 4つのボタンが等幅に広がる */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: var(--muted, #7c8798);
+  font-family: inherit;
+  font-size: 11px;
+  -webkit-tap-highlight-color: transparent; /* スマホでのタップ時のハイライトを消す */
+  transition: color 0.15s ease;
+}
+
+.is-standalone .pwa-bottom-nav-btn i {
+  font-size: 20px;
+}
+
+/* ボタンがアクティブ（選択中）の時のスタイル */
+.is-standalone .pwa-bottom-nav-btn.is-active {
+  color: var(--btn-main, #6654e8);
+}
+
+/* PWAモードの時、元々あった上部のボタンを非表示にする */
+.is-standalone .search-row-controls #filterToggleBtn,
+.is-standalone .search-row-controls #favOnlyToggleBtn,
+.is-standalone .search-row-controls #randomBtn,
+.is-standalone .search-row-controls #mainResetBtn {
+  display: none !important;
+}
+
+/* PWAモードの時、並び替えボタンが横幅いっぱいになるように調整 */
+.is-standalone .search-row-controls {
+  grid-template-columns: 1fr !important;
+}
+
+/* PWAモードの時、コンテンツの最下部がナビゲーションバーに隠れないように余白を追加 */
+.is-standalone .main-content {
+  padding-bottom: 80px; /* ナビゲーションバーの高さ + α */
+}
+
+/* --- 各テーマカラーへの対応 --- */
+
+/* ダークモード */
+.is-standalone.dark-mode .pwa-bottom-nav {
+  background-color: #252c35;
+  border-top-color: #394150;
+  box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.2);
+}
+.is-standalone.dark-mode .pwa-bottom-nav-btn {
+  color: #8ca2b3;
+}
+.is-standalone.dark-mode .pwa-bottom-nav-btn.is-active {
+  color: #ffffff;
+}
+
+/* その他のカラーテーマ */
+.is-standalone[class*="theme-"] .pwa-bottom-nav {
+  background-color: var(--card-bg);
+  border-top-color: var(--history-card-bd);
+}
+.is-standalone[class*="theme-"] .pwa-bottom-nav-btn {
+  color: var(--muted);
+}
+.is-standalone[class*="theme-"] .pwa-bottom-nav-btn.is-active {
+  color: var(--btn-main);
+}
+
+
+/* style.css の一番下に追加してください */
+
+/* =================================================== */
+/* ★★★ PWA/モバイル対応強化スタイル (修正版) ★★★ */
+/* =================================================== */
+
+/* --- PWAモードのセーフエリア対応 --- */
+:root {
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+}
+
+html.is-standalone .sticky-search-area {
   padding-top: calc(0.38rem + var(--safe-top));
 }
-.is-standalone .main-content {
+
+html.is-standalone .main-content {
   padding-left: max(15px, var(--safe-left));
   padding-right: max(15px, var(--safe-right));
+  /* コンテンツの最下部がナビゲーションバーに隠れないように余白を確保 */
+  padding-bottom: 80px;
 }
-.is-standalone .pagination-area,
-.is-standalone footer {
-  padding-bottom: var(--safe-bottom);
-}
-.is-standalone #theme-toggle-btn {
-  bottom: calc(18px + var(--safe-bottom));
-}
+
+/* --- 100vh問題対策 --- */
 #loading-screen {
   height: calc(var(--vh, 1vh) * 100);
 }
 
-/* 「このサイトについて」モーダル開閉アニメーション */
-#aboutModal.show { animation: modalFade .22s ease-out both; }
-#aboutModal.show #aboutModalContent { animation: modalPop .24s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
-#aboutModal.closing { animation: modalFadeOut .20s ease-in forwards; }
-#aboutModal.closing #aboutModalContent { animation: modalPopOut .18s ease-in forwards; }
+/* --- PWA専用 下部ナビゲーション スタイル --- */
 
-/* ページ内リンクのスクロール位置調整 */
-html {
-  scroll-padding-top: var(--header-offset, 186px);
+/* ナビゲーションバーを通常は非表示に */
+.pwa-bottom-nav {
+  display: none;
 }
 
-/* =================================================== */
-/* ★★★ カードレイアウト関連 ★★★ */
-/* =================================================== */
-.episode-item, .episode-item > a, .episode-item .thumb-col, .episode-item a > div:last-of-type { gap: 0; flex: none; }
-#results h5.mb-1, .episode-meta { margin: 0; }
-.episode-item { padding: 12px; }
-.episode-item > a { display: flex !important; align-items: center !important; gap: 0 !important; width: 100%; }
-.episode-item .thumb-col { flex-shrink: 0; }
-.episode-item a > div:last-of-type { flex-grow: 1; min-width: 0; }
-.guest-one-line.needs-ellipsis { text-overflow: ellipsis !important; }
-@media (max-width: 900px) {
-  .episode-item .thumbnail { width: 120px; }
-  .episode-item a > div:last-of-type { margin-left: 12px; }
-  #results h5.mb-1 { font-size: clamp(0.88rem, 3.7vw, 0.96rem); line-height: 1.25; margin-bottom: 4px; }
-  .episode-meta { font-size: clamp(0.8rem, 3.3vw, 0.98rem); line-height: 1.35; }
-  .episode-item a > div:last-of-type, .episode-item h5.mb-1 { word-break: normal; overflow-wrap: normal; }
-  .guest-one-line { display: block !important; width: 100% !important; white-space: nowrap !important; overflow: hidden !important; }
+/* PWAモードの時だけ表示し、スタイルを適用 */
+html.is-standalone .pwa-bottom-nav {
+  display: flex;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: calc(60px + var(--safe-bottom, 0px));
+  padding-bottom: var(--safe-bottom, 0px);
+  background-color: var(--card-bg, #ffffff);
+  border-top: 1px solid var(--btn-reset-border, #e5e7eb);
+  box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.06);
+  z-index: 3000;
 }
-@media (min-width: 901px) {
-  .episode-item { padding: 14px; }
-  .episode-item .thumbnail { width: 150px; }
-  .episode-item a > div:last-of-type { margin-left: 14px; height: 84px; display: flex; flex-direction: column; justify-content: center; }
-  #results h5.mb-1 { font-size: 1.05rem; line-height: 1.35; margin-bottom: 6px; }
-  .episode-meta { font-size: 0.9rem; line-height: 1.4; }
+
+/* ナビゲーションバー内の各ボタンのスタイル */
+html.is-standalone .pwa-bottom-nav-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: var(--muted, #7c8798);
+  font-family: inherit;
+  font-size: 11px;
+  -webkit-tap-highlight-color: transparent;
+  transition: color 0.15s ease;
 }
-.episode-item > a > div:last-of-type { flex: 1; min-width: 0; }
-.episode-item h5.mb-1 { width: 100%; }
-.guest-one-line { display: block !important; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; width: 100% !important; }
 
-/* タイムスタンプ */
-.thumb-col { position: relative; display: block; flex-shrink: 0; }
-.ts-buttons { position: absolute; bottom: 5px; right: 5px; margin-top: 0; z-index: 1; }
-.ts-btn { background-color: rgba(0, 0, 0, 0.75); color: white; border: none; font-size: 0.8em; font-weight: bold; padding: 3px 7px; border-radius: 4px; backdrop-filter: blur(2px); }
-body.dark-mode .ts-btn { background-color: rgba(0, 0, 0, 0.75) !important; color: white !important; border-color: transparent !important; }
-@media (max-width: 900px) { .thumb-col { width: 120px; } }
-@media (min-width: 901px) { .thumb-col { width: 150px; } }
+html.is-standalone .pwa-bottom-nav-btn i {
+  font-size: 20px;
+}
 
-/* =================================================== */
-/* ★★★ その他UI要素 ★★★ */
-/* =================================================== */
-.sort-wrapper { display: block; position: relative; }
-.results-count-under-bar, .filters-bar, .main-content { padding-left: 15px !important; padding-right: 15px !important; box-sizing: border-box !important; }
-.search-input-wrapper { position: relative; width: 100%; }
-.search-input-wrapper .searchbox-input { width: 100%; padding-right: 72px !important; }
-.clear-search-btn { position: absolute; top: 50%; right: 44px; transform: translateY(-50%); display: flex; align-items: center; justify-content: center; width: 26px; height: 26px; padding: 0; background-color: #d1d5db; color: #4b5563; border: none; border-radius: 50%; cursor: pointer; opacity: 0; visibility: hidden; transition: opacity 0.15s, visibility 0.15s, background-color 0.15s; }
-.clear-search-btn:not([hidden]) { opacity: 1; visibility: visible; }
-@media (hover: hover) { .clear-search-btn:hover { background-color: #9ca3af; color: #ffffff; } }
-body.dark-mode .clear-search-btn { background-color: #4b5563; color: #e5ecec; }
-@media (hover: hover) { body.dark-mode .clear-search-btn:hover { background-color: #6b7280; } }
-body[class*="theme-"] .clear-search-btn { background-color: var(--filter-btn-active); color: var(--btn-main); }
-@media (hover: hover) { body[class*="theme-"] .clear-search-btn:hover { background-color: var(--active-filter); color: var(--active-filter-text); } }
-.main-search-btn { position: absolute; top: 50%; right: 8px; transform: translateY(-50%); display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; padding: 0; background-color: transparent; color: #5f6e86; border: none; border-radius: 50%; cursor: pointer; font-size: 16px; transition: background-color 0.15s, color 0.15s; }
-@media (hover: hover) { .main-search-btn:hover { background-color: #f0f2f5; } }
-body.dark-mode .main-search-btn { color: #bdc6d2; }
-@media (hover: hover) { body.dark-mode .main-search-btn:hover { background-color: #394150; } }
-body[class*="theme-"] .main-search-btn { color: var(--muted); }
-@media (hover: hover) { body[class*="theme-"] .main-search-btn:hover { background-color: var(--filter-btn-active); } }
+html.is-standalone .pwa-bottom-nav-btn.is-active {
+  color: var(--btn-main, #6654e8);
+}
 
-/* フォント設定 */
-h1, h2, h3, h4, h5, b, strong, .filter-title, .guest-button, .btn-corner, .btn-year, .page-btn, .more-btn, .history-toggle .title, .history-item .label, #createPlaylistBtn, .drawer-close-btn, .about-title { font-family: fot-udkakugoc80-pro, 'Segoe UI', system-ui, -apple-system, sans-serif; font-weight: 700 !important; }
+/* PWAモードの時、元々あった上部のボタンを非表示にする */
+html.is-standalone .search-row-controls #filterToggleBtn,
+html.is-standalone .search-row-controls #favOnlyToggleBtn,
+html.is-standalone .search-row-controls #randomBtn,
+html.is-standalone .search-row-controls #mainResetBtn {
+  display: none !important;
+}
 
-/* お知らせポップアップ */
-#releasePopupContent { background: #fdfdff; border-radius: 16px; padding: 24px 28px 28px; width: 90vw; max-width: 480px; box-shadow: 0 12px 32px -8px rgba(0,0,0,0.2); text-align: center; border: 1px solid rgba(0,0,0,0.05); position: relative; }
-.popup-title { font-family: fot-udkakugoc80-pro, sans-serif; font-weight: 700; font-size: 1.5rem; margin-bottom: 16px; }
-.popup-body { font-size: 1rem; line-height: 1.8; margin-bottom: 24px; }
-.popup-cta-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 12px 16px; border: none; border-radius: 12px; background-color: #13a286; color: #ffffff; font-family: fot-udkakugoc80-pro, sans-serif; font-size: 1.1rem; font-weight: 700; cursor: pointer; transition: background-color 0.2s, transform 0.1s; }
-@media (hover: hover) { .popup-cta-btn:hover { background-color: #108a72; } }
-.popup-cta-btn:active { transform: translateY(1px); }
-#releasePopupCloseBtn { position: absolute; top: 8px; right: 8px; }
-body.dark-mode #releasePopupContent { background: #23242d; color: #e5ecec; }
-body[class*="theme-"] #releasePopupContent { background: var(--card-bg); color: var(--text-color); }
+/* PWAモードの時、並び替えボタンが横幅いっぱいになるように調整 */
+html.is-standalone .search-row-controls {
+  grid-template-columns: 1fr !important;
+}
 
-/* =================================================== */
-/* ★★★ PWA専用 下部ナビゲーション スタイル (改訂版) ★★★ */
-/* =================================================== */
-.pwa-bottom-nav { display: none; }
-html.is-standalone .pwa-bottom-nav { display: flex; align-items: center; position: fixed; bottom: 0; left: 0; right: 0; height: calc(60px + var(--safe-bottom, 0px)); padding: 0 var(--safe-left, 0px) var(--safe-bottom, 0px) var(--safe-right, 0px); background-color: var(--card-bg, #ffffff); border-top: 1px solid var(--btn-reset-border, #e5e7eb); z-index: 3000; }
-html.is-standalone .pwa-bottom-nav-btn { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; height: 100%; background: none; border: none; padding: 0; cursor: pointer; color: #888; font-family: inherit; font-size: 11px; font-weight: 500; -webkit-tap-highlight-color: transparent; transition: color 0.15s ease, transform 0.1s ease; }
-html.is-standalone .pwa-bottom-nav-btn i { font-size: 20px; }
-html.is-standalone .pwa-bottom-nav-btn.is-active { color: #000000; }
-html.is-standalone .pwa-bottom-nav-btn.is-center { flex-grow: 0; width: 60px; height: 60px; background-color: var(--btn-main, #6654e8); color: #ffffff; border-radius: 50%; transform: translateY(-15px); box-shadow: 0 4px 14px -4px rgba(0, 0, 0, 0.25); border: 4px solid var(--bg-color, #f9fafe); }
-html.is-standalone .pwa-bottom-nav-btn.is-center i { font-size: 22px; }
-html.is-standalone .pwa-bottom-nav-btn.is-center span { display: none; }
-html.is-standalone .pwa-bottom-nav-btn.is-center.is-active { background-color: var(--btn-hover, #5945d9); transform: translateY(-15px) scale(0.95); }
-html.is-standalone #theme-toggle-btn, html.is-standalone #theme-toggle-btn + .floating-panel { display: none !important; }
-html.is-standalone #floating-theme-panel { display: flex !important; position: fixed; bottom: calc(75px + var(--safe-bottom, 0px)); left: 50%; transform: translateX(-50%); flex-direction: row; border-radius: 16px; padding: 8px; gap: 8px; z-index: 3005; }
-html.is-standalone .pwa-bottom-nav.is-hidden-by-drawer { display: none !important; }
-html.is-standalone .search-row-controls #filterToggleBtn, html.is-standalone .search-row-controls #favOnlyToggleBtn, html.is-standalone .search-row-controls #randomBtn, html.is-standalone .search-row-controls .mainResetBtn { display: none !important; }
-html.is-standalone .search-row-controls { grid-template-columns: 1fr !important; }
-html.is-standalone .main-content { padding-bottom: 80px; }
-html.is-standalone.dark-mode .pwa-bottom-nav { background-color: #2d333b; border-top-color: #394150; }
-html.is-standalone.dark-mode .pwa-bottom-nav-btn { color: #8ca2b3; }
-html.is-standalone.dark-mode .pwa-bottom-nav-btn.is-active { color: #ffffff; }
-html.is-standalone.dark-mode .pwa-bottom-nav-btn.is-center { background-color: #e5ecec; color: #22272e; border-color: var(--bg-color); }
-html.is-standalone[class*="theme-"] .pwa-bottom-nav { background-color: var(--card-bg); border-top-color: var(--history-card-bd); }
-html.is-standalone[class*="theme-"] .pwa-bottom-nav-btn { color: var(--muted); }
-html.is-standalone[class*="theme-"] .pwa-bottom-nav-btn.is-active { color: var(--btn-main); }
-html.is-standalone[class*="theme-"] .pwa-bottom-nav-btn.is-center { background-color: var(--btn-main); color: var(--active-filter-text); border-color: var(--bg-color); }
+/*
+ * ★★★ 不具合修正点 1: ナビゲーションバーのテーマカラー対応 ★★★
+ * CSSセレクタを `html.is-standalone body.dark-mode` のように修正し、
+ * テーマクラスが `body` に付与された場合でも正しく色が反映されるようにします。
+*/
+
+/* ダークモード */
+html.is-standalone body.dark-mode .pwa-bottom-nav {
+  background-color: #252c35;
+  border-top-color: #394150;
+  box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.2);
+}
+html.is-standalone body.dark-mode .pwa-bottom-nav-btn {
+  color: #8ca2b3;
+}
+html.is-standalone body.dark-mode .pwa-bottom-nav-btn.is-active {
+  color: #ffffff;
+}
+
+/* その他のカラーテーマ */
+html.is-standalone body[class*="theme-"] .pwa-bottom-nav {
+  background-color: var(--card-bg);
+  border-top-color: var(--history-card-bd);
+}
+html.is-standalone body[class*="theme-"] .pwa-bottom-nav-btn {
+  color: var(--muted);
+}
+html.is-standalone body[class*="theme-"] .pwa-bottom-nav-btn.is-active {
+  color: var(--btn-main);
+}
+
+/*
+ * ★★★ 不具合修正点 2: カラー変更ボタンの位置調整 ★★★
+ * ナビゲーションバーの高さ(60px)を考慮して、ボタンの表示位置を上にずらします。
+*/
+html.is-standalone #theme-toggle-btn {
+  /* ナビバーの高さ(60px) + 元々の余白(18px) + ホームバーの高さ */
+  bottom: calc(60px + 18px + var(--safe-bottom));
+}
+/* テーマパネルも同様に上にずらします */
+html.is-standalone .floating-panel {
+    bottom: calc(60px + 80px + var(--safe-bottom));
+}
+
+
+/*
+ * ★★★ 不具合修正点 3: フィルタードロワーの位置調整 ★★★
+ * ドロワーの下端がナビゲーションバーの上端にぴったり合うように調整します。
+*/
+html.is-standalone #filterDrawer {
+  bottom: calc(60px + var(--safe-bottom, 0px)) !important;
+}
