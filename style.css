@@ -3657,3 +3657,9 @@ html.is-standalone .floating-panel {
 html.is-standalone #filterDrawer {
   bottom: 0 !important; /* ドロワー自体は画面下端まで広がるように戻します */
 }
+
+
+/* モーダルのオーバーレイをPWAナビゲーションより手前に表示 */
+.modal-overlay {
+  z-index: 3001 !important;
+}

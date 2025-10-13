@@ -837,6 +837,7 @@ function setupThemeSwitcher() {
   const THEME_KEY = 'site_theme_v1';
   const allThemeClasses = ['dark-mode', 'theme-pink', 'theme-yellow', 'theme-blue', 'theme-red', 'theme-green'];
 
+
   applyTheme = (themeName) => {
     document.body.classList.remove(...allThemeClasses);
     if (themeName === 'dark') document.body.classList.add('dark-mode');
@@ -844,6 +845,31 @@ function setupThemeSwitcher() {
     panel.querySelectorAll('.theme-btn').forEach(btn => btn.classList.remove('active'));
     panel.querySelector(`.theme-btn[data-theme="${themeName}"]`)?.classList.add('active');
     try { localStorage.setItem(THEME_KEY, themeName); } catch (e) {}
+
+    // ★★★ ここからがテーマに応じてPWAのUIカラーを制御する追加コードです ★★★
+    const isDarkTheme = themeName !== 'light';
+    const statusBar = document.getElementById('status-bar-style');
+    const themeColorMeta = document.getElementById('theme-color-meta');
+
+    // iOS PWAのステータスバーの文字色をテーマに応じて変更
+    // (light: 黒文字, それ以外: 白文字)
+    if (statusBar) {
+      statusBar.content = isDarkTheme ? 'black-translucent' : 'default';
+    }
+
+    // Android PWAの上部バーの色をテーマに応じて変更
+    if (themeColorMeta) {
+      let color = '#f9fafe'; // lightテーマのデフォルト色
+      switch (themeName) {
+        case 'dark':   color = '#22272e'; break;
+        case 'pink':   color = '#ff6496'; break;
+        case 'yellow': color = '#fabe00'; break;
+        case 'blue':   color = '#006ebe'; break;
+        case 'red':    color = '#e60046'; break;
+        case 'green':  color = '#13a286'; break;
+      }
+      themeColorMeta.content = color;
+    }
   };
 
   toggleBtn.addEventListener('click', e => { e.stopPropagation(); panel.classList.toggle('show'); });
