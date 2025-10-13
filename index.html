@@ -11,51 +11,49 @@
         let color = '#f9fafe';
         let statusBarStyle = 'default';
         let bodyBg = '';
-        let ballColor = ''; // ★ ローディングの玉の色を格納する変数を追加
+        let ballColor = '';
 
         switch (theme) {
           case 'dark':
             color = '#22272e';
             statusBarStyle = 'black-translucent';
             bodyBg = color;
-            // ダークモードはデフォルトの4色なのでballColorは設定しない
             break;
           case 'pink':
             color = '#ff6496';
             statusBarStyle = 'black-translucent';
             bodyBg = color;
-            ballColor = '#ffffff'; // ★ 各テーマの玉の色を設定
+            ballColor = '#ffffff';
             break;
           case 'yellow':
             color = '#fabe00';
             statusBarStyle = 'default';
             bodyBg = color;
-            ballColor = '#ffffff'; // ★ 各テーマの玉の色を設定
+            ballColor = '#ffffff';
             break;
           case 'blue':
             color = '#006ebe';
             statusBarStyle = 'black-translucent';
             bodyBg = color;
-            ballColor = '#ffffff'; // ★ 各テーマの玉の色を設定
+            ballColor = '#ffffff';
             break;
           case 'red':
             color = '#e60046';
             statusBarStyle = 'black-translucent';
             bodyBg = color;
-            ballColor = '#ffffff'; // ★ 各テーマの玉の色を設定
+            ballColor = '#ffffff';
             break;
           case 'green':
             color = '#13a286';
             statusBarStyle = 'black-translucent';
             bodyBg = color;
-            ballColor = '#ffffff'; // ★ 各テーマの玉の色を設定
+            ballColor = '#ffffff';
             break;
         }
 
         document.write('<meta name="theme-color" id="theme-color-meta" content="' + color + '">');
         document.write('<meta name="apple-mobile-web-app-status-bar-style" id="status-bar-style" content="' + statusBarStyle + '">');
 
-        // ★ 背景色と玉の色のスタイルをまとめて生成
         let styleContent = '';
         if (bodyBg) {
           styleContent += 'html, body, #loading-screen { background-color: ' + bodyBg + ' !important; }';
@@ -72,6 +70,7 @@
       }
     })();
   </script>
+
   <title>さーち・ざ・らじお！</title>
   
   <meta name="color-scheme" content="dark light">
@@ -95,9 +94,6 @@
 <link rel="canonical" href="https://searchtheradio.com/" />
 <meta name="description" content="『ぼっち・ざ・らじお！』のエピソード検索サイト。" />
 
-
-<link rel="preload" as="image" href="logo.png">
-
 <link rel="icon" type="image/png" sizes="32x32" href="./favicon-32.png?v=3">
 <link rel="icon" type="image/png" sizes="16x16" href="./favicon-16.png?v=3">
 <link rel="icon" href="./favicon.ico?v=3"><link rel="apple-touch-icon" href="./apple-touch-icon.png" sizes="180x180">
@@ -106,11 +102,7 @@
 <meta name="apple-mobile-web-app-title" content="さーち・ざ・らじお！">
 
 
-<link rel="manifest" href="./site.webmanifest?v=20251014b">
-
-
-
-
+<link rel="manifest" href="./site.webmanifest?v=20251014c">
 
   
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
@@ -120,7 +112,7 @@
 <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
 <link rel="preconnect" href="https://code.jquery.com" crossorigin>
 <link rel="preconnect" href="https://i.ytimg.com" crossorigin>
-  <link href="style.css?v=20251014b" rel="stylesheet" />
+  <link href="style.css?v=20251014c" rel="stylesheet" />
 
   <script>
     (function(d) {
@@ -142,7 +134,11 @@
   </div>
 
 <div id="loading-screen" style="position:fixed;z-index:9999;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;">
-  <img src="logo.png" alt="logo" id="loading-logo" style="width:330px;max-width:70vw;">
+  <picture>
+    <source srcset="logo.webp" type="image/webp">
+    <img src="logo.png" alt="logo" id="loading-logo" style="width:330px;max-width:70vw;" 
+         onload="this.classList.add('loaded'); this.parentElement.nextElementSibling.classList.add('loaded');">
+  </picture>
   <div id="spinner" style="margin-top:38px; display:flex; gap:12px;">
     <div class="loading-ball ball1"></div>
     <div class="loading-ball ball2"></div>
@@ -264,22 +260,25 @@
     <div class="pagination-area" id="paginationArea"></div>
    
     <div id="aboutModal" class="modal-overlay">
-  <div id="aboutModalContent">
-    <button id="aboutCloseBtn">×</button>
-    <img src="logo.png" alt="logo" class="about-logo"/>
-    <div class="about-title">このサイトについて</div>
-    <div class="about-body">
-      <br>
-      「さーち・ざ・らじお！」は<br>
-      ぼっち・ざ・らじお！（公式YouTube）の<br>エピソード情報を簡単・高速に検索できる<br>非公式サイトです。<br>
-      <br>
-      出演者やコーナー名、公開年などで<br>絞り込み・キーワード検索が可能です。<br>
-      <br>
-      ※本サイトはファンによる個人制作です。<br>
-      著作権は各権利者様に帰属します。
+      <div id="aboutModalContent">
+        <button id="aboutCloseBtn">×</button>
+        <picture>
+          <source srcset="logo.webp" type="image/webp">
+          <img src="logo.png" alt="logo" class="about-logo"/>
+        </picture>
+        <div class="about-title">このサイトについて</div>
+        <div class="about-body">
+          <br>
+          「さーち・ざ・らじお！」は<br>
+          ぼっち・ざ・らじお！（公式YouTube）の<br>エピソード情報を簡単・高速に検索できる<br>非公式サイトです。<br>
+          <br>
+          出演者やコーナー名、公開年などで<br>絞り込み・キーワード検索が可能です。<br>
+          <br>
+          ※本サイトはファンによる個人制作です。<br>
+          著作権は各権利者様に帰属します。
+        </div>
+      </div>
     </div>
-  </div>
-</div>
 
    <section id="radio-history" class="history-section" aria-label="ラジオの歴史">
   <button class="history-toggle" id="historyToggle"
@@ -327,13 +326,13 @@
     </footer>
   </div>
 
-  <script src="main.js?v=20251014b" defer></script>
+  <script src="main.js?v=20251014c" defer></script>
 
   <script>
   // ---- Service Worker register (network-first) ----
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', function () {
-      navigator.serviceWorker.register('/sw.js?20251014b').then(function(reg) {
+      navigator.serviceWorker.register('/sw.js?20251014c').then(function(reg) {
         return navigator.serviceWorker.ready;
       }).then(function(reg) {
         if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });

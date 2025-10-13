@@ -1152,20 +1152,25 @@ function rainGoodMarks() {
     document.addEventListener('DOMContentLoaded', () => {
         sizerModule.init();
         document.getElementById('filterToggleBtn')?.setAttribute('data-label', 'フィルタ');
-    });
 
-    window.addEventListener('load', () => {
-        const runFit = () => sizerModule.fitAll();
-        setTimeout(runFit, 100);
-        setTimeout(runFit, 300);
+        
         setTimeout(() => {
-            runFit();
-            document.body.classList.add('buttons-ready');
             const loadingScreen = document.getElementById("loading-screen");
             if (loadingScreen) {
                 loadingScreen.classList.add("fadeout");
                 loadingScreen.addEventListener('transitionend', () => loadingScreen.remove(), { once: true });
             }
+        }, 1000);
+    });
+
+    window.addEventListener('load', () => {
+        const runFit = () => sizerModule.fitAll();
+        // ページの読み込みが完了したタイミングで、ボタンの文字サイズ調整などを実行
+        setTimeout(runFit, 100);
+        setTimeout(runFit, 300);
+        setTimeout(() => {
+            runFit();
+            document.body.classList.add('buttons-ready');
         }, 750);
     });
 })();
