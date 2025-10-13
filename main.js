@@ -846,15 +846,15 @@ function setupThemeSwitcher() {
     panel.querySelector(`.theme-btn[data-theme="${themeName}"]`)?.classList.add('active');
     try { localStorage.setItem(THEME_KEY, themeName); } catch (e) {}
 
-    // ★★★ ここからがテーマに応じてPWAのUIカラーを制御する追加コードです ★★★
-    const isDarkTheme = themeName !== 'light';
+   // 背景が濃く、ステータスバーの文字を白にすべきテーマをリスト化します
+    const isDarkStyleStatusBar = ['dark', 'pink', 'blue', 'red', 'green'].includes(themeName);
     const statusBar = document.getElementById('status-bar-style');
     const themeColorMeta = document.getElementById('theme-color-meta');
-
+    
     // iOS PWAのステータスバーの文字色をテーマに応じて変更
-    // (light: 黒文字, それ以外: 白文字)
+    // (lightやyellow: 黒文字, それ以外: 白文字)
     if (statusBar) {
-      statusBar.content = isDarkTheme ? 'black-translucent' : 'default';
+      statusBar.content = isDarkStyleStatusBar ? 'black-translucent' : 'default';
     }
 
     // Android PWAの上部バーの色をテーマに応じて変更
@@ -869,6 +869,28 @@ function setupThemeSwitcher() {
         case 'green':  color = '#13a286'; break;
       }
       themeColorMeta.content = color;
+    }
+
+    // ちらつき防止用のインラインスタイルを、常に現在のテーマと同期させます
+    const earlyStyle = document.getElementById('early-theme-style');
+    if (earlyStyle) {
+      let bodyBg = '';
+      switch (themeName) {
+        case 'dark':   bodyBg = '#22272e'; break;
+        case 'pink':   bodyBg = '#ff6496'; break;
+        case 'yellow': bodyBg = '#fabe00'; break;
+        case 'blue':   bodyBg = '#006ebe'; break;
+        case 'red':    bodyBg = '#e60046'; break;
+        case 'green':  bodyBg = '#13a286'; break;
+      }
+
+      // ライトテーマに戻す場合はスタイル指定を空にし、
+      // それ以外のテーマでは背景色を!importantで上書きし続けます。
+      if (bodyBg) {
+        earlyStyle.textContent = 'html, body, #loading-screen { background-color: ' + bodyBg + ' !important; }';
+      } else {
+        earlyStyle.textContent = ''; // ライトテーマの場合はリセット
+      }
     }
   };
 
@@ -1405,6 +1427,8 @@ const onInput = () => {
 document.addEventListener('DOMContentLoaded', () => {
   initializeApp();
   document.documentElement.classList.remove('dark-preload');
+
+  
   document.getElementById("early-dark-style")?.remove();
   
   window.addEventListener('load', updateHeaderOffset);

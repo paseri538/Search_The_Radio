@@ -1,48 +1,82 @@
 <!DOCTYPE html>
 <html lang="ja">
-
-
 <head>
-
-
-<script>
-(function () {
-  try {
-    // 新しいテーマキーを読み込む
-    var savedTheme = localStorage.getItem("site_theme_v1");
-    // OSのダークモード設定を読み込む
-    var prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
-    
-    // 保存されたテーマがダーク系か、またはテーマ設定がなくOSがダークモードの場合に isDark を true にする
-    var isDark = ['dark', 'blue', 'red'].includes(savedTheme) || (!savedTheme && prefersDark);
-    
-    if (isDark) {
-      var st = document.createElement("style");
-      st.id = "early-dark-style";
-      // ダーク系のテーマ用の背景色を早期に適用
-      var darkBg = "#22272e"; // デフォルトのダーク背景
-      if (savedTheme === 'blue') darkBg = "#2a3a4a";
-      if (savedTheme === 'red') darkBg = "#4c2a2a";
-
-      st.textContent =
-        "html,body{background:" + darkBg + "!important;color:#e5ecec!important}" +
-        "#loading-screen{background:" + darkBg + "!important}";
-      document.head.appendChild(st);
-    }
-  } catch(e){}
-})();
-</script>
-
-<meta name="color-scheme" content="dark light">
-<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#22272e">
-<meta name="theme-color" media="(prefers-color-scheme: light)" content="#f9fafe">
-
-
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
 
+  <script>
+    (function() {
+      try {
+        const theme = localStorage.getItem("site_theme_v1") || 'light';
+        let color = '#f9fafe';
+        let statusBarStyle = 'default';
+        let bodyBg = '';
+        let ballColor = ''; // ★ ローディングの玉の色を格納する変数を追加
+
+        switch (theme) {
+          case 'dark':
+            color = '#22272e';
+            statusBarStyle = 'black-translucent';
+            bodyBg = color;
+            // ダークモードはデフォルトの4色なのでballColorは設定しない
+            break;
+          case 'pink':
+            color = '#ff6496';
+            statusBarStyle = 'black-translucent';
+            bodyBg = color;
+            ballColor = '#ffffff'; // ★ 各テーマの玉の色を設定
+            break;
+          case 'yellow':
+            color = '#fabe00';
+            statusBarStyle = 'default';
+            bodyBg = color;
+            ballColor = '#ffffff'; // ★ 各テーマの玉の色を設定
+            break;
+          case 'blue':
+            color = '#006ebe';
+            statusBarStyle = 'black-translucent';
+            bodyBg = color;
+            ballColor = '#ffffff'; // ★ 各テーマの玉の色を設定
+            break;
+          case 'red':
+            color = '#e60046';
+            statusBarStyle = 'black-translucent';
+            bodyBg = color;
+            ballColor = '#ffffff'; // ★ 各テーマの玉の色を設定
+            break;
+          case 'green':
+            color = '#13a286';
+            statusBarStyle = 'black-translucent';
+            bodyBg = color;
+            ballColor = '#ffffff'; // ★ 各テーマの玉の色を設定
+            break;
+        }
+
+        document.write('<meta name="theme-color" id="theme-color-meta" content="' + color + '">');
+        document.write('<meta name="apple-mobile-web-app-status-bar-style" id="status-bar-style" content="' + statusBarStyle + '">');
+
+        // ★ 背景色と玉の色のスタイルをまとめて生成
+        let styleContent = '';
+        if (bodyBg) {
+          styleContent += 'html, body, #loading-screen { background-color: ' + bodyBg + ' !important; }';
+        }
+        if (ballColor) {
+          styleContent += '.loading-ball { background-color: ' + ballColor + ' !important; }';
+        }
+        
+        if (styleContent) {
+          document.write('<style id="early-theme-style">' + styleContent + '</style>');
+        }
+      } catch (e) {
+        console.error("Early theme application failed:", e);
+      }
+    })();
+  </script>
   <title>さーち・ざ・らじお！</title>
-  <meta property="og:title" content="さーち・ざ・らじお！ — ぼっち・ざ・らじお！専門検索エンジン" />
+  
+  <meta name="color-scheme" content="dark light">
+
+<meta property="og:title" content="さーち・ざ・らじお！ — ぼっち・ざ・らじお！専門検索エンジン" />
 <meta property="og:description" content="『ぼっち・ざ・らじお！』のエピソードを出演者・コーナー・年でサクッと検索。お気に入り機能も対応。" />
 <meta property="og:type" content="website" />
 <meta property="og:url" content="https://searchtheradio.com/" />
@@ -69,14 +103,10 @@
 <link rel="icon" href="./favicon.ico?v=3"><link rel="apple-touch-icon" href="./apple-touch-icon.png" sizes="180x180">
 
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta id="theme-color-meta" name="theme-color" content="#f9fafe">
-
 <meta name="apple-mobile-web-app-title" content="さーち・ざ・らじお！">
-<meta id="status-bar-style" name="apple-mobile-web-app-status-bar-style" content="default">
 
 
-<link rel="manifest" href="./site.webmanifest?v=20251014a">
+<link rel="manifest" href="./site.webmanifest?v=20251014b">
 
 
 
@@ -90,7 +120,7 @@
 <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
 <link rel="preconnect" href="https://code.jquery.com" crossorigin>
 <link rel="preconnect" href="https://i.ytimg.com" crossorigin>
-  <link href="style.css?v=20251014a" rel="stylesheet" />
+  <link href="style.css?v=20251014b" rel="stylesheet" />
 
   <script>
     (function(d) {
@@ -297,13 +327,13 @@
     </footer>
   </div>
 
-  <script src="main.js?v=20251014a" defer></script>
+  <script src="main.js?v=20251014b" defer></script>
 
   <script>
   // ---- Service Worker register (network-first) ----
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', function () {
-      navigator.serviceWorker.register('/sw.js?20251014a').then(function(reg) {
+      navigator.serviceWorker.register('/sw.js?20251014b').then(function(reg) {
         return navigator.serviceWorker.ready;
       }).then(function(reg) {
         if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
