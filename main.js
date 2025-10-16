@@ -125,6 +125,7 @@ async function initializeApp() {
   setupModals();
   setupShareButtons();
   setupRightClickModal();
+  formatYearButtons();
   updateHeaderOffset();
   setupReleasePopup();
   console.log("Application initialized.");
@@ -222,7 +223,7 @@ function search(opts = {}) {
   }
 
   lastResults = res;
-  document.getElementById('fixedResultsCount').textContent = `表示数：${res.length}件`;
+  document.getElementById('fixedResultsCount').innerHTML = `表示数：<span class="impact-number">${res.length}</span>件`;
   currentPage = opts.gotoPage || 1;
   if (!isRestoringURL) buildURLFromState({ method: 'push' });
 
@@ -283,12 +284,27 @@ function resetSearch() {
  * ★★★ UIレンダリングと更新 ★★★
  * ===================================================
  */
+
+
+/* 「公開年検索」ボタンの見た目を整形する関数*/
+function formatYearButtons() {
+  // classが "btn-year" のボタンをすべて取得します
+  document.querySelectorAll('.btn-year').forEach(button => {
+    // ボタンの data-year 属性から年 (例: "2022") を取得します
+    const year = button.dataset.year;
+    if (year) {
+      // ボタンの中身を、Impactフォント用のspanで囲んだ数字だけに書き換えます
+      button.innerHTML = `<span class="impact-number">${year}</span>`;
+    }
+  });
+}
+
 function renderResults(arr, page = 1) {
   const ul = document.getElementById("results");
   ul.innerHTML = "";
 
   if (!arr || arr.length === 0) {
-    ul.innerHTML = `<li class="no-results"><div class="no-results-icon">ﾉ°(6ᯅ9)</div></li>`;
+    ul.innerHTML = `<li class="no-results"><div class="no-results-icon">表示できるお気に入り回はありません。</div></li>`;
     return;
   }
 
@@ -365,16 +381,20 @@ else if (Array.isArray(it.guest)) {
              onload="this.classList.add('loaded')"
              onerror="this.onerror=null; this.src='./thumb-fallback.svg'; this.classList.add('loaded'); this.closest('picture').querySelector('source').srcset='./thumb-fallback.svg';">
       </picture>
-      ${hit ? `<div class="ts-buttons"><button class="ts-btn" data-url="${it.link}" data-ts="${hit.seconds}" aria-label="${hit.label} から再生">${hit.label}</button></div>` : ''}
+      ${hit ? `<div class="ts-buttons"><button class="ts-btn" data-url="${it.link}" data-ts="${hit.seconds}" aria-label="${hit.label} から再生"><span class="impact-number">${hit.label}</span></button></div>` : ''}
     </div>
     <div style="min-width:0;">
       <div class="d-flex align-items-start justify-content-between" style="min-width:0;">
         <h5 class="mb-1">
-          ${hashOnly}${/\u3000/.test(it.title) ? "<br>" : " "}
+          ${
+            hashOnly.startsWith('#')
+              ? `<span class="impact-number">${hashOnly}</span>`
+              : hashOnly.replace(/([A-Za-z0-9]+)/g, '<span class="impact-number">$1</span>')
+          }${/\u3000/.test(it.title) ? "<br>" : " "}
           <span class="guest-one-line" aria-label="${guestText}">${guestText}</span>
         </h5>
       </div>
-      <p class="episode-meta">公開日時：${it.date}<br>動画時間：${it.duration || "?"}</p>
+      <p class="episode-meta">公開日時：<span class="impact-number">${it.date}</span><br>動画時間：${(it.duration ? `<span class="impact-number">${it.duration}</span>` : '?')}</p>
     </div>
   </a>
   <button class="fav-btn" data-id="${videoId}" aria-label="お気に入り" title="お気に入り"><i class="fa-regular fa-star"></i></button>
@@ -405,7 +425,7 @@ function renderPagination(totalCount) {
     btn.dataset.page = i;
     btn.tabIndex = 0;
     btn.setAttribute('aria-label', `ページ${i}`);
-    btn.textContent = i;
+    btn.innerHTML = `<span class="impact-number">${i}</span>`;
     fragment.appendChild(btn);
   }
   area.appendChild(fragment);
@@ -430,7 +450,7 @@ function updateActiveFilters() {
   });
   selectedCorners.forEach(c => html += `<button class="filter-tag" tabindex="0" aria-label="コーナーフィルタ解除 ${c}" data-type="corner" data-value="${c}"><i class="fa fa-cubes"></i> ${c} <i class="fa fa-xmark"></i></button>`);
   selectedOthers.forEach(o => html += `<button class="filter-tag" tabindex="0" aria-label="その他フィルタ解除 ${o}" data-type="other" data-value="${o}"><i class="fa fa-star"></i> ${o} <i class="fa fa-xmark"></i></button>`);
-  selectedYears.forEach(y => html += `<button class="filter-tag" tabindex="0" aria-label="年フィルタ解除 ${y}" data-type="year" data-value="${y}"><i class="fa fa-calendar"></i> ${y} <i class="fa fa-xmark"></i></button>`);
+  selectedYears.forEach(y => html += `<button class="filter-tag" tabindex="0" aria-label="年フィルタ解除 ${y}" data-type="year" data-value="${y}"><i class="fa fa-calendar"></i> <span class="impact-number">${y}</span> <i class="fa fa-xmark"></i></button>`);
   area.innerHTML = html;
 }
 
@@ -466,36 +486,35 @@ function fitGuestLines() {
   const guestLines = document.querySelectorAll('.guest-one-line');
 
   guestLines.forEach(line => {
-    // 1. 初期化
+    // スタイルを初期状態に戻します
     line.style.fontSize = '';
-    line.classList.remove('needs-ellipsis');
+    line.style.whiteSpace = '';
 
     const parent = line.parentElement;
     if (!parent) return;
 
+    // 親要素の幅（テキストが表示されるべきエリアの幅）を取得します
     const parentWidth = parent.clientWidth;
+    // 現在の文字サイズでのテキストの実際の幅を取得します
     const currentWidth = line.scrollWidth;
-    const MIN_FONT_SIZE = 10;
 
-    // 2. はみ出しているか、一度だけチェック
+    // 最小フォントサイズを9pxに設定（これ以上は小さくしない）
+    const MIN_FONT_SIZE = 9;
+
+    // テキストが親要素の幅を超えている場合のみ、処理を実行します
     if (currentWidth > parentWidth) {
       const originalSize = parseFloat(window.getComputedStyle(line).fontSize);
 
-      // 3. 最適な文字サイズを比率で一発計算 (ループを回避)
+      // 親要素の幅とテキストの幅の比率から、最適なフォントサイズを一発で計算します
       let newSize = (parentWidth / currentWidth) * originalSize;
 
-      // 4. 最小サイズを下回らないように制御
-      if (newSize < MIN_FONT_SIZE) {
-        newSize = MIN_FONT_SIZE;
-        line.style.fontSize = newSize + 'px';
-        // 最小サイズでもはみ出す場合は、省略記号クラスを付与
-        if (line.scrollWidth > parentWidth) {
-          line.classList.add('needs-ellipsis');
-        }
-      } else {
-        line.style.fontSize = newSize + 'px';
-      }
+      // 計算後のサイズが最小サイズより小さければ、最小サイズを適用します
+      // そうでなければ、計算結果をそのまま適用します
+      line.style.fontSize = Math.max(newSize, MIN_FONT_SIZE) + 'px';
     }
+
+    // 常に1行で表示されるように、white-spaceプロパティを設定します
+    line.style.whiteSpace = 'nowrap';
   });
 }
 
@@ -1087,25 +1106,34 @@ function buildTimeline(data) {
         currentYear = y;
         const yEl = document.createElement('div');
         yEl.className = 'history-year';
-        yEl.textContent = `${y}年`;
+        yEl.innerHTML = `<span class="impact-number">${y}</span>`;
         fragment.appendChild(yEl);
       }
       const el = document.createElement('div');
       el.className = 'history-item';
       const dateParts = it.date ? it.date.split('-') : [];
       let dateText = '';
-      if (dateParts.length === 3) dateText = `${parseInt(dateParts[1])}月${parseInt(dateParts[2])}日`;
-      else if (dateParts.length === 2) dateText = `${parseInt(dateParts[1])}月`;
+      if (dateParts.length === 3) {
+        const month = String(parseInt(dateParts[1], 10)).padStart(2, '0');
+        const day = String(parseInt(dateParts[2], 10)).padStart(2, '0');
+        dateText = `${month}.${day}`;
+      } else if (dateParts.length === 2) {
+        dateText = `${String(parseInt(dateParts[1], 10)).padStart(2, '0')}月`;
+      }
+      
+      // ラベル内の英数字をspanで囲む
+      const formattedLabel = it.label.replace(/([A-Za-z0-9]+)/g, '<span class="impact-number">$1</span>');
       
       el.innerHTML = `
-        ${dateText ? `<div class="date">${dateText}</div>` : ''}
-        <div class="label">${it.url ? `<a href="${it.url}" target="_blank" rel="noopener">${it.label}</a>` : it.label}</div>
+        ${dateText ? `<div class="date"><span class="impact-number">${dateText}</span></div>` : ''}
+        <div class="label">${it.url ? `<a href="${it.url}" target="_blank" rel="noopener">${formattedLabel}</a>` : formattedLabel}</div>
         ${it.desc ? `<div class="desc">${it.desc}</div>` : ''}
       `;
       fragment.appendChild(el);
     });
     list.appendChild(fragment);
 }
+
 
 
 function rainGoodMarks() {

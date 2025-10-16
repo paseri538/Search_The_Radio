@@ -1,5 +1,26 @@
+/* =================================================== */
+/* ★★★ Impactフォント定義と調整用変数 ★★★ */
+/* =================================================== */
+@font-face {
+  font-family: 'Impact Numbers';
+  src: url('Impact.ttf') format('truetype');
+  /* font-weightの指定は不要になります。
+    JSで強制適用するため、シンプルな定義に戻します。
+  */
+}
+
 /* 変数・レイアウト */
 :root {
+  /* ▼▼▼ ここでImpactフォントの見た目を調整できます ▼▼▼ */
+  --impact-scale: 115%;       /* 縦幅の倍率 (100%が基準) */
+  --impact-y-offset: 0.015em; /* 縦位置のオフセット (マイナスで上に、プラスで下に) */
+
+  --impact-scale-meta: 120%; /* 「公開日時・動画時間」の縦幅 */
+  --impact-y-offset-meta: 0.02em; /* 「公開日時・動画時間」の縦位置 */
+
+  --impact-scale-ts: 110%;       /* タイムスタンプの縦幅 */
+  --impact-y-offset-ts: 0.04em;  /* タイムスタンプの縦位置 */
+  
   --bg-color: #f9fafe;
   --card-bg: #fff;
   --text-color: #242943;
@@ -28,6 +49,21 @@ body {
   font-weight: 400; /* 標準の太さを指定 */
   min-height: 100%;
 }
+
+/* ======================================================================== */
+/* ===== ★★★ 固定ヘッダー内のコントロールを太字に変更 ★★★ ===== */
+/* ======================================================================== */
+
+/* --- ボタンとセレクトボックスのフォントを太字に変更 --- */
+#filterToggleBtn,
+#favOnlyToggleBtn,
+#randomBtn,
+#mainResetBtn,
+#sortSelect {
+  font-family: fot-udkakugoc80-pro, 'Segoe UI', system-ui, -apple-system, sans-serif !important;
+  font-weight: 700 !important;
+}
+
 .sticky-search-area {
   position: fixed;
   top: 0; left: 0; right: 0;
@@ -325,7 +361,36 @@ body {
 }
 footer { text-align: center; margin: 60px 0 20px; font-size: 0.8rem; color: var(--muted); }
 
-/* --- 以下、ダークモードや細部の追加CSS（index_2.html通り） --- */
+/*
+  数字を囲むspanタグに、Impactフォントを最優先で強制適用し、
+  サイズと位置を調整するスタイル
+*/
+.impact-number {
+  font-family: 'Impact Numbers' !important; /* 他の指定を上書きして強制適用 */
+  font-weight: normal !important; /* ブラウザによる擬似的な太字化をリセット */
+  display: inline-block; /* transformを有効にするため */
+  /* CSS変数を使ってスケールと位置を適用 */
+  transform: scaleY(var(--impact-scale, 1)) translateY(var(--impact-y-offset, 0));
+}
+
+/*
+  公開日時・動画時間 (.episode-meta 内の数字) にだけ、
+  独立した縦幅スケールを適用するための上書きルール
+*/
+.episode-meta .impact-number {
+  transform: scaleY(var(--impact-scale-meta, 1)) translateY(var(--impact-y-offset-meta, 0));
+}
+
+/*
+  タイムスタンプボタン (.ts-btn 内の数字) にだけ、
+  独立したスケールと位置を適用するための上書きルール
+*/
+.ts-btn .impact-number {
+  transform: scaleY(var(--impact-scale-ts, 1)) translateY(var(--impact-y-offset-ts, 0));
+}
+
+
+/* --- 以下、ダークモードや細部の追加CSS --- */
 
 /* === ベース背景・テキスト === */
 body.dark-mode {
@@ -548,10 +613,6 @@ body.dark-mode #aboutModalContent {
   box-shadow: 0 8px 30px -6px #23244080;
 }
 body.dark-mode #aboutModalContent a {
-  color: #8de0ee !important;
-}
-
-body.dark-mode #aboutCloseBtn {
   color: #8de0ee !important;
 }
 
@@ -802,18 +863,7 @@ body.dark-mode .autocomplete-item .type { border-color: #415766; color: #96e5c4;
 
 .history-body{ position: relative; padding: 14px 2px 2px; }
 
-/* Sticky year badge (left) */
-.history-sticky-year{
-  position: sticky; top: 12px; left: 0;
-  width: fit-content; margin-left: 4px; z-index: 1;
-  padding: 6px 12px; border-radius: 999px;
-  background: rgba(240,243,255,.8);
-  border: 1px solid var(--history-card-bd);
-  backdrop-filter: blur(6px);
-  font-weight: 800; font-size: 14px; color: var(--history-year);
-  box-shadow: 0 8px 24px -14px rgba(20,20,70,.25);
-  display: none; /* 開いた時にJSで表示 */
-}
+
 @media (prefers-color-scheme: dark){
   .history-sticky-year{ background: rgba(33,38,46,.6); }
 }
@@ -980,8 +1030,8 @@ body.dark-mode .history-sticky-year{
 .modal-overlay{
   display: none;
   position: fixed; inset: 0; z-index: 2055;
-  background: rgba(0, 0, 0, 0.5) !important;
-  backdrop-filter: blur(5px) !important;
+  /* 背景を少し濃くして、ぼかしがなくても見やすくします */
+  background: rgba(0, 0, 0, 0.6) !important;
   align-items: center; justify-content: center;
 }
 .modal-overlay.show{ display: flex; }
@@ -990,8 +1040,8 @@ body.dark-mode .history-sticky-year{
 body.dark-mode .modal-overlay,
 body.theme-blue .modal-overlay,
 body.theme-red .modal-overlay {
-  background: rgba(0, 0, 0, 0.25) !important;
-  backdrop-filter: blur(5px) !important;
+  /* こちらも背景を少し濃く調整します */
+  background: rgba(10, 10, 20, 0.7) !important;
 }
 
 .modal-content.history-modal{
@@ -1144,10 +1194,14 @@ body.fav-only #radio-history { display: none !important; }
   z-index: 5;
 }
 
-#historyModal .modal-close i { font-size: 1.15rem; }
+#aboutCloseBtn i, /* ← この行と */
+#historyCloseBtn i { /* ← この行に変更 */
+  font-size: 1.15rem;
+}
 
 /* ダークモードの見た目（既存と同じでOK。必要なら残す） */
-body.dark-mode #historyModal .modal-close{
+body.dark-mode #aboutCloseBtn,
+body.dark-mode #historyModal .modal-close {
   background: rgba(255,255,255,0.10);
   color: #eaf4f6;
   border-color: #3b4552;
@@ -1160,6 +1214,7 @@ body.dark-mode #historyModal .modal-close{
 }
 
 /* ライトテーマ時の閉じるボタン（落ち着いた中間トーン） */
+#aboutCloseBtn,
 #historyModal .modal-close {
   background: #ffffff;
   color: #667085;                 /* × アイコン色：落ち着いたグレー */
@@ -1303,6 +1358,7 @@ body.dark-mode .share-btn:focus-visible {
 
 /* Radio History modal — close button (single source of truth) */
 #historyModal .modal-header { padding:12px 48px 10px 16px; } /* 右側に×の余白 */
+#aboutCloseBtn,
 #historyCloseBtn {
   position: absolute;
   top: 6px;          /* ← 好みで微調整 */
@@ -1729,23 +1785,27 @@ html[data-theme="dark"] #filterDrawer .drawer-footer{
 #filterDrawer{ padding-bottom: 0 !important; }
 #filterDrawer > :last-child{ margin-bottom: 0 !important; }
 
-/* ===== FINAL OVERRIDE: stable centering + viewport-height drawer ===== */
-#filterDrawer{
+/* ======================================================================== */
+/* ===== フィルター画面のレイアウト (全デバイス対応) ===== */
+/* ======================================================================== */
+
+/* --- 基本スタイル (スマホ・タブレット向け) --- */
+#filterDrawer {
   position: fixed !important;
   left: 0 !important;
   right: 0 !important;
   margin: 0 auto !important;
-  width: min(100vw, 900px) !important;
-  top: var(--header-height, 96px) !important;/* 上の隙間(8px)を削除 */
-  bottom: max(0px, env(safe-area-inset-bottom, 0px)) !important; /* 下の隙間(8px)を削除 */
+  width: min(100vw, 900px) !important; /* 基本の最大幅を900pxに設定 */
+  top: var(--header-height, 96px) !important;
+  bottom: max(0px, env(safe-area-inset-bottom, 0px)) !important;
   height: auto !important;
   max-height: none !important;
   overflow-y: auto !important;
   overflow-x: hidden !important;
   transform: none !important;
   animation: fadein-drawer 0.17s ease-out;
-  border-top-left-radius: 0 !important; /* ヘッダーと繋がる部分の角丸を削除 */
-  border-top-right-radius: 0 !important; /* ヘッダーと繋がる部分の角丸を削除 */
+  border-top-left-radius: 0 !important;
+  border-top-right-radius: 0 !important;
   will-change: transform, opacity;
 }
 
@@ -2021,9 +2081,15 @@ body[class*="theme-"] #filterDrawer .drawer-close-btn { background: var(--btn-bg
 body[class*="theme-"] #results .no-results { background: var(--card-bg) !important; border: 1px solid var(--history-card-bd) !important; color: var(--text-color) !important; box-shadow: none !important; }
 body[class*="theme-"] .modal-content.history-modal, body[class*="theme-"] .history-modal .modal-header { background: var(--card-bg) !important; border-color: var(--history-card-bd) !important; }
 body[class*="theme-"] .history-item { background: var(--btn-bg) !important; border-color: var(--history-card-bd) !important; box-shadow: none !important; }
-body[class*="theme-"] #historyCloseBtn { background: var(--btn-bg) !important; color: var(--btn-main) !important; border-color: var(--history-card-bd) !important; }
+
+body[class*="theme-"] #aboutCloseBtn,
+body[class*="theme-"] #historyCloseBtn {
+  background: var(--btn-bg) !important;
+  color: var(--btn-main) !important;
+  border-color: var(--history-card-bd) !important;
+}
 @media (hover: hover) {
-  body[class*="theme-"] #historyCloseBtn:hover { background: var(--filter-btn-active) !important; }
+  body[class*="theme-"] #aboutCloseBtn:hover,#historyCloseBtn:hover { background: var(--filter-btn-active) !important; }
 }
 body[class*="theme-"] #aboutModalContent { background: var(--card-bg) !important; color: var(--text-color) !important; }
 body[class*="theme-"] #aboutModalContent b, body[class*="theme-"] #aboutModalContent a, body[class*="theme-"] #aboutCloseBtn, body[class*="theme-"] .about-title { color: var(--muted) !important; }
@@ -2127,12 +2193,7 @@ body[class*="theme-"]  {
   が正しく適用されます。
 */
 
-/* 閉じるボタン */
-#aboutCloseBtn {
-  position: absolute; top: 10px; right: 10px; width: 32px; height: 32px;
-  border: none; background: transparent; font-size: 24px; color: #aaa;
-  cursor: pointer; line-height: 1; padding: 0; transition: color 0.15s;
-}
+
 @media (hover: hover) {
   #aboutCloseBtn:hover { color: #333; }
 }
@@ -2149,7 +2210,6 @@ body.dark-mode #aboutCloseBtn { color: #8de0ee !important; }
 body[class*="theme-"] #aboutModalContent { background: var(--card-bg) !important; color: var(--text-color) !important; }
 body[class*="theme-"] #aboutModalContent b,
 body[class*="theme-"] #aboutModalContent a,
-body[class*="theme-"] #aboutCloseBtn,
 body[class*="theme-"] .about-title { color: var(--muted) !important; }
 
 /* === ダークモードの水色を白に完全統一する最終修正 === */
@@ -2976,10 +3036,6 @@ html {
 .guest-one-line {
   display: block !important;
   width: 100% !important;
-
-  /* ↓↓↓ テキストを強制的に1行に保ち、はみ出したら「...」で省略する設定 ↓↓↓ */
-  white-space: nowrap !important;
-  overflow: hidden !important;        /* ★追加: はみ出した部分を隠します */
 }
 }
 
@@ -3014,16 +3070,6 @@ html {
   }
 }
 
-/* ======================================================================== */
-/* ===== (最終・確定コード) ゲスト名のはみ出しを絶対に防ぐ最終手段 ===== */
-/* ======================================================================== */
-.guest-one-line {
-  display: block;          /* 常に独立した行として表示します */
-  width: 100%;             /* 親の幅いっぱいに広がります */
-  white-space: nowrap;     /* テキストの折り返しを禁止します */
-  overflow: hidden;        /* はみ出した部分を完全に隠します */
-  text-overflow: ellipsis; /* 隠れた部分を「...」で省略表示します */
-}
 
 
 /* ======================================================================== */
@@ -3046,18 +3092,6 @@ html {
 */
 .episode-item h5.mb-1 {
   width: 100%;
-}
-
-/*
- 3. ゲスト名の省略表示スタイルを、!importantを付けて再度定義し、
-    他のどのスタイルよりも優先されるようにします。
-*/
-.guest-one-line {
-  display: block !important;
-  white-space: nowrap !important;
-  overflow: hidden !important;
-  text-overflow: ellipsis !important;
-  width: 100% !important;
 }
 
 /* ======================================================================== */
@@ -3349,7 +3383,8 @@ b, strong,
 .history-item .label,
 #createPlaylistBtn,
 .drawer-close-btn,
-.about-title {
+.about-title,
+.results-count-under-bar {
   font-family: fot-udkakugoc80-pro, 'Segoe UI', system-ui, -apple-system, sans-serif;
   /* 他のスタイル設定に確実に打ち勝って太字にするため、
     font-weight に !important を付けています。
@@ -3642,7 +3677,6 @@ html.is-standalone body[class*="theme-"] .pwa-bottom-nav-btn.is-active { color: 
 
 
 /*
- * ★★★ 不具合修正点 2 (解決策) ★★★
  * カラー変更ボタンの位置を、!important を付けて確実に上書き
  */
 html.is-standalone #theme-toggle-btn {
@@ -3695,4 +3729,29 @@ html.is-standalone #filterDrawer {
 /* JSによって .loaded クラスが付与されたら不透明にする */
 #spinner.loaded {
   opacity: 1;
+}
+
+
+/* ================================================================= */
+/* ★★★ 「ひすとりー」リンク下線のガタつきを修正 (最終・確定版) ★★★ */
+/* ================================================================= */
+
+/* 1. リンク本体のデフォルト下線を無効化します */
+.history-item .label a {
+  text-decoration: none;
+}
+
+/* 2. リンクにホバーした時だけ、カスタム下線を描画します */
+.history-item .label a{
+    /* 背景画像として直線を描画し、下線として利用します */
+    background-image: linear-gradient(currentColor, currentColor);
+    background-position: 0% 100%; /* 下線の位置（テキストの下端） */
+    background-repeat: no-repeat;
+    background-size: 100% 1.5px;  /* 下線の太さ */
+    padding-bottom: 2px;          /* テキストと下線の間の余白 */
+  }
+
+/* 3. リンク内のspan要素には下線が適用されないようにします */
+.history-item .label a .impact-number {
+  text-decoration: none;
 }
