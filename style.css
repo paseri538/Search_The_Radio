@@ -12,10 +12,10 @@
 /* 変数・レイアウト */
 :root {
   /* ▼▼▼ ここでImpactフォントの見た目を調整できます ▼▼▼ */
-  --impact-scale: 115%;       /* 縦幅の倍率 (100%が基準) */
-  --impact-y-offset: 0.015em; /* 縦位置のオフセット (マイナスで上に、プラスで下に) */
+  --impact-scale: 113%;       /* 縦幅の倍率 (100%が基準) */
+  --impact-y-offset: 0.01em; /* 縦位置のオフセット (マイナスで上に、プラスで下に) */
 
-  --impact-scale-meta: 120%; /* 「公開日時・動画時間」の縦幅 */
+  --impact-scale-meta: 117%; /* 「公開日時・動画時間」の縦幅 */
   --impact-y-offset-meta: 0.02em; /* 「公開日時・動画時間」の縦位置 */
 
   --impact-scale-ts: 110%;       /* タイムスタンプの縦幅 */
@@ -2897,6 +2897,7 @@ html {
   .search-row-controls #randomBtn,
   .search-row-controls .reset-btn {
     flex-direction: column !important;
+    justify-content: center !important;
     height: auto !important;
     min-height: 60px;
     padding: 8px 4px !important;
@@ -3384,7 +3385,8 @@ b, strong,
 #createPlaylistBtn,
 .drawer-close-btn,
 .about-title,
-.results-count-under-bar {
+.results-count-under-bar,
+.is-standalone .pwa-bottom-nav-btn {
   font-family: fot-udkakugoc80-pro, 'Segoe UI', system-ui, -apple-system, sans-serif;
   /* 他のスタイル設定に確実に打ち勝って太字にするため、
     font-weight に !important を付けています。

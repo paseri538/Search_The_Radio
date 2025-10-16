@@ -215,8 +215,11 @@ function search(opts = {}) {
   if (showFavoritesOnly) res = res.filter(it => isFavorite(getVideoId(it.link)));
 
   // Sorting
-  if (sort === "newest") res.sort((a, b) => new Date(b.date) - new Date(a.date) || getEpisodeNumber(b.episode) - getEpisodeNumber(a.episode));
-  else if (sort === "oldest") res.sort((a, b) => new Date(a.date) - new Date(b.date) || getEpisodeNumber(a.episode) - getEpisodeNumber(b.episode));
+  // 日付文字列の「.」を「-」に置換して、Dateオブジェクトが正しく解釈できるようにするヘルパー関数
+  const parseDate = (dateStr) => new Date((dateStr || '').replace(/\./g, '-'));
+
+  if (sort === "newest") res.sort((a, b) => parseDate(b.date) - parseDate(a.date) || getEpisodeNumber(b.episode) - getEpisodeNumber(a.episode));
+  else if (sort === "oldest") res.sort((a, b) => parseDate(a.date) - parseDate(b.date) || getEpisodeNumber(a.episode) - getEpisodeNumber(b.episode));
   else if (sort === "longest" || sort === "shortest") {
     const toSec = s => (s || "0:0").split(":").map(Number).reduce((acc, time) => 60 * acc + time, 0);
     res.sort((a, b) => sort === "longest" ? toSec(b.duration) - toSec(a.duration) : toSec(a.duration) - toSec(b.duration));
