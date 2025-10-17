@@ -3009,26 +3009,24 @@ html {
 /* ===== スマホ表示 (幅 900px 以下) ===== */
 /* ======================================================================== */
 @media (max-width: 900px) {
-  /* (ここには前回のスマホ用のスタイルが既にあります) */
   .episode-item .thumbnail {
     width: 120px;
   }
+
+  /* ↓↓↓ この部分を修正しました ↓↓↓ */
   .episode-item a > div:last-of-type {
     margin-left: 12px;
-  }
-  #results h5.mb-1 {
-    font-size: clamp(0.88rem, 3.7vw, 0.96rem);
-    line-height: 1.25;
-    margin-bottom: 4px;
-  }
-  .episode-meta {
-    font-size: clamp(0.8rem, 3.3vw, 0.98rem);
-    line-height: 1.35;
-  }
+    display: flex; /* Flexboxを有効に */
+    flex-direction: column; /* 縦積みに */
+    justify-content: center; /* 垂直方向に中央揃え */
 
-  /* 以前に設定した強制的な折り返し設定をリセットします */
-.episode-item a > div:last-of-type,
-.episode-item h5.mb-1 {
+    /* サムネイルの高さ(約68px)に合わせて、
+       テキストエリアにも最低限の高さを設定します */
+    min-height: 67.5px; 
+  }
+  /* ↑↑↑ ここまで修正 ↑↑↑ */
+
+  #results h5.mb-1 {
   word-break: normal;
   overflow-wrap: normal;
 }
@@ -3063,7 +3061,6 @@ html {
   #results h5.mb-1 {
     font-size: 1.05rem;
     line-height: 1.35;
-    margin-bottom: 6px;
   }
   .episode-meta {
     font-size: 0.9rem;

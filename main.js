@@ -394,7 +394,7 @@ else if (Array.isArray(it.guest)) {
               ? `<span class="impact-number">${hashOnly}</span>`
               : hashOnly.replace(/([A-Za-z0-9]+)/g, '<span class="impact-number">$1</span>')
           }${/\u3000/.test(it.title) ? "<br>" : " "}
-          <span class="guest-one-line" aria-label="${guestText}">${guestText}</span>
+          <span class="guest-one-line" aria-label="${guestText}" style="visibility: hidden;">${guestText}</span>
         </h5>
       </div>
       <p class="episode-meta">公開日時：<span class="impact-number">${it.date}</span><br>動画時間：${(it.duration ? `<span class="impact-number">${it.duration}</span>` : '?')}</p>
@@ -413,7 +413,7 @@ else if (Array.isArray(it.guest)) {
   });
 
   ul.appendChild(fragment);
-  setTimeout(fitGuestLines, 300);
+  fitGuestLines();
 }
 
 function renderPagination(totalCount) {
@@ -491,36 +491,46 @@ function fitGuestLines() {
   guestLines.forEach(line => {
     // スタイルを初期状態に戻します
     line.style.fontSize = '';
-    line.style.whiteSpace = '';
-
+    
     const parent = line.parentElement;
-    if (!parent) return;
+    if (!parent) {
+      line.style.visibility = 'visible'; // 親がなければ表示だけしておく
+      return;
+    }
 
     // 親要素の幅（テキストが表示されるべきエリアの幅）を取得します
     const parentWidth = parent.clientWidth;
-    // 現在の文字サイズでのテキストの実際の幅を取得します
+    
+    // 先に「改行禁止」スタイルを適用します
+    line.style.whiteSpace = 'nowrap';
+    // その後で、1行の場合の「真の幅」を取得します
     const currentWidth = line.scrollWidth;
-
+    
     // 最小フォントサイズを9pxに設定（これ以上は小さくしない）
     const MIN_FONT_SIZE = 9;
 
-    // テキストが親要素の幅を超えている場合のみ、処理を実行します
-    if (currentWidth > parentWidth) {
-      const originalSize = parseFloat(window.getComputedStyle(line).fontSize);
-
-      // 親要素の幅とテキストの幅の比率から、最適なフォントサイズを一発で計算します
-      let newSize = (parentWidth / currentWidth) * originalSize;
-
-      // 計算後のサイズが最小サイズより小さければ、最小サイズを適用します
-      // そうでなければ、計算結果をそのまま適用します
-      line.style.fontSize = Math.max(newSize, MIN_FONT_SIZE) + 'px';
+    // 親要素の幅が0以下の場合は、計算エラーを防ぐために処理を中断します
+    if (parentWidth <= 0) {
+      line.style.visibility = 'visible'; // 計算できなくても表示はする
+      return;
     }
 
-    // 常に1行で表示されるように、white-spaceプロパティを設定します
-    line.style.whiteSpace = 'nowrap';
+    // テキストの「真の幅」が親要素の幅を超えている場合のみ、サイズ調整を実行します
+    if (currentWidth > parentWidth) {
+      const originalSize = parseFloat(window.getComputedStyle(line).fontSize);
+      
+      // 親要素の幅とテキストの幅の比率から、最適なフォントサイズを計算します
+      let newSize = (parentWidth / currentWidth) * originalSize;
+
+      // 計算後のサイズが最小サイズより小さければ最小サイズを、そうでなければ計算結果を適用します
+      line.style.fontSize = Math.max(newSize, MIN_FONT_SIZE) + 'px';
+    }
+    
+    // ★★★ 変更点 ★★★
+    // 計算が完了したので、表示状態に戻します
+    line.style.visibility = 'visible';
   });
 }
-
 function updatePlaylistButtonVisibility() {
     const btn = document.getElementById('createPlaylistBtn');
     if (btn) {
