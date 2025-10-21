@@ -3014,31 +3014,31 @@ html {
 @media (max-width: 900px) {
   /* --- サムネイル (幅120px / 高さ67.5px) --- */
   .episode-item .thumbnail {
-    width: 135px; 
+    width: 130px; 
   }
 
   /* --- テキストエリア全体の配置 --- */
   .episode-item a > div:last-of-type {
     /* margin-left 隙間*/
-    margin-left: 28px; 
+    margin-left: 20px; 
     display: flex;
     flex-direction: column;
     justify-content: center;
     /*枠の高さ */
-    min-height: 40px; 
+    min-height: 67.5px; 
   }
 
   /*
    * ▼▼▼ (1) エピソード名 ▼▼▼
    */
   #results h5.mb-1 {
-    margin-top: 2px;
+    margin-top: 0.15rem;
     
     /*サイズ調整*/
-    font-size: 1.3em; 
+    font-size: 1.2em; 
     
     /*行間を少し詰めます*/
-    line-height: 1.0; 
+    line-height: 1.2rem; 
     
     word-break: normal;
     overflow-wrap: normal;
@@ -3051,7 +3051,7 @@ html {
     /* ★修正: 隙間を詰めます */
     margin-top: 1.0px; 
     
-    font-size: 1.0rem; 
+    font-size: 0.85rem; 
     
     /* ★修正: 行間をh5に合わせます */
     line-height: 1.2;
@@ -3065,12 +3065,12 @@ html {
    */
   .episode-meta {
     /* ★修正: 隙間を詰めます */
-    margin-top: 4px; 
+    margin-top: 0.25rem; 
     
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     
     /* ★修正: 行間を少し詰めます */
-    line-height: 1.3; 
+    line-height: 1.35; 
 
     opacity: 0.7;
   }
