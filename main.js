@@ -426,10 +426,7 @@ else if (Array.isArray(it.guest)) {
   });
 
   ul.appendChild(fragment);
-  // ★★★ 修正点 ★★★
-  // DOMの描画とレイアウト計算が完了するのを待つため、
-  // 2回 requestAnimationFrame を呼び出してから fitGuestLines を実行します。
-  // これで読み込み時やフィルタリング時の計算失敗を防ぎます。
+
   requestAnimationFrame(() => {
     requestAnimationFrame(fitGuestLines);
   });
