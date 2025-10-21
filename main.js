@@ -116,9 +116,22 @@ async function loadExternalData() {
 async function initializeApp() {
   await loadExternalData();
   preloadThumbsFromData();
-  if (!applyStateFromURL({ replace: true })) {
-    search();
+
+  // ★★★ ここからが変更点 ★★★
+  // Webフォントの読み込み完了を待機する
+  try {
+    await document.fonts.ready;
+    console.log("Web fonts are ready.");
+  } catch (err) {
+    console.warn("Font loading failed or was interrupted, proceeding anyway...", err);
   }
+  
+  // フォント準備後（または失敗後）に最初の検索とUIセットアップを実行
+  if (!applyStateFromURL({ replace: true })) {
+    search(); // このsearch内で最初の fitGuestLines が呼ばれる
+  }
+  // ★★★ ここまでが変更点 ★★★
+
   setupEventListeners();
   initializeAutocomplete();
   setupThemeSwitcher();
@@ -413,7 +426,13 @@ else if (Array.isArray(it.guest)) {
   });
 
   ul.appendChild(fragment);
-  fitGuestLines();
+  // ★★★ 修正点 ★★★
+  // DOMの描画とレイアウト計算が完了するのを待つため、
+  // 2回 requestAnimationFrame を呼び出してから fitGuestLines を実行します。
+  // これで読み込み時やフィルタリング時の計算失敗を防ぎます。
+  requestAnimationFrame(() => {
+    requestAnimationFrame(fitGuestLines);
+  });
 }
 
 function renderPagination(totalCount) {
@@ -480,57 +499,59 @@ function updateFilterButtonStyles() {
   });
 }
 
-/**
- * ========================================================================
- * ===== ゲスト名表示の最適化 (高効率な計算ロジックに更新) =====
- * ========================================================================
- */
+/* ======================================================================== */
+/* ===== ゲスト名表示の最適化 (高効率な計算ロジックに更新) ===== */
+/* ======================================================================== */
 function fitGuestLines() {
   const guestLines = document.querySelectorAll('.guest-one-line');
+  let needsRetry = false; // ★追加: リトライが必要かどうかのフラグ
 
   guestLines.forEach(line => {
-    // スタイルを初期状態に戻します
+    // 1. スタイルを初期状態に戻します
     line.style.fontSize = '';
+    line.style.whiteSpace = 'normal';
     
     const parent = line.parentElement;
     if (!parent) {
-      line.style.visibility = 'visible'; // 親がなければ表示だけしておく
+      line.style.visibility = 'visible';
       return;
     }
 
-    // 親要素の幅（テキストが表示されるべきエリアの幅）を取得します
+    // 2. 親要素の幅を取得
     const parentWidth = parent.clientWidth;
     
-    // 先に「改行禁止」スタイルを適用します
-    line.style.whiteSpace = 'nowrap';
-    // その後で、1行の場合の「真の幅」を取得します
-    const currentWidth = line.scrollWidth;
-    
-    // 最小フォントサイズを9pxに設定（これ以上は小さくしない）
-    const MIN_FONT_SIZE = 9;
-
-    // 親要素の幅が0以下の場合は、計算エラーを防ぐために処理を中断します
-    if (parentWidth <= 0) {
-      line.style.visibility = 'visible'; // 計算できなくても表示はする
-      return;
+    // 3. ★修正: 親の幅が100px以下の場合、レイアウト未完了とみなしリトライ
+    if (parentWidth <= 100) { // 閾値を 50 から 100 に変更
+      needsRetry = true; // ★追加: リトライフラグを立てる
+      return; // この要素の処理を中断
     }
 
-    // テキストの「真の幅」が親要素の幅を超えている場合のみ、サイズ調整を実行します
+    // 4. 常に1行で表示するように設定
+    line.style.whiteSpace = 'nowrap';
+    const currentWidth = line.scrollWidth;
+    
+    // 5. 最小フォントサイズを9pxに設定
+    const MIN_FONT_SIZE = 9;
+
+    // 6. 親の幅よりテキストが長いかチェック
     if (currentWidth > parentWidth) {
       const originalSize = parseFloat(window.getComputedStyle(line).fontSize);
-      
-      // 親要素の幅とテキストの幅の比率から、最適なフォントサイズを計算します
       let newSize = (parentWidth / currentWidth) * originalSize;
 
-      // 計算後のサイズが最小サイズより小さければ最小サイズを、そうでなければ計算結果を適用します
+      // 7. 計算結果が9px未満でも、9pxを適用します。
       line.style.fontSize = Math.max(newSize, MIN_FONT_SIZE) + 'px';
     }
     
-    // ★★★ 変更点 ★★★
-    // 計算が完了したので、表示状態に戻します
+    // 8. 計算が完了したので、表示状態に戻します
     line.style.visibility = 'visible';
   });
+
+  // 9. ★追加: リトライが必要な要素が1つでもあれば、100ms後に再実行
+  if (needsRetry) {
+    setTimeout(fitGuestLines, 100);
+  }
 }
+
 function updatePlaylistButtonVisibility() {
     const btn = document.getElementById('createPlaylistBtn');
     if (btn) {
@@ -764,8 +785,6 @@ function setupEventListeners() {
     // リサイズ操作が終わった少し後に実行することで、処理の負荷を軽減します
     resizeTimer = setTimeout(fitGuestLines, 150);
   }, { passive: true });
-
-
 
   // 並び替えセレクトボックスが変更された時の処理
   document.getElementById('sortSelect').addEventListener('change', () => {
