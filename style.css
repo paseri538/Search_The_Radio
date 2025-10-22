@@ -3054,7 +3054,7 @@ html {
     font-size: 0.85rem; 
     
     /* ★修正: 行間をh5に合わせます */
-    line-height: 1.2;
+    line-height: 1.25;
 
     display: block !important;
     width: 100% !important;
