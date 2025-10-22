@@ -3009,9 +3009,9 @@ html {
 }
 
 /* ======================================================================== */
-/* ★★★ スマホ表示 (幅 900px 以下) の調整エリア ★★★ */
+/* ★★★ スマホ表示 (幅 767px 以下) の調整エリア ★★★ */
 /* ======================================================================== */
-@media (max-width: 900px) {
+@media (max-width: 767px) {
   /* --- サムネイル (幅120px / 高さ67.5px) --- */
   .episode-item .thumbnail {
     width: 130px; 
@@ -3019,67 +3019,50 @@ html {
 
   /* --- テキストエリア全体の配置 --- */
   .episode-item a > div:last-of-type {
-    /* margin-left 隙間*/
     margin-left: 12px; 
     display: flex;
     flex-direction: column;
     justify-content: center;
-    /*枠の高さ */
     min-height: 67.5px; 
   }
 
   /*
-   * ▼▼▼ (1) エピソード名 ▼▼▼
+   * ▼▼▼ (1) エピソード名 (スマホ) ▼▼▼
    */
   #results h5.mb-1 {
     margin-top: 0.15rem;
-    
-    /*サイズ調整*/
     font-size: 1.2em; 
-    
-    /*行間を少し詰めます*/
     line-height: 1.2rem; 
-    
     word-break: normal;
     overflow-wrap: normal;
   }
 
   /*
-   * ▼▼▼ (2) ゲスト名 ▼▼▼
+   * ▼▼▼ (2) ゲスト名 (スマホ) ▼▼▼
    */
   .guest-one-line {
-    /* ★修正: 隙間を詰めます */
     margin-top: 1.0px; 
-    
     font-size: 0.85rem; 
-    
-    /* ★修正: 行間をh5に合わせます */
     line-height: 1.25;
-
     display: block !important;
     width: 100% !important;
   }
 
   /*
-   * ▼▼▼ (3) 公開日時・(4) 動画時間 ▼▼▼
+   * ▼▼▼ (3) 公開日時・(4) 動画時間 (スマホ) ▼▼▼
    */
   .episode-meta {
-    /* ★修正: 隙間を詰めます */
     margin-top: 0.4rem; 
-    
     font-size: 0.75rem;
-    
-    /* ★修正: 行間を少し詰めます */
     line-height: 1.3; 
-
     opacity: 0.7;
   }
 }
 
 /* ======================================================================== */
-/* ★★★ PC/iPad表示 (幅 901px 以上) の調整エリア ★★★ */
+/* ★★★ タブレット表示 (iPad縦・横) (幅 768px ～ 1180px) の調整エリア ★★★ */
 /* ======================================================================== */
-@media (min-width: 901px) {
+@media (min-width: 768px) and (max-width: 1180px) {
   .episode-item {
     padding: 14px;
   }
@@ -3091,7 +3074,7 @@ html {
 
   /* --- テキストエリア全体の配置 --- */
   .episode-item a > div:last-of-type {
-    margin-left: 14px; /* サムネイルとテキスト間の隙間 */
+    margin-left: 12px; /* サムネイルとテキスト間の隙間 */
     height: 84px; /* サムネイルの高さに固定 */
     display: flex;
     flex-direction: column;
@@ -3099,43 +3082,85 @@ html {
   }
 
   /*
-   * ▼▼▼ (1) エピソード名 ▼▼▼
+   * ▼▼▼ (1) エピソード名 (タブレット) ▼▼▼
    */
   #results h5.mb-1 {
     margin-top: 3px;
-
-    /* ★修正: ユーザー設定を維持しつつ、行間を調整 */
     font-size: 1.4rem;
     line-height: 1.0; 
   }
   
   /*
-   * ▼▼▼ (2) ゲスト名 ▼▼▼
+   * ▼▼▼ (2) ゲスト名 (タブレット) ▼▼▼
    */
   .guest-one-line {
-    /* ★修正: 隙間を詰めます */
     margin-top: 2px; 
-    
-    /* ★修正: ユーザー設定を維持しつつ、行間を調整 */
     font-size: 1.1rem;
     line-height: 1.2; 
-
     display: block;
     width: 100%;
   }
 
   /*
-   * ▼▼▼ (3) 公開日時・(4) 動画時間 ▼▼▼
+   * ▼▼▼ (3) 公開日時・(4) 動画時間 (タブレット) ▼▼▼
    */
   .episode-meta {
-    /* ★修正: 隙間を詰めます */
     margin-top: 3px; 
-    
     font-size: 0.8rem; 
-    
-    /* ★修正: 行間を詰めます */
     line-height: 1.3; 
+    opacity: 0.7;
+  }
+}
 
+/* ======================================================================== */
+/* ★★★ PC表示 (幅 1181px 以上) の調整エリア ★★★ */
+/* ======================================================================== */
+@media (min-width: 1181px) {
+  .episode-item {
+    padding: 14px;
+  }
+  
+  /* --- サムネイル (幅150px / 高さ84.375px) --- */
+  .episode-item .thumbnail {
+    width: 150px;
+  }
+
+  /* --- テキストエリア全体の配置 --- */
+  .episode-item a > div:last-of-type {
+    margin-left: 12px; /* サムネイルとテキスト間の隙間 */
+    height: 84px; /* サムネイルの高さに固定 */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  /*
+   * ▼▼▼ (1) エピソード名 (PC) ▼▼▼
+   */
+  #results h5.mb-1 {
+    margin-top: 3px;
+    font-size: 1.4rem;
+    line-height: 1.0; 
+  }
+  
+  /*
+   * ▼▼▼ (2) ゲスト名 (PC) ▼▼▼
+   */
+  .guest-one-line {
+    margin-top: 2px; 
+    font-size: 1.1rem;
+    line-height: 1.2; 
+    display: block;
+    width: 100%;
+  }
+
+  /*
+   * ▼▼▼ (3) 公開日時・(4) 動画時間 (PC) ▼▼▼
+   */
+  .episode-meta {
+    margin-top: 3px; 
+    font-size: 0.8rem; 
+    line-height: 1.3; 
     opacity: 0.7;
   }
 }
@@ -3197,17 +3222,17 @@ body.dark-mode .ts-btn {
 
 /* --- デバイスごとの幅調整 --- */
 
-/* 5. SP表示 (幅 900px 以下) のコンテナ幅をサムネイルに合わせます */
-@media (max-width: 900px) {
+/* 5. スマホ表示 (幅 767px 以下) のコンテナ幅をサムネイルに合わせます */
+@media (max-width: 767px) {
   .thumb-col {
-    width: 130px;
+    width: 130px; /* スマホ用サムネイル幅 */
   }
 }
 
-/* 6. PC表示 (幅 901px 以上) のコンテナ幅をサムネイルに合わせます */
-@media (min-width: 901px) {
+/* 6. タブレット・PC表示 (幅 768px 以上) のコンテナ幅をサムネイルに合わせます */
+@media (min-width: 768px) {
   .thumb-col {
-    width: 150px;
+    width: 150px; /* タブレット・PC用サムネイル幅 */
   }
 }
 
@@ -3256,7 +3281,7 @@ html.scroll-locked {
 }
 
 
-/* style.css に追記 */
+
 
 /* =================================================== */
 /* ★★★ 検索ボックスのクリアボタン ★★★ */
