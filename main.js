@@ -184,6 +184,21 @@ function search(opts = {}) {
 
   let res = [...data];
 
+  // ★★★↓ここから差し替え (新しい仕様)↓★★★
+  // 1. 「その他」フィルターが有効かを確認
+  const isOtherFilterActive = selectedOthers.length > 0;
+
+  // 2. 「その他」フィルターが有効でない場合
+  //    (＝デフォルト表示、キーワード検索時、ゲスト・コーナー・年・お気に入りでの絞り込み時)
+  //    は、検索対象を「本編のみ」(#付きと緊急特番)に絞り込む。
+  if (!isOtherFilterActive) {
+    // getEpisodeNumber は #付の数字、「緊急」「特別編」を -1 以上として判定します
+    res = res.filter(it => getEpisodeNumber(it.episode) >= -1);
+  }
+  // これで、「その他」フィルターが押された時だけ、
+  // 全データ（「京まふ」などを含む）が検索対象になります。
+  // ★★★↑ここまで↑★★★
+
   if (normalize(raw).includes('いいね')) {
     rainGoodMarks();
   }
