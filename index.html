@@ -71,11 +71,11 @@
     })();
   </script>
 
-  <title>さーち・ざ・らじお！</title>
+  <title>さーち・ざ・らじお！ - 「ぼっち・ざ・らじお！」非公式検索エンジン</title>
   
   <meta name="color-scheme" content="dark light">
 
-<meta property="og:title" content="さーち・ざ・らじお！ — ぼっち・ざ・らじお！専門検索エンジン" />
+<meta property="og:title" content="さーち・ざ・らじお！ - 「ぼっち・ざ・らじお！」非公式検索エンジン" />
 <meta property="og:description" content="『ぼっち・ざ・らじお！』のエピソードを出演者・コーナー・年でサクッと検索。お気に入り機能も対応。" />
 <meta property="og:type" content="website" />
 <meta property="og:url" content="https://searchtheradio.com/" />
@@ -87,12 +87,12 @@
 <meta property="og:locale" content="ja_JP" />
 
 <meta name="twitter:card" content="summary_large_image" />
-<meta name="twitter:title" content="さーち・ざ・らじお！ — ぼっち・ざ・らじお！専門検索エンジン" />
+<meta name="twitter:title" content="さーち・ざ・らじお！ - 「ぼっち・ざ・らじお！」非公式検索エンジン" />
 <meta name="twitter:description" content="『ぼっち・ざ・らじお！』のエピソードを出演者・コーナー・年でサクッと検索。お気に入り機能も対応。" />
 <meta name="twitter:image" content="https://searchtheradio.com/ogp_img.jpg?v=1" />
 
 <link rel="canonical" href="https://searchtheradio.com/" />
-<meta name="description" content="『ぼっち・ざ・らじお！』のエピソード検索サイト。" />
+<meta name="description" content="『ぼっち・ざ・らじお！』のエピソードを出演者・コーナー・キーワードなどでサクッと検索できる非公式サイト。" />
 
 <link rel="icon" type="image/png" sizes="32x32" href="./favicon-32.png?v=3">
 <link rel="icon" type="image/png" sizes="16x16" href="./favicon-16.png?v=3">
@@ -102,7 +102,7 @@
 <meta name="apple-mobile-web-app-title" content="さーち・ざ・らじお！">
 
 
-<link rel="manifest" href="./site.webmanifest?v=20251028a">
+<link rel="manifest" href="./site.webmanifest?v=20251029a">
 
   
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
@@ -112,7 +112,7 @@
 <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
 <link rel="preconnect" href="https://code.jquery.com" crossorigin>
 <link rel="preconnect" href="https://i.ytimg.com" crossorigin>
-  <link href="style.css?v=20251028a" rel="stylesheet" />
+  <link href="style.css?v=20251029a" rel="stylesheet" />
 
 
 </head>
@@ -321,13 +321,13 @@
     </footer>
   </div>
 
-  <script src="main.js?v=20251028a" defer></script>
+  <script src="main.js?v=20251029a" defer></script>
 
   <script>
   // ---- Service Worker register (network-first) ----
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', function () {
-      navigator.serviceWorker.register('/sw.js?20251028a').then(function(reg) {
+      navigator.serviceWorker.register('/sw.js?20251029a').then(function(reg) {
         return navigator.serviceWorker.ready;
       }).then(function(reg) {
         if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
@@ -353,22 +353,6 @@
 
 </div>
 
-<div id="releasePopup" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="releasePopupTitle" hidden>
-  <div id="releasePopupContent" class="modal-content">
-    <button id="releasePopupCloseBtn" class="modal-close" aria-label="閉じる">
-      <i class="fa-solid fa-xmark"></i>
-    </button>
-    <h2 id="releasePopupTitle" class="popup-title">🎉お知らせ🎉</h2>
-    <p class="popup-body">
-      <b>『結束バンド TOUR “We will B”』</b><br>
-      Blu-ray＆DVD発売を記念して<br>
-      期間限定カラー「<b>グリーン</b>」を追加しました！
-    </p>
-    <button id="applyGreenThemeBtn" class="popup-cta-btn">
-      <i class="fa-solid fa-brush"></i>
-      <span>さっそく試してみる</span>
-    </button>
-  </div>
-</div>
+
 </body>
 </html>

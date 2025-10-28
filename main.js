@@ -140,7 +140,6 @@ async function initializeApp() {
   setupRightClickModal();
   formatYearButtons();
   updateHeaderOffset();
-  setupReleasePopup();
   console.log("Application initialized.");
 }
 
@@ -1065,7 +1064,7 @@ function setupModals() {
 
 function setupShareButtons() {
   const shareUrl = 'https://searchtheradio.com/';
-  const text = 'さーち・ざ・らじお！ — ぼっち・ざ・らじお！専門検索エンジン #さーち・ざ・らじお';
+  const text = 'さーち・ざ・らじお！ - 「ぼっち・ざ・らじお！」非公式検索エンジン #さーち・ざ・らじお';
   const u = encodeURIComponent(shareUrl);
   const t = encodeURIComponent(text);
   document.getElementById('shareX').href = `https://x.com/intent/tweet?url=${u}&text=${t}`;
@@ -1605,59 +1604,3 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 })();
 
-
-/* =================================================== */
-/* ★★★ お知らせポップアップの制御 ★★★ */
-/* =================================================== */
-function setupReleasePopup() {
-  const POPUP_SHOWN_KEY = 'release_popup_shown_bocchi_tour_2025'; // ポップアップ表示履歴のキー
-  const popup = document.getElementById('releasePopup');
-  const closeBtn = document.getElementById('releasePopupCloseBtn');
-  const applyBtn = document.getElementById('applyGreenThemeBtn');
-
-  if (!popup || !closeBtn || !applyBtn) return;
-
-  // --- 表示すべきか判定 ---
-  // localStorageにキーがなければ表示
-  const shouldShow = !localStorage.getItem(POPUP_SHOWN_KEY);
-
-  if (!shouldShow) {
-    return; // 表示済みなら何もしない
-  }
-
-  // --- ポップアップの開閉ロジック ---
-  const openPopup = () => {
-    popup.hidden = false;
-    // 既存のアニメーションを適用
-    popup.classList.add('show');
-    popup.querySelector('.modal-content').style.animation = 'modalPop .24s cubic-bezier(0.34, 1.56, 0.64, 1) both';
-
-    window.acquireBodyLock(); // 背景スクロールを禁止
-    // 表示したことを記録
-    localStorage.setItem(POPUP_SHOWN_KEY, 'true');
-  };
-
-  const closePopup = () => {
-    popup.classList.add('closing');
-    popup.addEventListener('animationend', () => {
-      popup.hidden = true;
-      popup.classList.remove('show', 'closing');
-    }, { once: true });
-    
-    window.releaseBodyLock(); // 背景スクロールを許可
-  };
-
-  // --- イベントリスナーを設定 ---
-  closeBtn.addEventListener('click', closePopup);
-  applyBtn.addEventListener('click', () => {
-    // グローバルスコープにある applyTheme 関数を呼び出す
-    if (typeof applyTheme === 'function') {
-      applyTheme('green');
-    }
-    closePopup();
-  });
-
-  // --- 準備ができたらポップアップを表示 ---
-  // 少し遅延させることで、メインコンテンツの表示を妨げないようにします
-  setTimeout(openPopup, 1000);
-}
