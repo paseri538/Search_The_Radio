@@ -1,4 +1,23 @@
 /* =================================================== */
+/* ★★★ ローカルフォント定義 (UD角ゴ) ★★★ */
+/* =================================================== */
+@font-face {
+  font-family: 'UDKakugo'; /* サイト全体で使うフォント名 */
+  src: url('FOT-UDKakugoC70Pro-R.otf') format('opentype');
+  font-weight: 400; /* 400 = Regular (標準) */
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'UDKakugo'; /* 標準と同じフォント名 */
+  src: url('FOT-UDKakugoC80Pro-B.otf') format('opentype');
+  font-weight: 700; /* 700 = Bold (太字) */
+  font-style: normal;
+  font-display: swap;
+}
+
+/* =================================================== */
 /* ★★★ Impactフォント定義と調整用変数 ★★★ */
 /* =================================================== */
 @font-face {
@@ -45,7 +64,7 @@ html, body { overflow-x: hidden; margin:0; padding:0; }
 body {
   background: var(--bg-color);
   color: var(--text-color);
-  font-family: fot-udkakugoc70-pro, 'Segoe UI', system-ui,-apple-system,sans-serif;
+  font-family: 'UDKakugo', 'Segoe UI', system-ui,-apple-system,sans-serif;
   font-weight: 400; /* 標準の太さを指定 */
   min-height: 100%;
 }
@@ -60,7 +79,7 @@ body {
 #randomBtn,
 #mainResetBtn,
 #sortSelect {
-  font-family: fot-udkakugoc80-pro, 'Segoe UI', system-ui, -apple-system, sans-serif !important;
+  font-family: 'UDKakugo', 'Segoe UI', system-ui, -apple-system, sans-serif !important;
   font-weight: 700 !important;
 }
 
@@ -2590,7 +2609,7 @@ body.body-scroll-locked {
 #randomBtn,
 .reset-btn {
   display: inline-flex !important; align-items: center !important; justify-content: center !important;
-  border: 1.5px solid !important; border-radius: 10px !important; font-weight: 500 !important;
+  border: 1.5px solid !important; border-radius: 10px !important; font-weight: 700 !important;
   line-height: 1 !important; white-space: nowrap !important;
   transition: background-color 0.1s ease, border-color 0.1s ease, color 0.1s ease, transform 0.1s ease, opacity 0.2s ease !important;
   cursor: pointer !important; user-select: none !important;
@@ -2632,8 +2651,11 @@ body.body-scroll-locked {
     visibility: visible;
     opacity: 1;
   }
-  #filterToggleBtn::after { content: "フィルタ" !important; }
-  .reset-btn::before { content: "↺" !important; }
+  #filterToggleBtn::after {
+    content: "フィルタ" !important;
+    font-family: 'UDKakugo', 'Segoe UI', system-ui, -apple-system, sans-serif !important;
+    font-weight: 700 !important;
+  }
 }
 /* PC (992px以上) */
 @media (min-width: 992px) {
@@ -2646,7 +2668,12 @@ body.body-scroll-locked {
     width: clamp(124px, 12vw, 144px) !important; flex: 0 0 auto !important;
     gap: 0.55em !important;
   }
-  #filterToggleBtn::after { content: "フィルタ" !important; }
+  #filterToggleBtn::after {
+    content: "フィルタ" !important;
+    font-family: 'UDKakugo', 'Segoe UI', system-ui, -apple-system, sans-serif !important;
+    font-weight: 700 !important;
+    }
+    
   .reset-btn::before { content: "↺" !important; }
   #filterToggleBtn { gap: 0 !important; }
   #filterToggleBtn::after { margin-left: 0.55em !important; }
@@ -2943,8 +2970,9 @@ html {
   #favOnlyToggleBtn span,
   #randomBtn span,
   .reset-btn {
+    font-family: 'UDKakugo', 'Segoe UI', system-ui, -apple-system, sans-serif !important; /* ★この行を追加 */
     font-size: 11px !important;
-    font-weight: 500 !important;
+    font-weight: 700 !important;
   }
 
   .reset-btn {
@@ -3469,7 +3497,7 @@ b, strong,
 .about-title,
 .results-count-under-bar,
 .is-standalone .pwa-bottom-nav-btn {
-  font-family: fot-udkakugoc80-pro, 'Segoe UI', system-ui, -apple-system, sans-serif;
+  font-family: 'UDKakugo', 'Segoe UI', system-ui, -apple-system, sans-serif;
   /* 他のスタイル設定に確実に打ち勝って太字にするため、
     font-weight に !important を付けています。
   */
