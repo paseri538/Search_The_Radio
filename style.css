@@ -2911,6 +2911,7 @@ html {
   .search-row-controls .reset-btn {
     flex-direction: column !important;
     justify-content: center !important;
+    align-items: center !important; /* ★修正1: 左右中央揃えを追加 */
     height: auto !important;
     min-height: 60px;
     padding: 8px 4px !important;
@@ -2925,10 +2926,12 @@ html {
     font-size: 22px !important;
     line-height: 1 !important;
     margin: 0 !important;
-    width: auto !important;
+    width: 1.1em !important; /* ★修正2: アイコンの表示幅を統一 */
+    text-align: center !important; /* ★修正3: 幅内部でアイコンを中央に配置 */
     font-weight: 900 !important;
   }
 
+/* ... (以降のスタイルは変更なし) ... */
   /* リセットボタンのアイコンをFontAwesomeに統一 */
   .reset-btn::before {
       font-family: "Font Awesome 6 Free" !important;
@@ -3663,13 +3666,18 @@ html.is-standalone .pwa-bottom-nav-btn {
   padding: 0;
   cursor: pointer;
   color: var(--muted, #7c8798);
-  font-family: inherit;
+  font-family: fot-udkakugoc80-pro, 'Segoe UI', system-ui, -apple-system, sans-serif;
   font-size: 11px;
+  font-weight: 700 !important; /* ★追加: 確実に太字を適用 */
   -webkit-tap-highlight-color: transparent;
   transition: color 0.15s ease;
 }
 
-html.is-standalone .pwa-bottom-nav-btn i { font-size: 20px; }
+html.is-standalone .pwa-bottom-nav-btn i {
+  font-size: 20px;
+  width: 1.1em; /* ★追加: アイコンの表示幅を統一 */
+  text-align: center; /* ★追加: 幅内部でアイコンを中央に配置 */
+}
 html.is-standalone .pwa-bottom-nav-btn.is-active { color: var(--btn-main, #6654e8); }
 
 html.is-standalone .search-row-controls #filterToggleBtn,
