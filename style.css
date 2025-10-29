@@ -2757,27 +2757,27 @@ body[class*="theme-"] #favOnlyToggleBtn[aria-pressed="true"] {
 /* 「フィルタ」アイコン (▼) */
 #filterToggleBtn i {
   position: relative;
-  top: 0.035em; /* 他より少し下に配置 */
+  top: -0.04em; /* ★修正: 少し上に移動 */
 }
 
 /* 「お気に入り」アイコン (☆) */
 #favOnlyToggleBtn i {
-  font-size: 1.00em !important; /* 他のアイコンと視覚的な大きさを合わせる */
+  font-size: 1.00em !important;
   position: relative;
-  top: 0em; /* わずかに下に */
+  top: 0.08em; /* ★修正: 少し下に移動 */
 }
 
 /* 「ランダム」アイコン */
 #randomBtn i {
   position: relative;
-  top: 0.02em; /* わずかに下に */
+  top: -0.04em; /* ★修正: 少し上に移動 */
 }
 
 /* 「リセット」アイコン (↺) */
 .reset-btn::before {
-  font-size: 1.05em !important; /* 他のアイコンと視覚的な大きさを合わせる */
+  font-size: 1.05em !important;
   position: relative;
-  top: 0.02em; /* 少し下に */
+  top: 0.08em; /* ★修正: 少し下に移動 */
 }
 
 /* ======================================================================== */
@@ -2911,7 +2911,7 @@ html {
   .search-row-controls .reset-btn {
     flex-direction: column !important;
     justify-content: center !important;
-    align-items: center !important; /* ★修正1: 左右中央揃えを追加 */
+    align-items: center !important; /* 左右中央揃え */
     height: auto !important;
     min-height: 60px;
     padding: 8px 4px !important;
@@ -2926,34 +2926,58 @@ html {
     font-size: 22px !important;
     line-height: 1 !important;
     margin: 0 !important;
-    width: 1.1em !important; /* ★修正2: アイコンの表示幅を統一 */
-    text-align: center !important; /* ★修正3: 幅内部でアイコンを中央に配置 */
+    width: 1.1em !important; /* 左右の表示幅を統一 */
+    text-align: center !important; /* 幅内部でアイコンを中央に */
     font-weight: 900 !important;
+    position: relative; /* ★修正1: 垂直位置調整(top)の基準点とします */
   }
 
-/* ... (以降のスタイルは変更なし) ... */
+  /* アイコンのスタイルを調整 (L3036 の既存のルールは削除して、
+     上の L3030 のルールにマージしました) */
+
   /* リセットボタンのアイコンをFontAwesomeに統一 */
   .reset-btn::before {
       font-family: "Font Awesome 6 Free" !important;
       content: "\f2ea" !important; /* fa-rotate-left アイコン */
   }
 
-  /* 各アイコンの垂直位置を個別に微調整 */
+  /* テキスト部分のスタイルを調整 (既存のルール L3057-L3066) */
+  #filterToggleBtn::after,
+  #favOnlyToggleBtn span,
+  #randomBtn span,
+  .reset-btn {
+    font-family: fot-udkakugoc80-pro, 'Segoe UI', system-ui, -apple-system, sans-serif !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+  }
+  .reset-btn {
+    line-height: 1.2 !important;
+  }
+
+  /*
+   * ★★★ 修正2: 以下のルールブロックを新しく追加します ★★★
+   * (PWA版のL3048-L3066の調整値を、こちらの非PWA版にも適用します)
+   */
+
+  /* 「フィルタ」アイコン (fa-filter) */
   #filterToggleBtn i {
-    position: relative;
-    top: 0.05em;
+    top: 0.05em; /* 約 1px 下に移動 */
   }
+
+  /* 「お気に入り」アイコン (fa-star) */
   #favOnlyToggleBtn i {
-    position: relative;
-    top: 0.02em;
+    top: 0.02em; /* 約 0.4px 下に移動 */
   }
+
+  /* 「ランダム」アイコン (fa-shuffle) */
   #randomBtn i {
-    position: relative;
-    top: 0.05em;
+    top: 0.05em; /* 約 1px 下に移動 */
   }
+
+  /* 「リセット」アイコン (fa-rotate-left) */
   .reset-btn::before {
-    position: relative;
-    top: 0.10em; /* ★変更点: 0.02emから0.05emに調整し、アイコンを少し下に移動 */
+    /* L3043で position: relative が指定済みのため、topのみ指定 */
+    top: 0.10em; /* 約 2px 下に移動 */
   }
 
   /* テキスト部分のスタイルを調整 */
@@ -3789,3 +3813,34 @@ html.is-standalone #filterDrawer {
 }
 
 
+/* =================================================== */
+/* ★★★ PWA 下部ナビ アイコン垂直位置の個別調整 ★★★ */
+/* =================================================== */
+
+/* PWAナビボタンのアイコン(i)は、
+  PC/スマホ版(L3048)での調整値を参考に、
+  個別に垂直位置を調整します。
+*/
+html.is-standalone .pwa-bottom-nav-btn i {
+  position: relative; /* 垂直位置調整(top)の基準点とします */
+}
+
+/* 「フィルタ」アイコン (fa-filter) */
+html.is-standalone #pwa-filterToggleBtn i {
+  top: 0.05em; /* 約 1px 下に移動 (PC版 L3050 と同じ) */
+}
+
+/* 「お気に入り」アイコン (fa-star) */
+html.is-standalone #pwa-favOnlyToggleBtn i {
+  top: 0.02em; /* 約 0.4px 下に移動 (PC版 L3055 と同じ) */
+}
+
+/* 「ランダム」アイコン (fa-shuffle) */
+html.is-standalone #pwa-randomBtn i {
+  top: 0.05em; /* 約 1px 下に移動 (PC版 L3060 と同じ) */
+}
+
+/* 「リセット」アイコン (fa-rotate-left) */
+html.is-standalone #pwa-mainResetBtn i {
+  top: 0.10em; /* 約 2px 下に移動 (PC版 L3065 と同じ) */
+}

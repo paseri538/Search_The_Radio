@@ -1571,6 +1571,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const newButton = document.createElement('button');
       newButton.className = 'pwa-bottom-nav-btn';
+      newButton.id = `pwa-${config.id}`; // ★修正: この行を追加します
       newButton.innerHTML = `
         <i class="${config.icon}"></i>
         <span>${config.label}</span>
