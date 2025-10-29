@@ -2628,10 +2628,18 @@ body.body-scroll-locked {
   width: 1.1em !important; text-align: center !important;
 }
 /* アイコン垂直位置の微調整 */
-#filterToggleBtn i { position: relative; top: 0.1em; }
-#favOnlyToggleBtn i { position: relative; top: 0.06em; }
-#randomBtn i { position: relative; top: 0.07em; }
-.reset-btn::before { font-size: 1.05em !important; position: relative; top: 0.08em; }
+#filterToggleBtn i { 
+  position: relative; top: -0.0005em;
+ }
+#favOnlyToggleBtn i {
+  position: relative; top: -0.02em;
+ }
+#randomBtn i { 
+  position: relative; top: 0.009em;
+ }
+.reset-btn::before { 
+  font-size: 1.10em !important; position: relative; top: 0.040em;
+ }
 
 /* --- 2. デバイスごとのレイアウトとスタイル --- */
 /* スマホ (991px以下) */
@@ -2758,47 +2766,7 @@ body[class*="theme-"] #favOnlyToggleBtn[aria-pressed="true"] {
   }
 }
 
-/* ======================================================================== */
-/* ===== (V23.3) ボタンアイコンの個別・最終精密調整 ===== */
-/* ======================================================================== */
 
-/* 1. まず、全ての位置調整を一旦リセット */
-#filterToggleBtn i,
-#favOnlyToggleBtn i,
-#randomBtn i,
-.reset-btn::before {
-  position: static;
-  top: auto;
-  transform: none !important;
-}
-
-/* 2. 各アイコンのサイズと位置を個別に微調整 */
-
-/* 「フィルタ」アイコン (▼) */
-#filterToggleBtn i {
-  position: relative;
-  top: -0.04em; /* ★修正: 少し上に移動 */
-}
-
-/* 「お気に入り」アイコン (☆) */
-#favOnlyToggleBtn i {
-  font-size: 1.00em !important;
-  position: relative;
-  top: 0.08em; /* ★修正: 少し下に移動 */
-}
-
-/* 「ランダム」アイコン */
-#randomBtn i {
-  position: relative;
-  top: -0.04em; /* ★修正: 少し上に移動 */
-}
-
-/* 「リセット」アイコン (↺) */
-.reset-btn::before {
-  font-size: 1.05em !important;
-  position: relative;
-  top: 0.08em; /* ★修正: 少し下に移動 */
-}
 
 /* ======================================================================== */
 /* ===== YouTubeプレイリスト作成ボタンのスタイル ===== */

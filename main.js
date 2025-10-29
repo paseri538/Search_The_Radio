@@ -117,15 +117,6 @@ async function initializeApp() {
   await loadExternalData();
   preloadThumbsFromData();
 
-  // ★★★ ここからが変更点 ★★★
-  // Webフォントの読み込み完了を待機する
-  try {
-    await document.fonts.ready;
-    console.log("Web fonts are ready.");
-  } catch (err) {
-    console.warn("Font loading failed or was interrupted, proceeding anyway...", err);
-  }
-  
   // フォント準備後（または失敗後）に最初の検索とUIセットアップを実行
   if (!applyStateFromURL({ replace: true })) {
     search(); // このsearch内で最初の fitGuestLines が呼ばれる
@@ -550,7 +541,20 @@ function fitGuestLines() {
       let newSize = (parentWidth / currentWidth) * originalSize;
 
       // 7. 計算結果が9px未満でも、9pxを適用します。
-      line.style.fontSize = Math.max(newSize, MIN_FONT_SIZE) + 'px';
+      const finalSize = Math.max(newSize, MIN_FONT_SIZE);
+      line.style.fontSize = finalSize + 'px';
+
+      // ★★★ ここから修正 ★★★
+      // 最小フォントサイズ(9px)でもはみ出す場合に、省略記号(...)クラスを付与
+      if (finalSize === MIN_FONT_SIZE && line.scrollWidth > parentWidth) {
+        line.classList.add('needs-ellipsis');
+      } else {
+        line.classList.remove('needs-ellipsis'); // はみ出さない場合はクラスを削除
+      }
+      // ★★★ ここまで ★★★
+
+    } else {
+      line.classList.remove('needs-ellipsis'); // はみ出さない場合はクラスを削除
     }
     
     // 8. 計算が完了したので、表示状態に戻します
