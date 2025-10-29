@@ -796,6 +796,26 @@ body.dark-mode .autocomplete-item:hover,
 body.dark-mode .autocomplete-item[aria-selected="true"] { background: #2b3a46; }
 body.dark-mode .autocomplete-item .type { border-color: #415766; color: #96e5c4; }
 
+/* =================================================== */
+/* ★★★ Adobe Fonts 読み込み対策 (FOUC防止) ★★★ */
+/* =================================================== */
+
+/* フォント読み込み中 (.wf-loading) は、検索候補欄を透明にしておく。
+  .wf-loading は index.html のAdobe Fontsスクリプト (L140) によって自動で付与されます。
+*/
+html.wf-loading #autocomplete {
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity 0.15s ease, visibility 0.15s ease;
+}
+
+/* フォント読み込み完了時 (.wf-active) に、検索候補欄を表示する。
+  .wf-active もAdobe Fontsスクリプトによって自動で付与されます。
+*/
+html.wf-active #autocomplete {
+  visibility: visible;
+  opacity: 1;
+}
 
 
 /* --- iOS PWA の安全域対応（ノッチ・ステータスバーを回避） --- */
@@ -3827,20 +3847,22 @@ html.is-standalone .pwa-bottom-nav-btn i {
 
 /* 「フィルタ」アイコン (fa-filter) */
 html.is-standalone #pwa-filterToggleBtn i {
-  top: 0.05em; /* 約 1px 下に移動 (PC版 L3050 と同じ) */
+  /* ★修正: 視覚的重心が最も高い「▼」を、一番大きく下に移動させます */
+  top: 0.10em;
 }
 
 /* 「お気に入り」アイコン (fa-star) */
 html.is-standalone #pwa-favOnlyToggleBtn i {
-  top: 0.02em; /* 約 0.4px 下に移動 (PC版 L3055 と同じ) */
+  top: 0.02em; /* 変更なし (元々ズレが少ないため) */
 }
 
 /* 「ランダム」アイコン (fa-shuffle) */
 html.is-standalone #pwa-randomBtn i {
-  top: 0.05em; /* 約 1px 下に移動 (PC版 L3060 と同じ) */
+  top: 0.05em; /* 変更なし (これを基準とします) */
 }
 
 /* 「リセット」アイコン (fa-rotate-left) */
 html.is-standalone #pwa-mainResetBtn i {
-  top: 0.10em; /* 約 2px 下に移動 (PC版 L3065 と同じ) */
+  /* ★修正: 0.10em は少し下げすぎだったため、「ランダム」と合わせます */
+  top: 0.05em;
 }
