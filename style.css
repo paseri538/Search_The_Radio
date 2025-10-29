@@ -3710,16 +3710,18 @@ html.is-standalone .pwa-bottom-nav-btn {
   cursor: pointer;
   color: var(--muted, #7c8798);
   font-family: fot-udkakugoc80-pro, 'Segoe UI', system-ui, -apple-system, sans-serif;
-  font-size: 11px;
-  font-weight: 700 !important; /* ★追加: 確実に太字を適用 */
+  font-weight: 700 !important;
   -webkit-tap-highlight-color: transparent;
   transition: color 0.15s ease;
 }
 
 html.is-standalone .pwa-bottom-nav-btn i {
-  font-size: 20px;
-  width: 1.1em; /* ★追加: アイコンの表示幅を統一 */
-  text-align: center; /* ★追加: 幅内部でアイコンを中央に配置 */
+  line-height: 1;
+}
+
+/* ★ テキストにも共通の line-height を指定 */
+html.is-standalone .pwa-bottom-nav-btn span {
+  line-height: 1;
 }
 html.is-standalone .pwa-bottom-nav-btn.is-active { color: var(--btn-main, #6654e8); }
 
@@ -3833,59 +3835,65 @@ html.is-standalone #filterDrawer {
 
 
 /* =================================================== */
-/* ★★★ PWA 下部ナビ アイコン/テキスト 独立調整 ★★★ */
+/* ★★★ PWA 下部ナビ アイコン/テキスト 独立・精密調整 ★★★ */
 /* =================================================== */
 
-/* 1. アイコンのベース位置を調整 (約2px上に移動) */
-html.is-standalone .pwa-bottom-nav-btn i {
-  position: relative;
-  /* 60pxのボタン中央から、4pxの隙間を空けるため約2px上に配置 */
-  top: -0.1em; /* 20px * -0.1 = -2px */
-}
-
-/* 2. テキストのベース位置を調整 (約2px下に移動) */
+/* --- 1. 全てのアイコンとテキストに relative を指定 --- */
+html.is-standalone .pwa-bottom-nav-btn i,
 html.is-standalone .pwa-bottom-nav-btn span {
   position: relative;
-  /* 60pxのボタン中央から、4pxの隙間を空けるため約2px下に配置 */
-  top: 0.18em; /* 11px * 0.18 = ~2px */
 }
 
-/* 3. 各アイコンの「視覚的」なズレを個別に微調整 */
-/* (ベース位置 `top: -0.1em` からの追加調整) */
-
-/* 「フィルタ」アイコン (fa-filter) */
-html.is-standalone #pwa-filterToggleBtn i {
-  /* base(-0.1em) + visual(0.15em) = +0.05em */
-  /* 視覚的重心が上の「▼」を一番下に移動させる */
-  top: 0.05em;
-}
-
-/* 「お気に入り」アイコン (fa-star) */
-html.is-standalone #pwa-favOnlyToggleBtn i {
-  /* base(-0.1em) + visual(0.12em) = +0.02em */
-  top: 0.02em;
-}
-
-/* 「ランダム」アイコン (fa-shuffle) */
-html.is-standalone #pwa-randomBtn i {
-  /* base(-0.1em) + visual(0.15em) = +0.05em */
-  top: 0.05em;
-}
-
-/* 「リセット」アイコン (fa-rotate-left) */
-html.is-standalone #pwa-mainResetBtn i {
-  /* base(-0.1em) + visual(0.15em) = +0.05em */
-  top: 0.05em;
-}
-
-/* 4. 「フィルタ」のテキストだけ上に微調整 */
-/*
-  「フィルタ」のテキストが下に見えるのは、
-  アイコン(▼)の重心が上で、他より隙間が空いて見えるためです。
-  「フィルタ」のテキストだけを少し上に移動させ、アイコンに近づけます。
+/* --- 2. 各ボタンの個別調整 ---
+  top: 垂直位置 (プラスで下に、マイナスで上に)
+  left: 水平位置 (プラスで右に、マイナスで左に)
+  font-size: 大きさ
 */
+
+/* --- フィルタボタン (#pwa-filterToggleBtn) --- */
+html.is-standalone #pwa-filterToggleBtn i {
+  font-size: 21px;
+  top: -0.08em;  /* (ベース位置: 約2px上) */
+  left: 0;
+}
 html.is-standalone #pwa-filterToggleBtn span {
-  /* base(0.18em) - visual(0.18em) = 0em */
-  /* ベース位置(約2px下)をキャンセルし、他のテキストより2px上に配置 */
-  top: 0em;
+  font-size: 10px;
+  top: -0.15em; 
+  left: 0.07em;
+}
+
+/* --- お気に入りボタン (#pwa-favOnlyToggleBtn) --- */
+html.is-standalone #pwa-favOnlyToggleBtn i {
+  font-size: 19px;
+  top: -0.1em;
+  left: 0;
+}
+html.is-standalone #pwa-favOnlyToggleBtn span {
+  font-size: 10px;
+  top: 0.0em;
+  left: 0.05em;
+}
+
+/* --- ランダムボタン (#pwa-randomBtn) --- */
+html.is-standalone #pwa-randomBtn i {
+  font-size: 22px;
+  top: -0.05em;
+  left: 0;
+}
+html.is-standalone #pwa-randomBtn span {
+  font-size: 10px;
+  top: -0.15em;
+  left: 0.05em;
+}
+
+/* --- リセットボタン (#pwa-mainResetBtn) --- */
+html.is-standalone #pwa-mainResetBtn i {
+  font-size: 22px;
+  top: -0.05em;
+  left: 0;
+}
+html.is-standalone #pwa-mainResetBtn span {
+  font-size: 10px;
+  top: -0.15em;
+  left: 0;
 }
