@@ -3704,7 +3704,6 @@ html.is-standalone .pwa-bottom-nav-btn {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 4px;
   background: none;
   border: none;
   padding: 0;
@@ -3834,35 +3833,59 @@ html.is-standalone #filterDrawer {
 
 
 /* =================================================== */
-/* ★★★ PWA 下部ナビ アイコン垂直位置の個別調整 ★★★ */
+/* ★★★ PWA 下部ナビ アイコン/テキスト 独立調整 ★★★ */
 /* =================================================== */
 
-/* PWAナビボタンのアイコン(i)は、
-  PC/スマホ版(L3048)での調整値を参考に、
-  個別に垂直位置を調整します。
-*/
+/* 1. アイコンのベース位置を調整 (約2px上に移動) */
 html.is-standalone .pwa-bottom-nav-btn i {
-  position: relative; /* 垂直位置調整(top)の基準点とします */
+  position: relative;
+  /* 60pxのボタン中央から、4pxの隙間を空けるため約2px上に配置 */
+  top: -0.1em; /* 20px * -0.1 = -2px */
 }
+
+/* 2. テキストのベース位置を調整 (約2px下に移動) */
+html.is-standalone .pwa-bottom-nav-btn span {
+  position: relative;
+  /* 60pxのボタン中央から、4pxの隙間を空けるため約2px下に配置 */
+  top: 0.18em; /* 11px * 0.18 = ~2px */
+}
+
+/* 3. 各アイコンの「視覚的」なズレを個別に微調整 */
+/* (ベース位置 `top: -0.1em` からの追加調整) */
 
 /* 「フィルタ」アイコン (fa-filter) */
 html.is-standalone #pwa-filterToggleBtn i {
-  /* ★修正: 視覚的重心が最も高い「▼」を、一番大きく下に移動させます */
-  top: 0.10em;
+  /* base(-0.1em) + visual(0.15em) = +0.05em */
+  /* 視覚的重心が上の「▼」を一番下に移動させる */
+  top: 0.05em;
 }
 
 /* 「お気に入り」アイコン (fa-star) */
 html.is-standalone #pwa-favOnlyToggleBtn i {
-  top: 0.02em; /* 変更なし (元々ズレが少ないため) */
+  /* base(-0.1em) + visual(0.12em) = +0.02em */
+  top: 0.02em;
 }
 
 /* 「ランダム」アイコン (fa-shuffle) */
 html.is-standalone #pwa-randomBtn i {
-  top: 0.05em; /* 変更なし (これを基準とします) */
+  /* base(-0.1em) + visual(0.15em) = +0.05em */
+  top: 0.05em;
 }
 
 /* 「リセット」アイコン (fa-rotate-left) */
 html.is-standalone #pwa-mainResetBtn i {
-  /* ★修正: 0.10em は少し下げすぎだったため、「ランダム」と合わせます */
+  /* base(-0.1em) + visual(0.15em) = +0.05em */
   top: 0.05em;
+}
+
+/* 4. 「フィルタ」のテキストだけ上に微調整 */
+/*
+  「フィルタ」のテキストが下に見えるのは、
+  アイコン(▼)の重心が上で、他より隙間が空いて見えるためです。
+  「フィルタ」のテキストだけを少し上に移動させ、アイコンに近づけます。
+*/
+html.is-standalone #pwa-filterToggleBtn span {
+  /* base(0.18em) - visual(0.18em) = 0em */
+  /* ベース位置(約2px下)をキャンセルし、他のテキストより2px上に配置 */
+  top: 0em;
 }
