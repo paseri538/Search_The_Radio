@@ -228,7 +228,7 @@ function search(opts = {}) {
       });
   }
   if (selectedCorners.length) res = res.filter(it => selectedCorners.some(c => it.searchText.includes(normalize(c))));
-  if (selectedOthers.length) res = res.filter(it => selectedOthers.every(o => it.searchText.includes(normalize(o))));
+  if (selectedOthers.length) res = res.filter(it => selectedOthers.some(o => it.searchText.includes(normalize(o))));
   if (selectedYears.length) res = res.filter(it => selectedYears.includes(String(it.date).slice(0, 4)));
   if (showFavoritesOnly) res = res.filter(it => isFavorite(getVideoId(it.link)));
 
@@ -570,13 +570,17 @@ function fitGuestLines() {
 function updatePlaylistButtonVisibility() {
     const btn = document.getElementById('createPlaylistBtn');
     if (btn) {
-        btn.hidden = !(showFavoritesOnly && lastResults && lastResults.length > 0);
+        // お気に入り(showFavoritesOnly)の条件を削除し、
+        // 検索結果(lastResults)が1件以上あれば常に表示するように変更
+        btn.hidden = !(lastResults && lastResults.length > 0);
     }
 }
 
 function createPlaylist() {
-    if (!showFavoritesOnly || !lastResults || lastResults.length === 0) {
-        alert('プレイリストを作成するには、お気に入りが1件以上必要です。');
+    // showFavoritesOnly のチェックを削除
+    if (!lastResults || lastResults.length === 0) {
+        // メッセージを「お気に入り」から「表示結果」に変更
+        alert('プレイリストを作成するには、表示結果が1件以上必要です。');
         return;
     }
     const videoIds = lastResults.map(item => getVideoId(item.link)).filter(Boolean);

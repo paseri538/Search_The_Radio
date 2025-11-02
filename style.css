@@ -14,11 +14,11 @@
 /* 変数・レイアウト */
 :root {
   /* ▼▼▼ ここでImpactフォントの見た目を調整できます ▼▼▼ */
-  --impact-scale: 115%;       /* 縦幅の倍率 (100%が基準) */
-  --impact-y-offset: 0.015em; /* 縦位置のオフセット (マイナスで上に、プラスで下に) */
+  --impact-scale: 110%;       /* 縦幅の倍率 (100%が基準) */
+  --impact-y-offset: 0.010em; /* 縦位置のオフセット (マイナスで上に、プラスで下に) */
 
   --impact-scale-meta: 120%; /* 「公開日時・動画時間」の縦幅 */
-  --impact-y-offset-meta: 0.025em; /* 「公開日時・動画時間」の縦位置 */
+  --impact-y-offset-meta: 0.015em; /* 「公開日時・動画時間」の縦位置 */
 
   --impact-scale-ts: 110%;       /* タイムスタンプの縦幅 */
   --impact-y-offset-ts: 0.04em;  /* タイムスタンプの縦位置 */
@@ -28,7 +28,7 @@
   --text-color: #242943;
   --muted: #7c8798;
   --radius: 11px;
-  --shadow: 0 8px 24px -10px rgba(60,60,110,0.13);
+  --shadow: 0 8px 24px -10px rgba(14, 14, 24, 0.13);
   --transition: .18s cubic-bezier(.47,.17,.21,.92);
   --btn-main: #6654e8;
   --btn-hover: #5945d9;
