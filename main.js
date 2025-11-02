@@ -580,7 +580,7 @@ function createPlaylist() {
     // showFavoritesOnly のチェックを削除
     if (!lastResults || lastResults.length === 0) {
         // メッセージを「お気に入り」から「表示結果」に変更
-        alert('プレイリストを作成するには、表示結果が1件以上必要です。');
+        alert('再生リストを作成するには、表示結果が1件以上必要です。');
         return;
     }
     const videoIds = lastResults.map(item => getVideoId(item.link)).filter(Boolean);
