@@ -167,34 +167,54 @@ function search(opts = {}) {
   if (typeof clearAutocompleteSuggestions === 'function') clearAutocompleteSuggestions();
   setTimeout(() => { isSearchTriggered = false; }, 100);
 
-  const searchBox = document.getElementById('searchBox');
-  const sortSelect = document.getElementById('sortSelect');
-  const raw = searchBox ? searchBox.value.trim() : '';
-  const sort = sortSelect ? sortSelect.value : 'newest';
+  const searchBox = document.getElementById("searchBox");
+  const sortSelect = document.getElementById("sortSelect");
+  const raw = searchBox ? searchBox.value.trim() : ""; // ★ 修正: 検索キーワードを取得
+  const sort = sortSelect ? sortSelect.value : "newest";
 
   let res = [...data];
 
-  // ★★★↓ここから差し替え (新しい仕様)↓★★★
   // 1. 「その他」フィルターが有効かを確認
   const isOtherFilterActive = selectedOthers.length > 0;
 
   // 2. 「その他」フィルターが有効でない場合
-  //    (＝デフォルト表示、キーワード検索時、ゲスト・コーナー・年・お気に入りでの絞り込み時)
-  //    は、検索対象を「本編のみ」(#付きと緊急特番)に絞り込む。
   if (!isOtherFilterActive) {
     // getEpisodeNumber は #付の数字、「緊急」「特別編」を -1 以上として判定します
     res = res.filter(it => getEpisodeNumber(it.episode) >= -1);
   }
-  // これで、「その他」フィルターが押された時だけ、
-  // 全データ（「京まふ」などを含む）が検索対象になります。
-  // ★★★↑ここまで↑★★★
 
   if (normalize(raw).includes('いいね')) {
     rainGoodMarks();
   }
 
-  // Keyword search
-  if (raw.length > 0) {
+  // ★ 修正: ここから検索ロジックを変更します
+  // ================================================
+
+  // 3. キーワードが「数字 (スペース) 数字」のパターンかチェック
+  //    (半角・全角スペース両方に対応)
+  const rangeMatch = raw.match(/^(\d+)\s+(\d+)$/);
+
+  if (rangeMatch) {
+    // 3a. (A) パターンに一致した場合：エピソード番号の「範囲検索」を実行
+    
+    // 2つの数字を取得 (例: "1", "10")
+    let num1 = parseInt(rangeMatch[1], 10);
+    let num2 = parseInt(rangeMatch[2], 10);
+    
+    // ユーザーが "10 1" と入力しても "1 10" と同じになるよう、大小を自動判定
+    const minNum = Math.min(num1, num2);
+    const maxNum = Math.max(num1, num2);
+
+    res = res.filter(it => {
+      // getEpisodeNumber でエピソード番号を数値として取得
+      const epNum = getEpisodeNumber(it.episode);
+      // エピソード番号が指定された範囲内（例: 1～10）であれば true を返す
+      return epNum >= minNum && epNum <= maxNum;
+    });
+
+  } else if (raw.length > 0) {
+    // 3b. (B) パターンに一致しない場合：通常の「キーワード検索」を実行
+    
     const normalizedQuery = normalize(raw);
         const searchTerms = new Set([normalizedQuery]);
         for (const key in CUSTOM_READINGS) {
@@ -205,10 +225,11 @@ function search(opts = {}) {
         }
         const searchWords = [...searchTerms].filter(Boolean);
         res = res.filter(it => searchWords.some(word => it.searchText.includes(word)));
-        // ★★★↑このブロックまでを...
   }
+  // ================================================
+  // ★ 修正はここまでです
 
-  // Filters
+  // Filters (これ以降は変更ありません)
   if (selectedGuests.length) {
       res = res.filter(it => {
           const guestArr = Array.isArray(it.guest) ? it.guest : (typeof it.guest === "string" ? [it.guest] : []);
@@ -233,7 +254,6 @@ function search(opts = {}) {
   if (showFavoritesOnly) res = res.filter(it => isFavorite(getVideoId(it.link)));
 
   // Sorting
-  // 日付文字列の「.」を「-」に置換して、Dateオブジェクトが正しく解釈できるようにするヘルパー関数
   const parseDate = (dateStr) => new Date((dateStr || '').replace(/\./g, '-'));
 
   if (sort === "newest") res.sort((a, b) => parseDate(b.date) - parseDate(a.date) || getEpisodeNumber(b.episode) - getEpisodeNumber(a.episode));
@@ -325,7 +345,7 @@ function renderResults(arr, page = 1) {
   ul.innerHTML = "";
 
   if (!arr || arr.length === 0) {
-    ul.innerHTML = `<li class="no-results"><div class="no-results-icon">表示できるお気に入り回はありません。</div></li>`;
+    ul.innerHTML = `<li class="no-results"><div class="no-results-icon">表示できる回はありません。</div></li>`;
     return;
   }
 

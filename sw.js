@@ -1,7 +1,7 @@
 
 
 // キャッシュの名前を定義。バージョンを更新すると古いキャッシュは自動的に削除。
-const SW_VERSION = 'v20251103a'; // ★バージョンを更新
+const SW_VERSION = 'v20251104a'; // ★バージョンを更新
 const CACHE_NAME = `radio-cache-${SW_VERSION}`;
 
 
