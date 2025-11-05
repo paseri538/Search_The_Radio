@@ -1397,7 +1397,7 @@ body.dark-mode .share-btn:focus-visible {
 
 /* ★ボタンの分だけ右側にスペース（スマホ） */
 @media (max-width: 640px){
-  #results .episode-item{ padding-right: 26px; } /* 34px(ボタン) + 10px*2(余白) */
+  #results .episode-item{ padding-right: 16px; } /* 34px(ボタン) + 10px*2(余白) */
 }
 
 @media (max-width: 640px){
@@ -3096,6 +3096,7 @@ html {
 @media (min-width: 768px) and (max-width: 1180px) {
   .episode-item {
     padding: 14px;
+    padding-right: 16px;
   }
   
   /* --- サムネイル (幅150px / 高さ84.375px) --- */

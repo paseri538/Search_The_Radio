@@ -142,15 +142,17 @@ function preloadThumbsFromData() {
     const preloadData = data;
 
     preloadData.forEach(ep => {
-      const vid = getVideoId(ep.link);
-      if (!vid || seen.has(vid)) return;
-      seen.add(vid);
-      const link = document.createElement('link');
-      link.rel = 'preload';
-      link.as = 'image';
-      link.href = `https://i.ytimg.com/vi/${vid}/mqdefault.jpg`;
-      link.crossOrigin = 'anonymous';
-      head.appendChild(link);
+      const episodeFilename = ep.episode;
+      if (!episodeFilename || seen.has(episodeFilename)) return;
+      seen.add(episodeFilename);
+
+      // ▼▼▼ ここから変更 (JPGのみプリロード) ▼▼▼
+      const linkJpg = document.createElement('link');
+      linkJpg.rel = 'preload';
+      linkJpg.as = 'image';
+      linkJpg.href = `thumbnails/${episodeFilename}.jpg`;
+      head.appendChild(linkJpg);
+      // ▲▲▲ ここまで変更 ▲▲▲
     });
   } catch (e) {
     console.error('Thumbnail preload error:', e);
@@ -358,9 +360,16 @@ function renderResults(arr, page = 1) {
   const fragment = document.createDocumentFragment();
 
   arr.slice(startIdx, endIdx).forEach((it, index) => {
-    const videoId = getVideoId(it.link);
-    const thumbUrlJpg = videoId ? `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg` : "";
-    const thumbUrlWebp = videoId ? `https://i.ytimg.com/vi_webp/${videoId}/mqdefault.webp` : "";
+    const videoId = getVideoId(it.link); // ★お気に入り機能で使うため、この行は残します
+    
+    // ▼▼▼ ここから変更 (JPGのみ) ▼▼▼
+    // episode の値をファイル名として使用
+    const episodeFilename = it.episode;
+    // サムネイル画像のパスをローカルに変更 (例: thumbnails/89.jpg)
+    const thumbBaseUrl = `thumbnails/${episodeFilename}`;
+    const thumbUrlJpg = `${thumbBaseUrl}.jpg`;
+    // const thumbUrlWebp = `${thumbBaseUrl}.webp`; // WebPの行を削除
+    // ▲▲▲ ここまで変更 ▲▲▲
 
     const hashOnly = getHashNumber(it.title);
 
@@ -386,9 +395,18 @@ function renderResults(arr, page = 1) {
 let guestText = "";
 // ★ここからが変更点です★
 // episodeが「京まふ大作戦」または「CENTRALSTATION」の場合の特別処理
-if (it.episode === "京まふ大作戦" || it.episode === "CENTRALSTATION") {
-  // ゲストリストの先頭に「青山吉能」を追加します
-  const members = ["青山吉能", ...(Array.isArray(it.guest) ? it.guest : [it.guest].filter(Boolean))];
+if (it.episode.startsWith("京まふ大作戦") || it.episode === "CENTRALSTATION") {
+  
+  // JSONからゲストリストを取得します (配列でなければ配列に変換)
+  const guestList = Array.isArray(it.guest) ? it.guest : [it.guest].filter(Boolean);
+  
+  // Set を使って、「青山吉能」さんを先頭に追加しつつ、
+  // JSON側で既に入力されていても重複しないようにします。
+  const membersSet = new Set(["青山吉能", ...guestList]);
+  
+  // Set から配列に戻して、最終的な出演者リストを作成します
+  const members = [...membersSet];
+  
   // 「出演：」という接頭辞で表示します
   guestText = "出演：" + members.join("、");
 }
@@ -412,16 +430,14 @@ else if (Array.isArray(it.guest)) {
     li.tabIndex = 0;
     li.style.setProperty('--i', index.toString());
 
+    // ▼▼▼ li.innerHTML 内の <picture> と <source> を削除し、<img> のみに修正 ▼▼▼
     li.innerHTML = `
   <a href="${finalLink}" target="_blank" rel="noopener" style="display:flex;text-decoration:none;color:inherit;align-items:center;min-width:0;">
     <div class="thumb-col">
-      <picture>
-        <source srcset="${thumbUrlWebp}" type="image/webp">
-        <img src="${thumbUrlJpg}" class="thumbnail" alt="サムネイル：${hashOnly}" 
-             decoding="async" 
-             onload="this.classList.add('loaded')"
-             onerror="this.onerror=null; this.src='./thumb-fallback.svg'; this.classList.add('loaded'); this.closest('picture').querySelector('source').srcset='./thumb-fallback.svg';">
-      </picture>
+      <img src="${thumbUrlJpg}" class="thumbnail" alt="サムネイル：${hashOnly}" 
+           decoding="async" 
+           onload="this.classList.add('loaded')"
+           onerror="this.onerror=null; this.src='./thumb-fallback.svg'; this.classList.add('loaded');">
       ${hit ? `<div class="ts-buttons"><button class="ts-btn" data-url="${it.link}" data-ts="${hit.seconds}" aria-label="${hit.label} から再生"><span class="impact-number">${hit.label}</span></button></div>` : ''}
     </div>
     <div style="min-width:0;">
@@ -440,6 +456,7 @@ else if (Array.isArray(it.guest)) {
   </a>
   <button class="fav-btn" data-id="${videoId}" aria-label="お気に入り" title="お気に入り"><i class="fa-regular fa-star"></i></button>
 `;
+    // ▲▲▲ ここまで変更 ▲▲▲
     
     if (isFavorite(videoId)) {
       const favBtn = li.querySelector('.fav-btn');
@@ -597,9 +614,8 @@ function updatePlaylistButtonVisibility() {
 }
 
 function createPlaylist() {
-    // showFavoritesOnly のチェックを削除
+    // 1. 既存のロジックで動画IDリストを取得 (変更なし)
     if (!lastResults || lastResults.length === 0) {
-        // メッセージを「お気に入り」から「表示結果」に変更
         alert('再生リストを作成するには、表示結果が1件以上必要です。');
         return;
     }
@@ -608,8 +624,64 @@ function createPlaylist() {
         alert('有効な動画IDが見つかりませんでした。');
         return;
     }
-    const playlistUrl = `https://www.youtube.com/watch_videos?video_ids=${videoIds.join(',')}`;
-    window.open(playlistUrl, '_blank', 'noopener');
+
+    // ▼▼▼ ここからが修正箇所です ▼▼▼
+
+    // 2. YouTubeアプリ用のURLスキームを作成 (https:// を youtube:// に変更)
+    //    (これが機能すれば、アプリが直接起動します)
+    const appUrl = `youtube://watch_videos?video_ids=${videoIds.join(',')}`;
+    
+    // 3. ブラウザ用のフォールバックURL (https://)
+    //    (アプリ起動が失敗した場合に使います)
+    const webUrl = `https://www.youtube.com/watch_videos?video_ids=${videoIds.join(',')}`;
+
+    let timer;
+    let appLaunched = false;
+
+    // アプリが起動してPWAがバックグラウンドに回ったかを監視するリスナー
+    const visibilityChangeHandler = () => {
+        if (document.visibilityState === 'hidden') {
+            // PWAが非表示になった = アプリが起動した
+            appLaunched = true;
+            if (timer) clearTimeout(timer); // タイムアウト処理をキャンセル
+            document.removeEventListener('visibilitychange', visibilityChangeHandler);
+        }
+    };
+
+    // 監視を開始
+    document.addEventListener('visibilitychange', visibilityChangeHandler);
+
+    // 4. アプリ起動を試みる (<a> タグを使用)
+    const a_app = document.createElement('a');
+    a_app.href = appUrl;
+    a_app.style.display = 'none';
+    document.body.appendChild(a_app);
+    a_app.click(); // アプリ起動を試行
+    document.body.removeChild(a_app);
+
+    // 5. タイムアウトを設定 
+    timer = setTimeout(() => {
+        // リスナーを忘れずに削除
+        document.removeEventListener('visibilitychange', visibilityChangeHandler);
+
+        if (!appLaunched) {
+            // タップしてもアプリが起動しなかった (PWAが非表示にならなかった)
+            // = アプリがインストールされていない、またはURLスキームが無効だった場合
+            
+            // フォールバックとしてブラウザ（Safari）で開く
+            const a_web = document.createElement('a');
+            a_web.href = webUrl;
+            a_web.target = '_blank'; // Safariで新しいタブとして開く
+            a_web.rel = 'noopener noreferrer';
+            a_web.style.display = 'none';
+            document.body.appendChild(a_web);
+            a_web.click();
+            document.body.removeChild(a_web);
+        }
+        // appLaunched が true の場合は、既にアプリが起動しているので何もしません。
+        
+    }, 100); // 待機
+    // ▲▲▲ 修正はここまでです ▲▲▲
 }
 
 /**
@@ -1632,4 +1704,3 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 })();
-
