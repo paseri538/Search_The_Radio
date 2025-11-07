@@ -116,13 +116,31 @@ body {
   width: 100%;
   font-size: 1.01em;
   border-radius: 0.65em; height: 2.5em;
-  padding: 0.18em 1em;
+  
+  /* ★修正: 矢印のスペース確保 (右パディングを 2.5em に変更) */
+  padding: 0.18em 2.5em 0.18em 1em; 
+
   border: 1.1px solid #e3e3ec;
-  background: #fafcff;
+  
+  /* ★修正: background -> background-color */
+  background-color: #fafcff;
+  
   transition: border var(--transition), box-shadow var(--transition);
-  appearance: auto;
+  
+  /* ★修正: appearance: none; に変更 */
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  
   z-index: 1;
   text-align-last: center; /* ★ 文字中央揃え */
+
+  /* ★★★ 以下を追記 (矢印SVG) ★★★ */
+  /* currentColor を使うことで、文字色に合わせて矢印の色が変わります */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='none' stroke='currentColor' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.7em center;
+  background-size: 12px 12px;
 }
 .results-count-under-bar {
   width: 100%; text-align: left; max-width: 860px; margin: 0 auto;
@@ -419,6 +437,7 @@ body.dark-mode .form-select.searchbox-select {
   background: #2d333b !important;
   color: #e6f0f3 !important;
   border-color: #394150 !important;
+  padding-right: 2.5em !important;
 }
 body.dark-mode .searchbox-input:focus {
   background: #262e36 !important;
@@ -2065,7 +2084,13 @@ body.theme-green {
 /* ===== テーマ別共通スタイル ===== */
 body[class*="theme-"] .sticky-search-area { background: var(--bg-color) !important; border-bottom-color: var(--history-card-bd) !important; }
 body[class*="theme-"] .search-card { background: var(--card-bg) !important; }
-body[class*="theme-"] .searchbox-input, body[class*="theme-"] .searchbox-select { background: var(--btn-bg) !important; border-color: var(--history-card-bd) !important; color: var(--text-color) !important; }
+body[class*="theme-"] .searchbox-input, 
+body[class*="theme-"] .searchbox-select { 
+  background: var(--btn-bg) !important;
+  border-color: var(--history-card-bd) !important;
+  color: var(--text-color) !important;
+  padding-right: 2.5em !important;
+}
 body[class*="theme-"] .searchbox-input::placeholder { color: var(--muted) !important; opacity: 1 !important; }
 body[class*="theme-"] .searchbox-input:focus { border-color: var(--btn-main) !important; box-shadow: 0 0 0 2px var(--input-focus-shadow) !important; }
 body[class*="theme-"] .results-count-under-bar { color: var(--btn-hover) !important; background: transparent !important; }
@@ -3767,6 +3792,9 @@ html.is-standalone .pwa-bottom-nav {
   right: 0;
   height: calc(60px + var(--safe-bottom, 0px));
   padding-bottom: var(--safe-bottom, 0px);
+
+  
+
   background-color: var(--card-bg, #ffffff);
   border-top: 1px solid var(--btn-reset-border, #e5e7eb);
   box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.06);
@@ -4175,4 +4203,27 @@ body[class*="theme-"] #theme-toggle-btn.is-active {
   background-color: var(--btn-main);   /* メインテキスト色（例: 白） */
   border-color: var(--card-bg);      /* カード背景色（例: 濃いピンク） */
   color: var(--card-bg);             /* アイコン色（例: 濃いピンク） */
+}
+
+
+
+
+/*
+ * ===================================================
+ * ★★★ PWA 下部ナビ 左右ボタンの余白調整 ★★★
+ * ===================================================
+ */
+
+/* フィルタボタン(一番左)を少し右にずらす */
+html.is-standalone #pwa-filterToggleBtn {
+  position: relative;
+  /* この数値(8px)を増減させて、お好みの位置に調整してください */
+  left: 8px;
+}
+
+/* リセットボタン(一番右)を少し左にずらす */
+html.is-standalone #pwa-mainResetBtn {
+  position: relative;
+  /* この数値(8px)を増減させて、お好みの位置に調整してください */
+  right: 8px;
 }

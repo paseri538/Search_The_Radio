@@ -183,7 +183,7 @@ function search(opts = {}) {
   // 1b. キーワードで「その他」が検索されているかを確認
   const normalizedRaw = normalize(raw);
   const isOtherKeywordSearch = (normalizedRaw === "そのた" || normalizedRaw === "その他");
-  
+
   // 2. 「その他」フィルターが有効でなく、かつ「その他」キーワード検索でもない場合
   if (!isOtherFilterActive && !isOtherKeywordSearch) {
     // getEpisodeNumber は #付の数字、「緊急」「特別編」を -1 以上として判定します
@@ -798,7 +798,29 @@ function setupEventListeners() {
     const pool = (lastResults.length > 0) ? lastResults : data;
     if (pool.length === 0) return;
     const pick = pool[Math.floor(Math.random() * pool.length)];
-    window.open(pick.link, '_blank', 'noopener');
+
+    // ★★★ ここからが修正点 ★★★
+    if (pick && pick.link) {
+      // PWA内で window.open('_blank') が
+      // 内部ナビゲーションを引き起こし白画面になる問題への対策
+      
+      // 1. 一時的なリンク(<a>)要素を作成
+      const a = document.createElement('a');
+      a.href = pick.link;
+      a.target = '_blank'; // 新しいタブ（PWAの場合は外部ブラウザ）で開く
+      a.rel = 'noopener noreferrer';
+      
+      // 2. 画面に追加 (非表示のまま)
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      
+      // 3. リンクをクリック
+      a.click();
+      
+      // 4. すぐに削除
+      document.body.removeChild(a);
+    }
+    // ★★★ 修正はここまで ★★★
   });
 
   document.getElementById('mainResetBtn').addEventListener('click', resetSearch);
