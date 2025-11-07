@@ -434,10 +434,16 @@ body.dark-mode .search-card {
 /* 入力欄・セレクト */
 body.dark-mode .searchbox-input,
 body.dark-mode .form-select.searchbox-select {
-  background: #2d333b !important;
+  background-color: #2d333b !important;
   color: #e6f0f3 !important;
   border-color: #394150 !important;
   padding-right: 2.5em !important;
+  /* ★ 矢印の background-image 指定をここから削除します */
+}
+
+/* ★★★ 以下のブロックを「新しく追加」してください ★★★ */
+body.dark-mode .form-select.searchbox-select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='none' stroke='%23ffffff' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3E%3C/svg%3E") !important;
 }
 body.dark-mode .searchbox-input:focus {
   background: #262e36 !important;
@@ -2086,10 +2092,16 @@ body[class*="theme-"] .sticky-search-area { background: var(--bg-color) !importa
 body[class*="theme-"] .search-card { background: var(--card-bg) !important; }
 body[class*="theme-"] .searchbox-input, 
 body[class*="theme-"] .searchbox-select { 
-  background: var(--btn-bg) !important;
+  background-color: var(--btn-bg) !important;
   border-color: var(--history-card-bd) !important;
   color: var(--text-color) !important;
   padding-right: 2.5em !important;
+  /* ★ 矢印の background-image 指定をここから削除します */
+}
+
+/* ★★★ 以下のブロックを「新しく追加」してください ★★★ */
+body[class*="theme-"] .searchbox-select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='none' stroke='%23ffffff' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3E%3C/svg%3E") !important;
 }
 body[class*="theme-"] .searchbox-input::placeholder { color: var(--muted) !important; opacity: 1 !important; }
 body[class*="theme-"] .searchbox-input:focus { border-color: var(--btn-main) !important; box-shadow: 0 0 0 2px var(--input-focus-shadow) !important; }
