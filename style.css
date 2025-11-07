@@ -85,7 +85,7 @@ body {
   background: var(--card-bg);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
-  padding: 0.4em 0.9em 0.36em 0.9em;
+  padding: 0.4em 15px 0.36em 15px;
   display: flex;
   flex-direction: column;
 }
@@ -122,6 +122,7 @@ body {
   transition: border var(--transition), box-shadow var(--transition);
   appearance: auto;
   z-index: 1;
+  text-align-last: center; /* ★ 文字中央揃え */
 }
 .results-count-under-bar {
   width: 100%; text-align: left; max-width: 860px; margin: 0 auto;
@@ -582,13 +583,15 @@ body.dark-mode .searchbox-input::placeholder {
   height: 55px;
   font-size: 30px;
   padding: 0;
-  background: #222;
-  color: #fff;
-  border: none;
+
+  background: var(--card-bg, #ffffff);
+  color: var(--muted, #7c8798);
+  border: 2px solid var(--btn-reset-border, #e5e7eb);
+
   border-radius: 50%;
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
   cursor: pointer;
-  transition: background .2s;
+  transition: background .2s, color .2s, border-color .2s;
   transform: translateZ(0);
 }
 
@@ -680,7 +683,10 @@ body.dark-mode #loading-screen {
   transition:transform .12s, box-shadow .12s, background .12s;
   transform: translateZ(0);
 }
-.fav-btn i{ font-size:16px; }
+.fav-btn i{
+  font-size:16px;
+  color: #333742;
+}
 .fav-btn:hover{ transform:scale(1.06); }
 .fav-btn.active{ background:#fff3c4; border-color:#f5b301; }
 .fav-btn.active i{ color:#f5b301; }
@@ -1419,7 +1425,7 @@ body.dark-mode .share-btn:focus-visible {
 
 
 /* ===== SP: 4ボタン等幅 + 並び替えは下段（gridで統一） ===== */
-@media (max-width: 768px){
+@media (max-width: 991px){
   .search-row-controls{
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -1439,14 +1445,30 @@ body.dark-mode .share-btn:focus-visible {
     padding-right: .4em;
   }
 
-  /* 並び替えは2段目で全幅、行間は gap にまかせる */
+  /* 並び替えは2段目で左半分 */
   .search-row-controls .sort-wrapper{
-    grid-column: 1 / -1;
+    grid-column: 1 / 3; /* 1 / -1 (全幅) から変更 */
     margin-top: 0;
+    width: 100%;
+    min-width: 0; /* ▼ 追加: 縮小時にレイアウトが崩れるのを防ぎます */
   }
   .search-row-controls .sort-wrapper select{
     width: 100%;
-    min-height: 40px;
+    height: 100%; /* 高さをグリッド行に合わせる */
+    min-height: 42px; /* 最小高さを保証 */
+  }
+  
+  /* ▼▼▼ ここに #createPlaylistBtn のスタイルを新しく追加 ▼▼▼ */
+  #createPlaylistBtn {
+    grid-column: 3 / 5 !important; /* 2段目で右半分 */
+    width: 100%;
+    height: 100%; /* 高さをグリッド行に合わせる */
+    min-height: 42px; /* 最小高さを保証 */
+    justify-content: center;
+    padding: 0 6px !important;
+    align-items: center; /* 垂直中央揃え */
+    min-width: 0;
+    /* font-size, gap, white-space, overflow, text-overflow は不要になったため削除 */
   }
 
   /* レイアウト切替時の“にゅるっ”を防ぐ（保険） */
@@ -2610,7 +2632,8 @@ body.body-scroll-locked {
 #filterToggleBtn,
 #favOnlyToggleBtn,
 #randomBtn,
-.reset-btn {
+.reset-btn,
+#createPlaylistBtn {
   display: inline-flex !important; align-items: center !important; justify-content: center !important;
   border: 1.5px solid !important; border-radius: 10px !important; font-weight: 700 !important;
   line-height: 1 !important; white-space: nowrap !important;
@@ -2643,9 +2666,9 @@ body.body-scroll-locked {
 
 /* --- 2. デバイスごとのレイアウトとスタイル --- */
 /* スマホ (991px以下) */
-@media (max-width: 991px) {
-  .search-row-controls { display: grid !important; grid-template-columns: repeat(4, 1fr) !important; gap: 6px !important; }
-  .search-row-controls .sort-wrapper { grid-column: 1 / -1 !important; }
+@media (min-width: 769px) and (max-width: 991px) {
+
+
   #filterToggleBtn, #favOnlyToggleBtn, #randomBtn, .reset-btn {
     height: 42px !important;
     font-size: 14px !important;     /* JSが調整するまでの安全な初期サイズ */
@@ -2654,6 +2677,14 @@ body.body-scroll-locked {
     visibility: hidden; /* ★計算完了まで完全に非表示 */
     opacity: 0;
   }
+
+  #createPlaylistBtn {
+    height: 42px !important;
+    padding: 0 10px !important;
+    font-size: 15.5px !important;
+    gap: 0.5em !important;
+  }
+
   /* ★JSの準備完了合図で表示 */
   body.buttons-ready #filterToggleBtn,
   body.buttons-ready #favOnlyToggleBtn,
@@ -2675,15 +2706,57 @@ body.body-scroll-locked {
 }
 /* PC (992px以上) */
 @media (min-width: 992px) {
-  .search-row-controls { display: flex !important; gap: 8px !important; }
-  .search-row-controls .sort-wrapper { margin-left: auto !important; flex-grow: 1 !important; }
+  .search-row-controls { display: flex !important; gap: 10px !important; }
+  .search-row-controls .sort-wrapper {
+    flex: 1 1 0 !important; /* ★ 変更 */
+    min-width: 0 !important; /* ★ 変更 */
+  }
+  
+  #createPlaylistBtn {
+    height: 40px !important; /* 高さを他のボタン(40px)と統一 */
+    padding: 0 1em !important; /* paddingを他のボタンと合わせる */
+    font-size: 15.5px !important; /* フォントサイズを他のボタンと合わせる */
+    gap: 0.55em !important; /* gapを他のボタンと合わせる */
+    flex-shrink: 0; /* ボタンが縮まないようにする */
+    
+    /* ▼▼▼ 以下の2行を追加 ▼▼▼ */
+    flex: 1 1 0 !important; /* 均等に伸びるようにする */
+    min-width: 0 !important; /* 最小幅の制限を解除 */
+  }
+
+  /* 4つのボタンを左に、並び替えと再生リストボタンを右に分ける */
+  .search-row-controls .reset-btn + .sort-wrapper {
+    margin-left: auto !important;
+  }
   #filterToggleBtn, #favOnlyToggleBtn, #randomBtn, .reset-btn {
     height: 40px !important;
     font-size: 15.5px !important;
     padding: 0 0.9em !important;
-    width: clamp(124px, 12vw, 144px) !important; flex: 0 0 auto !important;
+    width: calc(12.5% - 8.75px) !important; flex: 0 0 auto !important;
     gap: 0.55em !important;
   }
+
+  /* --- PWAモード (PC) の場合のレイアウト上書き (V4・カード2枚幅) --- */
+    /* (左4ボタン非表示に伴い、残り2ボタンを均等幅にする) */
+    html.is-standalone .search-row-controls .reset-btn + .sort-wrapper {
+      margin-left: 0 !important; /* autoマージンを解除 */
+    }
+
+    /* ズレ修正: .sort-wrapper と #createPlaylistBtn をグループ化 */
+    html.is-standalone .search-row-controls .sort-wrapper,
+    html.is-standalone #createPlaylistBtn {
+      /* ▼▼▼ flex の3番目の値（flex-basis）をカード1枚幅の計算値に変更 ▼▼▼ */
+      flex: 1 1 calc(50% - 5px) !important; /* 修正前: 1 1 0 !important; */
+      width: auto !important; 
+      box-sizing: border-box !important;
+    }
+    
+    /* ズレ修正: select要素の高さをボタン(40px)と合わせる */
+    html.is-standalone .search-row-controls .sort-wrapper,
+    html.is-standalone #sortSelect {
+      height: 40px !important; /* ★ 高さを 40px に強制統一 */
+    }
+
   #filterToggleBtn::after {
       content: "フィルタ" !important;
       font-family: fot-udkakugoc80-pro, 'Segoe UI', system-ui, -apple-system, sans-serif !important;
@@ -2708,9 +2781,18 @@ body.body-scroll-locked {
 body:not(.dark-mode):not([class*="theme-"]) #filterToggleBtn,
 body:not(.dark-mode):not([class*="theme-"]) #favOnlyToggleBtn,
 body:not(.dark-mode):not([class*="theme-"]) #randomBtn,
-body:not(.dark-mode):not([class*="theme-"]) .reset-btn {
+body:not(.dark-mode):not([class*="theme-"]) .reset-btn,
+body:not(.dark-mode):not([class*="theme-"]) #createPlaylistBtn { /* ← ここに追加 */
   background-color: #ffffff !important; color: #22272e !important; border-color: #d0d7de !important;
 }
+
+/* ★★★ ↓↓ このブロックを新しく追加 ↓↓ ★★★ */
+body:not(.dark-mode):not([class*="theme-"]) #createPlaylistBtn {
+  background-color: #e52d27 !important; /* YouTubeの赤 */
+  color: #ffffff !important;
+  border-color: #e52d27 !important;
+}
+
 body:not(.dark-mode):not([class*="theme-"]) #filterToggleBtn[aria-expanded="true"],
 body:not(.dark-mode):not([class*="theme-"]) #favOnlyToggleBtn[aria-pressed="true"] {
   background-color: #22272e !important; color: #ffffff !important; border-color: #22272e !important;
@@ -2719,21 +2801,43 @@ body:not(.dark-mode):not([class*="theme-"]) #favOnlyToggleBtn[aria-pressed="true
   body:not(.dark-mode):not([class*="theme-"]) #filterToggleBtn:hover,
   body:not(.dark-mode):not([class*="theme-"]) #favOnlyToggleBtn:hover,
   body:not(.dark-mode):not([class*="theme-"]) #randomBtn:hover,
-  body:not(.dark-mode):not([class*="theme-"]) .reset-btn:hover {
+  body:not(.dark-mode):not([class*="theme-"]) .reset-btn:hover,
+  body:not(.dark-mode):not([class*="theme-"]) #createPlaylistBtn:hover { /* ← ここに追加 */
     background-color: #22272e !important; color: #ffffff !important; border-color: #22272e !important; transform: none !important;
+  }
+  /* ★★★ ↓↓ このブロックを新しく追加 ↓↓ ★★★ */
+  body:not(.dark-mode):not([class*="theme-"]) #createPlaylistBtn:hover {
+    background-color: #c21d19 !important; /* 暗い赤 */
+    border-color: #c21d19 !important;
+    color: #ffffff !important;
   }
 }
 
 /* --- 2. ダークモード --- */
-body.dark-mode #filterToggleBtn, body.dark-mode #favOnlyToggleBtn, body.dark-mode #randomBtn, body.dark-mode .reset-btn {
+body.dark-mode #filterToggleBtn, body.dark-mode #favOnlyToggleBtn, body.dark-mode #randomBtn, body.dark-mode .reset-btn,
+body.dark-mode #createPlaylistBtn { /* ← ここに追加 */
   background-color: #2d333b !important; color: #e5ecec !important; border-color: #394150 !important;
 }
+/* ★★★ ↓↓ このブロックを新しく追加 ↓↓ ★★★ */
+body.dark-mode #createPlaylistBtn {
+  background-color: #ff4742 !important; /* 明るい赤 */
+  color: #ffffff !important;
+  border-color: #ff4742 !important;
+}
+
 body.dark-mode #filterToggleBtn[aria-expanded="true"], body.dark-mode #favOnlyToggleBtn[aria-pressed="true"] {
   background-color: #e5ecec !important; color: #22272e !important; border-color: #e5ecec !important;
 }
 @media (hover: hover) {
-  body.dark-mode #filterToggleBtn:hover, body.dark-mode #favOnlyToggleBtn:hover, body.dark-mode #randomBtn:hover, body.dark-mode .reset-btn:hover {
+  body.dark-mode #filterToggleBtn:hover, body.dark-mode #favOnlyToggleBtn:hover, body.dark-mode #randomBtn:hover, body.dark-mode .reset-btn:hover,
+  body.dark-mode #createPlaylistBtn:hover { /* ← ここに追加 */
     background-color: #e5ecec !important; color: #22272e !important; border-color: #e5ecec !important; transform: none !important;
+  }
+  /* ★★★ ↓↓ このブロックを新しく追加 ↓↓ ★★★ */
+  body.dark-mode #createPlaylistBtn:hover {
+    background-color: #e52d27 !important; /* 標準の赤 */
+    border-color: #e52d27 !important;
+    color: #ffffff !important;
   }
 }
 
@@ -2741,10 +2845,18 @@ body.dark-mode #filterToggleBtn[aria-expanded="true"], body.dark-mode #favOnlyTo
 body[class*="theme-"] #filterToggleBtn,
 body[class*="theme-"] #favOnlyToggleBtn,
 body[class*="theme-"] #randomBtn,
-body[class*="theme-"] .reset-btn {
+body[class*="theme-"] .reset-btn,
+body[class*="theme-"] #createPlaylistBtn { /* ← ここに追加 */
   background-color: var(--btn-control-bg) !important;
   color: var(--btn-control-text) !important;
   border-color: var(--btn-control-bg) !important;
+}
+
+/* ★★★ ↓↓ このブロックを新しく追加 ↓↓ ★★★ */
+body[class*="theme-"] #createPlaylistBtn {
+  background-color: #ffffff !important; /* 白 */
+  color: var(--bg-color) !important; /* テーマの背景色 */
+  border-color: #ffffff !important;
 }
 
 body[class*="theme-"] #filterToggleBtn[aria-expanded="true"],
@@ -2758,11 +2870,18 @@ body[class*="theme-"] #favOnlyToggleBtn[aria-pressed="true"] {
   body[class*="theme-"] #filterToggleBtn:hover,
   body[class*="theme-"] #favOnlyToggleBtn:hover,
   body[class*="theme-"] #randomBtn:hover,
-  body[class*="theme-"] .reset-btn:hover {
+  body[class*="theme-"] .reset-btn:hover,
+  body[class*="theme-"] #createPlaylistBtn:hover { /* ← ここに追加 */
     background-color: var(--btn-control-bg-active) !important;
     color: var(--btn-control-text-active) !important;
     border-color: var(--btn-control-bg-active) !important;
     transform: none !important;
+  }
+  /* ★★★ ↓↓ このブロックを新しく追加 ↓↓ ★★★ */
+  body[class*="theme-"] #createPlaylistBtn:hover {
+    background-color: #f0f0f0 !important; /* 少し暗い白 */
+    border-color: #f0f0f0 !important;
+    color: var(--bg-color) !important;
   }
 }
 
@@ -2890,7 +3009,7 @@ html {
 /* ======================================================================== */
 /* ===== (V2.1) スマホ表示時: コントロールボタンのデザインを微調整 ===== */
 /* ======================================================================== */
-@media (max-width: 768px) {
+@media (max-width: 991px) {
 
   /* 4つのボタンに共通の縦並びレイアウトを適用 */
   .search-row-controls #filterToggleBtn,
@@ -3571,10 +3690,7 @@ b, strong,
   display: none !important;
 }
 
-/* PWAモードの時、並び替えボタンが横幅いっぱいになるように調整 */
-.is-standalone .search-row-controls {
-  grid-template-columns: 1fr !important;
-}
+
 
 /* PWAモードの時、コンテンツの最下部がナビゲーションバーに隠れないように余白を追加 */
 .is-standalone .main-content {
@@ -3664,7 +3780,7 @@ html.is-standalone .pwa-bottom-nav {
  * モーダル表示中 (html.scroll-locked) は、ナビゲーションバーを画面下に隠す
  */
 html.is-standalone.scroll-locked .pwa-bottom-nav {
-  transform: translateY(100%);
+  transform: translateY(calc(100% + 18px));
 }
 
 html.is-standalone .pwa-bottom-nav-btn {
@@ -3701,7 +3817,7 @@ html.is-standalone .search-row-controls #mainResetBtn {
   display: none !important;
 }
 
-html.is-standalone .search-row-controls { grid-template-columns: 1fr !important; }
+
 
 /* --- テーマカラー対応 (前回同様) --- */
 /* ダークモード */
@@ -3865,4 +3981,198 @@ html.is-standalone #pwa-mainResetBtn span {
   font-size: 10px;
   top: -0.15em;
   left: 0;
+}
+
+
+/* style.css の一番下に追記 */
+
+/*
+ * ===================================================
+ * ★★★ PWA 下部ナビ 5ボタン (中央フロート型) スタイル ★★★
+ * ===================================================
+ */
+
+/* PWAモードの時は、右下の丸いテーマボタンを非表示に */
+html.is-standalone #theme-toggle-btn {
+  /* display: none; の代わりに、画面の外に移動させます。
+    これにより、見た目は消えますが、JSからのクリックは受け付けるようになります。
+  */
+  position: fixed !important;
+  top: -100px !important;     /* 画面の上外に配置 */
+  left: -100px !important;    /* 画面の左外に配置 */
+  opacity: 0 !important;
+}
+
+/* ナビゲーションバー自体の設定 (ボタンを中央揃えに) */
+html.is-standalone .pwa-bottom-nav {
+  justify-content: center;
+  align-items: flex-start; /* 上揃えにして、中央ボタンのはみ出しを許可 */
+}
+
+/* 4つの通常ボタンのスタイル */
+html.is-standalone .pwa-bottom-nav-btn {
+  flex: 1; /* 均等幅 */
+  max-width: 20%; /* 5ボタンなので */
+  position: relative;
+  height: 100%; /* 高さをナビバーに合わせる */
+}
+
+/* ★★★ 中央の「カラー」ボタンのスタイル ★★★ */
+html.is-standalone #pwa-theme-toggle-btn {
+  flex-grow: 0; /* 均等幅の対象外にする */
+  flex-shrink: 0;
+  
+  position: relative; /* topを効かせるため */
+  top: -18px; /* ★上に18pxはみ出す */
+  
+  /* 丸い形状を作成 */
+  width: 68px;
+  height: 68px;
+  min-width: 68px; /* 縮まないように */
+  border-radius: 50%;
+  background-color: var(--card-bg, #ffffff);
+  border: 2px solid var(--btn-reset-border, #e5e7eb);
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.08);
+
+  /* 左右のボタンとの間に少しマージン */
+  margin: 0 8px;
+}
+
+/* 中央ボタンのアイコン */
+html.is-standalone #pwa-theme-toggle-btn i {
+  font-size: 30px; /* アイコンを大きく */
+  top: 0;
+  left: 0;
+  color: var(--muted, #7c8798);
+}
+
+/* 中央ボタンのテキストを非表示に */
+html.is-standalone #pwa-theme-toggle-btn span {
+  display: none;
+}
+
+/* 中央ボタンがアクティブ (パネル表示中) のスタイル */
+html.is-standalone #pwa-theme-toggle-btn.is-active {
+  background-color: var(--btn-main, #6654e8);
+  border-color: var(--card-bg, #ffffff);
+}
+/* アクティブ時のアイコン色 */
+html.is-standalone #pwa-theme-toggle-btn.is-active i {
+  color: var(--card-bg, #ffffff);
+}
+
+
+/* --- テーマ別の中央ボタン調整 --- */
+
+/* ダークモード */
+html.is-standalone body.dark-mode #pwa-theme-toggle-btn {
+  background-color: #252c35;
+  border-color: #394150;
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.2);
+}
+html.is-standalone body.dark-mode #pwa-theme-toggle-btn i {
+  color: #8ca2b3;
+}
+html.is-standalone body.dark-mode #pwa-theme-toggle-btn.is-active {
+  background-color: #ffffff;
+  border-color: #252c35;
+}
+html.is-standalone body.dark-mode #pwa-theme-toggle-btn.is-active i {
+  color: #252c35; /* アクティブ時は黒 */
+}
+
+/* カラーテーマ */
+html.is-standalone body[class*="theme-"] #pwa-theme-toggle-btn {
+  background-color: var(--card-bg);
+  border-color: var(--bg-color);
+}
+html.is-standalone body[class*="theme-"] #pwa-theme-toggle-btn i {
+  color: var(--btn-main);
+}
+html.is-standalone body[class*="theme-"] #pwa-theme-toggle-btn.is-active {
+  background-color: var(--btn-main);
+  border-color: var(--card-bg);
+}
+html.is-standalone body[class*="theme-"] #pwa-theme-toggle-btn.is-active i {
+  color: var(--card-bg);
+}
+
+
+/* * フローティングパネルの位置を、
+ * 下部ナビゲーションバーの「上」＆「画面中央」に変更 
+ */
+html.is-standalone .floating-panel {
+  /* 中央ボタンの上 + ナビバーの高さ + 余白 + セーフエリア */
+  bottom: calc(60px + 18px + var(--safe-bottom)) !important;
+  
+  /* 左右中央に配置 */
+  left: 50% !important;
+  right: auto !important; /* right指定を解除 */
+  transform: translateX(-50%) !important;
+  
+  /* パネルの形状を横並びのピルケースに変更 */
+  flex-direction: row !important;
+  border-radius: 999px !important;
+  padding: 10px 14px !important;
+  gap: 12px !important;
+
+  /* アニメーションの基準点を調整 */
+  transform-origin: bottom center !important;
+}
+
+/* パネルが開くときのアニメーションを調整 (上に開くように) */
+html.is-standalone .floating-panel {
+  opacity: 0;
+  transform: translateX(-50%) scale(0.95) !important; 
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+html.is-standalone .floating-panel.show {
+  opacity: 1;
+  transform: translateX(-50%) scale(1) !important;
+  pointer-events: auto;
+}
+
+
+/*
+ * ===================================================
+ * ★★★ 非PWA版 (PC/スマホ) テーマボタンの色統一 ★★★
+ * ===================================================
+ */
+
+/* --- アクティブ時 (ライトモード) --- */
+#theme-toggle-btn.is-active {
+  background-color: var(--btn-main, #6654e8);
+  border-color: var(--card-bg, #ffffff);
+  color: var(--card-bg, #ffffff); /* アイコン色 */
+}
+
+/* --- ダークモード (非アクティブ時) --- */
+body.dark-mode #theme-toggle-btn {
+  background-color: #252c35;
+  border-color: #394150;
+  color: #8ca2b3; /* アイコン色 */
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+/* --- ダークモード (アクティブ時) --- */
+body.dark-mode #theme-toggle-btn.is-active {
+  background-color: #ffffff;
+  border-color: #252c35;
+  color: #252c35; /* アイコン色 */
+}
+
+/* --- カラーテーマ (非アクティブ時) --- */
+body[class*="theme-"] #theme-toggle-btn {
+  background-color: var(--card-bg);   /* カード背景色（例: 濃いピンク） */
+  border-color: var(--bg-color);     /* メイン背景色（例: ピンク） */
+  color: var(--btn-main);            /* アイコン色（例: 白） */
+}
+
+/* --- カラーテーマ (アクティブ時) --- */
+body[class*="theme-"] #theme-toggle-btn.is-active {
+  background-color: var(--btn-main);   /* メインテキスト色（例: 白） */
+  border-color: var(--card-bg);      /* カード背景色（例: 濃いピンク） */
+  color: var(--card-bg);             /* アイコン色（例: 濃いピンク） */
 }

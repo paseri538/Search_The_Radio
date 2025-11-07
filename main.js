@@ -179,11 +179,17 @@ function search(opts = {}) {
   // 1. 「その他」フィルターが有効かを確認
   const isOtherFilterActive = selectedOthers.length > 0;
 
-  // 2. 「その他」フィルターが有効でない場合
-  if (!isOtherFilterActive) {
+  // ★★★ ここからが変更点 ★★★
+  // 1b. キーワードで「その他」が検索されているかを確認
+  const normalizedRaw = normalize(raw);
+  const isOtherKeywordSearch = (normalizedRaw === "そのた" || normalizedRaw === "その他");
+  
+  // 2. 「その他」フィルターが有効でなく、かつ「その他」キーワード検索でもない場合
+  if (!isOtherFilterActive && !isOtherKeywordSearch) {
     // getEpisodeNumber は #付の数字、「緊急」「特別編」を -1 以上として判定します
     res = res.filter(it => getEpisodeNumber(it.episode) >= -1);
   }
+  // ★★★ ここまでが変更点 ★★★
 
   if (normalize(raw).includes('いいね')) {
     rainGoodMarks();
@@ -606,10 +612,11 @@ function fitGuestLines() {
 
 function updatePlaylistButtonVisibility() {
     const btn = document.getElementById('createPlaylistBtn');
-    if (btn) {
-        // お気に入り(showFavoritesOnly)の条件を削除し、
-        // 検索結果(lastResults)が1件以上あれば常に表示するように変更
-        btn.hidden = !(lastResults && lastResults.length > 0);
+    const note = document.getElementById('playlistNote'); // ★ 注釈spanを取得
+    if (btn && note) { // ★ noteもチェック
+        const shouldShow = (lastResults && lastResults.length > 0);
+        btn.hidden = !shouldShow;
+        note.hidden = !shouldShow; // ★ 注釈の表示/非表示も連動
     }
 }
 
@@ -949,7 +956,7 @@ function setupEventListeners() {
  * ★★★ その他のUI機能 ★★★
  * ===================================================
  */
-/* main.js の scrollLockModule をこのコードで置き換えてください */
+
 
 (function scrollLockModule() {
   let lockCount = 0;
@@ -966,7 +973,8 @@ function setupEventListeners() {
         stickyHeader.style.paddingRight = `${scrollbarWidth}px`;
       }
       
-      // html要素にクラスを付与してスクロールを禁止
+      // ★★★ この行を追加 ★★★
+      // html要素にクラスを付与してスクロールを禁止 (ナビゲーションバーを隠すトリガー)
       htmlElement.classList.add('scroll-locked');
     }
     lockCount++;
@@ -980,7 +988,8 @@ function setupEventListeners() {
         stickyHeader.style.paddingRight = '';
       }
       
-      // スクロール禁止を解除
+      // ★★★ この行を追加 ★★★
+      // スクロール禁止を解除 (ナビゲーションバーを戻すトリガー)
       htmlElement.classList.remove('scroll-locked');
     }
   };
@@ -999,6 +1008,16 @@ function setupThemeSwitcher() {
   const THEME_KEY = 'site_theme_v1';
   const allThemeClasses = ['dark-mode', 'theme-pink', 'theme-yellow', 'theme-blue', 'theme-red', 'theme-green'];
 
+  // パネルの表示状態を監視し、トリガーボタンのアクティブ状態を同期する
+  // (PWA版のロジックをこちらにも適用)
+  const observer = new MutationObserver(() => {
+    const isActive = panel.classList.contains('show');
+    toggleBtn.classList.toggle('is-active', isActive);
+  });
+  observer.observe(panel, { attributes: true, attributeFilter: ['class'] });
+  
+  // 初期状態を同期
+  toggleBtn.classList.toggle('is-active', panel.classList.contains('show'));
 
   applyTheme = (themeName) => {
     document.body.classList.remove(...allThemeClasses);
@@ -1660,6 +1679,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const buttonConfig = [
       { id: 'filterToggleBtn', label: 'フィルタ', icon: 'fa-solid fa-filter' },
       { id: 'favOnlyToggleBtn', label: 'お気に入り', icon: 'fa-solid fa-star' },
+      // ★★★ ここからが変更点 (テーマボタン追加) ★★★
+      { id: 'theme-toggle-btn', label: 'カラー', icon: 'fa-solid fa-palette' },
+      // ★★★ ここまでが変更点 ★★★
       { id: 'randomBtn', label: 'ランダム', icon: 'fa-solid fa-shuffle' },
       { id: 'mainResetBtn', label: 'リセット', icon: 'fa-solid fa-rotate-left' }
     ];
@@ -1671,29 +1693,60 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const newButton = document.createElement('button');
       newButton.className = 'pwa-bottom-nav-btn';
-      newButton.id = `pwa-${config.id}`; // ★修正: この行を追加します
+      newButton.id = `pwa-${config.id}`;
       newButton.innerHTML = `
         <i class="${config.icon}"></i>
         <span>${config.label}</span>
       `;
 
       // 新しいボタンがクリックされたら、元のボタンのクリックイベントを発火させる
-      newButton.addEventListener('click', () => {
+      newButton.addEventListener('click', (e) => { // ★★★ (e) を追加 ★★★
+        
+        // ★★★ この行を追加 ★★★
+        // このクリックがドキュメント全体に伝わって、
+        // パネルを即座に閉じてしまうのを防ぎます。
+        e.stopPropagation();
+
         originalButton.click();
       });
 
-      // 元のボタンの状態（アクティブ/非アクティブ）を監視し、新しいボタンの見た目に反映させる
-      const observer = new MutationObserver(() => {
+      // ★★★ ここからが変更点 (監視ロジックの分岐) ★★★
+
+      // A) フィルタ、お気に入り、リセットボタンの場合
+      if (config.id === 'filterToggleBtn' || config.id === 'favOnlyToggleBtn' || config.id === 'mainResetBtn') {
+        
+        // 元のボタンの状態（アクティブ/非アクティブ）を監視し、新しいボタンの見た目に反映させる
+        const observer = new MutationObserver(() => {
+          const isPressed = originalButton.getAttribute('aria-pressed') === 'true';
+          const isExpanded = originalButton.getAttribute('aria-expanded') === 'true';
+          newButton.classList.toggle('is-active', isPressed || isExpanded);
+        });
+        observer.observe(originalButton, { attributes: true, attributeFilter: ['aria-pressed', 'aria-expanded'] });
+        
+        // 初期状態を同期
         const isPressed = originalButton.getAttribute('aria-pressed') === 'true';
         const isExpanded = originalButton.getAttribute('aria-expanded') === 'true';
         newButton.classList.toggle('is-active', isPressed || isExpanded);
-      });
-      observer.observe(originalButton, { attributes: true, attributeFilter: ['aria-pressed', 'aria-expanded'] });
       
-      // 初期状態を同期
-      const isPressed = originalButton.getAttribute('aria-pressed') === 'true';
-      const isExpanded = originalButton.getAttribute('aria-expanded') === 'true';
-      newButton.classList.toggle('is-active', isPressed || isExpanded);
+      // B) テーマ切替ボタンの場合
+      } else if (config.id === 'theme-toggle-btn') {
+        
+        // テーマパネルの表示状態を監視する
+        const themePanel = document.getElementById('floating-theme-panel');
+        if (themePanel) {
+          const observer = new MutationObserver(() => {
+            const isActive = themePanel.classList.contains('show');
+            newButton.classList.toggle('is-active', isActive);
+          });
+          observer.observe(themePanel, { attributes: true, attributeFilter: ['class'] });
+
+          // 初期状態を同期
+          newButton.classList.toggle('is-active', themePanel.classList.contains('show'));
+        }
+      }
+      // ( 'randomBtn' はアクティブ状態を持たないので、監視は不要です )
+
+      // ★★★ ここまでが変更点 ★★★
 
       bottomNav.appendChild(newButton);
     });
