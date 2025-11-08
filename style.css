@@ -3119,6 +3119,8 @@ html {
   scroll-padding-top: var(--header-offset, 186px);
 }
 
+/* style.css の L3062 あたりからを、丸ごと差し替えてください */
+
 /* ======================================================================== */
 /* ===== (V2.1) スマホ表示時: コントロールボタンのデザインを微調整 ===== */
 /* ======================================================================== */
@@ -3161,18 +3163,32 @@ html {
       content: "\f2ea" !important; /* fa-rotate-left アイコン */
   }
 
-  /* テキスト部分のスタイルを調整 (既存のルール L3057-L3066) */
+  /*
+   * ▼▼▼ ここからが修正箇所です ▼▼▼
+   *
+   * 「リセット」ボタンのスタイルを分離して、
+   * IDセレクタ (#mainResetBtn) を使い詳細度を上げます。
+   */
+
+  /* テキスト部分のスタイルを調整 (フィルタ、お気に入り、ランダム) */
   #filterToggleBtn::after,
   #favOnlyToggleBtn span,
-  #randomBtn span,
-  .reset-btn {
+  #randomBtn span {
     font-family: fot-udkakugoc80-pro, 'Segoe UI', system-ui, -apple-system, sans-serif !important;
     font-size: 11px !important;
     font-weight: 700 !important;
   }
-  .reset-btn {
-    line-height: 1.2 !important;
+
+  /* リセットボタン本体のテキストスタイルを調整 */
+  #mainResetBtn {
+    font-family: fot-udkakugoc80-pro, 'Segoe UI', system-ui, -apple-system, sans-serif !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    line-height: 1.2 !important; /* 既存の .reset-btn のスタイルをここに含めます */
   }
+  
+  /* ▲▲▲ 修正はここまでです ▲▲▲ */
+
 
   /*
    * ★★★ 修正2: 以下のルールブロックを新しく追加します ★★★
@@ -3197,22 +3213,19 @@ html {
   /* 「リセット」アイコン (fa-rotate-left) */
   .reset-btn::before {
     /* L3043で position: relative が指定済みのため、topのみ指定 */
-    top: 0.10em; /* 約 2px 下に移動 */
+    top: 0.10em !important;
   }
 
   /* テキスト部分のスタイルを調整 */
   #filterToggleBtn::after,
   #favOnlyToggleBtn span,
-  #randomBtn span,
-  .reset-btn {
+  #randomBtn span
+  {
     font-family: fot-udkakugoc80-pro, 'Segoe UI', system-ui, -apple-system, sans-serif !important; /* ★この行を追加 */
     font-size: 11px !important;
     font-weight: 700 !important;
   }
 
-  .reset-btn {
-    line-height: 1.2 !important;
-  }
 }
 
 
