@@ -2702,6 +2702,82 @@ body.body-scroll-locked {
  }
 
 /* --- 2. デバイスごとのレイアウトとスタイル --- */
+
+/* ★★★★★ ここから新しく追加 ★★★★★ */
+/* スマホ (768px以下) */
+@media (max-width: 768px) {
+  /* (V2.1) の flex-direction: column を打ち消す */
+  .search-row-controls #filterToggleBtn,
+  .search-row-controls #favOnlyToggleBtn,
+  .search-row-controls #randomBtn,
+  .search-row-controls .reset-btn {
+    flex-direction: row !important; /* 縦並び -> 横並びに強制 */
+    height: 42px !important;        /* (V2.1) の height: auto を上書き */
+    min-height: 42px;               /* (V2.1) の min-height: 60px を上書き */
+    padding: 0 6px !important;      /* (V2.1) の padding: 8px 4px を上書き */
+    gap: 0.35em !important;         /* (V2.1) の gap: 4px を上書き */
+    visibility: hidden; /* ★計算完了まで完全に非表示 */
+    opacity: 0;
+  }
+  
+  /* (V2.1) のアイコンスタイルを上書き */
+  #filterToggleBtn i,
+  #favOnlyToggleBtn i,
+  #randomBtn i,
+  .reset-btn::before {
+    font-size: 1em !important;      /* (V2.1) の 22px を上書き */
+    font-weight: 700 !important;    /* (V2.1) の 900 を上書き */
+    top: 0 !important;              /* (V2.1) の位置調整をリセット */
+    width: 1.1em !important;        /* (V28) の共通スタイルに合わせる */
+    text-align: center !important;
+  }
+  
+  /* (V2.1) のテキストスタイルを上書き */
+  #filterToggleBtn::after,
+  #favOnlyToggleBtn span,
+  #randomBtn span,
+  .reset-btn {
+    font-size: 1em !important;      /* (V2.1) の 11px を上書き (JSが調整する) */
+    line-height: 1 !important;      /* (V2.1) の 1.2 を上書き */
+  }
+  
+  /* JSが調整するフォントサイズのベースを定義 */
+  .search-row-controls #filterToggleBtn,
+  .search-row-controls #favOnlyToggleBtn,
+  .search-row-controls #randomBtn,
+  .search-row-controls .reset-btn {
+     font-size: 14px !important; /* JSが調整するまでの安全な初期サイズ */
+  }
+
+  /* (V2.1) のリセットアイコン (fa-rotate-left) を (V28) の ↺ に戻す */
+  .reset-btn::before {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif !important;
+      content: "↺" !important;
+  }
+
+  /* 下段のボタン */
+  #createPlaylistBtn {
+    height: 42px !important;
+    padding: 0 10px !important;
+    font-size: 15.5px !important;
+    gap: 0.5em !important;
+  }
+
+  /* ★JSの準備完了合図で表示 */
+  body.buttons-ready #filterToggleBtn,
+  body.buttons-ready #favOnlyToggleBtn,
+  body.buttons-ready #randomBtn,
+  body.buttons-ready .reset-btn {
+    visibility: visible;
+    opacity: 1;
+  }
+  #filterToggleBtn::after {
+      content: "フィルタ" !important;
+      font-family: fot-udkakugoc80-pro, 'Segoe UI', system-ui, -apple-system, sans-serif !important;
+      font-weight: 700 !important;
+  }
+}
+
 /* スマホ (991px以下) */
 @media (min-width: 769px) and (max-width: 991px) {
 
