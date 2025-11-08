@@ -3197,23 +3197,23 @@ html {
 
   /* 「フィルタ」アイコン (fa-filter) */
   #filterToggleBtn i {
-    top: 0.05em; /* 約 1px 下に移動 */
+    top: 0.05em !important; /* 約 1px 下に移動 */
   }
 
   /* 「お気に入り」アイコン (fa-star) */
   #favOnlyToggleBtn i {
-    top: 0.02em; /* 約 0.4px 下に移動 */
+    top: 0.05em !important; /* 約 0.4px 下に移動 */
   }
 
   /* 「ランダム」アイコン (fa-shuffle) */
   #randomBtn i {
-    top: 0.05em; /* 約 1px 下に移動 */
+    top: 0.08em !important; /* 約 1px 下に移動 */
   }
 
   /* 「リセット」アイコン (fa-rotate-left) */
   .reset-btn::before {
     /* L3043で position: relative が指定済みのため、topのみ指定 */
-    top: 0.10em !important;
+    top: 0.15em !important;
   }
 
   /* テキスト部分のスタイルを調整 */
