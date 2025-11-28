@@ -4328,3 +4328,352 @@ html.is-standalone #pwa-mainResetBtn {
   /* この数値(8px)を増減させて、お好みの位置に調整してください */
   right: 8px;
 }
+
+/* =================================================== */
+/* ★★★ 「もしかして」機能のスタイル (リファイン版) ★★★ */
+/* =================================================== */
+
+/* 0件表示のラッパー */
+.no-results {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  text-align: center;
+  /* 既存のスタイルを維持しつつ、中身のレイアウトを調整 */
+}
+
+.no-results-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+}
+
+.no-results-icon {
+  /* ★修正: サイト共通の太字フォントを指定 */
+  font-family: fot-udkakugoc80-pro, 'Segoe UI', system-ui, -apple-system, sans-serif;
+  font-weight: 700 !important;
+  
+  font-size: 1.0em;
+  opacity: 0.9;
+  
+  /* ★修正: アイコンとテキストの位置関係を整理 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px; /* アイコンと文字の間隔をしっかり空ける */
+  line-height: 1.5; /* 行の高さに余裕を持たせて「切れ」を防ぐ */
+  width: 100%;
+}
+
+/* アイコン自体の微調整 */
+.no-results-icon i {
+  flex-shrink: 0; /* アイコンが潰れるのを防ぐ */
+  font-size: 1.15em; /* 少しだけ大きく */
+  padding: 2px; /* 周囲に余白を持たせて描画切れを防ぐ */
+}
+
+/* もしかしてエリアのコンテナ */
+.did-you-mean-container {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  
+  /* ガラスモーフィズム風のデザイン */
+  background-color: rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  
+  padding: 10px 24px;
+  border-radius: 50px; /* 丸みを帯びた形状 */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  
+  animation: fadein-drawer 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  margin-top: 8px;
+}
+
+/* ラベル ("💡 もしかして:") */
+.dym-label {
+  font-weight: 700;
+  font-size: 0.95em;
+  color: var(--text-color);
+  opacity: 0.85;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.dym-label i {
+  color: #fbbf24; /* 電球の色 (黄色) */
+  font-size: 1.1em;
+}
+
+/* 提案キーワードのボタン */
+.dym-link {
+  appearance: none;
+  background-color: var(--card-bg, #fff); /* カード色を使う */
+  color: var(--btn-main, #6654e8) !important; /* メインカラー */
+  border: 2px solid transparent;
+  
+  padding: 6px 18px;
+  border-radius: 20px;
+  font-size: 1.05em;
+  font-weight: 800; /* 太字で強調 */
+  cursor: pointer;
+  
+  display: inline-flex;
+  align-items: center;
+  
+  box-shadow: 0 2px 5px rgba(0,0,0,0.08);
+  transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+  font-family: inherit;
+}
+
+.dym-link:active {
+  transform: translateY(0) scale(0.98);
+}
+
+/* --- テーマ別の微調整 --- */
+
+/* ダークモード */
+body.dark-mode .did-you-mean-container {
+  background-color: rgba(0, 0, 0, 0.3);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+body.dark-mode .dym-link {
+  background-color: #364152;
+  color: #fff !important;
+}
+@media (hover: hover) {
+  body.dark-mode .dym-link:hover {
+    background-color: #404b5c;
+    border-color: #8de0ee;
+  }
+}
+
+/* カラーテーマ適用時 */
+body[class*="theme-"] .dym-link {
+  color: var(--btn-main) !important;
+  /* 背景はカード色(var(--card-bg))になるので視認性OK */
+}
+
+/* =================================================== */
+/* ★★★ 自動もしかして検索結果のスタイル (Refined) ★★★ */
+/* =================================================== */
+
+.did-you-mean-alert {
+  grid-column: 1 / -1;
+  width: 100%;
+  margin-bottom: 12px;
+  display: flex;
+  justify-content: center;
+  animation: fadein-drawer 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.dym-alert-content {
+  width: 100%;
+  max-width: 760px;
+  /* ガラス風の半透明背景 */
+  background-color: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 16px;
+  padding: 18px 24px;
+  box-shadow: 0 8px 24px -6px rgba(0,0,0,0.08);
+  
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  text-align: center;
+}
+
+/* 上部の補足メッセージ（見つかりませんでした） */
+.dym-alert-sub {
+  font-size: 0.9em;
+  color: #666; /* 控えめなグレー */
+  /* ★修正: サイト共通の太字フォントを指定 */
+  font-family: fot-udkakugoc80-pro, 'Segoe UI', system-ui, -apple-system, sans-serif;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  opacity: 0.8;
+}
+
+/* メインメッセージエリア */
+.dym-alert-main {
+  font-size: 1.1em;
+  color: var(--text-color);
+  font-family: fot-udkakugoc80-pro, 'Segoe UI', system-ui, -apple-system, sans-serif;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  line-height: 1.4;
+}
+
+.dym-prefix, .dym-suffix {
+  opacity: 0.9;
+}
+
+/* 提案ワードのボタンデザイン */
+.dym-word-btn {
+  appearance: none;
+  background: transparent;
+  border: 2px solid var(--btn-main, #6654e8);
+  color: var(--btn-main, #6654e8);
+  border-radius: 99px;
+  padding: 4px 16px;
+  font-size: 1.05em;
+  font-family: fot-udkakugoc80-pro, 'Segoe UI', system-ui, -apple-system, sans-serif;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-block;
+  transform: translateZ(0);
+
+  /* ★修正: "all" ではなく、ホバー演出に必要なプロパティだけを指定する */
+  /* これにより、JSによるフォントサイズ変更が即時反映（アニメーションなし）になります */
+  transition: background-color 0.2s, color 0.2s, transform 0.2s, box-shadow 0.2s;
+
+  max-width: 75vw;
+  width: auto;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis; 
+  vertical-align: middle;
+  flex-shrink: 1;
+}
+
+/* PCなどの広い画面では最大幅を固定ピクセルにする */
+@media (min-width: 768px) {
+  .dym-word-btn {
+    max-width: 600px;
+  }
+}
+
+/* スマホ用の微調整 */
+@media (max-width: 600px) {
+  .dym-word-btn {
+    padding: 4px 12px;
+    font-size: 1em;
+  }
+}
+
+/* ホバー時の挙動 */
+@media (hover: hover) {
+  .dym-word-btn:hover {
+    background: var(--btn-main, #6654e8);
+    color: #fff;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  }
+}
+
+.dym-word-btn:active {
+  transform: translateY(0);
+}
+
+/* --- テーマ別調整 --- */
+
+/* ダークモード */
+body.dark-mode .dym-alert-content {
+  background-color: rgba(30, 35, 45, 0.9);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+body.dark-mode .dym-alert-sub {
+  color: #a0a0a0;
+}
+body.dark-mode .dym-word-btn {
+  border-color: #8de0ee;
+  color: #8de0ee;
+}
+@media (hover: hover) {
+  body.dark-mode .dym-word-btn:hover {
+    background: #8de0ee;
+    color: #22272e;
+  }
+}
+
+/* カラーテーマ適用時 */
+body[class*="theme-"] .dym-alert-content {
+  background-color: var(--card-bg); /* カード色に合わせる */
+  border-color: rgba(255, 255, 255, 0.3);
+}
+body[class*="theme-"] .dym-alert-sub {
+  color: var(--muted);
+}
+body[class*="theme-"] .dym-word-btn {
+  border-color: #fff;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.15);
+}
+@media (hover: hover) {
+  body[class*="theme-"] .dym-word-btn:hover {
+    background: #fff;
+    color: var(--active-filter-text);
+  }
+}
+
+
+
+/* =================================================== */
+/* ★★★ お気に入り画面の見出しスタイル (Simple Ver.) ★★★ */
+/* =================================================== */
+
+.favorites-title-header {
+  display: flex;
+  justify-content: center;
+  /* 上下の余白を少し調整 */
+  margin-top: 4px;
+  margin-bottom: 12px;
+  animation: fadein-drawer 0.2s ease-out;
+}
+
+.favorites-title-inner {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  
+  /* --- 装飾を全削除 --- */
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+  
+  /* 文字スタイル */
+  color: var(--text-color); /* 通常の文字色を使用 */
+  font-family: fot-udkakugoc80-pro, 'Segoe UI', system-ui, -apple-system, sans-serif;
+  font-weight: 800;
+  font-size: 1.5rem;
+  letter-spacing: 0.02em;
+}
+
+/* --- テーマ別調整 --- */
+
+/* ダークモード */
+body.dark-mode .favorites-title-inner {
+  /* 背景などの指定は不要。文字色は --text-color で自動的に白になります */
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+/* カラーテーマ適用時 */
+body[class*="theme-"] .favorites-title-inner {
+  /* こちらも同様にリセット */
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  color: var(--text-color);
+}

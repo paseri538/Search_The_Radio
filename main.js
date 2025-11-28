@@ -7,7 +7,7 @@ let isInputFocused = false;
  */
 let data = [];
 let CUSTOM_READINGS = {};
-let READING_TO_LABEL = {};
+let READING_TO_LABEL = {}; // 読み仮名から正規表記へのマップ
 let selectedGuests = [];
 let selectedCorners = [];
 let selectedOthers = [];
@@ -43,7 +43,6 @@ const getHashNumber = (title) => title.match(/#(\d+)/)?.[0] || title;
 const getEpisodeNumber = (episode) => /^\d+$/.test(episode) ? parseInt(episode, 10) : (episode === "緊急" || episode === "特別編" ? -1 : -2);
 const getThumbnailUrl = (link) => {
     const videoId = getVideoId(link);
-    // ★ 変更点: hqdefault.jpg から mqdefault.jpg に変更して軽量化
     return videoId ? `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg` : "";
 };
 
@@ -71,6 +70,300 @@ function debounce(fn, ms = 40) {
   };
   return debouncedFn;
 }
+
+/**
+ * ===================================================
+ * ★★★ 検索エンジン級アルゴリズム (God Tier) ★★★
+ * ===================================================
+ */
+
+// 1. スーパーノーマライズ
+function superNormalize(str) {
+  if (!str) return "";
+  return normalize(str)
+    .replace(/[！-／：-＠［-｀｛-～、-〜”’・]/g, "") 
+    .replace(/[!-/:-@[-`{-~]/g, "") 
+    .replace(/\s+/g, "") 
+    .replace(/ー/g, "")
+    .replace(/[ぁぃぅぇぉっゃゅょゎ]/g, function(c) {
+      var map = {'ぁ':'あ','ぃ':'い','ぅ':'う','ぇ':'え','ぉ':'お','っ':'つ','ゃ':'や','ゅ':'ゆ','ょ':'よ','ゎ':'わ'};
+      return map[c] || c;
+    })
+    .normalize('NFC');
+}
+
+// 2. 濁点無視用ノーマライズ
+function baseCharNormalize(str) {
+  return str.normalize('NFD').replace(/[\u3099\u309A]/g, '').normalize('NFC');
+}
+
+// 3. 高機能ローマ字変換
+function kanaToRomaji(str) {
+  const map = {
+    'あ':'a','い':'i','う':'u','え':'e','お':'o',
+    'か':'ka','き':'ki','く':'ku','け':'ke','こ':'ko',
+    'さ':'sa','し':'shi','す':'su','せ':'se','そ':'so',
+    'た':'ta','ち':'chi','つ':'tsu','て':'te','と':'to',
+    'な':'na','ni':'ni','ぬ':'nu','ね':'ne','の':'no',
+    'は':'ha','ひ':'hi','ふ':'fu','へ':'he','ほ':'ho',
+    'ま':'ma','み':'mi','む':'mu','め':'me','も':'mo',
+    'や':'ya','ゆ':'yu','よ':'yo',
+    'ら':'ra','り':'ri','る':'ru','れ':'re','ろ':'ro',
+    'わ':'wa','を':'o','ん':'n',
+    'が':'ga','ぎ':'gi','ぐ':'gu','げ':'ge','ご':'go',
+    'ざ':'za','じ':'ji','ず':'zu','ぜ':'ze','ぞ':'zo',
+    'だ':'da','ぢ':'ji','づ':'zu','で':'de','ど':'do',
+    'ば':'ba','び':'bi','ぶ':'bu','べ':'be','ぼ':'bo',
+    'ぱ':'pa','ぴ':'pi','ぷ':'pu','ぺ':'pe','ぽ':'po',
+    'きゃ':'kya','きゅ':'kyu','きょ':'kyo',
+    'しゃ':'sha','しゅ':'shu','しょ':'sho',
+    'ちゃ':'cha','ちゅ':'chu','ちょ':'cho',
+    'にゃ':'nya','にゅ':'nyu','にょ':'nyo',
+    'ひゃ':'hya','ひゅ':'hyu','ひょ':'hyo',
+    'みゃ':'mya','みゅ':'myu','みょ':'myo',
+    'りゃ':'rya','りゅ':'ryu','りょ':'ryo',
+    'ぎゃ':'gya','ぎゅ':'gyu','ぎょ':'gyo',
+    'じゃ':'ja','じゅ':'ju','じょ':'jo',
+    'びゃ':'bya','びゅ':'byu','びょ':'byo',
+    'ぴゃ':'pya','ぴゅ':'pyu','ぴょ':'pyo',
+    'si':'shi', 'ti':'chi', 'tu':'tsu', 'hu':'fu', 'zi':'ji',
+    'xtsu': 'tu'
+  };
+  
+  let res = '';
+  let i = 0;
+  while (i < str.length) {
+    if (i < str.length - 1) {
+      const two = str.slice(i, i+2);
+      if (map[two]) { res += map[two]; i += 2; continue; }
+    }
+    const one = str[i];
+    if (one === 'つ' || one === 'っ') {
+        if (i < str.length - 1) {
+            const next = str[i+1];
+            const nextRomaji = map[next] || kanaToRomaji(next);
+            if (nextRomaji && nextRomaji.length > 0) {
+                res += nextRomaji[0];
+                i++;
+                continue;
+            }
+        }
+    }
+    res += (map[one] || one);
+    i++;
+  }
+  return res.replace(/si/g, 'shi').replace(/tu/g, 'tsu').replace(/zi/g, 'ji').replace(/hu/g, 'fu');
+}
+
+// 4. Jaro-Winkler距離
+function jaroWinkler(s1, s2) {
+  let m = 0;
+  if (s1.length === 0 || s2.length === 0) return 0;
+  if (s1 === s2) return 1;
+
+  const matchWindow = Math.floor(Math.max(s1.length, s2.length) / 2) - 1;
+  const s1Matches = new Array(s1.length).fill(false);
+  const s2Matches = new Array(s2.length).fill(false);
+
+  for (let i = 0; i < s1.length; i++) {
+    const start = Math.max(0, i - matchWindow);
+    const end = Math.min(i + matchWindow + 1, s2.length);
+    for (let j = start; j < end; j++) {
+      if (s2Matches[j]) continue;
+      if (s1[i] !== s2[j]) continue;
+      s1Matches[i] = true;
+      s2Matches[j] = true;
+      m++;
+      break;
+    }
+  }
+
+  if (m === 0) return 0;
+
+  let k = 0;
+  let t = 0;
+  for (let i = 0; i < s1.length; i++) {
+    if (!s1Matches[i]) continue;
+    while (!s2Matches[k]) k++;
+    if (s1[i] !== s2[k]) t++;
+    k++;
+  }
+  t /= 2;
+
+  let jaro = (m / s1.length + m / s2.length + (m - t) / m) / 3;
+  let l = 0;
+  for (let i = 0; i < Math.min(4, Math.min(s1.length, s2.length)); i++) {
+    if (s1[i] === s2[i]) l++;
+    else break;
+  }
+  return jaro + l * 0.1 * (1 - jaro);
+}
+
+// 5. Damerau-Levenshtein距離
+function damerauLevenshtein(source, target) {
+  if (!source) return target ? target.length : 0;
+  if (!target) return source.length;
+  const sourceLength = source.length;
+  const targetLength = target.length;
+  const score = Array(sourceLength + 2).fill(0).map(() => Array(targetLength + 2).fill(0));
+  const INF = sourceLength + targetLength;
+  score[0][0] = INF;
+  for (let i = 0; i <= sourceLength; i++) { score[i + 1][1] = i; score[i + 1][0] = INF; }
+  for (let j = 0; j <= targetLength; j++) { score[1][j + 1] = j; score[0][j + 1] = INF; }
+  const sd = {};
+  const combinedStr = source + target;
+  for (let i = 0; i < combinedStr.length; i++) sd[combinedStr[i]] = 0;
+  for (let i = 1; i <= sourceLength; i++) {
+    let DB = 0;
+    for (let j = 1; j <= targetLength; j++) {
+      const i1 = sd[target[j - 1]];
+      const j1 = DB;
+      if (source[i - 1] === target[j - 1]) {
+        score[i + 1][j + 1] = score[i][j];
+        DB = j;
+      } else {
+        score[i + 1][j + 1] = Math.min(score[i][j], Math.min(score[i + 1][j], score[i][j + 1])) + 1;
+      }
+      score[i + 1][j + 1] = Math.min(score[i + 1][j + 1], score[i1][j1] + (i - i1 - 1) + 1 + (j - j1 - 1));
+    }
+    sd[source[i - 1]] = i;
+  }
+  return score[sourceLength + 1][targetLength + 1];
+}
+
+// 6. ダイス係数 & ユニグラム
+function getBigrams(str) {
+  const bigrams = new Set();
+  for (let i = 0; i < str.length - 1; i++) {
+    bigrams.add(str.slice(i, i + 2));
+  }
+  return bigrams;
+}
+function diceCoefficient(s1, s2) {
+  if (!s1 || !s2) return 0;
+  if (s1.length < 2 || s2.length < 2) return s1 === s2 ? 1 : 0;
+  const bg1 = getBigrams(s1);
+  const bg2 = getBigrams(s2);
+  let intersection = 0;
+  bg1.forEach(key => { if (bg2.has(key)) intersection++; });
+  return (2 * intersection) / (bg1.size + bg2.size);
+}
+function unigramSimilarity(s1, s2) {
+  const set1 = new Set(s1.split(''));
+  const set2 = new Set(s2.split(''));
+  let intersection = 0;
+  set1.forEach(char => { if(set2.has(char)) intersection++; });
+  return (2 * intersection) / (set1.size + set2.size);
+}
+
+// 7. サブシーケンス判定
+function getSubsequenceScore(query, target) {
+  if (!query || !target) return 0;
+  if (query[0] !== target[0]) return 0; 
+  let qIdx = 0;
+  let tIdx = 0;
+  let consecutive = 0; 
+  let totalBonus = 0; 
+  while (qIdx < query.length && tIdx < target.length) {
+    if (query[qIdx] === target[tIdx]) {
+      qIdx++;
+      consecutive++;
+      if (consecutive > 1) totalBonus += 10; 
+    } else {
+      consecutive = 0;
+    }
+    tIdx++;
+  }
+  if (qIdx === query.length) {
+    const ratio = query.length / target.length;
+    return (50 + totalBonus) * ratio; 
+  }
+  return 0;
+}
+
+// ★修正: findDidYouMean (複数候補、部分一致、エイリアス解決対応、完全一致除外版)
+function findDidYouMean(query) {
+  if (!query || query.length < 2) return [];
+  
+  const normQuery = superNormalize(query);
+  
+  if (window.exactKeyNorms && window.exactKeyNorms.has(normQuery)) {
+      return [];
+  }
+
+  const romanQuery = normalize(query).replace(/[^a-z]/g, ''); 
+  const isRomajiInput = (romanQuery.length === normalize(query).length) && (romanQuery.length > 2);
+  const baseQuery = baseCharNormalize(normQuery);
+
+  if (!window.searchCorpus) return [];
+
+  const candidatesMap = new Map();
+
+  for (const word of window.searchCorpus) {
+    const normTarget = superNormalize(word);
+    const baseTarget = baseCharNormalize(normTarget);
+
+    let finalScore = 0;
+
+    const jwScore = jaroWinkler(normQuery, normTarget) * 100;
+    const dist = damerauLevenshtein(normQuery, normTarget);
+    const len = Math.max(normQuery.length, normTarget.length);
+    const dlScore = Math.max(0, (1 - dist / len) * 100);
+    const subScore = getSubsequenceScore(normQuery, normTarget);
+    const uniScore = unigramSimilarity(normQuery, normTarget) * 100;
+
+    let baseScore = 0;
+    if (baseQuery === baseTarget && baseQuery.length > 1) {
+        baseScore = 95;
+    } else {
+        const baseDist = damerauLevenshtein(baseQuery, baseTarget);
+        baseScore = Math.max(0, (1 - baseDist / len) * 100);
+    }
+
+    finalScore = Math.max(jwScore, dlScore, subScore, uniScore, baseScore);
+
+    if (isRomajiInput) {
+       const romanTarget = kanaToRomaji(normTarget);
+       const romanJw = jaroWinkler(romanQuery, romanTarget) * 100;
+       if (romanJw > 85) finalScore = Math.max(finalScore, romanJw); 
+    }
+
+    const isSubstring = (normQuery.length >= 2 && normTarget.includes(normQuery)) || (normTarget.length >= 2 && normQuery.includes(normTarget));
+
+    if (isSubstring) {
+      finalScore = Math.max(finalScore, 98);
+    } else {
+      const lengthDiff = Math.abs(normQuery.length - normTarget.length);
+      if (lengthDiff > 5) finalScore -= 20; 
+      else if (lengthDiff > 3) finalScore -= 10;
+    }
+
+    if (finalScore > 80) {
+       let labels = [];
+       if (window.canonicalMap && window.canonicalMap[word]) {
+           labels = Array.from(window.canonicalMap[word]);
+       } else if (READING_TO_LABEL[word]) {
+           labels = [READING_TO_LABEL[word]];
+       } else {
+           labels = [word];
+       }
+
+       labels.forEach(label => {
+           if (superNormalize(label) === normQuery) return;
+           const currentScore = candidatesMap.get(label) || 0;
+           if (finalScore > currentScore) {
+               candidatesMap.set(label, finalScore);
+           }
+       });
+    }
+  }
+
+  return Array.from(candidatesMap.entries())
+    .sort((a, b) => b[1] - a[1]) 
+    .slice(0, 100) 
+    .map(entry => entry[0]);
+}
+
 
 /**
  * ===================================================
@@ -103,6 +396,53 @@ async function loadExternalData() {
         READING_TO_LABEL[normalize(r)] = kanji;
       });
     }
+
+    window.searchCorpus = new Set();
+    window.canonicalMap = {}; 
+    window.exactKeyNorms = new Set(); 
+    
+    const addToCorpus = (word, label) => {
+      if(!word) return;
+      const norm = normalize(word);
+      window.searchCorpus.add(norm);
+      const roman = kanaToRomaji(norm);
+      if (roman && roman !== norm) window.searchCorpus.add(roman);
+
+      if (label) {
+        if (!window.canonicalMap[norm]) {
+            window.canonicalMap[norm] = new Set();
+        }
+        window.canonicalMap[norm].add(label);
+
+        if (roman) {
+            if (!window.canonicalMap[roman]) {
+                window.canonicalMap[roman] = new Set();
+            }
+            window.canonicalMap[roman].add(label);
+        }
+      }
+    };
+
+    for (const [key, values] of Object.entries(CUSTOM_READINGS)) {
+      addToCorpus(key, key); 
+      values.forEach(v => addToCorpus(v, key)); 
+      window.exactKeyNorms.add(superNormalize(key));
+    }
+    
+    data.forEach(ep => {
+      if (Array.isArray(ep.guest)) {
+        ep.guest.forEach(g => addToCorpus(g, g));
+      } else if (ep.guest && ep.guest !== "その他") {
+        addToCorpus(ep.guest, ep.guest);
+      }
+      if (Array.isArray(ep.keywords)) {
+        ep.keywords.forEach(k => {
+          const cleanK = stripTimeSuffix(k);
+          addToCorpus(cleanK, cleanK);
+        });
+      }
+    });
+
     console.log("All data loaded successfully.");
   } catch (error) {
     console.error("Failed to load external data:", error);
@@ -117,11 +457,9 @@ async function initializeApp() {
   await loadExternalData();
   preloadThumbsFromData();
 
-  // フォント準備後（または失敗後）に最初の検索とUIセットアップを実行
   if (!applyStateFromURL({ replace: true })) {
-    search(); // このsearch内で最初の fitGuestLines が呼ばれる
+    search();
   }
-  // ★★★ ここまでが変更点 ★★★
 
   setupEventListeners();
   initializeAutocomplete();
@@ -138,7 +476,6 @@ function preloadThumbsFromData() {
   try {
     const head = document.head;
     const seen = new Set();
-    
     const preloadData = data;
 
     preloadData.forEach(ep => {
@@ -146,13 +483,11 @@ function preloadThumbsFromData() {
       if (!episodeFilename || seen.has(episodeFilename)) return;
       seen.add(episodeFilename);
 
-      // ▼▼▼ ここから変更 (JPGのみプリロード) ▼▼▼
       const linkJpg = document.createElement('link');
       linkJpg.rel = 'preload';
       linkJpg.as = 'image';
       linkJpg.href = `thumbnails/${episodeFilename}.jpg`;
       head.appendChild(linkJpg);
-      // ▲▲▲ ここまで変更 ▲▲▲
     });
   } catch (e) {
     console.error('Thumbnail preload error:', e);
@@ -161,83 +496,49 @@ function preloadThumbsFromData() {
 
 /**
  * ===================================================
- * ★★★ 検索とフィルタリング ★★★
+ * ★★★ 検索とフィルタリング (コアロジック分離) ★★★
  * ===================================================
  */
-function search(opts = {}) {
-  isSearchTriggered = true;
-  if (typeof clearAutocompleteSuggestions === 'function') clearAutocompleteSuggestions();
-  setTimeout(() => { isSearchTriggered = false; }, 100);
 
-  const searchBox = document.getElementById("searchBox");
-  const sortSelect = document.getElementById("sortSelect");
-  const raw = searchBox ? searchBox.value.trim() : ""; // ★ 修正: 検索キーワードを取得
-  const sort = sortSelect ? sortSelect.value : "newest";
-
+function getFilteredData(query) {
   let res = [...data];
-
-  // 1. 「その他」フィルターが有効かを確認
-  const isOtherFilterActive = selectedOthers.length > 0;
-
-  // ★★★ ここからが変更点 ★★★
-  // 1b. キーワードで「その他」が検索されているかを確認
+  
+  const raw = query ? query.trim() : "";
   const normalizedRaw = normalize(raw);
+  
+  const isOtherFilterActive = selectedOthers.length > 0;
   const isOtherKeywordSearch = (normalizedRaw === "そのた" || normalizedRaw === "その他");
-
-  // 2. 「その他」フィルターが有効でなく、かつ「その他」キーワード検索でもない場合
   if (!isOtherFilterActive && !isOtherKeywordSearch) {
-    // getEpisodeNumber は #付の数字、「緊急」「特別編」を -1 以上として判定します
     res = res.filter(it => getEpisodeNumber(it.episode) >= -1);
   }
-  // ★★★ ここまでが変更点 ★★★
 
   if (normalize(raw).includes('いいね')) {
     rainGoodMarks();
   }
 
-  // ★ 修正: ここから検索ロジックを変更します
-  // ================================================
-
-  // 3. キーワードが「数字 (スペース) 数字」のパターンかチェック
-  //    (半角・全角スペース両方に対応)
   const rangeMatch = raw.match(/^(\d+)\s+(\d+)$/);
-
   if (rangeMatch) {
-    // 3a. (A) パターンに一致した場合：エピソード番号の「範囲検索」を実行
-    
-    // 2つの数字を取得 (例: "1", "10")
     let num1 = parseInt(rangeMatch[1], 10);
     let num2 = parseInt(rangeMatch[2], 10);
-    
-    // ユーザーが "10 1" と入力しても "1 10" と同じになるよう、大小を自動判定
     const minNum = Math.min(num1, num2);
     const maxNum = Math.max(num1, num2);
-
     res = res.filter(it => {
-      // getEpisodeNumber でエピソード番号を数値として取得
       const epNum = getEpisodeNumber(it.episode);
-      // エピソード番号が指定された範囲内（例: 1～10）であれば true を返す
       return epNum >= minNum && epNum <= maxNum;
     });
-
   } else if (raw.length > 0) {
-    // 3b. (B) パターンに一致しない場合：通常の「キーワード検索」を実行
-    
     const normalizedQuery = normalize(raw);
-        const searchTerms = new Set([normalizedQuery]);
-        for (const key in CUSTOM_READINGS) {
-            if (normalize(key).includes(normalizedQuery) || CUSTOM_READINGS[key].some(r => normalize(r).includes(normalizedQuery))) {
-                searchTerms.add(normalize(key));
-                CUSTOM_READINGS[key].forEach(r => searchTerms.add(normalize(r)));
-            }
+    const searchTerms = new Set([normalizedQuery]);
+    for (const key in CUSTOM_READINGS) {
+        if (normalize(key).includes(normalizedQuery) || CUSTOM_READINGS[key].some(r => normalize(r).includes(normalizedQuery))) {
+            searchTerms.add(normalize(key));
+            CUSTOM_READINGS[key].forEach(r => searchTerms.add(normalize(r)));
         }
-        const searchWords = [...searchTerms].filter(Boolean);
-        res = res.filter(it => searchWords.some(word => it.searchText.includes(word)));
+    }
+    const searchWords = [...searchTerms].filter(Boolean);
+    res = res.filter(it => searchWords.some(word => it.searchText.includes(word)));
   }
-  // ================================================
-  // ★ 修正はここまでです
 
-  // Filters (これ以降は変更ありません)
   if (selectedGuests.length) {
       res = res.filter(it => {
           const guestArr = Array.isArray(it.guest) ? it.guest : (typeof it.guest === "string" ? [it.guest] : []);
@@ -246,7 +547,6 @@ function search(opts = {}) {
           const indivGuests = selectedGuests.filter(g => g !== "結束バンド" && g !== "その他");
           
           let match = indivGuests.some(sel => it.searchText.includes(normalize(sel)));
-          
           if (!match && hasKessoku) {
               match = ["鈴代紗弓", "水野朔", "長谷川育美"].every(m => guestArr.includes(m));
           }
@@ -261,9 +561,41 @@ function search(opts = {}) {
   if (selectedYears.length) res = res.filter(it => selectedYears.includes(String(it.date).slice(0, 4)));
   if (showFavoritesOnly) res = res.filter(it => isFavorite(getVideoId(it.link)));
 
-  // Sorting
-  const parseDate = (dateStr) => new Date((dateStr || '').replace(/\./g, '-'));
+  return res;
+}
 
+// ★修正: search関数
+function search(opts = {}) {
+  isSearchTriggered = true;
+  if (typeof clearAutocompleteSuggestions === 'function') clearAutocompleteSuggestions();
+  setTimeout(() => { isSearchTriggered = false; }, 100);
+
+  const searchBox = document.getElementById("searchBox");
+  const sortSelect = document.getElementById("sortSelect");
+  const rawQuery = searchBox ? searchBox.value.trim() : "";
+  const sort = sortSelect ? sortSelect.value : "newest";
+
+  let res = getFilteredData(rawQuery);
+  let suggestionWords = [];
+
+  if (rawQuery.length > 0) {
+     const suggestions = findDidYouMean(rawQuery);
+     
+     if (suggestions.length > 0) {
+       const validSuggestions = suggestions.filter(word => getFilteredData(word).length > 0);
+
+       if (validSuggestions.length > 0) {
+         if (res.length === 0) {
+           res = getFilteredData(validSuggestions[0]);
+           suggestionWords = validSuggestions;
+         } else {
+           suggestionWords = validSuggestions;
+         }
+       }
+     }
+  }
+
+  const parseDate = (dateStr) => new Date((dateStr || '').replace(/\./g, '-'));
   if (sort === "newest") res.sort((a, b) => parseDate(b.date) - parseDate(a.date) || getEpisodeNumber(b.episode) - getEpisodeNumber(a.episode));
   else if (sort === "oldest") res.sort((a, b) => parseDate(a.date) - parseDate(b.date) || getEpisodeNumber(a.episode) - getEpisodeNumber(b.episode));
   else if (sort === "longest" || sort === "shortest") {
@@ -272,11 +604,14 @@ function search(opts = {}) {
   }
 
   lastResults = res;
-  document.getElementById('fixedResultsCount').innerHTML = `表示数：<span class="impact-number">${res.length}</span>件`;
+  
+  const countEl = document.getElementById('fixedResultsCount');
+  countEl.innerHTML = `表示数：<span class="impact-number">${res.length}</span>件`;
+
   currentPage = opts.gotoPage || 1;
   if (!isRestoringURL) buildURLFromState({ method: 'push' });
 
-  renderResults(res, currentPage);
+  renderResults(res, currentPage, rawQuery, suggestionWords);
   renderPagination(res.length);
   updateActiveFilters();
   updatePlaylistButtonVisibility();
@@ -321,7 +656,6 @@ function resetSearch() {
   resetFilters();
   try { window.scrollTo({ top: 0, behavior: 'auto' }); } catch (e) { window.scrollTo(0, 0); }
 
-  // もしフィルターモーダルが開いていたら、閉じる処理を呼び出します。
   if (typeof window.toggleFilterDrawer === 'function') {
     window.toggleFilterDrawer(false);
   }
@@ -334,60 +668,110 @@ function resetSearch() {
  * ===================================================
  */
 
-
-/* 「公開年検索」ボタンの見た目を整形する関数*/
 function formatYearButtons() {
-  // classが "btn-year" のボタンをすべて取得します
   document.querySelectorAll('.btn-year').forEach(button => {
-    // ボタンの data-year 属性から年 (例: "2022") を取得します
     const year = button.dataset.year;
     if (year) {
-      // ボタンの中身を、Impactフォント用のspanで囲んだ数字だけに書き換えます
       button.innerHTML = `<span class="impact-number">${year}</span>`;
     }
   });
 }
 
-function renderResults(arr, page = 1) {
+// ★修正: renderResults (もっと見る機能 + 自動フォント調整)
+function renderResults(arr, page = 1, originalQuery = null, suggestions = []) {
   const ul = document.getElementById("results");
   ul.innerHTML = "";
 
+  if (showFavoritesOnly) {
+    const liFav = document.createElement('li');
+    liFav.className = 'favorites-title-header';
+    liFav.style.gridColumn = "1 / -1";
+    liFav.innerHTML = `
+      <div class="favorites-title-inner">
+        <span>★お気に入り★</span>
+      </div>
+    `;
+    ul.appendChild(liFav);
+  }
+
+  if (suggestions && suggestions.length > 0 && originalQuery) {
+    const li = document.createElement('li');
+    li.className = 'did-you-mean-alert'; 
+    li.style.gridColumn = "1 / -1"; 
+
+    const limit = 5; 
+    const showAll = suggestions.length <= limit;
+    const firstBatch = suggestions.slice(0, limit);
+    const hiddenBatch = suggestions.slice(limit);
+
+    // ボタン生成用ヘルパー
+    // ★修正: 初期状態を opacity: 0 (透明) に設定して、調整前のガタつきを隠す
+    const createBtn = (word) => `
+      <button class="dym-word-btn" style="margin: 4px; opacity: 0;" onclick="document.getElementById('searchBox').value='${word}'; search(); scrollToResultsTop();">
+        ${word}
+      </button>
+    `;
+
+    // 最初のボタンたち
+    let buttonsHtml = firstBatch.map(createBtn).join('');
+
+    // 隠れている分がある場合の「もっと見る」ボタンと隠しエリア
+    if (!showAll) {
+      // 「もっと見る」ボタン自体は調整不要なので opacity: 1 でOK（またはクラス指定に従う）
+      buttonsHtml += `
+        <button id="dymShowMoreBtn" class="dym-word-btn" style="margin: 4px; background: transparent; border: 1px dashed currentColor; opacity: 0.8;" onclick="document.getElementById('dymHiddenArea').style.display='inline'; this.style.display='none'; fitDymButtons();">
+          <i class="fa-solid fa-plus"></i> 他${hiddenBatch.length}件
+        </button>
+        <span id="dymHiddenArea" style="display:none;">
+          ${hiddenBatch.map(createBtn).join('')}
+        </span>
+      `;
+    }
+
+    li.innerHTML = `
+      <div class="dym-alert-content">
+        <div class="dym-alert-main">
+          <span class="dym-prefix"><i class="fa-regular fa-lightbulb"></i> もしかして：</span>
+          <div style="display:inline-block; text-align: center;">
+            ${buttonsHtml}
+          </div>
+        </div>
+      </div>
+    `;
+    ul.appendChild(li);
+  }
+
   if (!arr || arr.length === 0) {
-    ul.innerHTML = `<li class="no-results"><div class="no-results-icon">表示できる回はありません。</div></li>`;
+    let html = '<li class="no-results"><div class="no-results-content"><div class="no-results-icon"><i class="fa-solid fa-circle-exclamation"></i>一致する回が見つかりませんでした。</div>';
+    html += '</div></li>';
+    ul.innerHTML += html; // append to existing header (if any)
     return;
   }
 
+  // 4. 結果リストの描画
   const startIdx = (page - 1) * pageSize;
   const endIdx = page * pageSize;
-  const qRaw = document.getElementById('searchBox').value.trim();
+  
+  const highlightQuery = (suggestions.length > 0) ? suggestions[0] : (document.getElementById('searchBox').value.trim());
   const cornerTarget = selectedCorners.length === 1 ? selectedCorners[0] : null;
-  const isLuckyButtonSearch = (normalize(qRaw) === "らっきーぼたん" || selectedCorners.includes("ラッキーボタン"));
+  const isLuckyButtonSearch = (normalize(highlightQuery) === "らっきーぼたん" || selectedCorners.includes("ラッキーボタン"));
 
   const fragment = document.createDocumentFragment();
 
   arr.slice(startIdx, endIdx).forEach((it, index) => {
-    const videoId = getVideoId(it.link); // ★お気に入り機能で使うため、この行は残します
-    
-    // ▼▼▼ ここから変更 (JPGのみ) ▼▼▼
-    // episode の値をファイル名として使用
+    const videoId = getVideoId(it.link);
     const episodeFilename = it.episode;
-    // サムネイル画像のパスをローカルに変更 (例: thumbnails/89.jpg)
     const thumbBaseUrl = `thumbnails/${episodeFilename}`;
     const thumbUrlJpg = `${thumbBaseUrl}.jpg`;
-    // const thumbUrlWebp = `${thumbBaseUrl}.webp`; // WebPの行を削除
-    // ▲▲▲ ここまで変更 ▲▲▲
 
     const hashOnly = getHashNumber(it.title);
 
-    let hit = findHitTime(it, qRaw);
+    let hit = findHitTime(it, highlightQuery);
     if (!hit && selectedGuests.length > 0) {
         for(const guest of selectedGuests) {
-            // ★★★↓ここから下を追加↓★★★
-            // 「結束バンド」と「その他」はタイムスタンプ検索の対象から除外
             if (guest === "結束バンド" || guest === "その他") {
                 continue;
             }
-            // ★★★↑ここまで↑★★★
             hit = findHitTime(it, guest);
             if(hit) break;
         }
@@ -397,33 +781,20 @@ function renderResults(arr, page = 1) {
     }
     const finalLink = hit ? withTimeParam(it.link, hit.seconds) : it.link;
 
-// main.js に記述する新しいコード
-let guestText = "";
-// ★ここからが変更点です★
-// episodeが「京まふ大作戦」または「CENTRALSTATION」の場合の特別処理
-if (it.episode.startsWith("京まふ大作戦") || it.episode === "CENTRALSTATION") {
-  
-  // JSONからゲストリストを取得します (配列でなければ配列に変換)
-  const guestList = Array.isArray(it.guest) ? it.guest : [it.guest].filter(Boolean);
-  
-  // Set を使って、「青山吉能」さんを先頭に追加しつつ、
-  // JSON側で既に入力されていても重複しないようにします。
-  const membersSet = new Set(["青山吉能", ...guestList]);
-  
-  // Set から配列に戻して、最終的な出演者リストを作成します
-  const members = [...membersSet];
-  
-  // 「出演：」という接頭辞で表示します
-  guestText = "出演：" + members.join("、");
-}
-// ★ここまでが変更点です★
-else if (Array.isArray(it.guest)) {
-  guestText = "ゲスト：" + it.guest.join("、");
-} else if (it.guest === "青山吉能") {
-  guestText = "パーソナリティ：青山吉能";
-} else if (it.guest && it.guest !== "その他") {
-  guestText = `ゲスト：${it.guest}`;
-}
+    let guestText = "";
+    if (it.episode.startsWith("京まふ大作戦") || it.episode === "CENTRALSTATION") {
+      const guestList = Array.isArray(it.guest) ? it.guest : [it.guest].filter(Boolean);
+      const membersSet = new Set(["青山吉能", ...guestList]);
+      const members = [...membersSet];
+      guestText = "出演：" + members.join("、");
+    }
+    else if (Array.isArray(it.guest)) {
+      guestText = "ゲスト：" + it.guest.join("、");
+    } else if (it.guest === "青山吉能") {
+      guestText = "パーソナリティ：青山吉能";
+    } else if (it.guest && it.guest !== "その他") {
+      guestText = `ゲスト：${it.guest}`;
+    }
 
     if (isLuckyButtonSearch) {
       const episodeKey = it.episode === "02" && it.title.includes("京まふ") ? "京まふ" : it.episode;
@@ -436,7 +807,6 @@ else if (Array.isArray(it.guest)) {
     li.tabIndex = 0;
     li.style.setProperty('--i', index.toString());
 
-    // ▼▼▼ li.innerHTML 内の <picture> と <source> を削除し、<img> のみに修正 ▼▼▼
     li.innerHTML = `
   <a href="${finalLink}" target="_blank" rel="noopener" style="display:flex;text-decoration:none;color:inherit;align-items:center;min-width:0;">
     <div class="thumb-col">
@@ -462,7 +832,6 @@ else if (Array.isArray(it.guest)) {
   </a>
   <button class="fav-btn" data-id="${videoId}" aria-label="お気に入り" title="お気に入り"><i class="fa-regular fa-star"></i></button>
 `;
-    // ▲▲▲ ここまで変更 ▲▲▲
     
     if (isFavorite(videoId)) {
       const favBtn = li.querySelector('.fav-btn');
@@ -475,8 +844,12 @@ else if (Array.isArray(it.guest)) {
 
   ul.appendChild(fragment);
 
+  // ★修正: 描画後にボタンのサイズ調整を行う
   requestAnimationFrame(() => {
-    requestAnimationFrame(fitGuestLines);
+    requestAnimationFrame(() => {
+        fitGuestLines();
+        fitDymButtons(); // ボタンサイズ調整を実行
+    });
   });
 }
 
@@ -497,6 +870,8 @@ function renderPagination(totalCount) {
   }
   area.appendChild(fragment);
 }
+
+// ... (中略: updateActiveFilters, updateFilterButtonStyles などは変更なし) ...
 
 function updateActiveFilters() {
   const area = document.getElementById("filtersBar");
@@ -544,15 +919,11 @@ function updateFilterButtonStyles() {
   });
 }
 
-/* ======================================================================== */
-/* ===== ゲスト名表示の最適化 (高効率な計算ロジックに更新) ===== */
-/* ======================================================================== */
 function fitGuestLines() {
   const guestLines = document.querySelectorAll('.guest-one-line');
-  let needsRetry = false; // ★追加: リトライが必要かどうかのフラグ
+  let needsRetry = false;
 
   guestLines.forEach(line => {
-    // 1. スタイルを初期状態に戻します
     line.style.fontSize = '';
     line.style.whiteSpace = 'normal';
     
@@ -562,66 +933,97 @@ function fitGuestLines() {
       return;
     }
 
-    // 2. 親要素の幅を取得
     const parentWidth = parent.clientWidth;
     
-    // 3. ★修正: 親の幅が100px以下の場合、レイアウト未完了とみなしリトライ
-    if (parentWidth <= 100) { // 閾値を 50 から 100 に変更
-      needsRetry = true; // ★追加: リトライフラグを立てる
-      return; // この要素の処理を中断
+    if (parentWidth <= 100) {
+      needsRetry = true;
+      return;
     }
 
-    // 4. 常に1行で表示するように設定
     line.style.whiteSpace = 'nowrap';
     const currentWidth = line.scrollWidth;
     
-    // 5. 最小フォントサイズを9pxに設定
     const MIN_FONT_SIZE = 9;
 
-    // 6. 親の幅よりテキストが長いかチェック
     if (currentWidth > parentWidth) {
       const originalSize = parseFloat(window.getComputedStyle(line).fontSize);
       let newSize = (parentWidth / currentWidth) * originalSize;
 
-      // 7. 計算結果が9px未満でも、9pxを適用します。
       const finalSize = Math.max(newSize, MIN_FONT_SIZE);
       line.style.fontSize = finalSize + 'px';
 
-      // ★★★ ここから修正 ★★★
-      // 最小フォントサイズ(9px)でもはみ出す場合に、省略記号(...)クラスを付与
       if (finalSize === MIN_FONT_SIZE && line.scrollWidth > parentWidth) {
         line.classList.add('needs-ellipsis');
       } else {
-        line.classList.remove('needs-ellipsis'); // はみ出さない場合はクラスを削除
+        line.classList.remove('needs-ellipsis');
       }
-      // ★★★ ここまで ★★★
 
     } else {
-      line.classList.remove('needs-ellipsis'); // はみ出さない場合はクラスを削除
+      line.classList.remove('needs-ellipsis');
     }
     
-    // 8. 計算が完了したので、表示状態に戻します
     line.style.visibility = 'visible';
   });
 
-  // 9. ★追加: リトライが必要な要素が1つでもあれば、100ms後に再実行
   if (needsRetry) {
     setTimeout(fitGuestLines, 100);
   }
 }
 
+// ★修正: もしかしてボタンのサイズ調整関数 (透明化解除付き)
+function fitDymButtons() {
+  const buttons = document.querySelectorAll('.dym-word-btn');
+  
+  buttons.forEach(btn => {
+    // もし「もっと見る」ボタンなど、すでに表示済みのものや特殊なボタンならスキップ
+    if (btn.id === 'dymShowMoreBtn') return;
+
+    // 1. スタイルをリセットして計測準備
+    btn.style.fontSize = '';
+    btn.style.whiteSpace = 'nowrap';
+    btn.style.lineHeight = '';
+    btn.style.wordBreak = '';
+    btn.style.borderRadius = '99px'; 
+
+    // 2. 計測: 中身(scrollWidth)が枠(clientWidth)より大きいか？
+    if (btn.scrollWidth > btn.clientWidth) {
+      
+      const currentSize = parseFloat(window.getComputedStyle(btn).fontSize);
+      // 比率計算
+      let newSize = currentSize * (btn.clientWidth / btn.scrollWidth) * 0.95;
+      const MIN_SIZE = 11; 
+
+      if (newSize >= MIN_SIZE) {
+        // A. フォント縮小だけで収まる場合
+        btn.style.fontSize = `${newSize}px`;
+      } else {
+        // B. 縮小しても無理な場合 -> 改行モード
+        btn.style.fontSize = '12px'; 
+        btn.style.whiteSpace = 'normal'; 
+        btn.style.lineHeight = '1.3';    
+        btn.style.wordBreak = 'break-word'; 
+        btn.style.overflowWrap = 'anywhere'; 
+        
+        btn.style.borderRadius = '12px'; 
+        btn.style.padding = '6px 12px';
+        btn.style.textAlign = 'center';
+      }
+    }
+
+    // ★追加: 調整が終わったら不透明にして表示する
+    btn.style.opacity = '1';
+  });
+}
+
 function updatePlaylistButtonVisibility() {
     const btn = document.getElementById('createPlaylistBtn');
-    const note = document.getElementById('playlistNote'); // ★ 注釈spanを取得
-    if (btn && note) { // ★ noteもチェック
+    if (btn) {
         const shouldShow = (lastResults && lastResults.length > 0);
         btn.hidden = !shouldShow;
-        note.hidden = !shouldShow; // ★ 注釈の表示/非表示も連動
     }
 }
 
 function createPlaylist() {
-    // 1. 既存のロジックで動画IDリストを取得 (変更なし)
     if (!lastResults || lastResults.length === 0) {
         alert('再生リストを作成するには、表示結果が1件以上必要です。');
         return;
@@ -632,64 +1034,45 @@ function createPlaylist() {
         return;
     }
 
-    // ▼▼▼ ここからが修正箇所です ▼▼▼
-
-    // 2. YouTubeアプリ用のURLスキームを作成 (https:// を youtube:// に変更)
-    //    (これが機能すれば、アプリが直接起動します)
     const appUrl = `youtube://watch_videos?video_ids=${videoIds.join(',')}`;
-    
-    // 3. ブラウザ用のフォールバックURL (https://)
-    //    (アプリ起動が失敗した場合に使います)
     const webUrl = `https://www.youtube.com/watch_videos?video_ids=${videoIds.join(',')}`;
 
     let timer;
     let appLaunched = false;
 
-    // アプリが起動してPWAがバックグラウンドに回ったかを監視するリスナー
     const visibilityChangeHandler = () => {
         if (document.visibilityState === 'hidden') {
-            // PWAが非表示になった = アプリが起動した
             appLaunched = true;
-            if (timer) clearTimeout(timer); // タイムアウト処理をキャンセル
+            if (timer) clearTimeout(timer);
             document.removeEventListener('visibilitychange', visibilityChangeHandler);
         }
     };
 
-    // 監視を開始
     document.addEventListener('visibilitychange', visibilityChangeHandler);
 
-    // 4. アプリ起動を試みる (<a> タグを使用)
     const a_app = document.createElement('a');
     a_app.href = appUrl;
     a_app.style.display = 'none';
     document.body.appendChild(a_app);
-    a_app.click(); // アプリ起動を試行
+    a_app.click();
     document.body.removeChild(a_app);
 
-    // 5. タイムアウトを設定 
     timer = setTimeout(() => {
-        // リスナーを忘れずに削除
         document.removeEventListener('visibilitychange', visibilityChangeHandler);
-
         if (!appLaunched) {
-            // タップしてもアプリが起動しなかった (PWAが非表示にならなかった)
-            // = アプリがインストールされていない、またはURLスキームが無効だった場合
-            
-            // フォールバックとしてブラウザ（Safari）で開く
             const a_web = document.createElement('a');
             a_web.href = webUrl;
-            a_web.target = '_blank'; // Safariで新しいタブとして開く
+            a_web.target = '_blank';
             a_web.rel = 'noopener noreferrer';
             a_web.style.display = 'none';
             document.body.appendChild(a_web);
             a_web.click();
             document.body.removeChild(a_web);
         }
-        // appLaunched が true の場合は、既にアプリが起動しているので何もしません。
-        
-    }, 100); // 待機
-    // ▲▲▲ 修正はここまでです ▲▲▲
+    }, 100);
 }
+
+// ... (後略: URL状態管理、イベントリスナーなどは変更なし) ...
 
 /**
  * ===================================================
@@ -742,15 +1125,10 @@ function applyStateFromURL({ replace = false } = {}) {
   if (replace) buildURLFromState({ method: 'replace' });
   return true;
 }
-/**
- * ===================================================
- * ★★★ ユーティリティ関数（追記） ★★★
- * ===================================================
- */
+
 function scrollToResultsTop() {
   const mainContent = document.querySelector('.main-content');
   if (mainContent) {
-    // ヘッダーの高さを考慮して、結果リストの先頭にスクロール
     const top = mainContent.getBoundingClientRect().top + window.pageYOffset - 24;
     window.scrollTo({ top: Math.max(0, top), behavior: 'auto' });
   }
@@ -799,28 +1177,16 @@ function setupEventListeners() {
     if (pool.length === 0) return;
     const pick = pool[Math.floor(Math.random() * pool.length)];
 
-    // ★★★ ここからが修正点 ★★★
     if (pick && pick.link) {
-      // PWA内で window.open('_blank') が
-      // 内部ナビゲーションを引き起こし白画面になる問題への対策
-      
-      // 1. 一時的なリンク(<a>)要素を作成
       const a = document.createElement('a');
       a.href = pick.link;
-      a.target = '_blank'; // 新しいタブ（PWAの場合は外部ブラウザ）で開く
+      a.target = '_blank';
       a.rel = 'noopener noreferrer';
-      
-      // 2. 画面に追加 (非表示のまま)
       a.style.display = 'none';
       document.body.appendChild(a);
-      
-      // 3. リンクをクリック
       a.click();
-      
-      // 4. すぐに削除
       document.body.removeChild(a);
     }
-    // ★★★ 修正はここまで ★★★
   });
 
   document.getElementById('mainResetBtn').addEventListener('click', resetSearch);
@@ -904,7 +1270,6 @@ function setupEventListeners() {
 
   document.getElementById('createPlaylistBtn').addEventListener('click', createPlaylist);
   window.addEventListener('popstate', () => applyStateFromURL({ replace: false }));
-  // ★ 変更点: passive: true を追加してスクロール性能を向上
   window.addEventListener('orientationchange', () => setTimeout(fitGuestLines, 120), { passive: true });
 
   ['filterToggleBtn', 'favOnlyToggleBtn', 'randomBtn', 'mainResetBtn', 'historyToggle'].forEach(id => {
@@ -918,67 +1283,51 @@ function setupEventListeners() {
     }
   });
 
-  // 画面のリサイズ時にも文字サイズを調整するようにイベントリスナーを追加
   let resizeTimer;
   window.addEventListener('resize', () => {
     clearTimeout(resizeTimer);
-    // リサイズ操作が終わった少し後に実行することで、処理の負荷を軽減します
-    resizeTimer = setTimeout(fitGuestLines, 150);
+    resizeTimer = setTimeout(() => {
+        fitGuestLines();
+        fitDymButtons(); // ★リサイズ時も調整を実行
+    }, 150);
   }, { passive: true });
 
-  // 並び替えセレクトボックスが変更された時の処理
   document.getElementById('sortSelect').addEventListener('change', () => {
     search();
     scrollToResultsTop();
   });
 
-  // ===================================================
-  // ★★★ 検索ボックスのクリアボタン機能 ★★★
-  // ===================================================
   const searchBoxForClear = document.getElementById('searchBox');
   const clearSearchBtn = document.getElementById('clearSearchBtn');
 
   if (searchBoxForClear && clearSearchBtn) {
-    // ボタンの表示/非表示を切り替える関数
     const toggleClearBtn = () => {
       clearSearchBtn.hidden = !searchBoxForClear.value;
     };
 
-    // 入力があるたびに、表示をチェック
     searchBoxForClear.addEventListener('input', toggleClearBtn);
 
-    // ボタンがクリックされた時の処理
     clearSearchBtn.addEventListener('click', () => {
-      searchBoxForClear.value = ''; // 入力欄を空にする
-      toggleClearBtn(); // ボタンを非表示にする
-      search(); // 検索を再実行して結果をリセット
-      searchBoxForClear.focus(); // 続けて入力できるようフォーカスを戻す
+      searchBoxForClear.value = '';
+      toggleClearBtn();
+      search();
+      searchBoxForClear.focus();
     });
 
-    // ページ読み込み時（URLから復元された場合など）にも一度チェック
     toggleClearBtn();
   }
 
-  // ===================================================
-  // ★★★ 検索ボックス内の検索ボタン機能 ★★★
-  // ===================================================
   const mainSearchBtn = document.getElementById('mainSearchBtn');
   if (mainSearchBtn) {
     mainSearchBtn.addEventListener('click', () => {
-      // 既存の検索関数とスクロール関数を呼び出すだけ
       search();
       scrollToResultsTop();
-      mainSearchBtn.blur(); // クリック後にボタンのフォーカスを外す
+      mainSearchBtn.blur();
     });
   }
 }
 
-/**
- * ===================================================
- * ★★★ その他のUI機能 ★★★
- * ===================================================
- */
-
+// ... (後略: その他のUI機能、テーマ設定、スクロールロック等は変更なし) ...
 
 (function scrollLockModule() {
   let lockCount = 0;
@@ -987,16 +1336,11 @@ function setupEventListeners() {
 
   window.acquireBodyLock = () => {
     if (lockCount === 0) {
-      // スクロールバーの幅を計算
       const scrollbarWidth = window.innerWidth - htmlElement.clientWidth;
       
-      // スクロールバーが消えることによるレイアウトのズレを防止
       if (scrollbarWidth > 0 && stickyHeader) {
         stickyHeader.style.paddingRight = `${scrollbarWidth}px`;
       }
-      
-      // ★★★ この行を追加 ★★★
-      // html要素にクラスを付与してスクロールを禁止 (ナビゲーションバーを隠すトリガー)
       htmlElement.classList.add('scroll-locked');
     }
     lockCount++;
@@ -1005,13 +1349,9 @@ function setupEventListeners() {
   window.releaseBodyLock = () => {
     lockCount = Math.max(0, lockCount - 1);
     if (lockCount === 0) {
-      // ズレ防止のpaddingを元に戻す
       if (stickyHeader) {
         stickyHeader.style.paddingRight = '';
       }
-      
-      // ★★★ この行を追加 ★★★
-      // スクロール禁止を解除 (ナビゲーションバーを戻すトリガー)
       htmlElement.classList.remove('scroll-locked');
     }
   };
@@ -1030,15 +1370,12 @@ function setupThemeSwitcher() {
   const THEME_KEY = 'site_theme_v1';
   const allThemeClasses = ['dark-mode', 'theme-pink', 'theme-yellow', 'theme-blue', 'theme-red', 'theme-green'];
 
-  // パネルの表示状態を監視し、トリガーボタンのアクティブ状態を同期する
-  // (PWA版のロジックをこちらにも適用)
   const observer = new MutationObserver(() => {
     const isActive = panel.classList.contains('show');
     toggleBtn.classList.toggle('is-active', isActive);
   });
   observer.observe(panel, { attributes: true, attributeFilter: ['class'] });
   
-  // 初期状態を同期
   toggleBtn.classList.toggle('is-active', panel.classList.contains('show'));
 
   applyTheme = (themeName) => {
@@ -1049,20 +1386,16 @@ function setupThemeSwitcher() {
     panel.querySelector(`.theme-btn[data-theme="${themeName}"]`)?.classList.add('active');
     try { localStorage.setItem(THEME_KEY, themeName); } catch (e) {}
 
-   // 背景が濃く、ステータスバーの文字を白にすべきテーマをリスト化します
     const isDarkStyleStatusBar = ['dark', 'pink', 'blue', 'red', 'green'].includes(themeName);
     const statusBar = document.getElementById('status-bar-style');
     const themeColorMeta = document.getElementById('theme-color-meta');
     
-    // iOS PWAのステータスバーの文字色をテーマに応じて変更
-    // (lightやyellow: 黒文字, それ以外: 白文字)
     if (statusBar) {
       statusBar.content = isDarkStyleStatusBar ? 'black-translucent' : 'default';
     }
 
-    // Android PWAの上部バーの色をテーマに応じて変更
     if (themeColorMeta) {
-      let color = '#f9fafe'; // lightテーマのデフォルト色
+      let color = '#f9fafe';
       switch (themeName) {
         case 'dark':   color = '#22272e'; break;
         case 'pink':   color = '#ff6496'; break;
@@ -1074,7 +1407,6 @@ function setupThemeSwitcher() {
       themeColorMeta.content = color;
     }
 
-    // ちらつき防止用のインラインスタイルを、常に現在のテーマと同期させます
     const earlyStyle = document.getElementById('early-theme-style');
     if (earlyStyle) {
       let bodyBg = '';
@@ -1087,12 +1419,10 @@ function setupThemeSwitcher() {
         case 'green':  bodyBg = '#13a286'; break;
       }
 
-      // ライトテーマに戻す場合はスタイル指定を空にし、
-      // それ以外のテーマでは背景色を!importantで上書きし続けます。
       if (bodyBg) {
         earlyStyle.textContent = 'html, body, #loading-screen { background-color: ' + bodyBg + ' !important; }';
       } else {
-        earlyStyle.textContent = ''; // ライトテーマの場合はリセット
+        earlyStyle.textContent = '';
       }
     }
   };
@@ -1122,19 +1452,12 @@ function setupModals() {
         const closeBtn = document.getElementById(closeBtnId);
         if (!modal || !openTrigger || !closeBtn || !modalContent) return { openModal: ()=>{}, closeModal: ()=>{} };
 
-        let closeTimer = null;
-
         const openModal = () => {
             if (modal.classList.contains('show') || modal.classList.contains('closing')) return;
 
-            // ★ここからが修正箇所です
-            // アニメーションをリセットするために、一度クラスを確実に削除します
             modal.classList.remove('show');
             modal.classList.remove('closing');
-
-            // ブラウザに上記の変更を強制的に認識させます（アニメーションリセットのおまじないです）
             void modal.offsetWidth;
-            // ★ここまでが修正箇所です
 
             if (modalId === 'historyModal' && !modal.dataset.built) {
                 buildTimeline(historyData);
@@ -1157,32 +1480,25 @@ function setupModals() {
         
             let isClosed = false;
         
-            // 閉じる処理の本体
             const finishClose = () => {
-                if (isClosed) return; // 処理が重複しないようにガード
+                if (isClosed) return;
                 isClosed = true;
         
                 modal.hidden = true;
                 modal.classList.remove('closing');
-        
-                // 念のため、イベントリスナーを解除
                 modal.removeEventListener('animationend', onAnimationEnd);
                 
                 window.releaseBodyLock();
             };
         
-            // アニメーション完了を待つリスナー
             const onAnimationEnd = (e) => {
-                // イベントの発生元がモーダル自身の場合のみ処理する
                 if (e.target === modal) {
                     finishClose();
                 }
             };
         
             modal.addEventListener('animationend', onAnimationEnd);
-        
-            // animationendが発火しない場合の安全策としてタイマーを設定
-            setTimeout(finishClose, 300); // 300ミリ秒後に強制実行
+            setTimeout(finishClose, 300);
         };
         openTrigger.addEventListener('click', e => { e.preventDefault(); openModal(); });
         closeBtn.addEventListener('click', closeModal);
@@ -1201,7 +1517,6 @@ function setupModals() {
         }
     });
 }
-
 
 function setupShareButtons() {
   const shareUrl = 'https://searchtheradio.com/';
@@ -1305,7 +1620,6 @@ function buildTimeline(data) {
         dateText = `${String(parseInt(dateParts[1], 10)).padStart(2, '0')}月`;
       }
       
-      // ラベル内の英数字をspanで囲む
       const formattedLabel = it.label.replace(/([A-Za-z0-9]+)/g, '<span class="impact-number">$1</span>');
       
       el.innerHTML = `
@@ -1317,8 +1631,6 @@ function buildTimeline(data) {
     });
     list.appendChild(fragment);
 }
-
-
 
 function rainGoodMarks() {
   const count = 30;
@@ -1334,6 +1646,16 @@ function rainGoodMarks() {
     document.body.appendChild(mark);
   }
 }
+
+// Global function for "Did You Mean"
+window.applyDidYouMean = function(word) {
+  const searchBox = document.getElementById('searchBox');
+  if (searchBox) {
+    searchBox.value = word;
+    search();
+    scrollToResultsTop();
+  }
+};
 
 (function buttonFontSizeSizer() {
     const sizerModule = {
@@ -1365,7 +1687,6 @@ function rainGoodMarks() {
         sizerModule.init();
         document.getElementById('filterToggleBtn')?.setAttribute('data-label', 'フィルタ');
 
-        
         setTimeout(() => {
             const loadingScreen = document.getElementById("loading-screen");
             if (loadingScreen) {
@@ -1375,15 +1696,33 @@ function rainGoodMarks() {
         }, 1000);
     });
 
-    window.addEventListener('load', () => {
+    // load（画像全読み込み）を待たずに、DOM構築後すぐに調整を開始する
+    const activateButtons = () => {
         const runFit = () => sizerModule.fitAll();
-        // ページの読み込みが完了したタイミングで、ボタンの文字サイズ調整などを実行
+        
+        // 念のため数回リトライしてサイズを合わせる
+        runFit();
         setTimeout(runFit, 100);
         setTimeout(runFit, 300);
+        
+        // ボタンを表示状態にするクラスを付与
+        // 少しだけ待つのは、フォント読み込みによるガタつきを一瞬隠すため
         setTimeout(() => {
-            runFit();
             document.body.classList.add('buttons-ready');
-        }, 750);
+            // 表示後にもう一度だけ念押しの調整
+            setTimeout(runFit, 200); 
+        }, 100); 
+    };
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', activateButtons);
+    } else {
+        activateButtons();
+    }
+    
+    // 念のため window.load でも再調整だけ走らせる（表示はすでにされている）
+    window.addEventListener('load', () => {
+        sizerModule.fitAll();
     });
 })();
 
@@ -1412,7 +1751,6 @@ function rainGoodMarks() {
     });
 })();
 
-// Autocomplete is already native JS, so we include it here.
 function initializeAutocomplete() {
   const inputEl = document.getElementById('searchBox');
   const boxEl = document.getElementById('autocomplete');
@@ -1475,8 +1813,6 @@ function initializeAutocomplete() {
         if (!viewItems[index]) return;
         inputEl.value = viewItems[index].label;
         clear();
-
-        
         setTimeout(() => {
           search();
           scrollToResultsTop(); 
@@ -1501,62 +1837,42 @@ const onInput = () => {
     const normQ = normalize(raw);
     if (!normQ) { clear(); return; }
     
-
-    // --- ここからが新しいロジック ---
-
-    // 1. 入力がエピソード番号かどうかを判定
-    // #を削除し、全角数字を半角に変換
     const episodeQuery = raw.replace('#', '').trim().replace(/[０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0));
 
-    // 数字のみで構成されているかチェック
     if (/^\d+$/.test(episodeQuery)) {
       const episodeNumber = parseInt(episodeQuery, 10);
-      
-      // 該当するエピソードを検索
       const targetEpisode = data.find(ep => parseInt(ep.episode, 10) === episodeNumber);
 
       if (targetEpisode && targetEpisode.keywords && targetEpisode.keywords.length > 0) {
-        // --- ここからが新しいロジック ---
-
-        // 1. 除外対象となる出演者関連の "全" キーワードリストを作成
         const guestKeywordsToExclude = new Set();
-        
-        // サイトが知っている主要な出演者とその愛称をすべてリストに追加
         const mainGuests = Object.keys(guestColorMap);
         mainGuests.forEach(guestName => {
-            guestKeywordsToExclude.add(guestName); // 本人名を追加
-            // 辞書データ(readings.json)にあれば、関連キーワード(愛称など)もすべて追加
+            guestKeywordsToExclude.add(guestName);
             if (CUSTOM_READINGS[guestName]) {
                 CUSTOM_READINGS[guestName].forEach(alias => guestKeywordsToExclude.add(alias));
             }
         });
 
-        // その回固有のゲストとその愛称もリストに追加
         const episodeGuests = Array.isArray(targetEpisode.guest) ? targetEpisode.guest : [targetEpisode.guest];
         episodeGuests.forEach(guestName => {
             if (guestName) {
-                guestKeywordsToExclude.add(guestName); // 本人名を追加
+                guestKeywordsToExclude.add(guestName);
                 if (CUSTOM_READINGS[guestName]) {
                     CUSTOM_READINGS[guestName].forEach(alias => guestKeywordsToExclude.add(alias));
                 }
             }
         });
 
-        // 2. キーワードリストから、出演者関連のキーワードを完全に除外
         const filteredKeywords = targetEpisode.keywords.filter(kw => {
           const cleanKeyword = stripTimeSuffix(kw).trim();
           return !guestKeywordsToExclude.has(cleanKeyword);
         });
 
-        // --- ここまでが新しいロジック ---
-        
-        // 3. 除外後のキーワードを候補として整形 (ここは変更なし)
         const keywordsAsEntries = filteredKeywords.map(kw => ({
           label: stripTimeSuffix(kw),
           type: `第${targetEpisode.episode}回`
         }));
         
-        // 重複するキーワードを除去 (ここも変更なし)
         const seen = new Set();
         const uniqueEntries = keywordsAsEntries.filter(el => {
             const duplicate = seen.has(el.label);
@@ -1569,9 +1885,6 @@ const onInput = () => {
       }
     }
 
-    // --- ここまでが新しいロジック ---
-
-    // 3. 通常のキーワード検索ロジック (入力がエピソード番号でなかった場合)
     const scored = entries.map(e => ({ e, s: scoreEntry(e, normQ, raw) })).filter(item => item.s !== null);
     scored.sort((a, b) => b.s - a.s);
     
@@ -1590,39 +1903,26 @@ const onInput = () => {
     render(items.slice(0, 12));
   };
   
-  const debouncedOnInput = debounce(onInput, 150); // ★先に定義する
+  const debouncedOnInput = debounce(onInput, 150);
 
   const onKeyDown = (e) => {
-    // Enterキーが押された時の包括的な処理
     if (e.key === 'Enter') {
-      // 日本語入力変換中（文字の下に線がある状態）のEnterは、
-      // 検索ではなく文字の確定を優先するため、ここで処理を中断する
       if (e.isComposing) {
         return;
       }
-
       e.preventDefault();
       
-      // 候補が選択されていれば、その候補を選択する
       if (!boxEl.hidden && cursor >= 0) {
         pick(cursor);
       } else {
-        // そうでなければ、通常の検索を実行する
-        
-        // 1. これから実行される可能性のある「候補表示の予約」をキャンセル
         debouncedOnInput.cancel();
-        
-        // 2. 表示されている候補があれば、即座にクリア
         clear();
-        
-        // 3. 検索を実行
         search();
         scrollToResultsTop();
       }
-      return; // Enterキーの処理はここで終了
+      return;
     }
 
-    // --- 以下はEnterキー以外のキー処理（変更なし） ---
     if (boxEl.hidden) return;
     if (e.key === 'ArrowDown') { e.preventDefault(); cursor = (cursor + 1) % viewItems.length; render(viewItems); } 
     else if (e.key === 'ArrowUp') { e.preventDefault(); cursor = (cursor - 1 + viewItems.length) % viewItems.length; render(viewItems); } 
@@ -1636,16 +1936,9 @@ const onInput = () => {
   });
 }
 
-/**
- * ===================================================
- * ★★★ 初期化処理の実行 ★★★
- * ===================================================
- */
 document.addEventListener('DOMContentLoaded', () => {
   initializeApp();
   document.documentElement.classList.remove('dark-preload');
-
-  
   document.getElementById("early-dark-style")?.remove();
   
   window.addEventListener('load', updateHeaderOffset);
@@ -1653,22 +1946,14 @@ document.addEventListener('DOMContentLoaded', () => {
   new MutationObserver(updateHeaderOffset).observe(document.querySelector('.sticky-search-area'), { childList: true, subtree: true, attributes: true });
 });
 
-/**
- * ===================================================
- * ★★★ PWA/モバイル対応強化 ★★★
- * ===================================================
- */
 (function enhanceMobileExperience() {
   const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
 
-  // PWAモード（スタンドアロン表示）を検出してクラスを付与
   if (isStandalone) {
     document.documentElement.classList.add('is-standalone');
-    // DOMの準備が整ってからナビゲーションバーをセットアップ
     document.addEventListener('DOMContentLoaded', setupPwaBottomNav);
   }
 
-  // モバイルブラウザの100vh問題を解決
   const setVh = () => {
     if (isInputFocused) return;
     document.documentElement.style.setProperty('--vh', `${window.innerHeight * 0.01}px`);
@@ -1688,27 +1973,19 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  /**
-   * PWAモード専用の下部ナビゲーションバーをセットアップする関数
-   */
   function setupPwaBottomNav() {
-    // 1. ナビゲーションバーのコンテナを作成
     const bottomNav = document.createElement('nav');
     bottomNav.className = 'pwa-bottom-nav';
     bottomNav.id = 'pwa-bottom-nav';
 
-    // 2. 移動させたいボタンの情報を定義
     const buttonConfig = [
       { id: 'filterToggleBtn', label: 'フィルタ', icon: 'fa-solid fa-filter' },
       { id: 'favOnlyToggleBtn', label: 'お気に入り', icon: 'fa-solid fa-star' },
-      // ★★★ ここからが変更点 (テーマボタン追加) ★★★
       { id: 'theme-toggle-btn', label: 'カラー', icon: 'fa-solid fa-palette' },
-      // ★★★ ここまでが変更点 ★★★
       { id: 'randomBtn', label: 'ランダム', icon: 'fa-solid fa-shuffle' },
       { id: 'mainResetBtn', label: 'リセット', icon: 'fa-solid fa-rotate-left' }
     ];
 
-    // 3. 設定に基づいて新しいボタンを生成し、ナビゲーションバーに追加
     buttonConfig.forEach(config => {
       const originalButton = document.getElementById(config.id);
       if (!originalButton) return;
@@ -1721,23 +1998,12 @@ document.addEventListener('DOMContentLoaded', () => {
         <span>${config.label}</span>
       `;
 
-      // 新しいボタンがクリックされたら、元のボタンのクリックイベントを発火させる
-      newButton.addEventListener('click', (e) => { // ★★★ (e) を追加 ★★★
-        
-        // ★★★ この行を追加 ★★★
-        // このクリックがドキュメント全体に伝わって、
-        // パネルを即座に閉じてしまうのを防ぎます。
+      newButton.addEventListener('click', (e) => {
         e.stopPropagation();
-
         originalButton.click();
       });
 
-      // ★★★ ここからが変更点 (監視ロジックの分岐) ★★★
-
-      // A) フィルタ、お気に入り、リセットボタンの場合
       if (config.id === 'filterToggleBtn' || config.id === 'favOnlyToggleBtn' || config.id === 'mainResetBtn') {
-        
-        // 元のボタンの状態（アクティブ/非アクティブ）を監視し、新しいボタンの見た目に反映させる
         const observer = new MutationObserver(() => {
           const isPressed = originalButton.getAttribute('aria-pressed') === 'true';
           const isExpanded = originalButton.getAttribute('aria-expanded') === 'true';
@@ -1745,15 +2011,11 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         observer.observe(originalButton, { attributes: true, attributeFilter: ['aria-pressed', 'aria-expanded'] });
         
-        // 初期状態を同期
         const isPressed = originalButton.getAttribute('aria-pressed') === 'true';
         const isExpanded = originalButton.getAttribute('aria-expanded') === 'true';
         newButton.classList.toggle('is-active', isPressed || isExpanded);
       
-      // B) テーマ切替ボタンの場合
       } else if (config.id === 'theme-toggle-btn') {
-        
-        // テーマパネルの表示状態を監視する
         const themePanel = document.getElementById('floating-theme-panel');
         if (themePanel) {
           const observer = new MutationObserver(() => {
@@ -1761,19 +2023,13 @@ document.addEventListener('DOMContentLoaded', () => {
             newButton.classList.toggle('is-active', isActive);
           });
           observer.observe(themePanel, { attributes: true, attributeFilter: ['class'] });
-
-          // 初期状態を同期
           newButton.classList.toggle('is-active', themePanel.classList.contains('show'));
         }
       }
-      // ( 'randomBtn' はアクティブ状態を持たないので、監視は不要です )
-
-      // ★★★ ここまでが変更点 ★★★
 
       bottomNav.appendChild(newButton);
     });
 
-    // 4. 完成したナビゲーションバーをbodyの末尾に追加
     if (bottomNav.hasChildNodes()) {
       document.body.appendChild(bottomNav);
     }
