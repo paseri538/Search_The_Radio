@@ -662,6 +662,29 @@ function resetSearch() {
   document.getElementById('mainResetBtn')?.blur();
 }
 
+
+/* =================================================== */
+/* ★★★ 新規: 検索条件を残したままトップへ戻る ★★★ */
+/* =================================================== */
+function exitFavoritesMode() {
+  // お気に入りフラグだけを下ろす
+  showFavoritesOnly = false;
+  document.body.classList.remove('fav-only');
+  
+  // お気に入りトグルボタンの見た目を戻す
+  const favBtn = document.getElementById("favOnlyToggleBtn");
+  if (favBtn) {
+    favBtn.classList.remove("active");
+    favBtn.setAttribute("aria-pressed", "false");
+  }
+  
+  // 検索条件（キーワードや絞り込み）は消さずに再検索を実行
+  search();
+  
+  // 画面トップへスクロール
+  try { window.scrollTo({ top: 0, behavior: 'auto' }); } catch (e) { window.scrollTo(0, 0); }
+}
+
 /**
  * ===================================================
  * ★★★ UIレンダリングと更新 ★★★
@@ -686,9 +709,16 @@ function renderResults(arr, page = 1, originalQuery = null, suggestions = []) {
     const liFav = document.createElement('li');
     liFav.className = 'favorites-title-header';
     liFav.style.gridColumn = "1 / -1";
+    
+    // ★タイトルとボタンをセットで表示
     liFav.innerHTML = `
-      <div class="favorites-title-inner">
-        <span>★お気に入り★</span>
+      <div class="favorites-header-layout">
+        <div class="favorites-title-inner">
+          <span>★お気に入り★</span>
+        </div>
+        <button id="favGoHomeBtn" class="fav-home-btn">
+          <i class="fa-solid fa-rotate-left"></i> トップへ戻る
+        </button>
       </div>
     `;
     ul.appendChild(liFav);
@@ -1237,6 +1267,13 @@ function setupEventListeners() {
   });
 
   document.getElementById('results').addEventListener('click', e => {
+
+    const homeBtn = e.target.closest('#favGoHomeBtn');
+  if (homeBtn) {
+    // ★変更: resetSearch() ではなく exitFavoritesMode() を呼ぶ
+    exitFavoritesMode(); 
+  }
+
     const target = e.target;
     const favBtn = target.closest('.fav-btn');
     if (favBtn) {
