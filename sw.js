@@ -1,5 +1,5 @@
 // キャッシュの名前を定義。バージョンを更新すると古いキャッシュは自動的に削除。
-const SW_VERSION = 'v20251217a'; // ★バージョンを更新
+const SW_VERSION = 'v20251225a'; // ★バージョンを更新
 const CACHE_NAME = `radio-cache-${SW_VERSION}`;
 
 
@@ -24,6 +24,7 @@ const CORE_ASSETS = [
 
 // 【重要】ここに、ローカルの全サムネイル画像のパス（.jpg のみ）を貼り付けます
 const THUMBNAIL_ASSETS = [
+  'thumbnails/94.jpg',
   'thumbnails/93.jpg',
   'thumbnails/92.jpg',
   'thumbnails/91.jpg',
