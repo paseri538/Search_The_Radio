@@ -102,7 +102,7 @@
 <meta name="apple-mobile-web-app-title" content="さーち・ざ・らじお！">
 
 
-<link rel="manifest" href="./site.webmanifest?v=20251226a">
+<link rel="manifest" href="./site.webmanifest?v=20251226b">
 
   
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
@@ -112,7 +112,7 @@
 <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
 <link rel="preconnect" href="https://code.jquery.com" crossorigin>
 <link rel="preconnect" href="https://i.ytimg.com" crossorigin>
-  <link href="style.css?v=20251226a" rel="stylesheet" />
+  <link href="style.css?v=20251226b" rel="stylesheet" />
 
 
 </head>
@@ -332,13 +332,13 @@
     h=d.documentElement,t=setTimeout(function(){h.className=h.className.replace(/\bwf-loading\b/g,"")+" wf-inactive";},config.scriptTimeout),tk=d.createElement("script"),f=false,s=d.getElementsByTagName("script")[0],a;h.className+=" wf-loading";tk.src='https://use.typekit.net/'+config.kitId+'.js';tk.async=true;tk.onload=tk.onreadystatechange=function(){a=this.readyState;if(f||a&&a!="complete"&&a!="loaded")return;f=true;clearTimeout(t);try{Typekit.load(config)}catch(e){}};s.parentNode.insertBefore(tk,s)
   })(document);
 </script>
-  <script src="main.js?v=20251226a" defer></script>
+  <script src="main.js?v=20251226b" defer></script>
 
   <script>
   // ---- Service Worker register (network-first) ----
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', function () {
-      navigator.serviceWorker.register('/sw.js?20251226a').then(function(reg) {
+      navigator.serviceWorker.register('/sw.js?20251226b').then(function(reg) {
         return navigator.serviceWorker.ready;
       }).then(function(reg) {
         if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
