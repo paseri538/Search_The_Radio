@@ -43,7 +43,13 @@
 
   --header-offset: 186px; /* フォールバック値 */
 }
-html, body { overflow-x: hidden; margin:0; padding:0; }
+
+/* htmlタグからは overflow-x: hidden を削除します */
+html { margin:0; padding:0; }
+
+/* bodyタグのみに適用します */
+body { overflow-x: hidden; margin:0; padding:0; }
+
 body {
   background: var(--bg-color);
   color: var(--text-color);
@@ -897,7 +903,10 @@ html.wf-active #autocomplete {
 }
 
 .history-section{
-  max-width: 960px; margin: 56px auto 28px; padding: 0 16px;
+  width: 80%;
+  max-width: 960px;
+  margin: 56px auto 28px;
+  padding: 0 16px;
 }
 .history-toggle{
   -webkit-tap-highlight-color: transparent;
@@ -4729,3 +4738,29 @@ body[class*="theme-"] .fav-home-btn {
   }
 }
 
+
+
+/* =================================================== */
+/* ★★★ PWA・ショートコンテンツ時のフッター位置調整 ★★★ */
+/* =================================================== */
+
+/* メインコンテンツエリアをFlexボックス化し、最小高さを画面いっぱいに設定 */
+.main-content {
+  display: flex;
+  flex-direction: column;
+  /* iOSなどのアドレスバー挙動も考慮した高さ計算変数が main.js で定義されている前提 */
+  min-height: calc(var(--vh, 1vh) * 100); 
+  box-sizing: border-box;
+}
+
+/* フッターを強制的に最下部へ押し出す */
+.site-footer {
+  margin-top: auto;
+  
+  /* margin-top: auto を指定すると元の margin-top: 60px が無効になるため、
+     コンテンツが画面いっぱいある時もくっつかないよう padding で余白を確保 */
+  padding-top: 60px;
+  /* 下部の余白は PWA ナビゲーションとの兼ね合いで調整 */
+  padding-bottom: 20px;
+  margin-bottom: 0;
+}
