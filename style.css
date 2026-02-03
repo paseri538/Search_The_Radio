@@ -3878,10 +3878,23 @@ html.is-standalone .sticky-search-area {
   padding-top: calc(0.38rem + var(--safe-top));
 }
 
+/* --- メインコンテンツを画面いっぱいに広げる設定 --- */
 html.is-standalone .main-content {
   padding-left: max(15px, var(--safe-left));
   padding-right: max(15px, var(--safe-right));
   padding-bottom: 80px; /* コンテンツ最下部がナビゲーションバーに隠れないように */
+
+  /* ▼▼▼ 追加・変更箇所 ▼▼▼ */
+  /* 画面の高さを最低でも100%確保し、Flexboxで縦並びにする */
+  min-height: calc(var(--vh, 1vh) * 100);
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box; 
+}
+
+/* ▼▼▼ 新規追加: フッターを強制的に最下部へ押し下げる ▼▼▼ */
+html.is-standalone .site-footer {
+  margin-top: auto; /* これにより、上の空きスペースを埋めて下に配置されます */
 }
 
 /* --- 100vh問題対策 --- */

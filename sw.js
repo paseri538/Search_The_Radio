@@ -1,5 +1,5 @@
 // キャッシュの名前を定義。バージョンを更新すると古いキャッシュは自動的に削除。
-const SW_VERSION = '20260127a'; // ★バージョンを更新
+const SW_VERSION = '20260204a'; // ★バージョンを更新
 const CACHE_NAME = `radio-cache-${SW_VERSION}`;
 
 
@@ -22,8 +22,9 @@ const CORE_ASSETS = [
   'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css'
 ];
 
-// 【重要】ここに、ローカルの全サムネイル画像のパス（.jpg のみ）を貼り付けます
+// ここにローカルの全サムネイル画像のパス（.jpg のみ）を貼り付けます
 const THUMBNAIL_ASSETS = [
+  'thumbnails/96.jpg',
   'thumbnails/95.jpg',
   'thumbnails/94.jpg',
   'thumbnails/93.jpg',

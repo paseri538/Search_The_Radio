@@ -18,6 +18,7 @@ let lastResults = [];
 let clearAutocompleteSuggestions = () => {};
 let isSearchTriggered = false;
 let luckyButtonData = {};
+let kessokuWatasiData = {};
 let historyData = [];
 
 const FAV_KEY = 'str_favs_v1';
@@ -372,15 +373,20 @@ function findDidYouMean(query) {
  */
 async function loadExternalData() {
   try {
-    const [episodesRes, readingsRes, keywordsRes, luckyButtonRes, historyRes] = await Promise.all([
-      fetch('episodes.json'), fetch('readings.json'), fetch('keywords.json'),
-      fetch('lucky-button.json'), fetch('history.json')
+    const [episodesRes, readingsRes, keywordsRes, luckyButtonRes, historyRes, kwRes] = await Promise.all([
+      fetch('episodes.json'),
+      fetch('readings.json'),
+      fetch('keywords.json'),
+      fetch('lucky-button.json'),
+      fetch('history.json'),
+      fetch('kessokuband_watasi.json')
     ]);
     const episodesData = await episodesRes.json();
     const readingsData = await readingsRes.json();
     const keywordsData = await keywordsRes.json();
     luckyButtonData = await luckyButtonRes.json();
     historyData = await historyRes.json();
+    kessokuWatasiData = await kwRes.json();
 
     data = episodesData.map(ep => {
       const keywordsWithoutTimestamp = (ep.keywords || []).map(stripTimeSuffix);
@@ -785,6 +791,7 @@ function renderResults(arr, page = 1, originalQuery = null, suggestions = []) {
   const highlightQuery = (suggestions.length > 0) ? suggestions[0] : (document.getElementById('searchBox').value.trim());
   const cornerTarget = selectedCorners.length === 1 ? selectedCorners[0] : null;
   const isLuckyButtonSearch = (normalize(highlightQuery) === "らっきーぼたん" || selectedCorners.includes("ラッキーボタン"));
+  const isKessokuWatasiSearch = selectedCorners.includes("結束バンドと私") || normalize(highlightQuery) === normalize("結束バンドと私");
 
   const fragment = document.createDocumentFragment();
 
@@ -829,6 +836,14 @@ function renderResults(arr, page = 1, originalQuery = null, suggestions = []) {
     if (isLuckyButtonSearch) {
       const episodeKey = it.episode === "02" && it.title.includes("京まふ") ? "京まふ" : it.episode;
       guestText = luckyButtonData[episodeKey] || guestText;
+    }
+
+    else if (isKessokuWatasiSearch) {
+      const episodeKey = it.episode === "02" && it.title.includes("京まふ") ? "京まふ" : it.episode;
+      // データがあれば書き換え、なければ元のまま
+      if (kessokuWatasiData[episodeKey]) {
+        guestText = kessokuWatasiData[episodeKey];
+      }
     }
 
     const li = document.createElement('li');
