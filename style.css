@@ -3860,9 +3860,8 @@ b, strong,
 }
 
 
-
 /* =================================================== */
-/* ★★★ PWA/モバイル対応強化スタイル (再修正版) ★★★ */
+/* ★★★ PWA/モバイル対応強化スタイル (修正版V2) ★★★ */
 /* =================================================== */
 
 /* --- PWAモードのセーフエリア対応 --- */
@@ -3876,15 +3875,21 @@ b, strong,
 /* JSでhtmlタグに .is-standalone クラスが付与されることを前提とします */
 html.is-standalone .sticky-search-area {
   padding-top: calc(0.38rem + var(--safe-top));
+  padding-left: max(0px, var(--safe-left));
+  padding-right: max(0px, var(--safe-right));
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
 }
 
 /* --- メインコンテンツを画面いっぱいに広げる設定 --- */
 html.is-standalone .main-content {
   padding-left: max(15px, var(--safe-left));
   padding-right: max(15px, var(--safe-right));
-  padding-bottom: 80px; /* コンテンツ最下部がナビゲーションバーに隠れないように */
 
-  /* ▼▼▼ 追加・変更箇所 ▼▼▼ */
+  /* ★修正1: 余白(隙間)の原因を修正 */
+  /* 固定の80pxではなく、ナビゲーションバーの高さと完全に一致させる */
+  padding-bottom: calc(60px + var(--safe-bottom)); 
+
   /* 画面の高さを最低でも100%確保し、Flexboxで縦並びにする */
   min-height: calc(var(--vh, 1vh) * 100);
   display: flex;
@@ -3892,14 +3897,20 @@ html.is-standalone .main-content {
   box-sizing: border-box; 
 }
 
-/* ▼▼▼ 新規追加: フッターを強制的に最下部へ押し下げる ▼▼▼ */
+/* フッターを強制的に最下部に配置 */
 html.is-standalone .site-footer {
   margin-top: auto; /* これにより、上の空きスペースを埋めて下に配置されます */
 }
 
-/* --- 100vh問題対策 --- */
+/* --- 100vh問題対策 & ロード画面修正 --- */
 #loading-screen {
-  height: calc(var(--vh, 1vh) * 100);
+  /* ★修正2: ロード画面の重なり順を最強にして、ナビバーが透けるのを防ぐ */
+  z-index: 2147483647 !important; 
+  
+  /* 高さの計算をより厳密に */
+  height: 100vh;      /* フォールバック */
+  height: 100dvh;     /* アドレスバー等を考慮した動的な高さ */
+  min-height: 100%;
 }
 
 /* --- PWA専用 下部ナビゲーション --- */
@@ -3913,23 +3924,18 @@ html.is-standalone .pwa-bottom-nav {
   bottom: 0;
   left: 0;
   right: 0;
+  /* ナビバーの高さ定義 (メインコンテンツのpadding-bottomと一致) */
   height: calc(60px + var(--safe-bottom, 0px));
   padding-bottom: var(--safe-bottom, 0px);
-
-  
 
   background-color: var(--card-bg, #ffffff);
   border-top: 1px solid var(--btn-reset-border, #e5e7eb);
   box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.06);
   z-index: 3000;
-  /* ★修正点: 表示/非表示をスムーズにするアニメーションを追加 */
   transition: transform 0.25s ease-in-out;
 }
 
-/*
- * ★★★ 不具合修正点 1 (解決策) ★★★
- * モーダル表示中 (html.scroll-locked) は、ナビゲーションバーを画面下に隠す
- */
+/* モーダル表示中はナビバーを隠す (操作干渉防止) */
 html.is-standalone.scroll-locked .pwa-bottom-nav {
   transform: translateY(calc(100% + 18px));
 }
@@ -3951,22 +3957,60 @@ html.is-standalone .pwa-bottom-nav-btn {
   transition: color 0.15s ease;
 }
 
-html.is-standalone .pwa-bottom-nav-btn i {
-  line-height: 1;
-}
-
-/* ★ テキストにも共通の line-height を指定 */
-html.is-standalone .pwa-bottom-nav-btn span {
-  line-height: 1;
-}
+html.is-standalone .pwa-bottom-nav-btn i { line-height: 1; position: relative; }
+html.is-standalone .pwa-bottom-nav-btn span { line-height: 1; position: relative; }
 html.is-standalone .pwa-bottom-nav-btn.is-active { color: var(--btn-main, #6654e8); }
 
+/* PWAモード時は、既存のヘッダー内ボタンを非表示にする */
 html.is-standalone .search-row-controls #filterToggleBtn,
 html.is-standalone .search-row-controls #favOnlyToggleBtn,
 html.is-standalone .search-row-controls #randomBtn,
 html.is-standalone .search-row-controls #mainResetBtn {
   display: none !important;
 }
+
+/* --- テーマカラー対応 --- */
+html.is-standalone body.dark-mode .pwa-bottom-nav {
+  background-color: #252c35;
+  border-top-color: #394150;
+  box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.2);
+}
+html.is-standalone body.dark-mode .pwa-bottom-nav-btn { color: #8ca2b3; }
+html.is-standalone body.dark-mode .pwa-bottom-nav-btn.is-active { color: #ffffff; }
+
+html.is-standalone body[class*="theme-"] .pwa-bottom-nav {
+  background-color: var(--card-bg);
+  border-top-color: var(--history-card-bd);
+}
+html.is-standalone body[class*="theme-"] .pwa-bottom-nav-btn { color: var(--muted); }
+html.is-standalone body[class*="theme-"] .pwa-bottom-nav-btn.is-active { color: var(--btn-main); }
+
+/* 位置調整 */
+html.is-standalone #theme-toggle-btn {
+  bottom: calc(60px + 18px + var(--safe-bottom)) !important;
+}
+html.is-standalone .floating-panel {
+  bottom: calc(60px + 80px + var(--safe-bottom)) !important;
+}
+html.is-standalone #filterDrawer {
+  bottom: 0 !important;
+}
+.modal-overlay {
+  z-index: 3001 !important;
+}
+
+/* ナビアイコン位置の微調整 */
+html.is-standalone #pwa-filterToggleBtn i { font-size: 21px; top: -0.08em; left: 0; }
+html.is-standalone #pwa-filterToggleBtn span { font-size: 10px; top: -0.15em; left: 0.07em; }
+html.is-standalone #pwa-favOnlyToggleBtn i { font-size: 19px; top: -0.1em; left: 0; }
+html.is-standalone #pwa-favOnlyToggleBtn span { font-size: 10px; top: 0.0em; left: 0.05em; }
+html.is-standalone #pwa-randomBtn i { font-size: 22px; top: -0.05em; left: 0; }
+html.is-standalone #pwa-randomBtn span { font-size: 10px; top: -0.15em; left: 0.05em; }
+html.is-standalone #pwa-mainResetBtn i { font-size: 22px; top: -0.05em; left: 0; }
+html.is-standalone #pwa-mainResetBtn span { font-size: 10px; top: -0.15em; left: 0; }
+
+html.is-standalone #pwa-filterToggleBtn { left: 8px; }
+html.is-standalone #pwa-mainResetBtn { right: 8px; }
 
 
 
