@@ -788,8 +788,15 @@ function renderResults(arr, page = 1, originalQuery = null, suggestions = []) {
   const startIdx = (page - 1) * pageSize;
   const endIdx = page * pageSize;
   
-  const highlightQuery = (suggestions.length > 0) ? suggestions[0] : (document.getElementById('searchBox').value.trim());
+  // ★修正: ユーザーの入力(userQuery)とサジェスト(suggestionQuery)を分けて取得
+  const userQuery = document.getElementById('searchBox').value.trim();
+  const suggestionQuery = (suggestions.length > 0) ? suggestions[0] : null;
+
+  // コーナー判定などにはサジェストがあればそちらを使う（既存ロジック維持）
+  const highlightQuery = suggestionQuery || userQuery;
+  
   const cornerTarget = selectedCorners.length === 1 ? selectedCorners[0] : null;
+
   const isLuckyButtonSearch = (normalize(highlightQuery) === "らっきーぼたん" || selectedCorners.includes("ラッキーボタン"));
   const isKessokuWatasiSearch = selectedCorners.includes("結束バンドと私") || normalize(highlightQuery) === normalize("結束バンドと私");
 
@@ -803,7 +810,13 @@ function renderResults(arr, page = 1, originalQuery = null, suggestions = []) {
 
     const hashOnly = getHashNumber(it.title);
 
-    let hit = findHitTime(it, highlightQuery);
+    // ★修正: まずユーザーの入力そのものでタイムスタンプを探す
+    let hit = findHitTime(it, userQuery);
+
+    // ★修正: ヒットせず、もしサジェストがあるなら、そちらでも探す
+    if (!hit && suggestionQuery) {
+      hit = findHitTime(it, suggestionQuery);
+    }
     if (!hit && selectedGuests.length > 0) {
         for(const guest of selectedGuests) {
             if (guest === "結束バンド" || guest === "その他") {
