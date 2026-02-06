@@ -2940,11 +2940,14 @@ body.dark-mode #filterToggleBtn, body.dark-mode #favOnlyToggleBtn, body.dark-mod
 body.dark-mode #createPlaylistBtn { /* ← ここに追加 */
   background-color: #2d333b !important; color: #e5ecec !important; border-color: #394150 !important;
 }
-/* ★★★ ↓↓ このブロックを新しく追加 ↓↓ ★★★ */
+
 body.dark-mode #createPlaylistBtn {
-  background-color: #ff4742 !important; /* 明るい赤 */
-  color: #ffffff !important;
-  border-color: #ff4742 !important;
+  /* 背景を明るい赤から、他のボタンと同じ暗いグレーに変更 */
+  background-color: #2d333b !important;
+  /* 文字色を「パステルレッド」にして、YouTubeっぽさを残しつつ目に優しく */
+  color: #e52d27 !important;
+  /* 枠線も馴染むグレーに変更 */
+  border-color: #394150 !important;
 }
 
 body.dark-mode #filterToggleBtn[aria-expanded="true"], body.dark-mode #favOnlyToggleBtn[aria-pressed="true"] {
