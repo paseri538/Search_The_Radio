@@ -2100,3 +2100,42 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 })();
+
+
+// キーボードの左右矢印キーでのページネーション操作
+  document.addEventListener('keydown', (e) => {
+    // 検索ボックス等にフォーカスが当たっている場合はスキップ
+    const activeEl = document.activeElement;
+    if (activeEl && ['input', 'textarea', 'select'].includes(activeEl.tagName.toLowerCase())) {
+      return;
+    }
+
+    // フィルタードロワーやモーダルが開いている場合はスキップ
+    const filterDrawer = document.getElementById('filterDrawer');
+    const historyModal = document.getElementById('historyModal');
+    const aboutModal = document.getElementById('aboutModal');
+    if ((filterDrawer && filterDrawer.style.display === 'block') || 
+        (historyModal && historyModal.classList.contains('show')) ||
+        (aboutModal && aboutModal.classList.contains('show'))) {
+      return;
+    }
+
+    const totalPage = Math.ceil(lastResults.length / pageSize);
+    if (totalPage <= 1) return; // 1ページしかない場合は何もしない
+
+    if (e.key === 'ArrowRight') {
+      // 次のページへ
+      if (currentPage < totalPage) {
+        e.preventDefault(); // デフォルトのスクロール動作を無効化
+        search({ gotoPage: currentPage + 1 });
+        scrollToResultsTop();
+      }
+    } else if (e.key === 'ArrowLeft') {
+      // 前のページへ
+      if (currentPage > 1) {
+        e.preventDefault(); // デフォルトのスクロール動作を無効化
+        search({ gotoPage: currentPage - 1 });
+        scrollToResultsTop();
+      }
+    }
+  });

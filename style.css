@@ -4799,3 +4799,20 @@ body[class*="theme-"] .fav-home-btn {
 }
 
 
+/* =================================================== */
+/* ★★★ ダークモード時のフィルタードロワー「閉じる」ボタン ★★★ */
+/* =================================================== */
+
+body.dark-mode #filterDrawer .drawer-close-btn {
+  background-color: #2d333b !important;
+  color: #e5ecec !important;
+  border-color: #394150 !important;
+}
+
+@media (hover: hover) {
+  body.dark-mode #filterDrawer .drawer-close-btn:hover,
+  body.dark-mode #filterDrawer .drawer-close-btn:focus {
+    background-color: #364152 !important;
+    border-color: #4a5967 !important;
+  }
+}
