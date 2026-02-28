@@ -4816,3 +4816,215 @@ body.dark-mode #filterDrawer .drawer-close-btn {
     border-color: #4a5967 !important;
   }
 }
+
+/* ======================================================================== */
+/* ===== PC版: フィルターの左サイドバー常時表示化 (ワイド版) ===== */
+/* ======================================================================== */
+
+@media (min-width: 992px) {
+  /* --- 1. 全体の最大幅を広げる (1160px -> 1300px) --- */
+  .main-content,
+  .search-card,
+  .filters-bar,
+  .results-count-under-bar {
+    max-width: 1300px !important;
+  }
+
+  /* --- 2. フィルター開閉ボタンなどを非表示 --- */
+  #filterToggleBtn,
+  .drawer-backdrop,
+  #filterDrawer .drawer-footer {
+    display: none !important;
+  }
+
+  /* --- 3. 上部ボタンの幅を均等に調整 --- */
+  #favOnlyToggleBtn, 
+  #randomBtn, 
+  .reset-btn {
+    width: calc(16.6% - 8px) !important;
+  }
+
+  /* --- 4. フィルタドロワーを左固定のサイドバーに変換 --- */
+  #filterDrawer {
+    display: block !important;
+    position: fixed !important;
+    top: calc(var(--header-offset) + 2px) !important;
+    
+    /* ▼ サイドバーの幅 */
+    width: 280px !important;
+    height: calc(100vh - var(--header-offset) - 20px) !important;
+    
+    /* 画面中央(max-width:1300px)の左端にピタッと合わせる計算 */
+    left: 50% !important;
+    margin-left: -650px !important;
+    
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 20px 20px 5px !important; /* 右側に少しゆとり */
+    overflow-y: auto !important;
+    z-index: 100 !important;
+    transform: none !important;
+    animation: none !important;
+  }
+
+  /* 画面幅が1300pxをやや下回る場合は左端に固定して見切れを防止 */
+  @media (max-width: 1320px) {
+    #filterDrawer {
+      left: 10px !important;
+      margin-left: 0 !important;
+    }
+  }
+
+  /* ダークモードやカラーテーマ適用時の背景色リセットを確実に */
+  body[class*="theme-"] #filterDrawer,
+  body.dark-mode #filterDrawer {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+
+  /* サイドバーのスクロールバーを少し細くスマートに */
+  #filterDrawer::-webkit-scrollbar {
+    width: 6px;
+  }
+  #filterDrawer::-webkit-scrollbar-thumb {
+    background-color: rgba(0, 0, 0, 0.15);
+    border-radius: 4px;
+  }
+  body.dark-mode #filterDrawer::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, 0.2);
+  }
+
+  /* --- 5. フィルター内ボタンの隙間を少し広げて見栄え良く --- */
+  #filterDrawer .filter-grid {
+    gap: 12px !important;
+  }
+
+  /* --- 6. メインコンテンツの配置をサイドバー拡張に合わせて調整 --- */
+  .main-content {
+    padding-left: 305px !important;
+    padding-right: 15px !important;
+  }
+
+  /* --- フィルター内のすべてのボタンを縦1列にして横幅を最大化 --- */
+  #filterDrawer .filter-grid {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important; /* ボタン間の縦の隙間。お好みで数値を調整してください */
+  }
+}
+
+/* ======================================================================== */
+/* ===== カラーテーマ適用時のフィルターボタン視認性修正 ===== */
+/* ======================================================================== */
+
+body[class*="theme-"] #filterDrawer .guest-button,
+body[class*="theme-"] #filterDrawer .btn-corner,
+body[class*="theme-"] #filterDrawer .btn-year {
+  /* 右側の検索結果カードと同じ背景色を適用 */
+  background-color: var(--card-bg) !important;
+
+  color: var(--text-color) !important;
+}
+
+/* マウスホバー時の少し明るくなるエフェクト */
+@media (hover: hover) {
+  body[class*="theme-"] #filterDrawer .guest-button:hover,
+  body[class*="theme-"] #filterDrawer .btn-corner:hover,
+  body[class*="theme-"] #filterDrawer .btn-year:hover {
+    background-color: var(--filter-btn-active) !important;
+    border-color: rgba(255, 255, 255, 0.3) !important;
+  }
+}
+
+/* ======================================================================== */
+/* ===== カラーテーマ: フィルターボタン選択時（アクティブ）の反転修正 ===== */
+/* ======================================================================== */
+
+body[class*="theme-"] #filterDrawer .guest-button.active,
+body[class*="theme-"] #filterDrawer .guest-button[aria-pressed="true"],
+body[class*="theme-"] #filterDrawer .btn-corner.active,
+body[class*="theme-"] #filterDrawer .btn-corner[aria-pressed="true"],
+body[class*="theme-"] #filterDrawer .btn-year.active,
+body[class*="theme-"] #filterDrawer .btn-year[aria-pressed="true"] {
+  /* 背景を真っ白に、文字色をテーマのベースカラーに反転 */
+  background-color: #ffffff !important;
+  color: var(--bg-color) !important;
+  border-color: #ffffff !important;
+  box-shadow: 0 0 0 2.5px rgba(255, 255, 255, 0.4) !important;
+}
+
+/* 選択中のボタンにマウスを乗せた際、色が戻ってしまわないように固定 */
+@media (hover: hover) {
+  body[class*="theme-"] #filterDrawer .guest-button.active:hover,
+  body[class*="theme-"] #filterDrawer .guest-button[aria-pressed="true"]:hover,
+  body[class*="theme-"] #filterDrawer .btn-corner.active:hover,
+  body[class*="theme-"] #filterDrawer .btn-corner[aria-pressed="true"]:hover,
+  body[class*="theme-"] #filterDrawer .btn-year.active:hover,
+  body[class*="theme-"] #filterDrawer .btn-year[aria-pressed="true"]:hover {
+    background-color: #ffffff !important;
+    color: var(--bg-color) !important;
+    border-color: #ffffff !important;
+  }
+}
+
+/* ======================================================================== */
+/* ===== iPad・スマホ版: フィルター内のカラーをPC版と完全に統一 ===== */
+/* ======================================================================== */
+
+@media (max-width: 991px) {
+  /* 1. ドロワー本体の背景色をメイン背景色(--bg-color)に変更。
+     これによりボタン(--card-bg)と同化せず、PC版と同じコントラストになります */
+  body[class*="theme-"] #filterDrawer {
+    background-color: var(--bg-color) !important;
+    border-color: var(--bg-color) !important;
+  }
+}
+
+/* 2. 非選択時ボタンの枠線を透明にして、PC版スクショのようなフラットな質感に統一 */
+body[class*="theme-"] #filterDrawer .guest-button:not(.active):not([aria-pressed="true"]),
+body[class*="theme-"] #filterDrawer .btn-corner:not(.active):not([aria-pressed="true"]),
+body[class*="theme-"] #filterDrawer .btn-year:not(.active):not([aria-pressed="true"]) {
+  border-color: transparent !important;
+}
+
+/* ======================================================================== */
+/* ===== フィルターボタンのホバー挙動をコンテンツカードと統一 ===== */
+/* ======================================================================== */
+
+@media (hover: hover) {
+  /* 全テーマ共通：未選択ボタンのホバー時の拡大(scale)や浮き上がり(translateY)を無効化 */
+  #filterDrawer .guest-button:not(.active):not([aria-pressed="true"]):hover,
+  #filterDrawer .btn-corner:not(.active):not([aria-pressed="true"]):hover,
+  #filterDrawer .btn-year:not(.active):not([aria-pressed="true"]):hover {
+    transform: none !important;
+    box-shadow: none !important;
+  }
+
+  /* 1. 通常（ライト）モードのホバー色をカードと統一 */
+  body:not(.dark-mode):not([class*="theme-"]) #filterDrawer .guest-button:not(.active):not([aria-pressed="true"]):hover,
+  body:not(.dark-mode):not([class*="theme-"]) #filterDrawer .btn-corner:not(.active):not([aria-pressed="true"]):hover,
+  body:not(.dark-mode):not([class*="theme-"]) #filterDrawer .btn-year:not(.active):not([aria-pressed="true"]):hover {
+    background-color: #f5f7fa !important;
+    border-color: #d0d7de !important;
+    color: var(--text-color) !important;
+  }
+
+  /* 2. ダークモードのホバー色をカードと統一 */
+  body.dark-mode #filterDrawer .guest-button:not(.active):not([aria-pressed="true"]):hover,
+  body.dark-mode #filterDrawer .btn-corner:not(.active):not([aria-pressed="true"]):hover,
+  body.dark-mode #filterDrawer .btn-year:not(.active):not([aria-pressed="true"]):hover {
+    background-color: #27343b !important;
+    border-color: #4a5967 !important;
+    color: #ffffff !important;
+  }
+
+  /* 3. カラーテーマ（ピンク～グリーン）のホバー色をカードと統一 */
+  body[class*="theme-"] #filterDrawer .guest-button:not(.active):not([aria-pressed="true"]):hover,
+  body[class*="theme-"] #filterDrawer .btn-corner:not(.active):not([aria-pressed="true"]):hover,
+  body[class*="theme-"] #filterDrawer .btn-year:not(.active):not([aria-pressed="true"]):hover {
+    background-color: var(--filter-btn-active) !important;
+    border-color: var(--btn-main) !important;
+    color: var(--text-color) !important;
+  }
+}
