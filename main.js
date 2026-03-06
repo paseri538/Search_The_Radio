@@ -1752,13 +1752,38 @@ window.applyDidYouMean = function(word) {
         sizerModule.init();
         document.getElementById('filterToggleBtn')?.setAttribute('data-label', 'フィルタ');
 
-        setTimeout(() => {
-            const loadingScreen = document.getElementById("loading-screen");
-            if (loadingScreen) {
-                loadingScreen.classList.add("fadeout");
-                loadingScreen.addEventListener('transitionend', () => loadingScreen.remove(), { once: true });
+        const loadingScreen = document.getElementById("loading-screen");
+        if (loadingScreen) {
+            // ローディング画面を消す共通関数（前回と同じく800ms待機）
+            const hideLoadingScreen = () => {
+                setTimeout(() => {
+                    loadingScreen.classList.add("fadeout");
+                    loadingScreen.addEventListener('transitionend', () => loadingScreen.remove(), { once: true });
+                }, 800);
+            };
+
+            const htmlEl = document.documentElement;
+            
+            // 既にフォントの読み込みが完了している場合
+            if (htmlEl.classList.contains('wf-active') || htmlEl.classList.contains('wf-inactive')) {
+                hideLoadingScreen();
+            } else {
+                // まだ読み込み中の場合は完了の合図を監視
+                const observer = new MutationObserver((mutations, obs) => {
+                    if (htmlEl.classList.contains('wf-active') || htmlEl.classList.contains('wf-inactive')) {
+                        obs.disconnect(); // 監視を終了
+                        hideLoadingScreen();
+                    }
+                });
+                observer.observe(htmlEl, { attributes: true, attributeFilter: ['class'] });
+                
+                // 通信エラー等に備えた保険（最大3秒で強制的に消す）
+                setTimeout(() => {
+                    observer.disconnect();
+                    hideLoadingScreen();
+                }, 3000);
             }
-        }, 1000);
+        }
     });
 
     // load（画像全読み込み）を待たずに、DOM構築後すぐに調整を開始する
