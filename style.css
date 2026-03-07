@@ -5037,7 +5037,7 @@ body[class*="theme-"] #filterDrawer .btn-year:not(.active):not([aria-pressed="tr
 }
 
 /* ======================================================================== */
-/* ===== タブレット・PC(iPad等)でのPWA表示最適化 (PC版UI復元) ===== */
+/* ===== タブレット・PC(iPad等)でのPWA表示最適化 (PC版UI完全復元) ===== */
 /* ======================================================================== */
 @media (min-width: 768px) {
   /* 1. スマホ用の下部ナビゲーションを非表示 */
@@ -5045,7 +5045,7 @@ body[class*="theme-"] #filterDrawer .btn-year:not(.active):not([aria-pressed="tr
     display: none !important;
   }
 
-  /* 2. 隠されていたヘッダー上部のボタン群を復活 */
+  /* 2. PWAモードで隠されていたヘッダー上部のボタン群を復活 */
   html.is-standalone .search-row-controls #filterToggleBtn,
   html.is-standalone .search-row-controls #favOnlyToggleBtn,
   html.is-standalone .search-row-controls #randomBtn,
@@ -5054,53 +5054,50 @@ body[class*="theme-"] #filterDrawer .btn-year:not(.active):not([aria-pressed="tr
     display: inline-flex !important;
   }
 
-  /* 992px以上(サイドバー表示幅)の場合のレイアウト調整を復元 */
-  @media (min-width: 992px) {
-    html.is-standalone .search-row-controls #filterToggleBtn,
-    html.is-standalone .search-row-controls #favOnlyToggleBtn,
-    html.is-standalone .search-row-controls #randomBtn,
-    html.is-standalone .search-row-controls #mainResetBtn,
-    html.is-standalone .search-row-controls .reset-btn {
-      display: flex !important;
-    }
-    
-    /* 左4ボタンが消える前提になっていた上書きレイアウトを元に戻す */
-    html.is-standalone .search-row-controls .reset-btn + .sort-wrapper {
-      margin-left: auto !important;
-    }
-    html.is-standalone .search-row-controls .sort-wrapper,
-    html.is-standalone #createPlaylistBtn {
-      flex: 1 1 0 !important;
-    }
+  /* 3. PWAモードで強制されていた上部レイアウトの崩れをリセット */
+  html.is-standalone .search-row-controls .reset-btn + .sort-wrapper {
+    margin-left: auto !important;
+  }
+  html.is-standalone .search-row-controls .sort-wrapper,
+  html.is-standalone #createPlaylistBtn {
+    flex: 1 1 0 !important;
+    width: auto !important;
   }
 
-  /* 3. メインコンテンツの下部余白(ナビバー分)を通常仕様にリセット */
+  /* 4. メインコンテンツの下部余白(ナビバー分)を通常仕様にリセット */
   html.is-standalone .main-content {
-    padding-bottom: calc(60px + var(--safe-bottom)) !important;
+    padding-bottom: calc(20px + var(--safe-bottom)) !important;
   }
 
-  /* 4. 非表示にされていた右下のカラーテーマ切替ボタンを元の位置に復活 */
+  /* 5. 非表示にされていた右下のカラーテーマ切替ボタンを元の位置に復活 */
   html.is-standalone #theme-toggle-btn {
     position: fixed !important;
     top: auto !important;
     left: auto !important;
     right: 18px !important;
-    bottom: 18px !important;
+    bottom: calc(18px + var(--safe-bottom)) !important;
     opacity: 1 !important;
     pointer-events: auto !important;
   }
 
-  /* 5. フローティングテーマパネル(カラー選択)を元の縦並び・右下配置に戻す */
+  /* 6. フローティングテーマパネル(カラー選択)を元の縦並び・右下配置に戻す */
   html.is-standalone .floating-panel {
-    bottom: 80px !important;
+    bottom: calc(80px + var(--safe-bottom)) !important;
     left: auto !important;
     right: 18px !important;
     transform: translateY(10px) scale(0.95) !important;
     flex-direction: column !important;
-    padding: 14px 10px !important;
     border-radius: 999px !important;
+    padding: 14px 10px !important;
   }
   html.is-standalone .floating-panel.show {
     transform: translateY(0) scale(1) !important;
+  }
+}
+
+/* 7. PCサイズ(992px以上)の場合、左サイドバーが出るため上部のフィルタボタンは消す */
+@media (min-width: 992px) {
+  html.is-standalone .search-row-controls #filterToggleBtn {
+    display: none !important;
   }
 }
