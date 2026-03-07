@@ -5037,190 +5037,70 @@ body[class*="theme-"] #filterDrawer .btn-year:not(.active):not([aria-pressed="tr
 }
 
 /* ======================================================================== */
-/* ===== PWA (スタンドアロン) モードのレイアウト制御 (iPad対応版) ===== */
+/* ===== タブレット・PC(iPad等)でのPWA表示最適化 (PC版UI復元) ===== */
 /* ======================================================================== */
-
-/* --- PWAモードのセーフエリア対応 (全画面共通) --- */
-html.is-standalone .sticky-search-area {
-  padding-top: calc(0.38rem + env(safe-area-inset-top, 0px));
-  padding-left: max(0px, env(safe-area-inset-left, 0px));
-  padding-right: max(0px, env(safe-area-inset-right, 0px));
-  border-top-left-radius: 0;
-  border-top-right-radius: 0;
-}
-
-/* ★ 画面幅が広い場合(iPad/PC)は、下部ナビゲーションを強制非表示にする */
-.pwa-bottom-nav {
-  display: none !important;
-}
-html.is-standalone .search-row-controls #filterToggleBtn,
-html.is-standalone .search-row-controls #favOnlyToggleBtn,
-html.is-standalone .search-row-controls #randomBtn,
-html.is-standalone .search-row-controls #mainResetBtn {
-  display: flex !important; /* PC/iPadレイアウトの上部ボタンを復活 */
-}
-html.is-standalone #theme-toggle-btn {
-  display: flex !important;
-  position: fixed !important;
-  top: auto !important;
-  left: auto !important;
-  bottom: calc(18px + env(safe-area-inset-bottom, 0px)) !important;
-  opacity: 1 !important;
-}
-
-/* ======================================================================== */
-/* ★★★ スマホサイズ (991px以下) のみ PWA下部ナビゲーションを有効化 ★★★ */
-/* ======================================================================== */
-@media (max-width: 991px) {
-  /* メインコンテンツの下余白確保 */
-  html.is-standalone .main-content {
-    padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px)) !important; 
-    min-height: calc(var(--vh, 1vh) * 100);
-    display: flex;
-    flex-direction: column;
-    box-sizing: border-box; 
-  }
-
-  html.is-standalone .site-footer {
-    margin-top: auto; 
-  }
-
-  /* 下部ナビゲーション表示 */
+@media (min-width: 768px) {
+  /* 1. スマホ用の下部ナビゲーションを非表示 */
   html.is-standalone .pwa-bottom-nav {
-    display: flex !important;
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: calc(60px + env(safe-area-inset-bottom, 0px));
-    padding-bottom: env(safe-area-inset-bottom, 0px);
-    background-color: var(--card-bg, #ffffff);
-    border-top: 1px solid var(--btn-reset-border, #e5e7eb);
-    box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.06);
-    z-index: 3000;
-    transition: transform 0.25s ease-in-out;
-    justify-content: center;
-    align-items: flex-start;
-  }
-
-  /* モーダル表示中はナビバーを隠す */
-  html.is-standalone.scroll-locked .pwa-bottom-nav {
-    transform: translateY(calc(100% + 18px));
-  }
-
-  /* 各ボタンの基本スタイル */
-  html.is-standalone .pwa-bottom-nav-btn {
-    flex: 1;
-    max-width: 20%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    background: none;
-    border: none;
-    padding: 0;
-    cursor: pointer;
-    color: var(--muted, #7c8798);
-    font-family: fot-udkakugoc80-pro, 'Segoe UI', system-ui, -apple-system, sans-serif;
-    font-weight: 700 !important;
-    -webkit-tap-highlight-color: transparent;
-    transition: color 0.15s ease;
-    height: 100%;
-  }
-
-  html.is-standalone .pwa-bottom-nav-btn i { line-height: 1; position: relative; }
-  html.is-standalone .pwa-bottom-nav-btn span { line-height: 1; position: relative; }
-  html.is-standalone .pwa-bottom-nav-btn.is-active { color: var(--btn-main, #6654e8); }
-
-  /* 上部ボタンを非表示 */
-  html.is-standalone .search-row-controls #filterToggleBtn,
-  html.is-standalone .search-row-controls #favOnlyToggleBtn,
-  html.is-standalone .search-row-controls #randomBtn,
-  html.is-standalone .search-row-controls #mainResetBtn {
     display: none !important;
   }
 
-  /* --- 中央の「カラー」ボタンのスタイル --- */
-  html.is-standalone #pwa-theme-toggle-btn {
-    flex-grow: 0; 
-    flex-shrink: 0;
-    top: -18px; 
-    width: 68px;
-    height: 68px;
-    min-width: 68px; 
-    border-radius: 50%;
-    background-color: var(--card-bg, #ffffff);
-    border: 2px solid var(--btn-reset-border, #e5e7eb);
-    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.08);
-    margin: 0 8px;
+  /* 2. 隠されていたヘッダー上部のボタン群を復活 */
+  html.is-standalone .search-row-controls #filterToggleBtn,
+  html.is-standalone .search-row-controls #favOnlyToggleBtn,
+  html.is-standalone .search-row-controls #randomBtn,
+  html.is-standalone .search-row-controls #mainResetBtn,
+  html.is-standalone .search-row-controls .reset-btn {
+    display: inline-flex !important;
   }
-  html.is-standalone #pwa-theme-toggle-btn i { font-size: 30px; }
-  html.is-standalone #pwa-theme-toggle-btn span { display: none; }
 
-  html.is-standalone #pwa-theme-toggle-btn.is-active {
-    background-color: var(--btn-main, #6654e8);
-    border-color: var(--card-bg, #ffffff);
+  /* 992px以上(サイドバー表示幅)の場合のレイアウト調整を復元 */
+  @media (min-width: 992px) {
+    html.is-standalone .search-row-controls #filterToggleBtn,
+    html.is-standalone .search-row-controls #favOnlyToggleBtn,
+    html.is-standalone .search-row-controls #randomBtn,
+    html.is-standalone .search-row-controls #mainResetBtn,
+    html.is-standalone .search-row-controls .reset-btn {
+      display: flex !important;
+    }
+    
+    /* 左4ボタンが消える前提になっていた上書きレイアウトを元に戻す */
+    html.is-standalone .search-row-controls .reset-btn + .sort-wrapper {
+      margin-left: auto !important;
+    }
+    html.is-standalone .search-row-controls .sort-wrapper,
+    html.is-standalone #createPlaylistBtn {
+      flex: 1 1 0 !important;
+    }
   }
-  html.is-standalone #pwa-theme-toggle-btn.is-active i { color: var(--card-bg, #ffffff); }
 
-  /* --- テーマカラー対応 (下部ナビ) --- */
-  html.is-standalone body.dark-mode .pwa-bottom-nav { background-color: #252c35; border-top-color: #394150; box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.2); }
-  html.is-standalone body.dark-mode .pwa-bottom-nav-btn { color: #8ca2b3; }
-  html.is-standalone body.dark-mode .pwa-bottom-nav-btn.is-active { color: #ffffff; }
-  html.is-standalone body.dark-mode #pwa-theme-toggle-btn { background-color: #252c35; border-color: #394150; }
-  html.is-standalone body.dark-mode #pwa-theme-toggle-btn.is-active { background-color: #ffffff; border-color: #252c35; }
-  html.is-standalone body.dark-mode #pwa-theme-toggle-btn.is-active i { color: #252c35; }
+  /* 3. メインコンテンツの下部余白(ナビバー分)を通常仕様にリセット */
+  html.is-standalone .main-content {
+    padding-bottom: calc(60px + var(--safe-bottom)) !important;
+  }
 
-  html.is-standalone body[class*="theme-"] .pwa-bottom-nav { background-color: var(--card-bg); border-top-color: var(--history-card-bd); }
-  html.is-standalone body[class*="theme-"] .pwa-bottom-nav-btn { color: var(--muted); }
-  html.is-standalone body[class*="theme-"] .pwa-bottom-nav-btn.is-active { color: var(--btn-main); }
-  html.is-standalone body[class*="theme-"] #pwa-theme-toggle-btn { background-color: var(--card-bg); border-color: var(--bg-color); }
-  html.is-standalone body[class*="theme-"] #pwa-theme-toggle-btn i { color: var(--btn-main); }
-  html.is-standalone body[class*="theme-"] #pwa-theme-toggle-btn.is-active { background-color: var(--btn-main); border-color: var(--card-bg); }
-  html.is-standalone body[class*="theme-"] #pwa-theme-toggle-btn.is-active i { color: var(--card-bg); }
-
-  /* --- 位置調整 --- */
+  /* 4. 非表示にされていた右下のカラーテーマ切替ボタンを元の位置に復活 */
   html.is-standalone #theme-toggle-btn {
     position: fixed !important;
-    top: -100px !important;
-    left: -100px !important;
-    opacity: 0 !important;
+    top: auto !important;
+    left: auto !important;
+    right: 18px !important;
+    bottom: 18px !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
   }
-  
+
+  /* 5. フローティングテーマパネル(カラー選択)を元の縦並び・右下配置に戻す */
   html.is-standalone .floating-panel {
-    bottom: calc(60px + 18px + env(safe-area-inset-bottom, 0px)) !important;
-    left: 50% !important;
-    right: auto !important;
-    transform: translateX(-50%) scale(0.95) !important;
-    flex-direction: row !important;
+    bottom: 80px !important;
+    left: auto !important;
+    right: 18px !important;
+    transform: translateY(10px) scale(0.95) !important;
+    flex-direction: column !important;
+    padding: 14px 10px !important;
     border-radius: 999px !important;
-    padding: 10px 14px !important;
-    gap: 12px !important;
-    transform-origin: bottom center !important;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.2s ease, transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
   html.is-standalone .floating-panel.show {
-    opacity: 1;
-    transform: translateX(-50%) scale(1) !important;
-    pointer-events: auto;
+    transform: translateY(0) scale(1) !important;
   }
-
-  html.is-standalone #filterDrawer {
-    bottom: 0 !important;
-  }
-
-  /* ナビアイコン位置・余白の微調整 */
-  html.is-standalone #pwa-filterToggleBtn i { font-size: 21px; top: -0.08em; left: 0; }
-  html.is-standalone #pwa-filterToggleBtn span { font-size: 10px; top: -0.15em; left: 0.07em; }
-  html.is-standalone #pwa-favOnlyToggleBtn i { font-size: 19px; top: -0.1em; left: 0; }
-  html.is-standalone #pwa-favOnlyToggleBtn span { font-size: 10px; top: 0.0em; left: 0.05em; }
-  html.is-standalone #pwa-randomBtn i { font-size: 22px; top: -0.05em; left: 0; }
-  html.is-standalone #pwa-randomBtn span { font-size: 10px; top: -0.15em; left: 0.05em; }
-  html.is-standalone #pwa-mainResetBtn i { font-size: 22px; top: -0.05em; left: 0; }
-  html.is-standalone #pwa-mainResetBtn span { font-size: 10px; top: -0.15em; left: 0; }
-  
-  html.is-standalone #pwa-filterToggleBtn { left: 8px; }
-  html.is-standalone #pwa-mainResetBtn { right: 8px; }
 }
