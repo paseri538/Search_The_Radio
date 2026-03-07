@@ -1531,7 +1531,14 @@ function setupModals() {
 
             modal.hidden = false;
 
+            // ★追加: アニメーション開始前に一瞬だけ不可視状態で配置し、フォント計算を強制させる
+            modal.style.display = 'flex';
+            modal.style.opacity = '0';
+            void modal.offsetWidth; // 強制リフロー（ここでフォントが適用される）
+
             requestAnimationFrame(() => {
+                modal.style.display = ''; // インラインスタイルを消してCSSに任せる
+                modal.style.opacity = '';
                 modal.classList.add('show');
             });
             window.acquireBodyLock();
@@ -1581,6 +1588,13 @@ function setupModals() {
             if (document.getElementById('historyModal').classList.contains('show')) closeHistory();
         }
     });
+
+    // ★追加: ひすとりーモーダルの内容を裏で事前に構築しておく（初回起動時のチラつき防止）
+    const historyModal = document.getElementById('historyModal');
+    if (historyModal && historyData && historyData.length > 0 && !historyModal.dataset.built) {
+        buildTimeline(historyData);
+        historyModal.dataset.built = 'true';
+    }
 }
 
 function setupShareButtons() {
@@ -1879,7 +1893,8 @@ function initializeAutocomplete() {
     if (isSearchTriggered) return;
     viewItems = items;
     boxEl.innerHTML = '';
-    boxEl.hidden = items.length === 0;
+    
+    // ★修正: 先にDOMを追加してから表示を切り替える
     const qRaw = inputEl.value.trim().toLowerCase();
     const fragment = document.createDocumentFragment();
     items.forEach((item, idx) => {
@@ -1897,6 +1912,12 @@ function initializeAutocomplete() {
       fragment.appendChild(el);
     });
     boxEl.appendChild(fragment);
+
+    // ★追加: 中身を入れた後に表示状態を切り替え、フォント計算を強制
+    boxEl.hidden = items.length === 0;
+    if (!boxEl.hidden) {
+        void boxEl.offsetHeight; // 強制リフロー
+    }
   };
 
  const pick = (index) => {
