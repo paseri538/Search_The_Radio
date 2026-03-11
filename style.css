@@ -5037,21 +5037,25 @@ body[class*="theme-"] #filterDrawer .btn-year:not(.active):not([aria-pressed="tr
 }
 
 /* ======================================================================== */
-/* ===== タブレット・PC(iPad等)でのPWA表示最適化 (PC版UI完全復元) ===== */
+/* ===== タブレット・PCでのPWA表示最適化 (PC版UI完全復元) ===== */
 /* ======================================================================== */
-@media (min-width: 768px) {
-  /* 1. スマホ用の下部ナビゲーションを非表示 */
+@media (min-width: 992px) {
+  /* 1. ボトムナビゲーションを非表示 */
   html.is-standalone .pwa-bottom-nav {
     display: none !important;
   }
 
-  /* 2. PWAモードで隠されていたヘッダー上部のボタン群を復活 */
-  html.is-standalone .search-row-controls #filterToggleBtn,
+  /* 2. PWAモードで隠されていた上部ボタンを復活（フィルタ以外） */
   html.is-standalone .search-row-controls #favOnlyToggleBtn,
   html.is-standalone .search-row-controls #randomBtn,
   html.is-standalone .search-row-controls #mainResetBtn,
   html.is-standalone .search-row-controls .reset-btn {
     display: inline-flex !important;
+  }
+
+  /* 左サイドバーが出るため、上部のフィルタボタンは引き続き非表示 */
+  html.is-standalone .search-row-controls #filterToggleBtn {
+    display: none !important;
   }
 
   /* 3. PWAモードで強制されていた上部レイアウトの崩れをリセット */
@@ -5092,12 +5096,5 @@ body[class*="theme-"] #filterDrawer .btn-year:not(.active):not([aria-pressed="tr
   }
   html.is-standalone .floating-panel.show {
     transform: translateY(0) scale(1) !important;
-  }
-}
-
-/* 7. PCサイズ(992px以上)の場合、左サイドバーが出るため上部のフィルタボタンは消す */
-@media (min-width: 992px) {
-  html.is-standalone .search-row-controls #filterToggleBtn {
-    display: none !important;
   }
 }
