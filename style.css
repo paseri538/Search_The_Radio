@@ -5096,3 +5096,87 @@ body[class*="theme-"] #filterDrawer .btn-year:not(.active):not([aria-pressed="tr
     transform: translateY(0) scale(1) !important;
   }
 }
+
+/* =================================================== */
+/* ★★★ 期間限定：100回記念ローディング画面 ★★★ */
+/* =================================================== */
+
+body #loading-screen,
+body.dark-mode #loading-screen,
+body[class*="theme-"] #loading-screen { 
+  position: fixed; inset: 0; 
+  background-color: #111 !important; /* 記念仕様はダークな背景で完全固定 */
+  display: flex; flex-direction: column; align-items: center; justify-content: center; 
+  z-index: 9999; transition: opacity 0.6s cubic-bezier(.52,0,.37,1.09); 
+  overflow-y: auto; overflow-x: hidden; 
+}
+#loading-screen.fadeout { opacity: 0; pointer-events: none; }
+
+.loading-content { 
+  text-align: center; position: relative; width: 100%; display: flex; 
+  justify-content: center; align-items: center; flex-direction: column; 
+  padding: 0; box-sizing: border-box; margin: 0 auto; 
+}
+
+#loading-thumbnail-wrapper { 
+  position: relative; width: 240px; height: 135px; margin: 0 auto 20px; 
+  border-radius: 12px; overflow: hidden; 
+  box-shadow: 0 10px 30px rgba(0,0,0,0.8), 0 0 0 2px #fabe00; 
+}
+#loading-thumbnail { width: 100%; height: 100%; object-fit: cover; display: block; }
+.thumbnail-overlay { position: absolute; inset: 0; background: linear-gradient(to bottom, transparent, rgba(0,0,0,0.4)); }
+
+#progress-wrapper { 
+  display: flex; flex-direction: column; align-items: center; width: 80%; max-width: 400px; 
+  opacity: 0; /* ★最初は見えないようにする */
+  transition: opacity 0.6s ease; /* ★フワッと表示させるための設定 */
+}
+#progress-wrapper.show {
+  opacity: 1; /* ★JSからこのクラスが付与されると表示される */
+}
+#progress-text { 
+  font-size: 4rem; color: #fff; font-family: 'Impact Numbers', 'Impact', sans-serif; 
+  letter-spacing: 0.02em; margin-bottom: 15px; text-shadow: 0 0 20px rgba(250, 190, 0, 0.5); 
+}
+
+.status-bar { 
+  position: relative; width: 100%; height: 8px; background-color: rgba(255,255,255,0.1); 
+  border-radius: 8px; overflow: hidden; box-shadow: inset 0 2px 4px rgba(0,0,0,0.8); margin-bottom: 12px; 
+}
+#status-fill { 
+  position: absolute; inset: 0; width: 100%; height: 100%; 
+  /* 結束バンドカラーのグラデーション */
+  background: linear-gradient(90deg, #ff6496 0%, #ff6496 25%, #fabe00 25%, #fabe00 50%, #006ebe 50%, #006ebe 75%, #e60046 75%, #e60046 100%); 
+  clip-path: inset(0 100% 0 0); -webkit-clip-path: inset(0 100% 0 0); 
+  transition: clip-path 0.1s linear, -webkit-clip-path 0.1s linear; 
+}
+.loading-label { 
+  font-family: 'Impact Numbers', 'Impact', sans-serif; font-size: 1.2rem; 
+  color: #fabe00; letter-spacing: 0.02em; text-shadow: 0 2px 4px rgba(0,0,0,0.8); 
+}
+.loading-copyright { 
+  font-size: 0.65rem; color: rgba(255, 255, 255, 0.4); margin-top: 15px; 
+  font-family: fot-udkakugoc70-pro, sans-serif; letter-spacing: 0.05em; 
+}
+
+@media (max-width: 600px) {
+  #loading-thumbnail-wrapper { width: 200px; height: 112px; }
+  #progress-text { font-size: 3.5rem; }
+}
+
+/* 変更後 (Impactフォントへの修正＆行間詰め) */
+.loading-label-sub { 
+  font-family: 'Impact Numbers', 'Impact', sans-serif; /* Impactフォントに修正 */
+  font-size: 0.95rem; 
+  color: #fabe00; 
+  letter-spacing: 0.02em; /* 下の LOADING... と文字間隔を統一 */
+  margin-bottom: -2px; /* ★ここの数値で下の文字との距離を調整（マイナスでさらに近づきます） */
+  text-shadow: 0 2px 4px rgba(0,0,0,0.8); 
+}
+
+@media (max-width: 600px) {
+  .loading-label-sub { 
+    font-size: 0.8rem; 
+    margin-bottom: -4px; /* スマホではもう少し近づける */
+  }
+}

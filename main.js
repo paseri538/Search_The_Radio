@@ -1517,7 +1517,7 @@ function setupThemeSwitcher() {
       }
 
       if (bodyBg) {
-        earlyStyle.textContent = 'html, body, #loading-screen { background-color: ' + bodyBg + ' !important; }';
+        earlyStyle.textContent = 'html, body { background-color: ' + bodyBg + ' !important; }';
       } else {
         earlyStyle.textContent = '';
       }
@@ -1800,33 +1800,123 @@ window.applyDidYouMean = function(word) {
 
         const loadingScreen = document.getElementById("loading-screen");
         if (loadingScreen) {
-            // ローディング画面を消す共通関数（前回と同じく800ms待機）
-            const hideLoadingScreen = () => {
-                setTimeout(() => {
-                    loadingScreen.classList.add("fadeout");
-                    loadingScreen.addEventListener('transitionend', () => loadingScreen.remove(), { once: true });
-                }, 800);
+            const progressWrapper = document.getElementById('progress-wrapper');
+            const progressText = document.getElementById('progress-text');
+            const statusFill = document.getElementById('status-fill');
+            const loadingThumbnail = document.getElementById('loading-thumbnail');
+            
+            let progress = 0;
+            let loadingStarted = false;
+
+            const updateLoadingBar = (val) => {
+                if (progressText) progressText.textContent = val + '%';
+                if (statusFill) {
+                    const insetVal = `inset(0 ${100 - val}% 0 0)`;
+                    statusFill.style.clipPath = insetVal;
+                    statusFill.style.webkitClipPath = insetVal;
+                }
+            };
+
+            const advanceLoading = () => {
+                if (progress >= 100) return;
+
+                let increment = 1;
+                let nextDelay = 0;
+
+                // ▼ 進行速度の調整（前回よりもほんの少し早めに調整）
+                if (progress < 30) {
+                    increment = Math.floor(Math.random() * 2) + 1; // 1〜2%
+                    nextDelay = Math.random() * 40 + 60;           // 60〜100ミリ秒 (前回80~140)
+                } else if (progress < 70) {
+                    increment = Math.floor(Math.random() * 2) + 1; // 1〜2%
+                    nextDelay = Math.random() * 30 + 40;           // 40〜70ミリ秒 (前回60~110)
+                } else if (progress < 99) {
+                    increment = Math.floor(Math.random() * 2) + 2; // 2〜3%
+                    nextDelay = Math.random() * 20 + 20;           // 20〜40ミリ秒 (前回40~80)
+                }
+
+                progress += increment;
+                if (progress >= 100) progress = 100;
+                
+                updateLoadingBar(progress);
+
+                if (loadingThumbnail) {
+                    const numStr = String(Math.max(1, Math.min(progress, 100))).padStart(2, '0');
+                    loadingThumbnail.src = `thumbnails/${numStr}.jpg`;
+                }
+
+                // ==========================================
+                // ★★★ 100%到達時の新・画面切り替えアニメーション ★★★
+                // ==========================================
+                if (progress === 100) {
+                    const progressWrapper = document.getElementById('progress-wrapper');
+                    const logoWrapper = document.getElementById('loading-logo-wrapper');
+                    
+                    // 1. まずはメーターとサムネをスーッとフェードアウト
+                    if (progressWrapper) {
+                        progressWrapper.style.opacity = "0";
+                    }
+
+                    setTimeout(() => {
+                        // 2. その直後、さーちざらじおのロゴがポップにフェードイン
+                        if (logoWrapper) {
+                            logoWrapper.style.opacity = "1";
+                            logoWrapper.style.transform = "scale(1)";
+                        }
+
+                        // 3. ロゴの余韻を少し残してから、ローディング画面全体をフェードアウト
+                        setTimeout(() => {
+                            loadingScreen.style.transition = "opacity 0.6s ease";
+                            loadingScreen.style.opacity = "0";
+                            loadingScreen.style.pointerEvents = "none";
+                            
+                            setTimeout(() => {
+                                loadingScreen.style.display = "none";
+                                if (loadingScreen.parentNode) {
+                                    loadingScreen.remove();
+                                }
+                            }, 600); // 全体フェードアウトの完了待ち時間
+                        }, 1200); // ロゴを見せておく時間（1.2秒）
+
+                    }, 400); // メーターが完全に消えるのを待つ時間（0.4秒）
+                // ==========================================
+                } else {
+                    setTimeout(advanceLoading, nextDelay);
+                }
+            };
+
+            const startLoadingProcess = () => {
+                if (!loadingStarted) {
+                    loadingStarted = true;
+                    // ★ 最初に中身をフェードインさせる
+                    if (progressWrapper) {
+                        progressWrapper.classList.add("show");
+                        // フェードインが終わる頃(0.6秒後)にメーターを動かし始める
+                        setTimeout(() => {
+                            advanceLoading();
+                        }, 600);
+                    } else {
+                        advanceLoading();
+                    }
+                }
             };
 
             const htmlEl = document.documentElement;
             
-            // 既にフォントの読み込みが完了している場合
             if (htmlEl.classList.contains('wf-active') || htmlEl.classList.contains('wf-inactive')) {
-                hideLoadingScreen();
+                startLoadingProcess();
             } else {
-                // まだ読み込み中の場合は完了の合図を監視
                 const observer = new MutationObserver((mutations, obs) => {
                     if (htmlEl.classList.contains('wf-active') || htmlEl.classList.contains('wf-inactive')) {
-                        obs.disconnect(); // 監視を終了
-                        hideLoadingScreen();
+                        obs.disconnect(); 
+                        startLoadingProcess();
                     }
                 });
                 observer.observe(htmlEl, { attributes: true, attributeFilter: ['class'] });
                 
-                // 通信エラー等に備えた保険（最大3秒で強制的に消す）
                 setTimeout(() => {
                     observer.disconnect();
-                    hideLoadingScreen();
+                    startLoadingProcess();
                 }, 3000);
             }
         }
