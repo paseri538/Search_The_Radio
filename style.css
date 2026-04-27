@@ -5098,85 +5098,198 @@ body[class*="theme-"] #filterDrawer .btn-year:not(.active):not([aria-pressed="tr
 }
 
 /* =================================================== */
-/* ★★★ 期間限定：100回記念ローディング画面 ★★★ */
+/* ★★★ フォトメモリンク (カメラボタン＆モーダル) ★★★ */
 /* =================================================== */
 
-body #loading-screen,
-body.dark-mode #loading-screen,
-body[class*="theme-"] #loading-screen { 
-  position: fixed; inset: 0; 
-  background-color: #111 !important; /* 記念仕様はダークな背景で完全固定 */
-  display: flex; flex-direction: column; align-items: center; justify-content: center; 
-  z-index: 9999; transition: opacity 0.6s cubic-bezier(.52,0,.37,1.09); 
-  overflow-y: auto; overflow-x: hidden; 
+/* --- カメラボタン (リスト上のボタン) --- */
+.photo-btn {
+  position: absolute;
+  bottom: 10px;
+  right: 52px; 
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #fff;
+  border: 1px solid #e6e6f3;
+  box-shadow: 0 2px 10px -6px #0002;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 2;
+  transition: transform .12s, box-shadow .12s, background .12s;
+  transform: translateZ(0);
 }
-#loading-screen.fadeout { opacity: 0; pointer-events: none; }
-
-.loading-content { 
-  text-align: center; position: relative; width: 100%; display: flex; 
-  justify-content: center; align-items: center; flex-direction: column; 
-  padding: 0; box-sizing: border-box; margin: 0 auto; 
+.photo-btn i {
+  font-size: 15px;
+  color: #333742;
 }
-
-#loading-thumbnail-wrapper { 
-  position: relative; width: 240px; height: 135px; margin: 0 auto 20px; 
-  border-radius: 12px; overflow: hidden; 
-  box-shadow: 0 10px 30px rgba(0,0,0,0.8), 0 0 0 2px #fabe00; 
-}
-#loading-thumbnail { width: 100%; height: 100%; object-fit: cover; display: block; }
-.thumbnail-overlay { position: absolute; inset: 0; background: linear-gradient(to bottom, transparent, rgba(0,0,0,0.4)); }
-
-#progress-wrapper { 
-  display: flex; flex-direction: column; align-items: center; width: 80%; max-width: 400px; 
-  opacity: 0; /* ★最初は見えないようにする */
-  transition: opacity 0.6s ease; /* ★フワッと表示させるための設定 */
-}
-#progress-wrapper.show {
-  opacity: 1; /* ★JSからこのクラスが付与されると表示される */
-}
-#progress-text { 
-  font-size: 4rem; color: #fff; font-family: 'Impact Numbers', 'Impact', sans-serif; 
-  letter-spacing: 0.02em; margin-bottom: 15px; text-shadow: 0 0 20px rgba(250, 190, 0, 0.5); 
+@media (hover: hover) {
+  .photo-btn:hover { transform: scale(1.06); }
 }
 
-.status-bar { 
-  position: relative; width: 100%; height: 8px; background-color: rgba(255,255,255,0.1); 
-  border-radius: 8px; overflow: hidden; box-shadow: inset 0 2px 4px rgba(0,0,0,0.8); margin-bottom: 12px; 
-}
-#status-fill { 
-  position: absolute; inset: 0; width: 100%; height: 100%; 
-  /* 結束バンドカラーのグラデーション */
-  background: linear-gradient(90deg, #ff6496 0%, #ff6496 25%, #fabe00 25%, #fabe00 50%, #006ebe 50%, #006ebe 75%, #e60046 75%, #e60046 100%); 
-  clip-path: inset(0 100% 0 0); -webkit-clip-path: inset(0 100% 0 0); 
-  transition: clip-path 0.1s linear, -webkit-clip-path 0.1s linear; 
-}
-.loading-label { 
-  font-family: 'Impact Numbers', 'Impact', sans-serif; font-size: 1.2rem; 
-  color: #fabe00; letter-spacing: 0.02em; text-shadow: 0 2px 4px rgba(0,0,0,0.8); 
-}
-.loading-copyright { 
-  font-size: 0.65rem; color: rgba(255, 255, 255, 0.4); margin-top: 15px; 
-  font-family: fot-udkakugoc70-pro, sans-serif; letter-spacing: 0.05em; 
+/* --- モーダル全体 --- */
+.modal-content.photo-modal {
+  background: #ffffff;
+  width: min(500px, 90vw); /* 横幅を制限 */
+  border-radius: 20px;     /* 大きめの角丸 */
+  position: relative;
+  padding: 0;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  box-shadow: 0 10px 40px -10px rgba(0,0,0,0.15);
 }
 
-@media (max-width: 600px) {
-  #loading-thumbnail-wrapper { width: 200px; height: 112px; }
-  #progress-text { font-size: 3.5rem; }
+/* --- モーダルヘッダー --- */
+.photo-modal .modal-header {
+  position: relative;
+  padding: 28px 20px 20px;
+  text-align: center;
+  border-bottom: none;
+}
+.photo-modal .modal-title {
+  margin: 0 auto;
+  font-size: 1.3rem;
+  font-family: fot-udkakugoc80-pro, 'Segoe UI', system-ui, -apple-system, sans-serif;
+  font-weight: 800;
+  color: #222;
+  letter-spacing: 0.02em;
 }
 
-/* 変更後 (Impactフォントへの修正＆行間詰め) */
-.loading-label-sub { 
-  font-family: 'Impact Numbers', 'Impact', sans-serif; /* Impactフォントに修正 */
-  font-size: 0.95rem; 
-  color: #fabe00; 
-  letter-spacing: 0.02em; /* 下の LOADING... と文字間隔を統一 */
-  margin-bottom: -2px; /* ★ここの数値で下の文字との距離を調整（マイナスでさらに近づきます） */
-  text-shadow: 0 2px 4px rgba(0,0,0,0.8); 
+/* --- 閉じるボタン --- */
+.photo-modal .modal-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 1.5px solid #e5e7eb;
+  color: #6b7280;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 1.1rem;
+  transition: background 0.2s, transform 0.1s;
+}
+@media (hover: hover) {
+  .photo-modal .modal-close:hover { background: #f3f4f6; }
+}
+.photo-modal .modal-close:active {
+  transform: scale(0.95);
 }
 
-@media (max-width: 600px) {
-  .loading-label-sub { 
-    font-size: 0.8rem; 
-    margin-bottom: -4px; /* スマホではもう少し近づける */
+/* --- リンクボタン群 (ボディ) --- */
+.photo-body {
+  padding: 0 24px 32px; /* 左右と下のパディング */
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.photo-link-btn {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #ffffff;
+  color: #333;
+  text-decoration: none !important;
+  transition: background 0.2s, border-color 0.2s;
+}
+@media (hover: hover) {
+  .photo-link-btn:hover {
+    background: #f8fafc;
+    border-color: #cbd5e1;
   }
+}
+.photo-link-icon {
+  font-size: 1.5rem;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+}
+.photo-link-text {
+  font-size: 0.95rem;
+  font-family: fot-udkakugoc70-pro, 'Segoe UI', system-ui, -apple-system, sans-serif;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+/* =================================================== */
+/* ダークモード対応 */
+/* =================================================== */
+body.dark-mode .photo-btn {
+  background: #2a2f37 !important;
+  border-color: #41505f !important;
+}
+body.dark-mode .photo-btn i {
+  color: #e7eef6 !important;
+}
+body.dark-mode .modal-content.photo-modal {
+  background: #252c35;
+  border-color: #394150;
+  box-shadow: 0 10px 40px -10px rgba(0,0,0,0.6);
+}
+body.dark-mode .photo-modal .modal-title {
+  color: #ffffff;
+}
+body.dark-mode .photo-modal .modal-close {
+  background: #2d333b;
+  border-color: #394150;
+  color: #a0aec0;
+}
+body.dark-mode .photo-link-btn {
+  background: #2d333b;
+  border-color: #394150;
+  color: #e5ecec;
+}
+@media (hover: hover) {
+  body.dark-mode .photo-link-btn:hover {
+    background: #374151;
+    border-color: #4b5563;
+  }
+}
+body.dark-mode .photo-link-icon {
+  color: #9aa4b2;
+}
+
+/* =================================================== */
+/* 各カラーテーマ対応 */
+/* =================================================== */
+body[class*="theme-"] .photo-btn {
+  background: var(--btn-bg) !important;
+  border-color: var(--history-card-bd) !important;
+}
+body[class*="theme-"] .photo-btn i {
+  color: var(--muted) !important;
+}
+body[class*="theme-"] .modal-content.photo-modal {
+  background: var(--card-bg);
+  border-color: var(--history-card-bd);
+}
+body[class*="theme-"] .photo-modal .modal-title {
+  color: var(--text-color);
+}
+body[class*="theme-"] .photo-modal .modal-close {
+  background: var(--btn-bg);
+  border-color: var(--history-card-bd);
+  color: var(--muted);
+}
+body[class*="theme-"] .photo-link-btn {
+  background: var(--btn-bg);
+  border-color: var(--history-card-bd);
+  color: var(--text-color);
+}
+@media (hover: hover) {
+  body[class*="theme-"] .photo-link-btn:hover {
+    background: var(--filter-btn-active);
+  }
+}
+body[class*="theme-"] .photo-link-icon {
+  color: var(--muted);
 }
