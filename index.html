@@ -56,7 +56,7 @@
 
         let styleContent = '';
         if (bodyBg) {
-          styleContent += 'html, body { background-color: ' + bodyBg + ' !important; }';
+          styleContent += 'html, body, #loading-screen { background-color: ' + bodyBg + ' !important; }';
         }
         if (ballColor) {
           styleContent += '.loading-ball { background-color: ' + ballColor + ' !important; }';
@@ -110,7 +110,7 @@
 <meta name="apple-mobile-web-app-title" content="さーち・ざ・らじお！">
 
 
-<link rel="manifest" href="./site.webmanifest?v=20260325a">
+<link rel="manifest" href="./site.webmanifest?v=20260427a">
 
   
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
@@ -120,7 +120,7 @@
 <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
 <link rel="preconnect" href="https://code.jquery.com" crossorigin>
 <link rel="preconnect" href="https://i.ytimg.com" crossorigin>
-  <link href="style.css?v=20260325a" rel="stylesheet" />
+  <link href="style.css?v=20260427a" rel="stylesheet" />
 
 
 </head>
@@ -132,32 +132,18 @@
     </div>
   </div>
 
-
-
-<div id="loading-screen">
-  <div class="loading-content">
-    
-    <div id="loading-logo-wrapper" style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275); transform: scale(0.8);">
-      <picture>
-        <source srcset="logo.webp" type="image/webp">
-        <img src="logo.png" alt="Search The Radio" style="width: 80%; max-width: 400px;">
-      </picture>
-    </div>
-
-    <div id="progress-wrapper">
-      <div id="loading-thumbnail-wrapper">
-        <img src="thumbnails/01.jpg" id="loading-thumbnail" alt="Radio Thumbnail" onerror="this.src='./thumb-fallback.svg'" />
-        <div class="thumbnail-overlay"></div>
-      </div>
-      <div id="progress-text">0%</div>
-      <div class="status-bar"><div id="status-fill"></div></div>
-      
-      <div class="loading-label-sub">CONGRATULATIONS ON 100 RADIO EPISODES!</div>
-      
-      <div class="loading-label">NOW LOADING...</div>
-      <div class="loading-copyright">©はまじあき／芳文社・アニプレックス</div>
-    </div>
+<div id="loading-screen" style="position:fixed;z-index:9999;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+  <picture>
+    <source srcset="logo.webp" type="image/webp">
+    <img src="logo.png" alt="logo" id="loading-logo" style="width:330px;max-width:70vw;" decoding="sync">
+  </picture>
+  <div id="spinner" style="margin-top:38px; display:flex; gap:12px;">
+    <div class="loading-ball ball1"></div>
+    <div class="loading-ball ball2"></div>
+    <div class="loading-ball ball3"></div>
+    <div class="loading-ball ball4"></div>
   </div>
+  <span class="visually-hidden">Loading...</span>
 </div>
 
 
@@ -318,6 +304,19 @@
   </div>
 </section>
 
+<div id="photoModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="photoModalTitle" hidden>
+  <div class="modal-content photo-modal">
+    <div class="modal-header">
+      <h2 id="photoModalTitle" class="modal-title">関連リンク集</h2>
+      <button class="modal-close" id="photoCloseBtn" aria-label="閉じる">
+        <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+      </button>
+    </div>
+    <div class="photo-body" id="photoBody">
+      </div>
+  </div>
+</div>
+
 <div id="historyModal" class="modal-overlay" role="dialog" aria-modal="true"
      aria-labelledby="historyModalTitle" hidden aria-label="ひすとりー・おぶ・らじお！">
   <div class="modal-content history-modal" role="document">
@@ -354,13 +353,13 @@
     h=d.documentElement,t=setTimeout(function(){h.className=h.className.replace(/\bwf-loading\b/g,"")+" wf-inactive";},config.scriptTimeout),tk=d.createElement("script"),f=false,s=d.getElementsByTagName("script")[0],a;h.className+=" wf-loading";tk.src='https://use.typekit.net/'+config.kitId+'.js';tk.async=true;tk.onload=tk.onreadystatechange=function(){a=this.readyState;if(f||a&&a!="complete"&&a!="loaded")return;f=true;clearTimeout(t);try{Typekit.load(config)}catch(e){}};s.parentNode.insertBefore(tk,s)
   })(document);
 </script>
-  <script src="main.js?v=20260325a" defer></script>
+  <script src="main.js?v=20260427a" defer></script>
 
   <script>
   // ---- Service Worker register (network-first) ----
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', function () {
-      navigator.serviceWorker.register('/sw.js?20260325a').then(function(reg) {
+      navigator.serviceWorker.register('/sw.js?20260427a').then(function(reg) {
         return navigator.serviceWorker.ready;
       }).then(function(reg) {
         if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });

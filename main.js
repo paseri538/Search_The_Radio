@@ -20,6 +20,7 @@ let isSearchTriggered = false;
 let luckyButtonData = {};
 let kessokuWatasiData = {};
 let historyData = [];
+let linksData = {}; // ★追加：リンクデータの格納先
 
 const FAV_KEY = 'str_favs_v1';
 let favorites = loadFavs();
@@ -373,13 +374,18 @@ function findDidYouMean(query) {
  */
 async function loadExternalData() {
   try {
-    const [episodesRes, readingsRes, keywordsRes, luckyButtonRes, historyRes, kwRes] = await Promise.all([
+    // ★追加: links.jsonの読み込みを追加 (無ければ空オブジェクト)
+    const [episodesRes, readingsRes, keywordsRes, luckyButtonRes, historyRes, kwRes, linksRes] = await Promise.all([
       fetch('episodes.json'),
       fetch('readings.json'),
       fetch('keywords.json'),
       fetch('lucky-button.json'),
       fetch('history.json'),
-      fetch('kessokuband_watasi.json')
+      fetch('kessokuband_watasi.json'),
+      // ★修正：ファイルがない場合（404エラーなど）でもサイト全体が壊れないように安全処理を追加
+      fetch('links.json')
+        .then(res => res.ok ? res : { json: () => ({}) })
+        .catch(() => ({ json: () => ({}) }))
     ]);
     const episodesData = await episodesRes.json();
     const readingsData = await readingsRes.json();
@@ -387,6 +393,7 @@ async function loadExternalData() {
     luckyButtonData = await luckyButtonRes.json();
     historyData = await historyRes.json();
     kessokuWatasiData = await kwRes.json();
+    linksData = await linksRes.json(); // ★変更
 
     data = episodesData.map(ep => {
       const keywordsWithoutTimestamp = (ep.keywords || []).map(stripTimeSuffix);
@@ -897,6 +904,12 @@ function renderResults(arr, page = 1, originalQuery = null, suggestions = []) {
     li.tabIndex = 0;
     li.style.setProperty('--i', index.toString());
 
+    // ★関連リンクデータがある場合のみボタンのHTMLを生成
+    let photoBtnHtml = '';
+    if (linksData[it.episode] && linksData[it.episode].length > 0) {
+      photoBtnHtml = `<button class="photo-btn" data-ep="${it.episode}" aria-label="関連リンク集" title="関連リンク集"><i class="fa-solid fa-link"></i></button>`;
+    }
+
     li.innerHTML = `
   <a href="${finalLink}" target="_blank" rel="noopener" style="display:flex;text-decoration:none;color:inherit;align-items:center;min-width:0;">
     <div class="thumb-col">
@@ -920,6 +933,7 @@ function renderResults(arr, page = 1, originalQuery = null, suggestions = []) {
       <p class="episode-meta">公開日時：<span class="impact-number">${it.date}</span><br>動画時間：${(it.duration ? `<span class="impact-number">${it.duration}</span>` : '?')}</p>
     </div>
   </a>
+  ${photoBtnHtml}
   <button class="fav-btn" data-id="${videoId}" aria-label="お気に入り" title="お気に入り"><i class="fa-regular fa-star"></i></button>
 `;
     
@@ -1335,6 +1349,16 @@ function setupEventListeners() {
   }
 
     const target = e.target;
+    
+    // ★追加: フォトメモリンクボタンの処理
+    const photoBtn = target.closest('.photo-btn');
+    if (photoBtn) {
+      e.preventDefault(); e.stopPropagation();
+      const ep = photoBtn.dataset.ep;
+      if (window.openPhotoModal) window.openPhotoModal(ep);
+      return;
+    }
+
     const favBtn = target.closest('.fav-btn');
     if (favBtn) {
       e.preventDefault(); e.stopPropagation();
@@ -1517,7 +1541,7 @@ function setupThemeSwitcher() {
       }
 
       if (bodyBg) {
-        earlyStyle.textContent = 'html, body { background-color: ' + bodyBg + ' !important; }';
+        earlyStyle.textContent = 'html, body, #loading-screen { background-color: ' + bodyBg + ' !important; }';
       } else {
         earlyStyle.textContent = '';
       }
@@ -1547,7 +1571,7 @@ function setupModals() {
         const modalContent = modal ? modal.querySelector('.modal-content, #aboutModalContent') : null;
         const openTrigger = document.getElementById(openTriggerId);
         const closeBtn = document.getElementById(closeBtnId);
-        if (!modal || !openTrigger || !closeBtn || !modalContent) return { openModal: ()=>{}, closeModal: ()=>{} };
+        if (!modal || !closeBtn || !modalContent) return { openModal: ()=>{}, closeModal: ()=>{} }; // openTriggerはnull許容に変更
 
         const openModal = () => {
             if (modal.classList.contains('show') || modal.classList.contains('closing')) return;
@@ -1604,7 +1628,10 @@ function setupModals() {
             modal.addEventListener('animationend', onAnimationEnd);
             setTimeout(finishClose, 300);
         };
-        openTrigger.addEventListener('click', e => { e.preventDefault(); openModal(); });
+        
+        if(openTrigger) {
+            openTrigger.addEventListener('click', e => { e.preventDefault(); openModal(); });
+        }
         closeBtn.addEventListener('click', closeModal);
         modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
         
@@ -1614,10 +1641,32 @@ function setupModals() {
     const { closeModal: closeAbout } = setup('aboutModal', 'aboutSiteLink', 'aboutCloseBtn');
     const { closeModal: closeHistory } = setup('historyModal', 'historyToggle', 'historyCloseBtn');
     
+    // ★追加: フォトメモリンク用モーダルのセットアップ
+    const { openModal: openPhoto, closeModal: closePhoto } = setup('photoModal', null, 'photoCloseBtn');
+    
+    // グローバルから呼べるようにする
+    window.openPhotoModal = (ep) => {
+      const links = linksData[ep] || [];
+      const body = document.getElementById('photoBody');
+      
+      body.innerHTML = links.map(link => {
+        const faIcon = link.platform === 'instagram' ? '<i class="fa-brands fa-instagram"></i>' : '<i class="fa-brands fa-x-twitter"></i>';
+        return `
+          <a href="${link.url}" target="_blank" rel="noopener" class="photo-link-btn">
+            <span class="photo-link-icon">${faIcon}</span>
+            <span class="photo-link-text">${link.text}</span>
+          </a>
+        `;
+      }).join('');
+      
+      openPhoto();
+    };
+    
     document.addEventListener('keydown', e => {
         if (e.key === 'Escape') {
-            if (document.getElementById('aboutModal').classList.contains('show')) closeAbout();
-            if (document.getElementById('historyModal').classList.contains('show')) closeHistory();
+            if (document.getElementById('aboutModal')?.classList.contains('show')) closeAbout();
+            if (document.getElementById('historyModal')?.classList.contains('show')) closeHistory();
+            if (document.getElementById('photoModal')?.classList.contains('show')) closePhoto(); // ★追加
         }
     });
 
@@ -1800,123 +1849,33 @@ window.applyDidYouMean = function(word) {
 
         const loadingScreen = document.getElementById("loading-screen");
         if (loadingScreen) {
-            const progressWrapper = document.getElementById('progress-wrapper');
-            const progressText = document.getElementById('progress-text');
-            const statusFill = document.getElementById('status-fill');
-            const loadingThumbnail = document.getElementById('loading-thumbnail');
-            
-            let progress = 0;
-            let loadingStarted = false;
-
-            const updateLoadingBar = (val) => {
-                if (progressText) progressText.textContent = val + '%';
-                if (statusFill) {
-                    const insetVal = `inset(0 ${100 - val}% 0 0)`;
-                    statusFill.style.clipPath = insetVal;
-                    statusFill.style.webkitClipPath = insetVal;
-                }
-            };
-
-            const advanceLoading = () => {
-                if (progress >= 100) return;
-
-                let increment = 1;
-                let nextDelay = 0;
-
-                // ▼ 進行速度の調整（前回よりもほんの少し早めに調整）
-                if (progress < 30) {
-                    increment = Math.floor(Math.random() * 2) + 1; // 1〜2%
-                    nextDelay = Math.random() * 40 + 60;           // 60〜100ミリ秒 (前回80~140)
-                } else if (progress < 70) {
-                    increment = Math.floor(Math.random() * 2) + 1; // 1〜2%
-                    nextDelay = Math.random() * 30 + 40;           // 40〜70ミリ秒 (前回60~110)
-                } else if (progress < 99) {
-                    increment = Math.floor(Math.random() * 2) + 2; // 2〜3%
-                    nextDelay = Math.random() * 20 + 20;           // 20〜40ミリ秒 (前回40~80)
-                }
-
-                progress += increment;
-                if (progress >= 100) progress = 100;
-                
-                updateLoadingBar(progress);
-
-                if (loadingThumbnail) {
-                    const numStr = String(Math.max(1, Math.min(progress, 100))).padStart(2, '0');
-                    loadingThumbnail.src = `thumbnails/${numStr}.jpg`;
-                }
-
-                // ==========================================
-                // ★★★ 100%到達時の新・画面切り替えアニメーション ★★★
-                // ==========================================
-                if (progress === 100) {
-                    const progressWrapper = document.getElementById('progress-wrapper');
-                    const logoWrapper = document.getElementById('loading-logo-wrapper');
-                    
-                    // 1. まずはメーターとサムネをスーッとフェードアウト
-                    if (progressWrapper) {
-                        progressWrapper.style.opacity = "0";
-                    }
-
-                    setTimeout(() => {
-                        // 2. その直後、さーちざらじおのロゴがポップにフェードイン
-                        if (logoWrapper) {
-                            logoWrapper.style.opacity = "1";
-                            logoWrapper.style.transform = "scale(1)";
-                        }
-
-                        // 3. ロゴの余韻を少し残してから、ローディング画面全体をフェードアウト
-                        setTimeout(() => {
-                            loadingScreen.style.transition = "opacity 0.6s ease";
-                            loadingScreen.style.opacity = "0";
-                            loadingScreen.style.pointerEvents = "none";
-                            
-                            setTimeout(() => {
-                                loadingScreen.style.display = "none";
-                                if (loadingScreen.parentNode) {
-                                    loadingScreen.remove();
-                                }
-                            }, 600); // 全体フェードアウトの完了待ち時間
-                        }, 1200); // ロゴを見せておく時間（1.2秒）
-
-                    }, 400); // メーターが完全に消えるのを待つ時間（0.4秒）
-                // ==========================================
-                } else {
-                    setTimeout(advanceLoading, nextDelay);
-                }
-            };
-
-            const startLoadingProcess = () => {
-                if (!loadingStarted) {
-                    loadingStarted = true;
-                    // ★ 最初に中身をフェードインさせる
-                    if (progressWrapper) {
-                        progressWrapper.classList.add("show");
-                        // フェードインが終わる頃(0.6秒後)にメーターを動かし始める
-                        setTimeout(() => {
-                            advanceLoading();
-                        }, 600);
-                    } else {
-                        advanceLoading();
-                    }
-                }
+            // ローディング画面を消す共通関数（前回と同じく800ms待機）
+            const hideLoadingScreen = () => {
+                setTimeout(() => {
+                    loadingScreen.classList.add("fadeout");
+                    loadingScreen.addEventListener('transitionend', () => loadingScreen.remove(), { once: true });
+                }, 800);
             };
 
             const htmlEl = document.documentElement;
             
+            // 既にフォントの読み込みが完了している場合
             if (htmlEl.classList.contains('wf-active') || htmlEl.classList.contains('wf-inactive')) {
-                startLoadingProcess();
+                hideLoadingScreen();
             } else {
+                // まだ読み込み中の場合は完了の合図を監視
                 const observer = new MutationObserver((mutations, obs) => {
                     if (htmlEl.classList.contains('wf-active') || htmlEl.classList.contains('wf-inactive')) {
-                        obs.disconnect(); 
-                        startLoadingProcess();
+                        obs.disconnect(); // 監視を終了
+                        hideLoadingScreen();
                     }
                 });
                 observer.observe(htmlEl, { attributes: true, attributeFilter: ['class'] });
                 
+                // 通信エラー等に備えた保険（最大3秒で強制的に消す）
                 setTimeout(() => {
                     observer.disconnect();
-                    startLoadingProcess();
+                    hideLoadingScreen();
                 }, 3000);
             }
         }
@@ -1953,7 +1912,7 @@ window.applyDidYouMean = function(word) {
 })();
 
 (function robustScrollUnlock() {
-    const modalIds = ['filterDrawer', 'aboutModal', 'historyModal'];
+    const modalIds = ['filterDrawer', 'aboutModal', 'historyModal', 'photoModal']; // ★追加: photoModalを追加
     const observerCallback = (mutationsList) => {
         for (const mutation of mutationsList) {
             const targetElement = mutation.target;
@@ -2269,41 +2228,42 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 })();
 
-
 // キーボードの左右矢印キーでのページネーション操作
-  document.addEventListener('keydown', (e) => {
-    // 検索ボックス等にフォーカスが当たっている場合はスキップ
-    const activeEl = document.activeElement;
-    if (activeEl && ['input', 'textarea', 'select'].includes(activeEl.tagName.toLowerCase())) {
-      return;
-    }
+document.addEventListener('keydown', (e) => {
+  // 検索ボックス等にフォーカスが当たっている場合はスキップ
+  const activeEl = document.activeElement;
+  if (activeEl && ['input', 'textarea', 'select'].includes(activeEl.tagName.toLowerCase())) {
+    return;
+  }
 
-    // フィルタードロワーやモーダルが開いている場合はスキップ
-    const filterDrawer = document.getElementById('filterDrawer');
-    const historyModal = document.getElementById('historyModal');
-    const aboutModal = document.getElementById('aboutModal');
-    if ((filterDrawer && filterDrawer.style.display === 'block') || 
-        (historyModal && historyModal.classList.contains('show')) ||
-        (aboutModal && aboutModal.classList.contains('show'))) {
-      return;
-    }
+  // フィルタードロワーやモーダルが開いている場合はスキップ
+  const filterDrawer = document.getElementById('filterDrawer');
+  const historyModal = document.getElementById('historyModal');
+  const aboutModal = document.getElementById('aboutModal');
+  const photoModal = document.getElementById('photoModal'); // ★追加
+  if ((filterDrawer && filterDrawer.style.display === 'block') || 
+      (historyModal && historyModal.classList.contains('show')) ||
+      (aboutModal && aboutModal.classList.contains('show')) ||
+      (photoModal && photoModal.classList.contains('show'))) { // ★追加
+    return;
+  }
 
-    const totalPage = Math.ceil(lastResults.length / pageSize);
-    if (totalPage <= 1) return; // 1ページしかない場合は何もしない
+  const totalPage = Math.ceil(lastResults.length / pageSize);
+  if (totalPage <= 1) return; // 1ページしかない場合は何もしない
 
-    if (e.key === 'ArrowRight') {
-      // 次のページへ
-      if (currentPage < totalPage) {
-        e.preventDefault(); // デフォルトのスクロール動作を無効化
-        search({ gotoPage: currentPage + 1 });
-        scrollToResultsTop();
-      }
-    } else if (e.key === 'ArrowLeft') {
-      // 前のページへ
-      if (currentPage > 1) {
-        e.preventDefault(); // デフォルトのスクロール動作を無効化
-        search({ gotoPage: currentPage - 1 });
-        scrollToResultsTop();
-      }
+  if (e.key === 'ArrowRight') {
+    // 次のページへ
+    if (currentPage < totalPage) {
+      e.preventDefault(); // デフォルトのスクロール動作を無効化
+      search({ gotoPage: currentPage + 1 });
+      scrollToResultsTop();
     }
-  });
+  } else if (e.key === 'ArrowLeft') {
+    // 前のページへ
+    if (currentPage > 1) {
+      e.preventDefault(); // デフォルトのスクロール動作を無効化
+      search({ gotoPage: currentPage - 1 });
+      scrollToResultsTop();
+    }
+  }
+});
