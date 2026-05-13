@@ -904,9 +904,10 @@ function renderResults(arr, page = 1, originalQuery = null, suggestions = []) {
     li.tabIndex = 0;
     li.style.setProperty('--i', index.toString());
 
-    // ★関連リンクデータがある場合のみボタンのHTMLを生成
     let photoBtnHtml = '';
+    let hasPhotoBtn = false; // ★追加: リンクボタンの有無を判定するフラグ
     if (linksData[it.episode] && linksData[it.episode].length > 0) {
+      hasPhotoBtn = true;    // ★追加
       photoBtnHtml = `<button class="photo-btn" data-ep="${it.episode}" aria-label="関連リンク集" title="関連リンク集"><i class="fa-solid fa-link"></i></button>`;
     }
 
@@ -930,7 +931,10 @@ function renderResults(arr, page = 1, originalQuery = null, suggestions = []) {
           <span class="guest-one-line" aria-label="${guestText}" style="visibility: hidden;">${guestText}</span>
         </h5>
       </div>
-      <p class="episode-meta">公開日時：<span class="impact-number">${it.date}</span><br>動画時間：${(it.duration ? `<span class="impact-number">${it.duration}</span>` : '?')}</p>
+      <div class="episode-meta ${hasPhotoBtn ? 'has-photo-btn' : ''}">
+        <div class="meta-one-line" style="visibility: hidden;">公開日時：<span class="impact-number">${it.date}</span></div>
+        <div class="meta-one-line" style="visibility: hidden;">動画時間：${(it.duration ? `<span class="impact-number">${it.duration}</span>` : '?')}</div>
+      </div>
     </div>
   </a>
   ${photoBtnHtml}
@@ -1024,49 +1028,94 @@ function updateFilterButtonStyles() {
 }
 
 function fitGuestLines() {
-  const guestLines = document.querySelectorAll('.guest-one-line');
   let needsRetry = false;
 
-  guestLines.forEach(line => {
+  // --- 1. テキスト幅を計測して最適なサイズを計算する共通関数 ---
+  const calculateSize = (line) => {
     line.style.fontSize = '';
     line.style.whiteSpace = 'normal';
     
     const parent = line.parentElement;
-    if (!parent) {
-      line.style.visibility = 'visible';
-      return;
-    }
+    if (!parent) return null;
 
-    const parentWidth = parent.clientWidth;
+    const compStyle = window.getComputedStyle(parent);
+    const paddingLeft = parseFloat(compStyle.paddingLeft) || 0;
+    const paddingRight = parseFloat(compStyle.paddingRight) || 0;
+    const parentWidth = parent.clientWidth - paddingLeft - paddingRight;
     
-    if (parentWidth <= 100) {
+    if (parentWidth <= 10) {
       needsRetry = true;
-      return;
+      return null;
     }
 
     line.style.whiteSpace = 'nowrap';
     const currentWidth = line.scrollWidth;
-    
-    const MIN_FONT_SIZE = 9;
+    const MIN_FONT_SIZE = 8.5;
 
+    let finalSize = parseFloat(window.getComputedStyle(line).fontSize) || 12;
     if (currentWidth > parentWidth) {
-      const originalSize = parseFloat(window.getComputedStyle(line).fontSize);
+      const originalSize = finalSize;
       let newSize = (parentWidth / currentWidth) * originalSize;
+      finalSize = Math.max(newSize, MIN_FONT_SIZE);
+    }
+    return { finalSize, parentWidth, currentWidth, MIN_FONT_SIZE };
+  };
 
-      const finalSize = Math.max(newSize, MIN_FONT_SIZE);
-      line.style.fontSize = finalSize + 'px';
+  // --- 2. ゲスト名の処理（従来通り1行ごとに独立して計算・適用） ---
+  const guestLines = document.querySelectorAll('.guest-one-line');
+  guestLines.forEach(line => {
+    const res = calculateSize(line);
+    if (!res) {
+      line.style.visibility = 'visible';
+      return;
+    }
+    
+    line.style.fontSize = res.finalSize + 'px';
 
-      if (finalSize === MIN_FONT_SIZE && line.scrollWidth > parentWidth) {
+    if (res.finalSize === res.MIN_FONT_SIZE && line.scrollWidth > res.parentWidth) {
+      line.classList.add('needs-ellipsis');
+    } else {
+      line.classList.remove('needs-ellipsis');
+    }
+    line.style.visibility = 'visible';
+  });
+
+  // --- 3. メタ情報（公開日時・動画時間）の処理（2行のサイズを比較して小さい方に統一する） ---
+  const metaContainers = document.querySelectorAll('.episode-meta');
+  metaContainers.forEach(container => {
+    const lines = container.querySelectorAll('.meta-one-line');
+    if (lines.length === 0) return;
+
+    let minSize = 999;
+    const results = [];
+
+    // まず親要素内のすべての行の理想サイズを計算
+    lines.forEach(line => {
+      const res = calculateSize(line);
+      if (res) {
+        results.push({ line, res });
+        if (res.finalSize < minSize) {
+          minSize = res.finalSize; // 一番小さいフォントサイズを記録
+        }
+      } else {
+        line.style.visibility = 'visible';
+      }
+    });
+
+    if (minSize === 999) return; // 計算できなかった場合はスキップ
+
+    // 計算結果をもとに、同じ親要素内の2行を「一番小さいサイズ」に揃えて適用
+    results.forEach(({ line, res }) => {
+      line.style.fontSize = minSize + 'px';
+      
+      // 統一サイズ適用後、限界まで小さくしてもはみ出す場合は「...」を付与
+      if (minSize === res.MIN_FONT_SIZE && line.scrollWidth > res.parentWidth) {
         line.classList.add('needs-ellipsis');
       } else {
         line.classList.remove('needs-ellipsis');
       }
-
-    } else {
-      line.classList.remove('needs-ellipsis');
-    }
-    
-    line.style.visibility = 'visible';
+      line.style.visibility = 'visible';
+    });
   });
 
   if (needsRetry) {
@@ -1833,7 +1882,8 @@ window.applyDidYouMean = function(word) {
             return startSize;
         },
         fitAll: function() {
-            if (window.innerWidth > 991) {
+            // ★修正: 判定値を 991 から 1069 に変更
+            if (window.innerWidth > 1069) {
                 this.targets.forEach(el => el.style.fontSize = '');
                 return;
             }

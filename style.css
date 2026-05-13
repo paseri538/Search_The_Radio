@@ -1,5 +1,3 @@
-
-
 /* =================================================== */
 /* ★★★ Impactフォント定義と調整用変数 ★★★ */
 /* =================================================== */
@@ -237,7 +235,7 @@ body {
 }
 @keyframes fadein-drawer { from { opacity: 0; transform: translateY(-8px);} to { opacity: 1; transform: translateY(0);} } to { opacity: 1; transform: translate(-50%, 0);}
 .filter-section { margin-bottom: 13px; padding-left: 1.2rem; padding-right: 1.2rem; }
-@media (min-width: 769px){
+@media (min-width: 780px){
   .filter-section { padding-left: 0; padding-right: 0; }
 }
 
@@ -335,7 +333,7 @@ body {
 #results {
   display: grid; grid-template-columns: 1fr 1fr; gap: 13px 10px; margin: 0; padding: 0;
 }
-@media (max-width: 767px) {
+@media (max-width: 779px) {
   #results { grid-template-columns: 1fr; gap: 9px 0; }
 }
 .episode-item {
@@ -662,6 +660,10 @@ body.dark-mode #aboutModalContent a {
   height: 18px;
   border-radius: 50%;
   animation: bounce 0.6s infinite ease-in-out;
+  
+  /* ★追加: スマホでのカクつきを防ぐため、GPU処理を強制する */
+  will-change: transform;
+  transform: translateZ(0); 
 }
 
 .ball1 { background-color: #ff6496; animation-delay: 0s;   }
@@ -671,10 +673,12 @@ body.dark-mode #aboutModalContent a {
 
 @keyframes bounce {
   0%, 80%, 100% {
-    transform: translateY(0);
+    /* ★変更: translateY を translate3d に変えることでGPUアクセラレーションを確実にする */
+    transform: translate3d(0, 0, 0);
   }
   40% {
-    transform: translateY(-12px);
+    /* ★変更: translateY を translate3d に変える */
+    transform: translate3d(0, -12px, 0);
   }
 }
 
@@ -1463,7 +1467,7 @@ body.dark-mode .share-btn:focus-visible {
 
 
 /* ===== SP: 4ボタン等幅 + 並び替えは下段（gridで統一） ===== */
-@media (max-width: 991px){
+@media (max-width: 1069px){
   .search-row-controls{
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -1535,7 +1539,7 @@ body.dark-mode .share-btn:focus-visible {
 
 
 /* === Controls: 自動調整用の共通サイズ変数＋形崩れ防止 === */
-@media (max-width: 768px){
+@media (max-width: 779px){
   /* 文字サイズを JS から上書きするための CSS 変数（初期値 15px） */
   .search-row-controls #filterToggleBtn,
   .search-row-controls #favOnlyToggleBtn,
@@ -1576,7 +1580,7 @@ body.dark-mode .share-btn:focus-visible {
 }
 
 /* === SPボタン: 見た目の統一（アイコン行高/記号サイズ） === */
-@media (max-width: 768px){
+@media (max-width: 779px){
   /* 自動調整フォント用 変数（JSで更新） */
   .search-row-controls #filterToggleBtn,
   .search-row-controls #favOnlyToggleBtn,
@@ -1604,7 +1608,7 @@ body.dark-mode .share-btn:focus-visible {
 /* ===== SP: 4ボタンの太さと余白を完全統一 ===== */
 :root { --ctl-gap: .38em; }  /* アイコンと文字の統一間隔 */
 
-@media (max-width: 768px){
+@media (max-width: 779px){
   /* 4ボタンの太さはすべて同じ（500）に統一。余白は margin で管理 */
   .search-row-controls #filterToggleBtn,
   .search-row-controls #favOnlyToggleBtn,
@@ -2717,8 +2721,8 @@ body.body-scroll-locked {
 /* --- 2. デバイスごとのレイアウトとスタイル --- */
 
 /* ★★★★★ ここから新しく追加 ★★★★★ */
-/* スマホ (768px以下) */
-@media (max-width: 768px) {
+/* スマホ (779px以下) */
+@media (max-width: 779px) {
   /* (V2.1) の flex-direction: column を打ち消す */
   .search-row-controls #filterToggleBtn,
   .search-row-controls #favOnlyToggleBtn,
@@ -2791,8 +2795,8 @@ body.body-scroll-locked {
   }
 }
 
-/* スマホ (991px以下) */
-@media (min-width: 769px) and (max-width: 991px) {
+/* スマホ (1069px以下) */
+@media (min-width: 780px) and (max-width: 1069px) {
 
 
   #filterToggleBtn, #favOnlyToggleBtn, #randomBtn, .reset-btn {
@@ -2830,8 +2834,8 @@ body.body-scroll-locked {
       content: "↺" !important;
     }
 }
-/* PC (992px以上) */
-@media (min-width: 992px) {
+/* PC (1070px以上) */
+@media (min-width: 1070px) {
   .search-row-controls { display: flex !important; gap: 10px !important; }
   .search-row-controls .sort-wrapper {
     flex: 1 1 0 !important; /* ★ 変更 */
@@ -3140,7 +3144,7 @@ html {
 /* ======================================================================== */
 /* ===== (V2.1) スマホ表示時: コントロールボタンのデザインを微調整 ===== */
 /* ======================================================================== */
-@media (max-width: 991px) {
+@media (max-width: 1069px) {
 
   /* 4つのボタンに共通の縦並びレイアウトを適用 */
   .search-row-controls #filterToggleBtn,
@@ -3301,9 +3305,9 @@ html {
 }
 
 /* ======================================================================== */
-/* ★★★ スマホ表示 (幅 767px 以下) の調整エリア ★★★ */
+/* ★★★ スマホ表示 (幅 779px 以下) の調整エリア ★★★ */
 /* ======================================================================== */
-@media (max-width: 767px) {
+@media (max-width: 779px) {
   /* --- サムネイル (幅120px / 高さ67.5px) --- */
   .episode-item .thumbnail {
     width: 130px; 
@@ -3353,9 +3357,9 @@ html {
 }
 
 /* ======================================================================== */
-/* ★★★ タブレット表示 (iPad縦・横) (幅 768px ～ 1180px) の調整エリア ★★★ */
+/* ★★★ タブレット表示 (iPad縦・横) (幅 780px ～ 1069px) の調整エリア ★★★ */
 /* ======================================================================== */
-@media (min-width: 768px) and (max-width: 1180px) {
+@media (min-width: 780px) and (max-width: 1069px) {
   .episode-item {
     padding: 14px;
     padding-right: 16px;
@@ -3407,9 +3411,9 @@ html {
 }
 
 /* ======================================================================== */
-/* ★★★ PC表示 (幅 1181px 以上) の調整エリア ★★★ */
+/* ★★★ PC表示 (幅 1070px 以上) の調整エリア ★★★ */
 /* ======================================================================== */
-@media (min-width: 1181px) {
+@media (min-width: 1070px) {
   .episode-item {
     padding: 14px;
   }
@@ -3516,15 +3520,15 @@ body.dark-mode .ts-btn {
 
 /* --- デバイスごとの幅調整 --- */
 
-/* 5. スマホ表示 (幅 767px 以下) のコンテナ幅をサムネイルに合わせます */
-@media (max-width: 767px) {
+/* 5. スマホ表示 (幅 779px 以下) のコンテナ幅をサムネイルに合わせます */
+@media (max-width: 779px) {
   .thumb-col {
     width: 130px; /* スマホ用サムネイル幅 */
   }
 }
 
-/* 6. タブレット・PC表示 (幅 768px 以上) のコンテナ幅をサムネイルに合わせます */
-@media (min-width: 768px) {
+/* 6. タブレット・PC表示 (幅 780px 以上) のコンテナ幅をサムネイルに合わせます */
+@media (min-width: 780px) {
   .thumb-col {
     width: 150px; /* タブレット・PC用サムネイル幅 */
   }
@@ -4617,7 +4621,7 @@ body[class*="theme-"] .dym-link {
 }
 
 /* PCなどの広い画面では最大幅を固定ピクセルにする */
-@media (min-width: 768px) {
+@media (min-width: 780px) {
   .dym-word-btn {
     max-width: 600px;
   }
@@ -4826,7 +4830,7 @@ body.dark-mode #filterDrawer .drawer-close-btn {
 /* ===== PC版: フィルターの左サイドバー常時表示化 (ワイド版) ===== */
 /* ======================================================================== */
 
-@media (min-width: 992px) {
+@media (min-width: 1070px) {
   /* --- 1. 全体の最大幅を広げる (1160px -> 1300px) --- */
   .main-content,
   .search-card,
@@ -4977,7 +4981,7 @@ body[class*="theme-"] #filterDrawer .btn-year[aria-pressed="true"] {
 /* ===== iPad・スマホ版: フィルター内のカラーをPC版と完全に統一 ===== */
 /* ======================================================================== */
 
-@media (max-width: 991px) {
+@media (max-width: 1069px) {
   /* 1. ドロワー本体の背景色をメイン背景色(--bg-color)に変更。
      これによりボタン(--card-bg)と同化せず、PC版と同じコントラストになります */
   body[class*="theme-"] #filterDrawer {
@@ -5037,7 +5041,7 @@ body[class*="theme-"] #filterDrawer .btn-year:not(.active):not([aria-pressed="tr
 /* ======================================================================== */
 /* ===== タブレット・PCでのPWA表示最適化 (PC版UI完全復元) ===== */
 /* ======================================================================== */
-@media (min-width: 992px) {
+@media (min-width: 1070px) {
   /* 1. ボトムナビゲーションを非表示 */
   html.is-standalone .pwa-bottom-nav {
     display: none !important;
@@ -5131,20 +5135,30 @@ body[class*="theme-"] #filterDrawer .btn-year:not(.active):not([aria-pressed="tr
 /* --- モーダル全体 --- */
 .modal-content.photo-modal {
   background: #ffffff;
-  width: min(500px, 90vw); /* 横幅を制限 */
-  border-radius: 20px;     /* 大きめの角丸 */
+  width: min(500px, 92vw); /* 横幅を少し広げて調整 */
+  
+  /* 最大高さを制限し、画面端にぴったりくっつかないよう上下にマージンを確保 */
+  max-height: 75vh;
+  margin-bottom: 20px; 
+  
+  display: flex;
+  flex-direction: column;
+  border-radius: 24px;     /* 角丸を少し強調して柔らかい印象に */
   position: relative;
   padding: 0;
   border: 1px solid rgba(0, 0, 0, 0.05);
-  box-shadow: 0 10px 40px -10px rgba(0,0,0,0.15);
+  box-shadow: 0 15px 50px -12px rgba(0,0,0,0.2);
+  overflow: hidden; /* 子要素の角丸をはみ出させない */
 }
 
-/* --- モーダルヘッダー --- */
+/* --- モーダルヘッダー (固定) --- */
 .photo-modal .modal-header {
   position: relative;
-  padding: 28px 20px 20px;
+  flex-shrink: 0; /* ヘッダーが潰れないように固定 */
+  padding: 32px 20px 16px;
   text-align: center;
-  border-bottom: none;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05); /* 境界線を薄く追加 */
+  z-index: 10;
 }
 .photo-modal .modal-title {
   margin: 0 auto;
@@ -5176,33 +5190,49 @@ body[class*="theme-"] #filterDrawer .btn-year:not(.active):not([aria-pressed="tr
 @media (hover: hover) {
   .photo-modal .modal-close:hover { background: #f3f4f6; }
 }
-.photo-modal .modal-close:active {
-  transform: scale(0.95);
-}
 
-/* --- リンクボタン群 (ボディ) --- */
+/* --- リンクボタン群 (スクロールエリア) --- */
 .photo-body {
-  padding: 0 24px 32px; /* 左右と下のパディング */
+  padding: 20px 24px 40px; /* ★下部パディングを40pxに増やして余白を確保 */
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
+  
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
+
+/* ★★★ スクロールバーを常に薄く表示して、スクロール可能であることを伝える ★★★ */
+.photo-body::-webkit-scrollbar {
+  width: 6px;
+}
+.photo-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+.photo-body::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.12); /* 薄いグレーのバー */
+  border-radius: 10px;
+}
+
 .photo-link-btn {
   display: flex;
   align-items: center;
   gap: 16px;
   padding: 16px 20px;
   border: 1px solid #e2e8f0;
-  border-radius: 12px;
+  border-radius: 16px;
   background: #ffffff;
   color: #333;
   text-decoration: none !important;
-  transition: background 0.2s, border-color 0.2s;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.02);
 }
 @media (hover: hover) {
   .photo-link-btn:hover {
     background: #f8fafc;
     border-color: #cbd5e1;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
   }
 }
 .photo-link-icon {
@@ -5216,7 +5246,7 @@ body[class*="theme-"] #filterDrawer .btn-year:not(.active):not([aria-pressed="tr
 .photo-link-text {
   font-size: 0.95rem;
   font-family: fot-udkakugoc70-pro, 'Segoe UI', system-ui, -apple-system, sans-serif;
-  font-weight: 500;
+  font-weight: 700; /* 太字にして視認性アップ */
   line-height: 1.4;
 }
 
@@ -5233,7 +5263,9 @@ body.dark-mode .photo-btn i {
 body.dark-mode .modal-content.photo-modal {
   background: #252c35;
   border-color: #394150;
-  box-shadow: 0 10px 40px -10px rgba(0,0,0,0.6);
+}
+body.dark-mode .photo-modal .modal-header {
+  border-bottom-color: #394150;
 }
 body.dark-mode .photo-modal .modal-title {
   color: #ffffff;
@@ -5257,6 +5289,10 @@ body.dark-mode .photo-link-btn {
 body.dark-mode .photo-link-icon {
   color: #9aa4b2;
 }
+/* ダークモード用スクロールバー */
+body.dark-mode .photo-body::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.15);
+}
 
 /* =================================================== */
 /* 各カラーテーマ対応 */
@@ -5271,6 +5307,9 @@ body[class*="theme-"] .photo-btn i {
 body[class*="theme-"] .modal-content.photo-modal {
   background: var(--card-bg);
   border-color: var(--history-card-bd);
+}
+body[class*="theme-"] .photo-modal .modal-header {
+  border-bottom-color: var(--history-card-bd);
 }
 body[class*="theme-"] .photo-modal .modal-title {
   color: var(--text-color);
@@ -5293,3 +5332,65 @@ body[class*="theme-"] .photo-link-btn {
 body[class*="theme-"] .photo-link-icon {
   color: var(--muted);
 }
+/* カラーテーマ用スクロールバー */
+body[class*="theme-"] .photo-body::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.3);
+}
+
+/* =================================================== */
+/* ★★★ 公開日時・動画時間のテキスト被り回避＆自動縮小 ★★★ */
+/* =================================================== */
+.episode-item .episode-meta {
+  display: flex !important;
+  flex-direction: column;
+  width: 100% !important;
+  box-sizing: border-box !important; 
+  
+  white-space: normal !important;
+  word-break: normal !important;
+  overflow-wrap: normal !important;
+  
+  /* 右下のボタン類と被らないように余白を確保 */
+  padding-right: 44px; /* お気に入りボタン(☆)のみの場合 */
+}
+.episode-item .episode-meta.has-photo-btn {
+  padding-right: 78px; /* リンク(🔗)＋お気に入り(☆)が両方ある場合 */
+}
+
+/* 各行（公開日時 / 動画時間）のラッパー */
+.meta-one-line {
+  /* ★修正: blockにして幅を100%に固定し、絶対に改行させない指定を追加 */
+  display: block; 
+  width: 100%;
+  white-space: nowrap !important; 
+  overflow: hidden;
+}
+
+/* 限界まで文字を縮小しても入り切らない場合は「...」で省略する */
+.meta-one-line.needs-ellipsis {
+  text-overflow: ellipsis !important;
+}
+
+/* =================================================== */
+/* ★★★ 誤タップ防止：ボタンのタッチ判定エリア拡大 ★★★ */
+/* =================================================== */
+
+/* リンクボタンとお気に入りボタンの周囲に「透明なタップ領域」を設けて、
+   背後の動画リンク(aタグ)を誤って押してしまうのを防ぎます。 */
+.fav-btn::after,
+.photo-btn::after {
+  content: '';
+  position: absolute;
+  
+  /* 上下は指で押しやすいように大きめに広げる (+14pxずつ) */
+  top: -14px;
+  bottom: -14px;
+  
+  /* 左右は2つのボタンの判定が重ならない程度に広げる (+5pxずつ) */
+  left: -5px;
+  right: -5px;
+  
+  /* タップ判定の形状を少し丸くする */
+  border-radius: 50px;
+}
+
