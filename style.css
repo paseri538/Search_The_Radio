@@ -4056,9 +4056,9 @@ html.is-standalone .floating-panel {
   bottom: calc(60px + 80px + var(--safe-bottom)) !important;
 }
 
-/* フィルタードロワーの下端指定は、ナビバーが隠れるようになったため不要になりましたが、念のため残しておきます */
+/* ★修正: フィルタードロワーがナビゲーションバーと被らないよう、ナビバーの高さ分だけ下を空ける */
 html.is-standalone #filterDrawer {
-  bottom: 0 !important; /* ドロワー自体は画面下端まで広がるように戻します */
+  bottom: calc(60px + var(--safe-bottom, 0px)) !important; 
 }
 
 
