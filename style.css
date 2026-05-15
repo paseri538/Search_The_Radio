@@ -3947,9 +3947,9 @@ html.is-standalone .pwa-bottom-nav {
   transition: transform 0.25s ease-in-out;
 }
 
-/* モーダル表示中はナビバーを隠す (操作干渉防止) */
+/* ★修正: モーダル表示中もナビバーを隠さない（下に引っ込ませない）ように変更 */
 html.is-standalone.scroll-locked .pwa-bottom-nav {
-  transform: translateY(calc(100% + 18px));
+  transform: translateY(0) !important;
 }
 
 html.is-standalone .pwa-bottom-nav-btn {
@@ -5350,11 +5350,12 @@ body[class*="theme-"] .photo-body::-webkit-scrollbar-thumb {
   word-break: normal !important;
   overflow-wrap: normal !important;
   
-  /* 右下のボタン類と被らないように余白を確保 */
-  padding-right: 44px; /* お気に入りボタン(☆)のみの場合 */
+  /* ★修正: 右下のボタン類と被らないように【確実な】余白を確保 */
+  padding-right: 48px !important; /* お気に入りボタン(☆)のみの場合 */
 }
 .episode-item .episode-meta.has-photo-btn {
-  padding-right: 78px; /* リンク(🔗)＋お気に入り(☆)が両方ある場合 */
+  /* ★修正: リンクボタンの左端は右から86pxの位置にあるため、90px以上の余白が必要です */
+  padding-right: 90px !important; 
 }
 
 /* 各行（公開日時 / 動画時間）のラッパー */

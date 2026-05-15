@@ -1072,7 +1072,8 @@ function fitGuestLines() {
     
     line.style.fontSize = res.finalSize + 'px';
 
-    if (res.finalSize === res.MIN_FONT_SIZE && line.scrollWidth > res.parentWidth) {
+    // ★微調整: 小数点以下の計算誤差を吸収するために +1 を追加
+    if (res.finalSize === res.MIN_FONT_SIZE && line.scrollWidth > res.parentWidth + 1) {
       line.classList.add('needs-ellipsis');
     } else {
       line.classList.remove('needs-ellipsis');
@@ -1108,8 +1109,8 @@ function fitGuestLines() {
     results.forEach(({ line, res }) => {
       line.style.fontSize = minSize + 'px';
       
-      // 統一サイズ適用後、限界まで小さくしてもはみ出す場合は「...」を付与
-      if (minSize === res.MIN_FONT_SIZE && line.scrollWidth > res.parentWidth) {
+      // ★微調整: 統一サイズ適用後、限界まで小さくしてもはみ出す場合は「...」を付与 (+1で誤差吸収)
+      if (minSize === res.MIN_FONT_SIZE && line.scrollWidth > res.parentWidth + 1) {
         line.classList.add('needs-ellipsis');
       } else {
         line.classList.remove('needs-ellipsis');
