@@ -5354,8 +5354,7 @@ body[class*="theme-"] .photo-body::-webkit-scrollbar-thumb {
   padding-right: 48px !important; /* お気に入りボタン(☆)のみの場合 */
 }
 .episode-item .episode-meta.has-photo-btn {
-  /* ★修正: リンクボタンの左端は右から86pxの位置にあるため、90px以上の余白が必要です */
-  padding-right: 90px !important; 
+  padding-right:76px !important; 
 }
 
 /* 各行（公開日時 / 動画時間）のラッパー */
