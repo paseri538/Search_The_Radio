@@ -20688,3 +20688,91 @@ body #favSceneModal#favSceneModal#favSceneModal #favSceneEpisodeCard#favSceneEpi
   pointer-events: none !important;
   opacity: .92 !important;
 }
+
+/* ===================================================
+   Favorite scene modal v105: iOS Safari editor layout
+   - iOS 26 Safariのキーボード/下部バーに保存・キャンセルが隠れないよう、
+     スマホ編集時は操作ボタンを入力欄の上へ固定する。
+   =================================================== */
+@media (max-width: 779px){
+  body #favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal.modal-overlay.fav-scene-modal-overlay.is-editing .fav-scene-body,
+  html.vv-keyboard-open body #favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal.modal-overlay.fav-scene-modal-overlay.is-editing .fav-scene-body{
+    max-height: calc(var(--app-vv-height, 100svh) - 86px) !important;
+    padding: 12px clamp(14px, 3.2vw, 18px) 14px !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    scroll-padding-top: 74px !important;
+    scroll-padding-bottom: 16px !important;
+    -webkit-overflow-scrolling: touch !important;
+    overscroll-behavior: contain !important;
+  }
+
+  body #favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal.modal-overlay.fav-scene-modal-overlay.is-editing .fav-scene-comment-row,
+  html.vv-keyboard-open body #favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal.modal-overlay.fav-scene-modal-overlay.is-editing .fav-scene-comment-row{
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+    grid-template-areas:
+      "cancel save"
+      "input input" !important;
+    gap: 10px 12px !important;
+    align-items: stretch !important;
+    align-content: start !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  body #favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal.modal-overlay.fav-scene-modal-overlay.is-editing .fav-scene-comment-input,
+  html.vv-keyboard-open body #favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal.modal-overlay.fav-scene-modal-overlay.is-editing .fav-scene-comment-input{
+    grid-area: input !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 148px !important;
+    height: clamp(148px, 34svh, 220px) !important;
+    max-height: 220px !important;
+    margin: 0 !important;
+    padding: 16px !important;
+    border-radius: 18px !important;
+    font-size: 16px !important;
+    line-height: 1.45 !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    resize: vertical !important;
+  }
+
+  body #favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal.modal-overlay.fav-scene-modal-overlay.is-editing .fav-scene-save-btn,
+  html.vv-keyboard-open body #favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal.modal-overlay.fav-scene-modal-overlay.is-editing .fav-scene-save-btn{
+    grid-area: save !important;
+  }
+
+  body #favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal.modal-overlay.fav-scene-modal-overlay.is-editing #favSceneInlineCancelBtn,
+  html.vv-keyboard-open body #favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal.modal-overlay.fav-scene-modal-overlay.is-editing #favSceneInlineCancelBtn{
+    grid-area: cancel !important;
+  }
+
+  body #favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal.modal-overlay.fav-scene-modal-overlay.is-editing .fav-scene-save-btn,
+  body #favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal.modal-overlay.fav-scene-modal-overlay.is-editing #favSceneInlineCancelBtn,
+  html.vv-keyboard-open body #favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal.modal-overlay.fav-scene-modal-overlay.is-editing .fav-scene-save-btn,
+  html.vv-keyboard-open body #favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal.modal-overlay.fav-scene-modal-overlay.is-editing #favSceneInlineCancelBtn{
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    height: 46px !important;
+    min-height: 46px !important;
+    margin: 0 !important;
+    padding: 0 14px !important;
+    border-radius: 999px !important;
+    font-size: clamp(.94rem, 3.25vw, 1rem) !important;
+    font-weight: 850 !important;
+    line-height: 1.1 !important;
+    white-space: nowrap !important;
+    box-sizing: border-box !important;
+  }
+
+  body #favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal.modal-overlay.fav-scene-modal-overlay.is-editing.is-comment-focused .fav-scene-episode-card,
+  html.vv-keyboard-open body #favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal.modal-overlay.fav-scene-modal-overlay.is-editing .fav-scene-episode-card{
+    flex-shrink: 0 !important;
+  }
+}
