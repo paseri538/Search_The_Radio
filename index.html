@@ -17,7 +17,7 @@
           case 'dark':
             color = '#22272e';
             statusBarStyle = 'black-translucent';
-            bodyBg = color;
+            bodyBg = color;　
             break;
           case 'pink':
             color = '#ff6496';
@@ -110,7 +110,7 @@
 <meta name="apple-mobile-web-app-title" content="さーち・ざ・らじお！">
 
 
-<link rel="manifest" href="./site.webmanifest?v=20260611a">
+<link rel="manifest" href="./site.webmanifest?v=20260613a">
 
   
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
@@ -120,7 +120,7 @@
 <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
 <link rel="preconnect" href="https://code.jquery.com" crossorigin>
 <link rel="preconnect" href="https://i.ytimg.com" crossorigin>
-  <link href="style.css?v=20260611a" rel="stylesheet" />
+  <link href="style.css?v=20260613a" rel="stylesheet" />
 
 
 </head>
@@ -265,7 +265,7 @@
    
     <div id="aboutModal" class="modal-overlay">
       <div id="aboutModalContent">
-        <button id="aboutCloseBtn"><i class="fa-solid fa-xmark"></i></button>
+        <button class="modal-close" id="aboutCloseBtn" aria-label="閉じる"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
         <picture>
           <source srcset="logo.webp" type="image/webp">
           <img src="logo.png" alt="logo" class="about-logo"/>
@@ -317,6 +317,58 @@
   </div>
 </div>
 
+<div id="favSceneModal" class="modal-overlay fav-scene-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="favSceneModalTitle" hidden>
+  <div class="modal-content fav-scene-modal" role="document">
+    <div class="fav-scene-topbar">
+      <div class="fav-scene-title-wrap">
+        <h2 id="favSceneModalTitle" class="modal-title">お気に入りシーン</h2>
+      </div>
+      <button class="modal-close fav-scene-close" id="favSceneCloseBtn" aria-label="閉じる">
+        <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+      </button>
+    </div>
+
+    <div class="fav-scene-body">
+      <div id="favSceneEpisodeCard" class="fav-scene-episode-card" aria-label="選択中のエピソード"></div>
+
+      <div id="favSceneEpisodeInline" class="fav-scene-episode-inline" aria-hidden="true" hidden></div>
+
+      <div class="fav-scene-saved">
+        <form id="favSceneForm" class="fav-scene-form fav-scene-inline-editor" hidden>
+          <div class="fav-scene-field fav-scene-time-field">
+            <div class="fav-scene-comment-row">
+              <textarea id="favSceneCommentInput" class="fav-scene-comment-input" rows="5" autocapitalize="off" autocomplete="off" autocorrect="off" spellcheck="false" aria-label="タイムスタンプとメモを入力" placeholder="例：30:00 好きなシーン"></textarea>
+              <button type="submit" class="fav-scene-save-btn">
+                <i class="fa-solid fa-plus" aria-hidden="true"></i> 保存
+              </button>
+              <button type="button" id="favSceneInlineCancelBtn" class="fav-scene-inline-cancel-btn">キャンセル</button>
+            </div>
+            <p class="fav-scene-comment-help">1行に1つずつ入力。時間なしメモも登録できます。</p>
+            <p id="favSceneError" class="fav-scene-error" hidden></p>
+          </div>
+        </form>
+
+        <p id="favSceneEmpty" class="fav-scene-empty">まだタイムスタンプはありません。</p>
+        <ul id="favSceneList" class="fav-scene-list"></ul>
+
+        <div class="fav-scene-saved-head">
+          <div class="fav-scene-saved-labels">
+            <div class="fav-scene-saved-title">タイムスタンプ</div>
+            <p id="favSceneSavedHint" class="fav-scene-saved-hint" hidden></p>
+          </div>
+          <button type="button" id="favSceneOpenEditorBtn" class="fav-scene-open-editor-btn">
+            <i class="fa-solid fa-pen-to-square" aria-hidden="true"></i> <span class="fav-scene-open-editor-label">タイムスタンプ編集</span>
+          </button>
+        </div>
+      </div>
+
+      <button type="button" id="favSceneRemoveBtn" class="fav-scene-remove-btn" aria-label="お気に入りを解除する" hidden>
+        <i class="fa-solid fa-star-half-stroke" aria-hidden="true"></i> お気に入りを解除する
+      </button>
+    </div>
+  </div>
+</div>
+
 <div id="historyModal" class="modal-overlay" role="dialog" aria-modal="true"
      aria-labelledby="historyModalTitle" hidden aria-label="ひすとりー・おぶ・らじお！">
   <div class="modal-content history-modal" role="document">
@@ -353,13 +405,13 @@
     h=d.documentElement,t=setTimeout(function(){h.className=h.className.replace(/\bwf-loading\b/g,"")+" wf-inactive";},config.scriptTimeout),tk=d.createElement("script"),f=false,s=d.getElementsByTagName("script")[0],a;h.className+=" wf-loading";tk.src='https://use.typekit.net/'+config.kitId+'.js';tk.async=true;tk.onload=tk.onreadystatechange=function(){a=this.readyState;if(f||a&&a!="complete"&&a!="loaded")return;f=true;clearTimeout(t);try{Typekit.load(config)}catch(e){}};s.parentNode.insertBefore(tk,s)
   })(document);
 </script>
-  <script src="main.js?v=20260611a" defer></script>
+  <script src="main.js?v=20260613a" defer></script>
 
   <script>
   // ---- Service Worker register (network-first) ----
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', function () {
-      navigator.serviceWorker.register('/sw.js?20260611a').then(function(reg) {
+      navigator.serviceWorker.register('/sw.js?20260613a').then(function(reg) {
         return navigator.serviceWorker.ready;
       }).then(function(reg) {
         if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
