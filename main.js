@@ -86,6 +86,7 @@ let favoriteScenes = loadFavoriteScenes();
 let pendingFavoriteEpisode = null;
 let showFavoritesOnly = false;
 let isRestoringURL = false;
+let postRenderFitRaf = 0;
 
 // Guest colors (for active filters)
 const guestColorMap = {
@@ -986,20 +987,33 @@ function search(opts = {}) {
   updatePlaylistButtonVisibility();
 }
 
-function resetFilters() {
+function resetFilters({ runSearch = true } = {}) {
   selectedGuests = [];
   selectedCorners = [];
   selectedOthers = [];
   selectedYears = [];
   updateFilterButtonStyles();
-  search();
+  if (runSearch) search();
 }
 
 function resetSearch() {
   const searchBox = document.getElementById('searchBox');
   const sortSelect = document.getElementById('sortSelect');
-  if (searchBox) searchBox.value = "";
-  searchBox.dispatchEvent(new Event('input'));
+  const hadQuery = Boolean(searchBox && searchBox.value);
+  const hadSort = Boolean(sortSelect && sortSelect.value !== "newest");
+  const hadFilters = selectedGuests.length > 0 || selectedCorners.length > 0 || selectedOthers.length > 0 || selectedYears.length > 0;
+  const hadFavOnly = showFavoritesOnly;
+  const hadPage = currentPage !== 1;
+  const shouldSearch = hadQuery || hadSort || hadFilters || hadFavOnly || hadPage;
+
+  if (searchBox && hadQuery) {
+    searchBox.value = "";
+    searchBox.dispatchEvent(new Event('input'));
+  } else {
+    const clearSearchBtn = document.getElementById('clearSearchBtn');
+    if (clearSearchBtn) clearSearchBtn.hidden = true;
+    if (typeof clearAutocompleteSuggestions === 'function') clearAutocompleteSuggestions();
+  }
   if (sortSelect) sortSelect.value = "newest";
 
   if (showFavoritesOnly) {
@@ -1014,7 +1028,9 @@ function resetSearch() {
     }
   }
 
-  resetFilters();
+  resetFilters({ runSearch: false });
+  currentPage = 1;
+  if (shouldSearch) search({ gotoPage: 1 });
   try { window.scrollTo({ top: 0, behavior: 'auto' }); } catch (e) { window.scrollTo(0, 0); }
 
   if (typeof window.toggleFilterDrawer === 'function') {
@@ -1058,6 +1074,17 @@ function formatYearButtons() {
     if (year) {
       button.innerHTML = `<span class="impact-number">${year}</span>`;
     }
+  });
+}
+
+function schedulePostRenderTextFit() {
+  if (postRenderFitRaf) cancelAnimationFrame(postRenderFitRaf);
+  postRenderFitRaf = requestAnimationFrame(() => {
+    postRenderFitRaf = requestAnimationFrame(() => {
+      postRenderFitRaf = 0;
+      fitGuestLines();
+      fitDymButtons();
+    });
   });
 }
 
@@ -1285,12 +1312,7 @@ function renderResults(arr, page = 1, originalQuery = null, suggestions = []) {
   ul.appendChild(fragment);
 
   // ★修正: 描画後にボタンのサイズ調整を行う
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
-        fitGuestLines();
-        fitDymButtons(); // ボタンサイズ調整を実行
-    });
-  });
+  schedulePostRenderTextFit();
 }
 
 function renderPagination(totalCount) {
@@ -1591,6 +1613,7 @@ function buildURLFromState({ method = 'push' } = {}) {
   const url = qs ? `?${qs}` : location.pathname;
   const state = { q, selectedGuests, selectedCorners, selectedOthers, selectedYears, sort, fav: showFavoritesOnly, p: currentPage };
   try {
+    if (`${location.pathname}${location.search}` === url) return;
     history[method === 'replace' ? 'replaceState' : 'pushState'](state, '', url);
   } catch {}
 }

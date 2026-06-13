@@ -20776,3 +20776,136 @@ body #favSceneModal#favSceneModal#favSceneModal #favSceneEpisodeCard#favSceneEpi
     flex-shrink: 0 !important;
   }
 }
+
+/* ===================================================
+   Favorite scene modal v106: mobile editor comfort
+   =================================================== */
+@media (max-width: 779px){
+  body #favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal.modal-overlay.fav-scene-modal-overlay.is-editing .fav-scene-save-btn,
+  body #favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal.modal-overlay.fav-scene-modal-overlay.is-editing #favSceneInlineCancelBtn{
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 6 !important;
+    box-shadow: 0 8px 18px -16px rgba(0, 0, 0, .45) !important;
+    -webkit-tap-highlight-color: transparent !important;
+  }
+
+  html.vv-keyboard-open body #favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal.modal-overlay.fav-scene-modal-overlay.is-editing .fav-scene-comment-input,
+  body #favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal.modal-overlay.fav-scene-modal-overlay.is-editing.is-comment-focused .fav-scene-comment-input{
+    min-height: 136px !important;
+    height: clamp(136px, 30svh, 198px) !important;
+    max-height: 198px !important;
+  }
+
+  body #favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal.modal-overlay.fav-scene-modal-overlay.is-editing .fav-scene-comment-help{
+    margin: 8px 2px 0 !important;
+    font-size: .78rem !important;
+    line-height: 1.35 !important;
+  }
+}
+
+/* ===================================================
+   Favorite scene modal v107: unified editor actions
+   - iOSで改善した「キャンセル / 保存を入力欄の上」配置をiPad/PCにも展開する。
+   =================================================== */
+#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal.modal-overlay.fav-scene-modal-overlay.is-editing .fav-scene-comment-row{
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+  grid-template-areas:
+    "cancel save"
+    "input input" !important;
+  align-items: stretch !important;
+  align-content: start !important;
+}
+
+#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal.modal-overlay.fav-scene-modal-overlay.is-editing .fav-scene-comment-input{
+  grid-area: input !important;
+}
+
+#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal.modal-overlay.fav-scene-modal-overlay.is-editing .fav-scene-save-btn{
+  grid-area: save !important;
+}
+
+#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal.modal-overlay.fav-scene-modal-overlay.is-editing #favSceneInlineCancelBtn{
+  grid-area: cancel !important;
+}
+
+@media (min-width: 780px){
+  #favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal.modal-overlay.fav-scene-modal-overlay.is-editing .fav-scene-form:not([hidden]),
+  #favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal.modal-overlay.fav-scene-modal-overlay.is-editing .fav-scene-field{
+    width: 100% !important;
+    max-width: none !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+
+  #favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal.modal-overlay.fav-scene-modal-overlay.is-editing .fav-scene-comment-row{
+    width: 100% !important;
+    max-width: none !important;
+    gap: 16px 18px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  #favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal.modal-overlay.fav-scene-modal-overlay.is-editing .fav-scene-save-btn,
+  #favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal.modal-overlay.fav-scene-modal-overlay.is-editing #favSceneInlineCancelBtn{
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    min-height: 54px !important;
+    height: 54px !important;
+    margin: 0 !important;
+    padding: 0 18px !important;
+    border-radius: 999px !important;
+    font-size: clamp(1.02rem, 1.5vw, 1.2rem) !important;
+    font-weight: 850 !important;
+    line-height: 1.1 !important;
+    white-space: nowrap !important;
+    box-sizing: border-box !important;
+    -webkit-tap-highlight-color: transparent !important;
+  }
+
+  #favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal.modal-overlay.fav-scene-modal-overlay.is-editing .fav-scene-comment-input{
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: clamp(210px, 26vh, 300px) !important;
+    height: clamp(210px, 26vh, 300px) !important;
+    max-height: 300px !important;
+    margin: 0 !important;
+    padding: clamp(18px, 2.2vw, 24px) !important;
+    border-radius: 20px !important;
+    font-size: clamp(1.08rem, 1.55vw, 1.28rem) !important;
+    line-height: 1.5 !important;
+    overflow-y: auto !important;
+    resize: vertical !important;
+  }
+
+  #favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal.modal-overlay.fav-scene-modal-overlay.is-editing .fav-scene-comment-help{
+    margin: 10px 2px 0 !important;
+    font-size: .86rem !important;
+    line-height: 1.4 !important;
+  }
+}
+
+/* ===================================================
+   Favorite scene modal v108: desktop editor text sizing
+   - iPad/スマホのタッチUIは維持し、PCのマウス環境だけ少し文字を締める。
+   =================================================== */
+@media (min-width: 1070px) and (hover: hover) and (pointer: fine){
+  #favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal.modal-overlay.fav-scene-modal-overlay.is-editing .fav-scene-save-btn,
+  #favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal.modal-overlay.fav-scene-modal-overlay.is-editing #favSceneInlineCancelBtn{
+    min-height: 50px !important;
+    height: 50px !important;
+    font-size: clamp(.92rem, 1.15vw, 1.02rem) !important;
+    font-weight: 800 !important;
+  }
+
+  #favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal#favSceneModal.modal-overlay.fav-scene-modal-overlay.is-editing .fav-scene-comment-input{
+    padding: 18px 20px !important;
+    font-size: clamp(.98rem, 1.18vw, 1.08rem) !important;
+    line-height: 1.48 !important;
+  }
+}
