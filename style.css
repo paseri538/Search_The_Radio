@@ -2276,45 +2276,6 @@ body.dark-mode #aboutModalContent .about-body b,
 body.dark-mode #aboutModalContent .about-body a{
   color: #ffffff !important; /* タイトル、本文、強調文字、リンクをすべて純粋な白に */
 }
-/* ===== デザイン改善提案: フィルター選択色の強調 ===== */
-
-/* --- 1. 通常（ライト）モードの選択色を上書き --- */
-body:not(.dark-mode):not([class*="theme-"]) .guest-button[aria-pressed="true"],
-body:not(.dark-mode):not([class*="theme-"]) .btn-corner[aria-pressed="true"],
-body:not(.dark-mode):not([class*="theme-"]) .btn-year[aria-pressed="true"]{
-  background-color: #000000 !important;
-  color: #ffffff !important;
-  border-color: #000000 !important;
-  box-shadow: 0 0 0 2.5px rgba(0, 0, 0, 0.15) !important;
-}
-/* --- 2. ダークモードの選択色を上書き --- */
-body.dark-mode .guest-button[aria-pressed="true"],
-body.dark-mode .btn-corner[aria-pressed="true"],
-body.dark-mode .btn-year[aria-pressed="true"]{
-  background: #ffffff !important;
-  color: #27363f !important; /* ダークモードの濃い背景色に合わせる */
-  border-color: #ffffff !important;
-  box-shadow: 0 0 0 2.5px rgba(255, 255, 255, 0.3) !important;
-}
-/* --- 3. 各カラーテーマの選択色を上書き --- */
-body[class*="theme-"] .guest-button.active,
-body[class*="theme-"] .btn-corner.active,
-body[class*="theme-"] .btn-year.active{
-  background: #ffffff !important;
-  color: var(--bg-color) !important; /* 各テーマの背景色を文字色として使用 */
-  border-color: #ffffff !important;
-  box-shadow: 0 0 0 2.5px rgba(255, 255, 255, 0.4) !important;
-}
-/* --- 4. ホバー時のスタイルも調整（任意ですが推奨） --- */
-/* 選択されていないボタンのホバーエフェクトを少し抑えめにして、選択状態との差を明確にします */
-@media (hover: hover){
-  .guest-button:not([aria-pressed="true"]):hover,
-  .btn-corner:not([aria-pressed="true"]):hover,
-  .btn-year:not([aria-pressed="true"]):hover {
-    transform: translateY(-1px) scale(1.02);
-    box-shadow: 0 4px 12px -4px rgba(0,0,0,0.1);
-  }
-}
 /* ===== 修正: スマホ表示時のテーマ選択ボタンの比率を修正 ===== */
 
 /*
@@ -21344,5 +21305,110 @@ html.scroll-locked body.body-scroll-locked{
   .history-item,
   .fav-scene-item.is-new{
     animation: none !important;
+  }
+}
+
+
+/* ===================================================
+
+/* ===================================================
+   ★★★ v10: Filter drawer selected state - final clean rule ★★★
+   目的:
+   - v8/v9で追加した .active / [aria-pressed] / theme 用の重複上書きを撤去し、ここに一本化する。
+   - JS側で data-filter-active="true" と inline important を同期し、古いCSSの詳細度やhover指定に負けないようにする。
+   - 未選択時の見た目は既存デザインを維持し、選択中だけ色反転する。
+=================================================== */
+:root{
+  --filter-selected-bg: #000000;
+  --filter-selected-text: #ffffff;
+  --filter-selected-border: #000000;
+  --filter-selected-ring: rgba(0, 0, 0, 0.16);
+}
+body.dark-mode{
+  --filter-selected-bg: #ffffff;
+  --filter-selected-text: #22272e;
+  --filter-selected-border: #ffffff;
+  --filter-selected-ring: rgba(255, 255, 255, 0.30);
+}
+body.theme-pink{
+  --filter-selected-bg: #ffffff;
+  --filter-selected-text: #eb5b89;
+  --filter-selected-border: #ffffff;
+  --filter-selected-ring: rgba(255, 255, 255, 0.42);
+}
+body.theme-yellow{
+  --filter-selected-bg: #ffffff;
+  --filter-selected-text: #9a7400;
+  --filter-selected-border: #ffffff;
+  --filter-selected-ring: rgba(255, 255, 255, 0.46);
+}
+body.theme-blue{
+  --filter-selected-bg: #ffffff;
+  --filter-selected-text: #0063a9;
+  --filter-selected-border: #ffffff;
+  --filter-selected-ring: rgba(255, 255, 255, 0.42);
+}
+body.theme-red{
+  --filter-selected-bg: #ffffff;
+  --filter-selected-text: #cb003d;
+  --filter-selected-border: #ffffff;
+  --filter-selected-ring: rgba(255, 255, 255, 0.42);
+}
+body.theme-green{
+  --filter-selected-bg: #ffffff;
+  --filter-selected-text: #108a72;
+  --filter-selected-border: #ffffff;
+  --filter-selected-ring: rgba(255, 255, 255, 0.42);
+}
+
+#filterDrawer .guest-button[data-filter-active="true"],
+#filterDrawer .btn-corner[data-filter-active="true"],
+#filterDrawer .btn-year[data-filter-active="true"],
+#filterDrawer .guest-button.active,
+#filterDrawer .guest-button[aria-pressed="true"],
+#filterDrawer .btn-corner.active,
+#filterDrawer .btn-corner[aria-pressed="true"],
+#filterDrawer .btn-year.active,
+#filterDrawer .btn-year[aria-pressed="true"]{
+  background: var(--filter-selected-bg) !important;
+  background-color: var(--filter-selected-bg) !important;
+  color: var(--filter-selected-text) !important;
+  -webkit-text-fill-color: var(--filter-selected-text) !important;
+  border-color: var(--filter-selected-border) !important;
+  box-shadow: 0 0 0 2.5px var(--filter-selected-ring) !important;
+  text-shadow: none !important;
+  filter: none !important;
+}
+
+#filterDrawer .guest-button[data-filter-active="true"] *,
+#filterDrawer .btn-corner[data-filter-active="true"] *,
+#filterDrawer .btn-year[data-filter-active="true"] *,
+#filterDrawer .guest-button.active *,
+#filterDrawer .guest-button[aria-pressed="true"] *,
+#filterDrawer .btn-corner.active *,
+#filterDrawer .btn-corner[aria-pressed="true"] *,
+#filterDrawer .btn-year.active *,
+#filterDrawer .btn-year[aria-pressed="true"] *{
+  color: inherit !important;
+  -webkit-text-fill-color: currentColor !important;
+}
+
+@media (hover: hover){
+  #filterDrawer .guest-button[data-filter-active="true"]:hover,
+  #filterDrawer .btn-corner[data-filter-active="true"]:hover,
+  #filterDrawer .btn-year[data-filter-active="true"]:hover,
+  #filterDrawer .guest-button.active:hover,
+  #filterDrawer .guest-button[aria-pressed="true"]:hover,
+  #filterDrawer .btn-corner.active:hover,
+  #filterDrawer .btn-corner[aria-pressed="true"]:hover,
+  #filterDrawer .btn-year.active:hover,
+  #filterDrawer .btn-year[aria-pressed="true"]:hover{
+    background: var(--filter-selected-bg) !important;
+    background-color: var(--filter-selected-bg) !important;
+    color: var(--filter-selected-text) !important;
+    -webkit-text-fill-color: var(--filter-selected-text) !important;
+    border-color: var(--filter-selected-border) !important;
+    box-shadow: 0 0 0 2.5px var(--filter-selected-ring) !important;
+    transform: none !important;
   }
 }

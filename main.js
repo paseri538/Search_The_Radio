@@ -986,6 +986,7 @@ function search(opts = {}) {
   renderResults(res, currentPage, rawQuery, suggestionWords);
   renderPagination(res.length);
   updateActiveFilters();
+  updateFilterButtonStyles();
   updatePlaylistButtonVisibility();
 }
 
@@ -1372,26 +1373,79 @@ function updateActiveFilters() {
   area.innerHTML = html;
 }
 
+function getFilterSelectedButtonColors() {
+  const body = document.body;
+  if (!body) {
+    return { bg: '#000000', text: '#ffffff', border: '#000000', ring: 'rgba(0, 0, 0, 0.16)' };
+  }
+
+  if (body.classList.contains('dark-mode')) {
+    return { bg: '#ffffff', text: '#22272e', border: '#ffffff', ring: 'rgba(255, 255, 255, 0.30)' };
+  }
+
+  const themeTextMap = {
+    'theme-pink': '#eb5b89',
+    'theme-yellow': '#9a7400',
+    'theme-blue': '#0063a9',
+    'theme-red': '#cb003d',
+    'theme-green': '#108a72'
+  };
+  for (const [themeClass, text] of Object.entries(themeTextMap)) {
+    if (body.classList.contains(themeClass)) {
+      return { bg: '#ffffff', text, border: '#ffffff', ring: 'rgba(255, 255, 255, 0.42)' };
+    }
+  }
+
+  return { bg: '#000000', text: '#ffffff', border: '#000000', ring: 'rgba(0, 0, 0, 0.16)' };
+}
+
+function applyFilterSelectedButtonVisual(btn, active) {
+  if (!btn) return;
+
+  btn.classList.toggle('active', active);
+  btn.setAttribute('aria-pressed', String(active));
+  btn.toggleAttribute('data-filter-active', active);
+
+  const forcedProps = [
+    'background',
+    'background-color',
+    'color',
+    '-webkit-text-fill-color',
+    'border-color',
+    'box-shadow',
+    'text-shadow',
+    'filter'
+  ];
+
+  if (!active) {
+    forcedProps.forEach(prop => btn.style.removeProperty(prop));
+    return;
+  }
+
+  const colors = getFilterSelectedButtonColors();
+  // CSSの後段上書きやhover指定に負けないよう、選択中だけinline importantで固定する。
+  btn.style.setProperty('background', colors.bg, 'important');
+  btn.style.setProperty('background-color', colors.bg, 'important');
+  btn.style.setProperty('color', colors.text, 'important');
+  btn.style.setProperty('-webkit-text-fill-color', colors.text, 'important');
+  btn.style.setProperty('border-color', colors.border, 'important');
+  btn.style.setProperty('box-shadow', `0 0 0 2.5px ${colors.ring}`, 'important');
+  btn.style.setProperty('text-shadow', 'none', 'important');
+  btn.style.setProperty('filter', 'none', 'important');
+}
+
 function updateFilterButtonStyles() {
   document.querySelectorAll('.guest-button[data-guest]').forEach(btn => {
-    const active = selectedGuests.includes(btn.dataset.guest);
-    btn.classList.toggle('active', active);
-    btn.setAttribute('aria-pressed', String(active));
+    applyFilterSelectedButtonVisual(btn, selectedGuests.includes(btn.dataset.guest));
   });
   document.querySelectorAll('.btn-corner[data-corner]').forEach(btn => {
-    const active = selectedCorners.includes(btn.dataset.corner);
-    btn.classList.toggle('active', active);
-    btn.setAttribute('aria-pressed', String(active));
+    applyFilterSelectedButtonVisual(btn, selectedCorners.includes(btn.dataset.corner));
   });
   document.querySelectorAll('.btn-corner[data-other]').forEach(btn => {
-    const active = selectedOthers.includes(btn.dataset.other);
-    btn.classList.toggle('active', active);
-    btn.setAttribute('aria-pressed', String(active));
+    applyFilterSelectedButtonVisual(btn, selectedOthers.includes(btn.dataset.other));
   });
   document.querySelectorAll('.btn-year[data-year]').forEach(btn => {
-    const active = selectedYears.includes(String(btn.dataset.year));
-    btn.classList.toggle('active', active);
-    btn.setAttribute('aria-pressed', String(active));
+    applyFilterSelectedButtonVisual(btn, selectedYears.includes(String(btn.dataset.year)));
   });
 }
 
@@ -1690,8 +1744,12 @@ function setupEventListeners() {
     filterToggleBtn.setAttribute('aria-expanded', String(isOpening));
     filterToggleBtn.setAttribute('aria-pressed', String(isOpening));
 
-    if (isOpening) window.acquireBodyLock();
-    else window.releaseBodyLock();
+    if (isOpening) {
+      updateFilterButtonStyles();
+      window.acquireBodyLock();
+    } else {
+      window.releaseBodyLock();
+    }
   };
   window.toggleFilterDrawer = toggleFilterDrawer;
 
@@ -2131,6 +2189,11 @@ function setupThemeSwitcher() {
       } else {
         earlyStyle.textContent = '';
       }
+    }
+
+    // テーマ変更直後に、選択中フィルターボタンの反転色も同期する。
+    if (typeof updateFilterButtonStyles === 'function') {
+      requestAnimationFrame(updateFilterButtonStyles);
     }
   };
 
