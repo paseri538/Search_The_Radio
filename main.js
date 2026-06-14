@@ -1275,7 +1275,7 @@ function renderResults(arr, page = 1, originalQuery = null, suggestions = []) {
   <a href="${finalLink}" target="_blank" rel="noopener" style="display:flex;text-decoration:none;color:inherit;align-items:center;min-width:0;">
     <div class="thumb-col">
       <img src="${thumbUrlJpg}" class="thumbnail" alt="サムネイル：${hashOnly}" 
-           decoding="async" 
+           decoding="async" loading="${index < 4 ? 'eager' : 'lazy'}" fetchpriority="${index < 4 ? 'auto' : 'low'}" 
            onload="this.classList.add('loaded')"
            onerror="this.onerror=null; this.src='./thumb-fallback.svg'; this.classList.add('loaded');">
       ${displayTimestamp ? `<div class="ts-buttons"><button class="ts-btn" data-url="${it.link}" data-ts="${displayTimestamp.seconds}" aria-label="${escapeHtml(displayTimestamp.label || formatTimestamp(displayTimestamp.seconds))} から再生"><span class="impact-number">${escapeHtml(displayTimestamp.label || formatTimestamp(displayTimestamp.seconds))}</span></button></div>` : ''}
@@ -1889,6 +1889,7 @@ function setupEventListeners() {
 
 (function scrollLockModule() {
   let lockCount = 0;
+  let isLocked = false;
   let lockedScrollY = 0;
   let lockedScrollX = 0;
   let originalBodyStyle = null;
@@ -1898,10 +1899,22 @@ function setupEventListeners() {
   const bodyElement = document.body;
   const stickyHeader = document.querySelector('.sticky-search-area');
 
-  const readCurrentScroll = () => ({
-    x: window.pageXOffset || htmlElement.scrollLeft || bodyElement.scrollLeft || 0,
-    y: window.pageYOffset || htmlElement.scrollTop || bodyElement.scrollTop || 0
-  });
+  const LOCK_UI_IDS = ['filterDrawer', 'aboutModal', 'historyModal', 'photoModal', 'favSceneModal'];
+
+  const readCurrentScroll = () => {
+    if (isLocked) {
+      const top = parseFloat(bodyElement.style.top || '0');
+      const left = parseFloat(bodyElement.style.left || '0');
+      return {
+        x: Number.isFinite(left) ? Math.max(0, -left) : lockedScrollX,
+        y: Number.isFinite(top) ? Math.max(0, -top) : lockedScrollY
+      };
+    }
+    return {
+      x: window.pageXOffset || htmlElement.scrollLeft || bodyElement.scrollLeft || 0,
+      y: window.pageYOffset || htmlElement.scrollTop || bodyElement.scrollTop || 0
+    };
+  };
 
   const restoreScrollPosition = (x, y) => {
     const sx = Math.max(0, Number(x) || 0);
@@ -1911,7 +1924,7 @@ function setupEventListeners() {
       try { window.scrollTo(sx, sy); } catch (_) {}
     });
     // iOS Safari / PWA ではキーボード閉じ直後に1フレーム遅れてスクロール補正が入るため、
-    // 少しだけ遅延して同じ位置へ戻す。これで保存後に背面のトップ画面が少し動くのを防ぐ。
+    // 短い時間だけ同じ位置へ戻す。ただしロック解除は確実に完了させる。
     window.setTimeout(() => {
       try { window.scrollTo(sx, sy); } catch (_) {}
     }, 80);
@@ -1920,7 +1933,49 @@ function setupEventListeners() {
     }, 220);
   };
 
+  const isLockUiActive = () => LOCK_UI_IDS.some(id => {
+    const el = document.getElementById(id);
+    if (!el) return false;
+    if (id === 'filterDrawer') {
+      return window.getComputedStyle(el).display !== 'none';
+    }
+    // closing中はアニメーション中なので、まだロック対象として扱う。
+    if (el.classList.contains('show') || el.classList.contains('closing')) return true;
+    if (el.hidden || el.getAttribute('aria-hidden') === 'true') return false;
+    const style = window.getComputedStyle(el);
+    return style.display !== 'none' && style.visibility !== 'hidden' && style.opacity !== '0';
+  });
+
+  const restoreInlineStyles = () => {
+    if (stickyHeader) stickyHeader.style.paddingRight = originalStickyPaddingRight || '';
+    htmlElement.classList.remove('scroll-locked');
+    bodyElement.classList.remove('body-scroll-locked');
+
+    if (originalHtmlStyle) {
+      htmlElement.style.overflow = originalHtmlStyle.overflow || '';
+      htmlElement.style.overscrollBehavior = originalHtmlStyle.overscrollBehavior || '';
+    } else {
+      htmlElement.style.removeProperty('overflow');
+      htmlElement.style.removeProperty('overscroll-behavior');
+    }
+
+    if (originalBodyStyle) {
+      bodyElement.style.position = originalBodyStyle.position || '';
+      bodyElement.style.top = originalBodyStyle.top || '';
+      bodyElement.style.left = originalBodyStyle.left || '';
+      bodyElement.style.right = originalBodyStyle.right || '';
+      bodyElement.style.width = originalBodyStyle.width || '';
+      bodyElement.style.overflow = originalBodyStyle.overflow || '';
+    } else {
+      ['position', 'top', 'left', 'right', 'width', 'overflow'].forEach(prop => bodyElement.style.removeProperty(prop));
+    }
+
+    originalBodyStyle = null;
+    originalHtmlStyle = null;
+  };
+
   const applyLock = () => {
+    if (isLocked) return;
     const current = readCurrentScroll();
     lockedScrollX = current.x;
     lockedScrollY = current.y;
@@ -1956,55 +2011,62 @@ function setupEventListeners() {
     bodyElement.style.right = '0';
     bodyElement.style.width = '100%';
     bodyElement.style.overflow = 'hidden';
+    isLocked = true;
   };
 
-  const clearLock = () => {
+  const clearLock = ({ restore = true } = {}) => {
     const restoreX = lockedScrollX;
     const restoreY = lockedScrollY;
+    restoreInlineStyles();
+    isLocked = false;
+    if (restore) restoreScrollPosition(restoreX, restoreY);
+  };
 
-    if (stickyHeader) stickyHeader.style.paddingRight = originalStickyPaddingRight || '';
-    htmlElement.classList.remove('scroll-locked');
-    bodyElement.classList.remove('body-scroll-locked');
-
-    if (originalHtmlStyle) {
-      htmlElement.style.overflow = originalHtmlStyle.overflow || '';
-      htmlElement.style.overscrollBehavior = originalHtmlStyle.overscrollBehavior || '';
-    } else {
-      htmlElement.style.overflow = '';
-      htmlElement.style.overscrollBehavior = '';
+  const syncLockToVisibleUi = () => {
+    // タイマー/アニメーション競合で lockCount だけ残った時の保険。
+    // 実際に開いているロック対象UIが無いなら、必ずスクロール可能状態へ戻す。
+    if (!isLockUiActive() && (isLocked || lockCount > 0 || htmlElement.classList.contains('scroll-locked') || bodyElement.classList.contains('body-scroll-locked'))) {
+      lockCount = 0;
+      clearLock({ restore: true });
     }
-
-    if (originalBodyStyle) {
-      bodyElement.style.position = originalBodyStyle.position || '';
-      bodyElement.style.top = originalBodyStyle.top || '';
-      bodyElement.style.left = originalBodyStyle.left || '';
-      bodyElement.style.right = originalBodyStyle.right || '';
-      bodyElement.style.width = originalBodyStyle.width || '';
-      bodyElement.style.overflow = originalBodyStyle.overflow || '';
-    } else {
-      ['position', 'top', 'left', 'right', 'width', 'overflow'].forEach(prop => bodyElement.style.removeProperty(prop));
-    }
-
-    originalBodyStyle = null;
-    originalHtmlStyle = null;
-    restoreScrollPosition(restoreX, restoreY);
   };
 
   window.acquireBodyLock = () => {
-    if (lockCount === 0) applyLock();
-    lockCount++;
+    if (lockCount <= 0) {
+      lockCount = 0;
+      applyLock();
+    }
+    lockCount += 1;
+    return lockCount;
   };
 
   window.releaseBodyLock = () => {
-    if (lockCount <= 0) return;
+    if (lockCount <= 0) {
+      lockCount = 0;
+      requestAnimationFrame(syncLockToVisibleUi);
+      return;
+    }
     lockCount = Math.max(0, lockCount - 1);
-    if (lockCount === 0) clearLock();
+    if (lockCount === 0) clearLock({ restore: true });
+    window.setTimeout(syncLockToVisibleUi, 120);
   };
-  
+
   window.__hardUnlockScroll = () => {
-    lockCount = 1;
-    window.releaseBodyLock();
+    lockCount = 0;
+    clearLock({ restore: true });
   };
+
+  window.__syncBodyLockToUi = () => {
+    requestAnimationFrame(syncLockToVisibleUi);
+    window.setTimeout(syncLockToVisibleUi, 120);
+    window.setTimeout(syncLockToVisibleUi, 360);
+  };
+
+  window.addEventListener('pageshow', () => window.__syncBodyLockToUi(), { passive: true });
+  window.addEventListener('focus', () => window.__syncBodyLockToUi(), { passive: true });
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) window.__syncBodyLockToUi();
+  }, { passive: true });
 })();
 
 function setupThemeSwitcher() {
@@ -2624,7 +2686,7 @@ function setupFavoriteSceneModal() {
   <a href="${escapeHtml(link)}" target="_blank" rel="noopener" style="display:flex;text-decoration:none;color:inherit;align-items:center;min-width:0;">
     <div class="thumb-col">
       <img src="${escapeHtml(thumbUrl)}" class="thumbnail" alt="サムネイル：${escapeHtml(title)}"
-           decoding="async"
+           decoding="async" loading="eager" fetchpriority="high"
            onload="this.classList.add('loaded')"
            onerror="this.onerror=null; this.src='./thumb-fallback.svg'; this.classList.add('loaded');">
     </div>
@@ -2679,6 +2741,7 @@ function setupFavoriteSceneModal() {
       modal.style.setProperty('--fav-scene-visible-rows-final', String(rows));
       modal.style.setProperty('--fav-scene-vv-height', `${Math.floor(h)}px`);
     } catch (_) {}
+    window.acquireBodyLock?.();
     modal.hidden = false;
     modal.setAttribute('tabindex', '-1');
     try { modal.focus({ preventScroll: true }); } catch (_) { modal.focus(); }
@@ -2690,20 +2753,33 @@ function setupFavoriteSceneModal() {
       setTimeout(updateFavoriteSceneListScrollHint, 180);
       if (document.fonts?.ready) document.fonts.ready.then(updateFavoriteSceneListScrollHint).catch(() => {});
     });
-    window.acquireBodyLock?.();
   };
 
+  let closeModalTimer = 0;
   const closeModal = () => {
     window.clearTimeout(saveCommitTimer);
     saveCommitTimer = 0;
     modal.classList.remove('is-saving-scene');
+
+    // まれに「表示直後/保存直後/キーボード復帰中」に close が二重発火すると、
+    // show が無いのに body ロックだけ残ることがある。非表示パスでも必ず解除同期する。
     if (!modal.classList.contains('show')) {
       modal.hidden = true;
+      modal.classList.remove('closing', 'is-keyboard-open', 'is-vv-compact-keyboard', 'is-vv-tiny-keyboard', 'is-editor-focused', 'is-comment-focused');
+      closeEditor(false);
+      setCommentError('');
+      resetEditingState();
+      window.releaseBodyLock?.();
+      window.__syncBodyLockToUi?.();
       return;
     }
+
+    if (modal.classList.contains('closing')) return;
     modal.classList.remove('show');
     modal.classList.add('closing');
+    window.clearTimeout(closeModalTimer);
     const finish = () => {
+      closeModalTimer = 0;
       modal.hidden = true;
       modal.classList.remove('closing', 'is-keyboard-open', 'is-vv-compact-keyboard', 'is-vv-tiny-keyboard', 'is-editor-focused', 'is-comment-focused');
       closeEditor(false);
@@ -2711,8 +2787,9 @@ function setupFavoriteSceneModal() {
       resetEditingState();
       restorePreviousFocus();
       window.releaseBodyLock?.();
+      window.__syncBodyLockToUi?.();
     };
-    setTimeout(finish, 220);
+    closeModalTimer = setTimeout(finish, 220);
   };
 
   commentInput.addEventListener('input', () => {
@@ -3327,28 +3404,27 @@ window.applyDidYouMean = function(word) {
 })();
 
 (function robustScrollUnlock() {
-    const modalIds = ['filterDrawer', 'aboutModal', 'historyModal', 'photoModal']; // ★追加: photoModalを追加
-    const observerCallback = (mutationsList) => {
-        for (const mutation of mutationsList) {
-            const targetElement = mutation.target;
-            const style = window.getComputedStyle(targetElement);
-            if (style.display === 'none' || targetElement.hidden) {
-                if (window.releaseBodyLock) {
-                    window.releaseBodyLock();
-                }
-            }
-        }
+    const modalIds = ['filterDrawer', 'aboutModal', 'historyModal', 'photoModal', 'favSceneModal'];
+    let syncTimer = 0;
+    const requestSync = () => {
+        if (syncTimer) window.clearTimeout(syncTimer);
+        syncTimer = window.setTimeout(() => {
+            syncTimer = 0;
+            window.__syncBodyLockToUi?.();
+        }, 80);
     };
-    const observer = new MutationObserver(observerCallback);
+    const observer = new MutationObserver(requestSync);
     modalIds.forEach(id => {
         const modalElement = document.getElementById(id);
         if (modalElement) {
             observer.observe(modalElement, {
                 attributes: true,
-                attributeFilter: ['style', 'hidden']
+                attributeFilter: ['class', 'style', 'hidden', 'aria-hidden']
             });
         }
     });
+    window.addEventListener('pageshow', requestSync, { passive: true });
+    window.addEventListener('orientationchange', () => window.setTimeout(requestSync, 320), { passive: true });
 })();
 
 function initializeAutocomplete() {
@@ -3698,6 +3774,7 @@ document.addEventListener('keydown', (e) => {
   const root = document.documentElement;
   let rafId = 0;
   let revealTimer = 0;
+  let delayedSyncTimers = [];
   let stableViewportHeight = Math.max(
     Number(window.innerHeight) || 0,
     Number(document.documentElement.clientHeight) || 0,
@@ -3885,11 +3962,14 @@ document.addEventListener('keydown', (e) => {
   };
 
   const delayedSync = () => {
+    // 入力のたびに複数のsetTimeoutを積み増すと、低性能端末で重くなる。
+    // 常に最新の同期予約だけ残す。
+    delayedSyncTimers.forEach(timerId => window.clearTimeout(timerId));
+    delayedSyncTimers = [];
     requestSync();
-    window.setTimeout(requestSync, 80);
-    window.setTimeout(requestSync, 220);
-    window.setTimeout(requestSync, 420);
-    window.setTimeout(requestSync, 700);
+    [80, 220, 420, 700].forEach(delay => {
+      delayedSyncTimers.push(window.setTimeout(requestSync, delay));
+    });
   };
 
   document.addEventListener('focusin', (event) => {

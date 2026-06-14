@@ -21290,3 +21290,59 @@ html.scroll-locked body.body-scroll-locked{
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain !important;
 }
+
+/* =================================================== */
+/* ★★★ v6: mobile stability + lightweight rendering ★★★ */
+/* =================================================== */
+/* body固定解除漏れが起きても、hidden属性のモーダルは必ず操作対象外にする */
+#favSceneModal[hidden],
+#aboutModal[hidden],
+#historyModal[hidden],
+#photoModal[hidden]{
+  display: none !important;
+  pointer-events: none !important;
+}
+
+/* 低〜中性能のスマホでは、繰り返し発火するカードアニメーションと重いぼかしを抑える */
+@media (hover: none), (pointer: coarse), (max-width: 779px){
+  #results .episode-item,
+  .history-item,
+  .fav-scene-item.is-new{
+    animation: none !important;
+  }
+
+  .modal-overlay,
+  #rcModal,
+  .drawer-backdrop{
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  .episode-item,
+  .history-item,
+  .fav-scene-modal,
+  .history-modal,
+  #filterDrawer,
+  .autocomplete{
+    will-change: auto !important;
+  }
+}
+
+/* 画面外の長い履歴セクションは描画を先送りして、初期スクロールを軽くする */
+.history-item{
+  content-visibility: auto;
+  contain-intrinsic-size: 96px;
+}
+
+@media (prefers-reduced-motion: reduce){
+  *,
+  *::before,
+  *::after{
+    scroll-behavior: auto !important;
+  }
+  #results .episode-item,
+  .history-item,
+  .fav-scene-item.is-new{
+    animation: none !important;
+  }
+}
