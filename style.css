@@ -21267,3 +21267,26 @@ body #favSceneModal#favSceneModal#favSceneModal.fav-scene-modal-overlay #favScen
     padding-right: 48px !important;
   }
 }
+
+
+/* ===================================================
+   v116: mobile/PWA save stability + external playback guard
+   - body fixed lock uses inline top/left from JS, so do not override it here.
+   - keep the background page visually frozen while the favorite timestamp editor
+     opens/closes the iOS keyboard.
+   =================================================== */
+html.scroll-locked,
+html.scroll-locked body.body-scroll-locked{
+  overscroll-behavior: none !important;
+}
+html.scroll-locked body.body-scroll-locked{
+  overflow: hidden !important;
+  touch-action: auto !important;
+}
+#favSceneModal.show{
+  overscroll-behavior: contain !important;
+}
+#favSceneModal .fav-scene-body{
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain !important;
+}

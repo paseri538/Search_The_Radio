@@ -1811,7 +1811,7 @@ function setupEventListeners() {
     const tsBtn = target.closest('.ts-btn');
     if (tsBtn) {
       e.preventDefault(); e.stopPropagation();
-      window.open(withTimeParam(tsBtn.dataset.url, Number(tsBtn.dataset.ts)), '_blank', 'noopener');
+      openPlaybackUrl(withTimeParam(tsBtn.dataset.url, Number(tsBtn.dataset.ts)));
       return;
     }
   });
@@ -1889,33 +1889,120 @@ function setupEventListeners() {
 
 (function scrollLockModule() {
   let lockCount = 0;
+  let lockedScrollY = 0;
+  let lockedScrollX = 0;
+  let originalBodyStyle = null;
+  let originalHtmlStyle = null;
+  let originalStickyPaddingRight = '';
   const htmlElement = document.documentElement;
+  const bodyElement = document.body;
   const stickyHeader = document.querySelector('.sticky-search-area');
 
-  window.acquireBodyLock = () => {
-    if (lockCount === 0) {
-      const scrollbarWidth = window.innerWidth - htmlElement.clientWidth;
-      
-      if (scrollbarWidth > 0 && stickyHeader) {
-        stickyHeader.style.paddingRight = `${scrollbarWidth}px`;
-      }
-      htmlElement.classList.add('scroll-locked');
+  const readCurrentScroll = () => ({
+    x: window.pageXOffset || htmlElement.scrollLeft || bodyElement.scrollLeft || 0,
+    y: window.pageYOffset || htmlElement.scrollTop || bodyElement.scrollTop || 0
+  });
+
+  const restoreScrollPosition = (x, y) => {
+    const sx = Math.max(0, Number(x) || 0);
+    const sy = Math.max(0, Number(y) || 0);
+    try { window.scrollTo(sx, sy); } catch (_) {}
+    requestAnimationFrame(() => {
+      try { window.scrollTo(sx, sy); } catch (_) {}
+    });
+    // iOS Safari / PWA ではキーボード閉じ直後に1フレーム遅れてスクロール補正が入るため、
+    // 少しだけ遅延して同じ位置へ戻す。これで保存後に背面のトップ画面が少し動くのを防ぐ。
+    window.setTimeout(() => {
+      try { window.scrollTo(sx, sy); } catch (_) {}
+    }, 80);
+    window.setTimeout(() => {
+      try { window.scrollTo(sx, sy); } catch (_) {}
+    }, 220);
+  };
+
+  const applyLock = () => {
+    const current = readCurrentScroll();
+    lockedScrollX = current.x;
+    lockedScrollY = current.y;
+    originalBodyStyle = {
+      position: bodyElement.style.position,
+      top: bodyElement.style.top,
+      left: bodyElement.style.left,
+      right: bodyElement.style.right,
+      width: bodyElement.style.width,
+      overflow: bodyElement.style.overflow
+    };
+    originalHtmlStyle = {
+      overflow: htmlElement.style.overflow,
+      overscrollBehavior: htmlElement.style.overscrollBehavior
+    };
+    originalStickyPaddingRight = stickyHeader ? stickyHeader.style.paddingRight : '';
+
+    const scrollbarWidth = Math.max(0, window.innerWidth - htmlElement.clientWidth);
+    if (scrollbarWidth > 0 && stickyHeader) {
+      stickyHeader.style.paddingRight = `${scrollbarWidth}px`;
     }
+
+    htmlElement.classList.add('scroll-locked');
+    bodyElement.classList.add('body-scroll-locked');
+    htmlElement.style.overflow = 'hidden';
+    htmlElement.style.overscrollBehavior = 'none';
+
+    // overflow:hidden だけだと、iOSのキーボード表示/非表示時に背面ページが補正スクロールされる。
+    // body自体を現在位置で fixed 固定し、解除時に同じ scrollY へ戻す。
+    bodyElement.style.position = 'fixed';
+    bodyElement.style.top = `-${lockedScrollY}px`;
+    bodyElement.style.left = `-${lockedScrollX}px`;
+    bodyElement.style.right = '0';
+    bodyElement.style.width = '100%';
+    bodyElement.style.overflow = 'hidden';
+  };
+
+  const clearLock = () => {
+    const restoreX = lockedScrollX;
+    const restoreY = lockedScrollY;
+
+    if (stickyHeader) stickyHeader.style.paddingRight = originalStickyPaddingRight || '';
+    htmlElement.classList.remove('scroll-locked');
+    bodyElement.classList.remove('body-scroll-locked');
+
+    if (originalHtmlStyle) {
+      htmlElement.style.overflow = originalHtmlStyle.overflow || '';
+      htmlElement.style.overscrollBehavior = originalHtmlStyle.overscrollBehavior || '';
+    } else {
+      htmlElement.style.overflow = '';
+      htmlElement.style.overscrollBehavior = '';
+    }
+
+    if (originalBodyStyle) {
+      bodyElement.style.position = originalBodyStyle.position || '';
+      bodyElement.style.top = originalBodyStyle.top || '';
+      bodyElement.style.left = originalBodyStyle.left || '';
+      bodyElement.style.right = originalBodyStyle.right || '';
+      bodyElement.style.width = originalBodyStyle.width || '';
+      bodyElement.style.overflow = originalBodyStyle.overflow || '';
+    } else {
+      ['position', 'top', 'left', 'right', 'width', 'overflow'].forEach(prop => bodyElement.style.removeProperty(prop));
+    }
+
+    originalBodyStyle = null;
+    originalHtmlStyle = null;
+    restoreScrollPosition(restoreX, restoreY);
+  };
+
+  window.acquireBodyLock = () => {
+    if (lockCount === 0) applyLock();
     lockCount++;
   };
 
   window.releaseBodyLock = () => {
+    if (lockCount <= 0) return;
     lockCount = Math.max(0, lockCount - 1);
-    if (lockCount === 0) {
-      if (stickyHeader) {
-        stickyHeader.style.paddingRight = '';
-      }
-      htmlElement.classList.remove('scroll-locked');
-    }
+    if (lockCount === 0) clearLock();
   };
   
   window.__hardUnlockScroll = () => {
-    lockCount = 0;
+    lockCount = 1;
     window.releaseBodyLock();
   };
 })();
@@ -2622,8 +2709,8 @@ function setupFavoriteSceneModal() {
       closeEditor(false);
       setCommentError('');
       resetEditingState();
-      window.releaseBodyLock?.();
       restorePreviousFocus();
+      window.releaseBodyLock?.();
     };
     setTimeout(finish, 220);
   };
@@ -2717,7 +2804,7 @@ function setupFavoriteSceneModal() {
       if (e.clientX > rect.right - 72) return;
     }
     const url = item.dataset.playUrl;
-    if (url) window.open(url, '_blank', 'noopener');
+    if (url) openPlaybackUrl(url);
   });
 
   list.addEventListener('keydown', e => {
@@ -2727,7 +2814,7 @@ function setupFavoriteSceneModal() {
     if (!item || !list.contains(item)) return;
     e.preventDefault();
     const url = item.dataset.playUrl;
-    if (url) window.open(url, '_blank', 'noopener');
+    if (url) openPlaybackUrl(url);
   });
 
   removeBtn.addEventListener('click', () => {
@@ -2959,6 +3046,124 @@ function withTimeParam(url, seconds) {
     const cleaned = url.replace(/([?&])t=\d+s?(?=&|$)/, "$1").replace(/[?&]$/, "");
     return cleaned + (cleaned.includes("?") ? "&" : "?") + "t=" + seconds;
   }
+}
+
+
+function parseYouTubeStartSeconds(value) {
+  const raw = String(value || '').trim().toLowerCase();
+  if (!raw) return null;
+  if (/^\d+$/.test(raw)) return Math.max(0, parseInt(raw, 10));
+  if (/^\d+s$/.test(raw)) return Math.max(0, parseInt(raw, 10));
+  const match = raw.match(/^(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s?)?$/);
+  if (!match) return null;
+  const h = parseInt(match[1] || '0', 10);
+  const m = parseInt(match[2] || '0', 10);
+  const s = parseInt(match[3] || '0', 10);
+  const total = h * 3600 + m * 60 + s;
+  return Number.isFinite(total) ? Math.max(0, total) : null;
+}
+
+function getYouTubePlaybackInfo(url) {
+  const raw = String(url || '').trim();
+  if (!raw) return null;
+  try {
+    const u = new URL(raw, window.location.href);
+    const host = u.hostname.replace(/^www\./, '').toLowerCase();
+    let videoId = '';
+    if (host === 'youtu.be') {
+      videoId = u.pathname.split('/').filter(Boolean)[0] || '';
+    } else if (host === 'youtube.com' || host.endsWith('.youtube.com')) {
+      if (u.pathname === '/watch') videoId = u.searchParams.get('v') || '';
+      else if (u.pathname.startsWith('/shorts/')) videoId = u.pathname.split('/').filter(Boolean)[1] || '';
+      else if (u.pathname.startsWith('/embed/')) videoId = u.pathname.split('/').filter(Boolean)[1] || '';
+    }
+    if (!/^[\w-]{11}$/.test(videoId)) return null;
+
+    const start = parseYouTubeStartSeconds(u.searchParams.get('t')) ??
+      parseYouTubeStartSeconds(u.searchParams.get('start')) ?? 0;
+    const t = Math.max(0, Math.floor(start));
+    const timeParam = t > 0 ? `&t=${t}s` : '';
+    const encodedId = encodeURIComponent(videoId);
+    return {
+      videoId,
+      seconds: t,
+      webUrl: `https://www.youtube.com/watch?v=${encodedId}${timeParam}`,
+      appUrl: `youtube://www.youtube.com/watch?v=${encodedId}${timeParam}`
+    };
+  } catch (_) {
+    return null;
+  }
+}
+
+function isStandalonePwaMode() {
+  return Boolean(
+    window.matchMedia?.('(display-mode: standalone)')?.matches ||
+    window.navigator.standalone === true ||
+    document.documentElement.classList.contains('is-standalone')
+  );
+}
+
+function isIOSFamilyDevice() {
+  const ua = String(window.navigator.userAgent || '');
+  const platform = String(window.navigator.platform || '');
+  // iPadOS 13+ のSafariはMacとして名乗ることがあるため、タッチ点数も見る。
+  return /iP(hone|ad|od)/.test(ua) || (platform === 'MacIntel' && Number(window.navigator.maxTouchPoints || 0) > 1);
+}
+
+function isIOSStandalonePwaMode() {
+  return isStandalonePwaMode() && isIOSFamilyDevice();
+}
+
+function openPlaybackUrl(url) {
+  const safeUrl = String(url || '').trim();
+  if (!safeUrl || safeUrl === '#') return;
+
+  const youtubeInfo = getYouTubePlaybackInfo(safeUrl);
+
+  // iOS/iPadOS のPWA / ホーム画面アプリでは window.open(_blank) が白い空ページを残すことがある。
+  // PC版PWAや通常ブラウザには影響させず、iOS/iPadOSのPWAだけYouTubeアプリへのdeep linkを優先する。
+  if (youtubeInfo && isIOSStandalonePwaMode()) {
+    let pageLeft = false;
+    let cleaned = false;
+    const cleanup = () => {
+      if (cleaned) return;
+      cleaned = true;
+      window.removeEventListener('pagehide', markLeft);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+    };
+    const markLeft = () => {
+      pageLeft = true;
+      cleanup();
+    };
+    const onVisibilityChange = () => {
+      if (document.hidden) markLeft();
+    };
+
+    window.addEventListener('pagehide', markLeft, { once: true });
+    document.addEventListener('visibilitychange', onVisibilityChange);
+
+    try {
+      window.location.href = youtubeInfo.appUrl;
+    } catch (_) {
+      cleanup();
+      window.location.href = youtubeInfo.webUrl;
+      return;
+    }
+
+    // YouTubeアプリが入っていない場合だけ、同じPWA内で通常URLへフォールバックする。
+    // _blank は使わないため、謎の白ページは増えない。
+    window.setTimeout(() => {
+      cleanup();
+      if (!pageLeft && !document.hidden) {
+        window.location.href = youtubeInfo.webUrl;
+      }
+    }, 900);
+    return;
+  }
+
+  const targetUrl = youtubeInfo ? youtubeInfo.webUrl : safeUrl;
+  const opened = window.open(targetUrl, '_blank', 'noopener,noreferrer');
+  if (!opened) window.location.href = targetUrl;
 }
 
 function buildTimeline(data) {
