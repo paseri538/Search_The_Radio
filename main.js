@@ -1087,91 +1087,25 @@ function requestResultsCardAnimation() {
   nextResultsAnimation = true;
 }
 
-function shouldReduceResultsMotion() {
-  try {
-    return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  } catch (_) {
-    return false;
-  }
-}
-
-function clearResultsCardAnimationState(resultsEl) {
-  if (resultsAnimationCleanupTimer) {
-    clearTimeout(resultsAnimationCleanupTimer);
-    resultsAnimationCleanupTimer = 0;
-  }
+function applyResultsCardAnimationState(resultsEl, shouldAnimate) {
   if (!resultsEl) return;
-  resultsEl.classList.remove('results-fade-in', 'results-transitioning');
-  resultsEl.querySelectorAll('[data-result-enter="true"]').forEach(el => {
-    el.removeAttribute('data-result-enter');
-    el.style.removeProperty('opacity');
-    el.style.removeProperty('transform');
-    el.style.removeProperty('transition');
-    el.style.removeProperty('transition-delay');
-    el.style.removeProperty('will-change');
-  });
-}
-
-function prepResultsCardEnter(el, delayIndex = 0, shouldAnimate = false) {
-  if (!shouldAnimate || !el) return;
-  el.dataset.resultEnter = 'true';
-  el.style.setProperty('--result-anim-delay', `${Math.min(Math.max(0, delayIndex) * 22, 170)}ms`);
-  // CSSアニメーションではなくinline transitionで初期状態を先に固定する。
-  // 既存CSSの animation:none やテーマ別 !important 指定に邪魔されず、iOS Safari/PWAでも再生される。
-  const reduceMotion = shouldReduceResultsMotion();
-  el.style.opacity = reduceMotion ? '0.08' : '0';
-  el.style.transform = reduceMotion ? 'translate3d(0, 0, 0) scale(1)' : 'translate3d(0, 16px, 0) scale(.988)';
-  el.style.transition = 'none';
-  el.style.willChange = 'opacity, transform';
-}
-
-function runResultsCardTransition(resultsEl) {
-  if (!resultsEl) return;
-  const cards = Array.from(resultsEl.querySelectorAll('[data-result-enter="true"]'));
-  if (!cards.length) return;
-
   if (resultsAnimationCleanupTimer) {
     clearTimeout(resultsAnimationCleanupTimer);
     resultsAnimationCleanupTimer = 0;
   }
 
-  resultsEl.classList.add('results-transitioning');
+  resultsEl.classList.remove('results-fade-in');
+  if (!shouldAnimate) return;
 
-  let started = false;
-  const start = () => {
-    if (started) return;
-    started = true;
-    cards.forEach((el, index) => {
-      if (!el.isConnected) return;
-      const delay = el.style.getPropertyValue('--result-anim-delay') || `${Math.min(index * 22, 170)}ms`;
-      const reduceMotion = shouldReduceResultsMotion();
-      const duration = reduceMotion ? '260ms' : '520ms';
-      el.style.transition = `opacity ${duration} cubic-bezier(.16, 1, .3, 1), transform ${duration} cubic-bezier(.16, 1, .3, 1)`;
-      el.style.transitionDelay = delay;
-      el.style.opacity = '1';
-      el.style.transform = 'translate3d(0, 0, 0) scale(1)';
-    });
-
+  // 一度クラスを外してから次フレームで付与し、連続検索/リセットでも確実に再生する。
+  requestAnimationFrame(() => {
+    if (!resultsEl.isConnected) return;
+    resultsEl.classList.add('results-fade-in');
     resultsAnimationCleanupTimer = window.setTimeout(() => {
-      cards.forEach(el => {
-        if (!el.isConnected) return;
-        el.removeAttribute('data-result-enter');
-        el.style.removeProperty('opacity');
-        el.style.removeProperty('transform');
-        el.style.removeProperty('transition');
-        el.style.removeProperty('transition-delay');
-        el.style.removeProperty('will-change');
-      });
-      resultsEl.classList.remove('results-transitioning');
+      resultsEl.classList.remove('results-fade-in');
       resultsAnimationCleanupTimer = 0;
-    }, 900);
-  };
-
-  // 1フレーム目で opacity:0 / translate を確定させ、次のフレームで表示状態へ遷移させる。
-  // 単一rAFだとSafari/PWAで初期状態と最終状態が同フレーム扱いになり、見た目上アニメーションしないことがある。
-  requestAnimationFrame(() => requestAnimationFrame(start));
-  // backgroundタブ復帰などでrAFが詰まった場合の保険。
-  window.setTimeout(start, 80);
+    }, 760);
+  });
 }
 
 function formatYearButtons() {
@@ -1204,16 +1138,31 @@ function renderResults(arr, page = 1, originalQuery = null, suggestions = []) {
   const shouldAnimateResults = nextResultsAnimation === true;
   nextResultsAnimation = false;
 
-  clearResultsCardAnimationState(ul);
+  // v13: 結果カードのフェードインは、親クラスの後付けではなく
+  // 新しく生成した各カードに class を直接付ける。
+  // これにより、スマホSafari/PWAでも「描画後に見えてしまってからクラス追加」にならず、
+  // 検索・リセット・フィルター更新直後に確実にアニメーションする。
+  if (resultsAnimationCleanupTimer) {
+    clearTimeout(resultsAnimationCleanupTimer);
+    resultsAnimationCleanupTimer = 0;
+  }
+  ul.classList.remove('results-fade-in');
   ul.innerHTML = "";
 
   const markResultEnter = (el, delayIndex = 0) => {
-    prepResultsCardEnter(el, delayIndex, shouldAnimateResults);
+    if (!shouldAnimateResults || !el) return;
+    el.classList.add('result-card-enter');
+    el.style.setProperty('--result-anim-delay', `${Math.min(Math.max(0, delayIndex) * 18, 140)}ms`);
   };
 
   const cleanupResultEnter = () => {
     if (!shouldAnimateResults) return;
-    runResultsCardTransition(ul);
+    resultsAnimationCleanupTimer = window.setTimeout(() => {
+      if (ul && ul.isConnected) {
+        ul.querySelectorAll('.result-card-enter').forEach(el => el.classList.remove('result-card-enter'));
+      }
+      resultsAnimationCleanupTimer = 0;
+    }, 720);
   };
 
   if (showFavoritesOnly) {
@@ -2204,14 +2153,15 @@ function setupEventListeners() {
     return lockCount;
   };
 
-  window.releaseBodyLock = () => {
+  window.releaseBodyLock = (options = {}) => {
+    const restore = !(options && options.restore === false);
     if (lockCount <= 0) {
       lockCount = 0;
       requestAnimationFrame(syncLockToVisibleUi);
       return;
     }
     lockCount = Math.max(0, lockCount - 1);
-    if (lockCount === 0) clearLock({ restore: true });
+    if (lockCount === 0) clearLock({ restore });
     window.setTimeout(syncLockToVisibleUi, 90);
   };
 
@@ -2399,31 +2349,120 @@ function buildFavoriteSceneList(videoId) {
     openEditorBtn.setAttribute('aria-label', label);
   }
 
-  const updateListScrollHint = () => updateFavoriteSceneListScrollHint();
+  savedBox?.classList.toggle('has-timestamps', hasTimestamps);
+  savedBox?.classList.toggle('is-empty', !hasTimestamps);
+  savedBox?.classList.toggle('is-editing', Boolean(isEditing));
+
+  const updateListScrollHint = () => updateFavoriteSceneListScrollHint({ measure: true });
   updateListScrollHint();
   requestAnimationFrame(updateListScrollHint);
   setTimeout(updateListScrollHint, 90);
   setTimeout(updateListScrollHint, 260);
-
-  savedBox?.classList.toggle('has-timestamps', hasTimestamps);
-  savedBox?.classList.toggle('is-empty', !hasTimestamps);
-  savedBox?.classList.toggle('is-editing', Boolean(isEditing));
 }
 
-function updateFavoriteSceneListScrollHint() {
+function ensureFavoriteSceneListFade() {
+  // v18: 白い帯のように見えていた独立オーバーレイは使わない。
+  // スクロール可能ヒントは #favSceneList 自体の mask-image で表現する。
+  // 既に旧コードで生成済みの要素があれば削除して、テーマCSSの上書き事故を防ぐ。
+  const oldFade = document.getElementById('favSceneListFade');
+  if (oldFade) oldFade.remove();
+  return null;
+}
+
+let favoriteSceneListMeasureRaf = 0;
+let favoriteSceneListStateRaf = 0;
+
+function updateFavoriteSceneListScrollHint(options = {}) {
   const list = document.getElementById('favSceneList');
   if (!list) return;
   const modal = document.getElementById('favSceneModal');
+  const savedBox = list.closest('.fav-scene-saved');
+  const fade = ensureFavoriteSceneListFade();
   const hidden = list.hidden || list.getAttribute('aria-hidden') === 'true' || !modal || modal.hidden;
+
+  const resetState = () => {
+    list.classList.remove('is-scrollable', 'is-at-bottom', 'is-fixed-scroll-area');
+    list.style.removeProperty('--fav-scene-stable-list-height');
+    list.style.removeProperty('--fav-scene-fade-height');
+    savedBox?.classList.remove('has-list-overflow', 'is-list-at-bottom');
+    if (fade) {
+      fade.hidden = true;
+      fade.style.removeProperty('--fav-scene-list-fade-top');
+      fade.style.removeProperty('--fav-scene-list-fade-height');
+    }
+  };
+
   if (hidden) {
-    list.classList.remove('is-scrollable');
+    resetState();
     return;
   }
-  const style = window.getComputedStyle(list);
-  const maxHeight = parseFloat(style.maxHeight);
-  const hasMaxHeight = Number.isFinite(maxHeight) && maxHeight > 0 && maxHeight < 9999;
-  const isScrollable = list.scrollHeight > list.clientHeight + 2 || (hasMaxHeight && list.scrollHeight > maxHeight + 2);
-  list.classList.toggle('is-scrollable', isScrollable);
+
+  const syncScrollState = () => {
+    favoriteSceneListStateRaf = 0;
+    const scrollable = list.scrollHeight > list.clientHeight + 2;
+    const atBottom = !scrollable || (list.scrollTop + list.clientHeight >= list.scrollHeight - 3);
+    list.classList.toggle('is-scrollable', scrollable);
+    list.classList.toggle('is-at-bottom', atBottom);
+    savedBox?.classList.toggle('has-list-overflow', scrollable);
+    savedBox?.classList.toggle('is-list-at-bottom', atBottom);
+
+    if (fade) {
+      const fadeHeight = Math.min(24, Math.max(16, Math.floor(list.clientHeight * 0.11)));
+      fade.style.setProperty('--fav-scene-list-fade-height', `${fadeHeight}px`);
+      fade.style.setProperty('--fav-scene-list-fade-top', `${Math.max(0, list.offsetTop + list.clientHeight - fadeHeight)}px`);
+      fade.hidden = !scrollable || atBottom;
+    }
+  };
+
+  const requestState = () => {
+    if (favoriteSceneListStateRaf) return;
+    favoriteSceneListStateRaf = requestAnimationFrame(syncScrollState);
+  };
+
+  if (options.measure) {
+    if (favoriteSceneListMeasureRaf) cancelAnimationFrame(favoriteSceneListMeasureRaf);
+    favoriteSceneListMeasureRaf = requestAnimationFrame(() => {
+      favoriteSceneListMeasureRaf = 0;
+      const items = Array.from(list.querySelectorAll('.fav-scene-item'));
+      // いったん自然なCSS計算へ戻してから測る。これにより、VisualViewportやフォント読み込みの途中値が
+      // そのまま固定されて、登録数が多い時に一覧の縦幅が伸び縮みするのを防ぐ。
+      list.classList.remove('is-fixed-scroll-area');
+      list.style.removeProperty('--fav-scene-stable-list-height');
+      void list.offsetHeight;
+
+      if (items.length === 0) {
+        resetState();
+        return;
+      }
+
+      const style = window.getComputedStyle(list);
+      const gap = Math.max(0, parseFloat(style.rowGap || style.gap || '0') || 0);
+      const firstHeight = Math.max(1, Math.ceil(items[0].getBoundingClientRect().height || 54));
+      const rowStep = firstHeight + gap;
+      const naturalClientHeight = Math.max(0, Math.floor(list.clientHeight));
+      const naturalScrollHeight = Math.max(0, Math.ceil(list.scrollHeight));
+      const needsOwnScroll = naturalScrollHeight > naturalClientHeight + 2;
+
+      if (needsOwnScroll) {
+        // 表示領域を「完全な行数」へ丸める。スクロール中に半端な空白が出たり、
+        // iOS Safari のツールバー変化で高さだけ再計算されるのを防ぐ。
+        const rowsFromCurrentHeight = Math.floor((naturalClientHeight + gap + 1) / rowStep);
+        const rowsFromViewport = Number(modal.style.getPropertyValue('--fav-scene-visible-rows-final')) || 0;
+        const visibleRows = Math.max(2, Math.min(items.length - 1, 6, rowsFromCurrentHeight || rowsFromViewport || 4));
+        const stableHeight = Math.round((firstHeight * visibleRows) + (gap * Math.max(0, visibleRows - 1)));
+        list.style.setProperty('--fav-scene-stable-list-height', `${stableHeight}px`);
+        list.classList.add('is-fixed-scroll-area');
+      } else {
+        list.classList.remove('is-fixed-scroll-area');
+        list.style.removeProperty('--fav-scene-stable-list-height');
+      }
+
+      requestState();
+    });
+    return;
+  }
+
+  requestState();
 }
 
 
@@ -2653,6 +2692,42 @@ function setupFavoriteSceneModal() {
     try { target.focus({ preventScroll: true }); } catch (_) { target.focus(); }
   };
 
+  const getFavoriteModalContent = () => modal.querySelector('.fav-scene-modal');
+
+  const clearClosingLayoutFreeze = () => {
+    const modalContent = getFavoriteModalContent();
+    modal.classList.remove('is-closing-stable');
+    if (!modalContent) return;
+    [
+      'position', 'top', 'left', 'right', 'bottom', 'width', 'height',
+      'max-height', 'margin', 'transform', 'overflow-y', 'overflow-x'
+    ].forEach(prop => modalContent.style.removeProperty(prop));
+  };
+
+  const freezeClosingLayout = () => {
+    const modalContent = getFavoriteModalContent();
+    if (!modalContent || modal.hidden) return;
+    const rect = modalContent.getBoundingClientRect();
+    if (!rect.width || !rect.height) return;
+
+    // iOS Safari/PWAでは、保存後のVisualViewport復帰中に閉じると
+    // overlayの中央寄せが1フレームだけ再計算されてモーダルがズレることがある。
+    // 閉じ始めた瞬間の見た目を固定してからフェードアウトさせる。
+    modal.classList.add('is-closing-stable');
+    modalContent.style.setProperty('position', 'fixed', 'important');
+    modalContent.style.setProperty('top', `${Math.round(rect.top)}px`, 'important');
+    modalContent.style.setProperty('left', `${Math.round(rect.left)}px`, 'important');
+    modalContent.style.setProperty('right', 'auto', 'important');
+    modalContent.style.setProperty('bottom', 'auto', 'important');
+    modalContent.style.setProperty('width', `${Math.round(rect.width)}px`, 'important');
+    modalContent.style.setProperty('height', `${Math.round(rect.height)}px`, 'important');
+    modalContent.style.setProperty('max-height', `${Math.round(rect.height)}px`, 'important');
+    modalContent.style.setProperty('margin', '0', 'important');
+    modalContent.style.setProperty('transform', 'none', 'important');
+    modalContent.style.setProperty('overflow-y', 'hidden', 'important');
+    modalContent.style.setProperty('overflow-x', 'hidden', 'important');
+  };
+
   const setSaveButtonMode = (isEditing) => {
     const editing = Boolean(isEditing);
     const savedBox = list?.closest('.fav-scene-saved');
@@ -2755,13 +2830,13 @@ function setupFavoriteSceneModal() {
     list.querySelectorAll('.fav-scene-item').forEach(item => item.classList.add('is-new'));
     setTimeout(() => list.querySelectorAll('.fav-scene-item.is-new').forEach(item => item.classList.remove('is-new')), 900);
 
-    updateFavoriteSceneListScrollHint();
+    updateFavoriteSceneListScrollHint({ measure: true });
     requestAnimationFrame(() => {
-      updateFavoriteSceneListScrollHint();
+      updateFavoriteSceneListScrollHint({ measure: true });
       // iOSのキーボード閉じアニメーション直後はフォント計測が一瞬だけズレるため、
       // 保存完了の描画が落ち着いてから1回だけ計測し直す。
       setTimeout(() => {
-        updateFavoriteSceneListScrollHint();
+        updateFavoriteSceneListScrollHint({ measure: true });
       }, 120);
     });
 
@@ -2888,6 +2963,7 @@ function setupFavoriteSceneModal() {
   };
 
   const openModal = (episode) => {
+    clearClosingLayoutFreeze();
     previouslyFocusedElement = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     pendingFavoriteEpisode = episode;
     const entry = getFavoriteSceneEntry(episode.id);
@@ -2922,10 +2998,10 @@ function setupFavoriteSceneModal() {
     try { modal.focus({ preventScroll: true }); } catch (_) { modal.focus(); }
     requestAnimationFrame(() => {
       modal.classList.add('show');
-      updateFavoriteSceneListScrollHint();
-      requestAnimationFrame(updateFavoriteSceneListScrollHint);
-      setTimeout(updateFavoriteSceneListScrollHint, 180);
-      if (document.fonts?.ready) document.fonts.ready.then(updateFavoriteSceneListScrollHint).catch(() => {});
+      updateFavoriteSceneListScrollHint({ measure: true });
+      requestAnimationFrame(() => updateFavoriteSceneListScrollHint({ measure: true }));
+      setTimeout(() => updateFavoriteSceneListScrollHint({ measure: true }), 180);
+      if (document.fonts?.ready) document.fonts.ready.then(() => updateFavoriteSceneListScrollHint({ measure: true })).catch(() => {});
     });
   };
 
@@ -2935,16 +3011,29 @@ function setupFavoriteSceneModal() {
     saveCommitTimer = 0;
     modal.classList.remove('is-saving-scene');
 
-    // まれに「表示直後/保存直後/キーボード復帰中」に close が二重発火すると、
-    // show が無いのに body ロックだけ残ることがある。非表示パスでも必ず解除同期する。
-    if (!modal.classList.contains('show')) {
+    // 保存直後のキーボード復帰/visualViewport同期が残っている状態で閉じると、
+    // is-keyboard-open系クラスの付け外しとoverlay中央寄せが競合して1フレームだけズレる。
+    // 閉じ始める前に現在の見た目を固定し、同期系クラスは即クリアする。
+    freezeClosingLayout();
+    modal.classList.remove('is-keyboard-open', 'is-vv-compact-keyboard', 'is-vv-tiny-keyboard', 'is-editor-focused', 'is-comment-focused');
+    document.documentElement.classList.remove('vv-keyboard-open', 'vv-keyboard-compact', 'vv-keyboard-tiny');
+    try { commentInput.blur(); } catch (_) {}
+
+    const cleanupAfterClose = () => {
       modal.hidden = true;
-      modal.classList.remove('closing', 'is-keyboard-open', 'is-vv-compact-keyboard', 'is-vv-tiny-keyboard', 'is-editor-focused', 'is-comment-focused');
+      modal.classList.remove('closing', 'show', 'is-keyboard-open', 'is-vv-compact-keyboard', 'is-vv-tiny-keyboard', 'is-editor-focused', 'is-comment-focused');
       closeEditor(false);
       setCommentError('');
       resetEditingState();
-      window.releaseBodyLock?.();
+      clearClosingLayoutFreeze();
+      restorePreviousFocus();
       window.__syncBodyLockToUi?.();
+    };
+
+    // まれに二重発火で show が既に外れている場合も、見た目固定を解除して必ずロックを解放する。
+    if (!modal.classList.contains('show')) {
+      window.releaseBodyLock?.({ restore: false });
+      cleanupAfterClose();
       return;
     }
 
@@ -2954,16 +3043,10 @@ function setupFavoriteSceneModal() {
     window.clearTimeout(closeModalTimer);
     const finish = () => {
       closeModalTimer = 0;
-      // 背面のロック解除を先に済ませてから hidden にする。
-      // hidden→body fixed解除 の順だと、低性能端末で背景が1フレーム白飛びしやすい。
-      window.releaseBodyLock?.();
-      modal.hidden = true;
-      modal.classList.remove('closing', 'is-keyboard-open', 'is-vv-compact-keyboard', 'is-vv-tiny-keyboard', 'is-editor-focused', 'is-comment-focused');
-      closeEditor(false);
-      setCommentError('');
-      resetEditingState();
-      restorePreviousFocus();
-      window.__syncBodyLockToUi?.();
+      // body fixed方式ではないため、閉じる瞬間にscrollTo復元を走らせる必要はない。
+      // ここでscrollToを挟むとiOS/PWAで背景が一瞬上下して見える。
+      window.releaseBodyLock?.({ restore: false });
+      cleanupAfterClose();
     };
     closeModalTimer = setTimeout(finish, 180);
   };
@@ -3069,6 +3152,10 @@ function setupFavoriteSceneModal() {
     const url = item.dataset.playUrl;
     if (url) openPlaybackUrl(url);
   });
+
+  list.addEventListener('scroll', () => {
+    updateFavoriteSceneListScrollHint();
+  }, { passive: true });
 
   removeBtn.addEventListener('click', () => {
     if (!pendingFavoriteEpisode?.id) return;
@@ -4091,6 +4178,13 @@ document.addEventListener('keydown', (e) => {
     const keyboardHeight = Math.max(0, layoutHeight - visualHeight - offsetTop);
     const active = document.activeElement;
     const modalIsOpen = Boolean(modal && !modal.hidden && modal.classList.contains('show'));
+    if (modal && (modal.hidden || modal.classList.contains('closing') || modal.classList.contains('is-closing-stable') || !modalIsOpen)) {
+      clearCompactEditorHeight(modal);
+      modal.classList.remove('is-editor-focused', 'is-comment-focused', 'is-keyboard-open', 'is-vv-compact-keyboard', 'is-vv-tiny-keyboard');
+      root.classList.remove('vv-keyboard-open', 'vv-keyboard-compact', 'vv-keyboard-tiny');
+      root.style.setProperty('--app-keyboard-height', '0px');
+      return;
+    }
     const focusedInModal = Boolean(modal && active && modal.contains(active) && isEditableTarget(active));
     const commentFocused = Boolean(modal && active && active.id === 'favSceneCommentInput');
     const mobileViewport = visualWidth <= 779 || window.matchMedia?.('(max-width: 779px)')?.matches;
@@ -4138,6 +4232,8 @@ document.addEventListener('keydown', (e) => {
   };
 
   const delayedSync = () => {
+    const modal = getModal();
+    if (modal && (modal.hidden || modal.classList.contains('closing') || modal.classList.contains('is-closing-stable'))) return;
     // 入力のたびに複数のsetTimeoutを積み増すと、低性能端末で重くなる。
     // 常に最新の同期予約だけ残す。
     delayedSyncTimers.forEach(timerId => window.clearTimeout(timerId));
