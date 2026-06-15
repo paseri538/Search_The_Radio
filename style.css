@@ -21813,3 +21813,43 @@ body.dark-mode #favSceneModal#favSceneModal#favSceneModal#favSceneModal.modal-ov
   mask-image: none !important;
 }
 
+
+
+/* ===================================================
+   v19: Favorite timestamp save/close stability + reliable result feedback
+   - 保存時のDOM切替中はモーダル内のtransition/animationを止め、VisualViewport復帰中の乱れを抑える。
+   - 検索結果カードのフェードはJS inline transitionで実行するため、CSS側では潰さない。
+=================================================== */
+#favSceneModal.fav-scene-modal-overlay.is-saving-scene .fav-scene-modal,
+#favSceneModal.fav-scene-modal-overlay.is-saving-scene .fav-scene-body,
+#favSceneModal.fav-scene-modal-overlay.is-saving-scene .fav-scene-saved,
+#favSceneModal.fav-scene-modal-overlay.is-saving-scene #favSceneForm,
+#favSceneModal.fav-scene-modal-overlay.is-saving-scene #favSceneList,
+#favSceneModal.fav-scene-modal-overlay.is-saving-scene .fav-scene-item{
+  transition: none !important;
+  animation: none !important;
+}
+
+#favSceneModal.fav-scene-modal-overlay.is-saving-scene #favSceneList{
+  scroll-behavior: auto !important;
+  contain: layout paint !important;
+}
+
+#favSceneModal.fav-scene-modal-overlay.closing.is-closing-stable,
+#favSceneModal.fav-scene-modal-overlay.closing.is-closing-stable .fav-scene-modal{
+  will-change: opacity !important;
+}
+
+/* JSが直接 opacity/transform/transition を入れる。CSS animation:none に潰されない保険。 */
+#results .episode-item.result-card-enter,
+#results .no-results.result-card-enter,
+#results .did-you-mean-alert.result-card-enter{
+  animation: none !important;
+}
+
+#results .episode-item[data-result-enter="true"],
+#results .no-results[data-result-enter="true"],
+#results .did-you-mean-alert[data-result-enter="true"]{
+  backface-visibility: hidden !important;
+  transform-origin: center top !important;
+}

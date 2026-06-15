@@ -1149,20 +1149,57 @@ function renderResults(arr, page = 1, originalQuery = null, suggestions = []) {
   ul.classList.remove('results-fade-in');
   ul.innerHTML = "";
 
+  const resultEnterQueue = [];
+
   const markResultEnter = (el, delayIndex = 0) => {
     if (!shouldAnimateResults || !el) return;
+    const delay = Math.min(Math.max(0, delayIndex) * 18, 140);
+
+    // v19: CSS animation ではなく inline transition で直接制御する。
+    // 既存CSSの animation:none / prefers-reduced-motion / Safariの挿入タイミングに潰されないよう、
+    // DOM挿入前から初期状態を入れておき、挿入後2フレーム目で必ず表示へ遷移させる。
     el.classList.add('result-card-enter');
-    el.style.setProperty('--result-anim-delay', `${Math.min(Math.max(0, delayIndex) * 18, 140)}ms`);
+    el.dataset.resultEnter = 'true';
+    el.style.setProperty('--result-anim-delay', `${delay}ms`);
+    el.style.setProperty('opacity', '0', 'important');
+    el.style.setProperty('transform', 'translate3d(0, 10px, 0) scale(.992)', 'important');
+    el.style.setProperty('transition', 'none', 'important');
+    el.style.setProperty('will-change', 'opacity, transform', 'important');
+    resultEnterQueue.push({ el, delay });
   };
 
   const cleanupResultEnter = () => {
-    if (!shouldAnimateResults) return;
+    if (!shouldAnimateResults || resultEnterQueue.length === 0) return;
+    const entries = resultEnterQueue.filter(({ el }) => el && el.isConnected);
+    if (entries.length === 0) return;
+
+    const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        entries.forEach(({ el, delay }) => {
+          if (!el || !el.isConnected) return;
+          const d = reduceMotion ? 0 : delay;
+          const duration = reduceMotion ? 180 : 360;
+          el.style.setProperty('transition', `opacity ${duration}ms cubic-bezier(.16,1,.3,1) ${d}ms, transform ${duration}ms cubic-bezier(.16,1,.3,1) ${d}ms`, 'important');
+          el.style.setProperty('opacity', '1', 'important');
+          el.style.setProperty('transform', 'translate3d(0, 0, 0) scale(1)', 'important');
+        });
+      });
+    });
+
     resultsAnimationCleanupTimer = window.setTimeout(() => {
-      if (ul && ul.isConnected) {
-        ul.querySelectorAll('.result-card-enter').forEach(el => el.classList.remove('result-card-enter'));
-      }
+      entries.forEach(({ el }) => {
+        if (!el || !el.isConnected) return;
+        el.classList.remove('result-card-enter');
+        delete el.dataset.resultEnter;
+        el.style.removeProperty('opacity');
+        el.style.removeProperty('transform');
+        el.style.removeProperty('transition');
+        el.style.removeProperty('will-change');
+        el.style.removeProperty('--result-anim-delay');
+      });
       resultsAnimationCleanupTimer = 0;
-    }, 720);
+    }, 980);
   };
 
   if (showFavoritesOnly) {
@@ -2842,7 +2879,7 @@ function setupFavoriteSceneModal() {
 
     if (refreshResults) {
       requestAnimationFrame(() => {
-        window.setTimeout(() => search({ gotoPage: currentPage }), 0);
+        window.setTimeout(() => search({ gotoPage: currentPage, animateResults: true }), 0);
       });
     }
   };
@@ -2856,19 +2893,27 @@ function setupFavoriteSceneModal() {
     // これにより、保存直後に「編集DOM→一覧DOM→キーボード閉じ」の順で再レイアウトされる一瞬のちらつきを防ぐ。
     try { commentInput.blur(); } catch (_) {}
 
+    // v19: キーボードが閉じる前にフォーム→一覧へDOMを入れ替えると、
+    // VisualViewport復帰・モーダル高さ再計算・リスト計測が同時に走って一瞬乱れる。
+    // 保存時点でキーボードが開いていた場合は、閉じた状態が2フレーム続くまで待ってからUIを切り替える。
     const startedAt = Date.now();
-    const minWait = 0;
-    const maxWait = 140;
+    const keyboardWasOpen = isSoftKeyboardLikelyOpen();
+    const minWait = keyboardWasOpen ? 120 : 24;
+    const maxWait = keyboardWasOpen ? 680 : 180;
+    let closedStableFrames = 0;
     const tick = () => {
       const elapsed = Date.now() - startedAt;
       const keyboardOpen = isSoftKeyboardLikelyOpen();
-      if ((elapsed < minWait) || (keyboardOpen && elapsed < maxWait)) {
-        saveCommitTimer = window.setTimeout(tick, 16);
+      closedStableFrames = keyboardOpen ? 0 : (closedStableFrames + 1);
+      if (elapsed < minWait || ((keyboardOpen || closedStableFrames < 2) && elapsed < maxWait)) {
+        saveCommitTimer = window.setTimeout(tick, 24);
         return;
       }
-      requestAnimationFrame(() => finishSavedSceneUiCommit(videoId, options));
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => finishSavedSceneUiCommit(videoId, options));
+      });
     };
-    saveCommitTimer = window.setTimeout(tick, 0);
+    saveCommitTimer = window.setTimeout(tick, 24);
   };
 
   const startEditingScene = (sceneId) => {
@@ -3032,8 +3077,8 @@ function setupFavoriteSceneModal() {
 
     // まれに二重発火で show が既に外れている場合も、見た目固定を解除して必ずロックを解放する。
     if (!modal.classList.contains('show')) {
-      window.releaseBodyLock?.({ restore: false });
-      cleanupAfterClose();
+      window.releaseBodyLock?.({ restore: true });
+      requestAnimationFrame(cleanupAfterClose);
       return;
     }
 
@@ -3043,12 +3088,15 @@ function setupFavoriteSceneModal() {
     window.clearTimeout(closeModalTimer);
     const finish = () => {
       closeModalTimer = 0;
-      // body fixed方式ではないため、閉じる瞬間にscrollTo復元を走らせる必要はない。
-      // ここでscrollToを挟むとiOS/PWAで背景が一瞬上下して見える。
-      window.releaseBodyLock?.({ restore: false });
-      cleanupAfterClose();
+      // v19: iOS/PWAでは入力欄フォーカス中に背面ページのscrollYが動くことがある。
+      // 閉じる前のロック位置へ戻してからモーダルを完全にhidden化することで、
+      // 背景が footer 側へ飛んだり、閉じた直後にサイト全体が動くのを防ぐ。
+      window.releaseBodyLock?.({ restore: true });
+      requestAnimationFrame(() => {
+        requestAnimationFrame(cleanupAfterClose);
+      });
     };
-    closeModalTimer = setTimeout(finish, 180);
+    closeModalTimer = setTimeout(finish, 160);
   };
 
   commentInput.addEventListener('input', () => {
