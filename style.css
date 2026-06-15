@@ -1626,7 +1626,7 @@ body{
 /* モーダル/ドロワー表示時の背景固定（スクロールロック） */
 body.modal-open{
   overflow: hidden !important;
-  touch-action: none !important;
+  touch-action: auto !important;
 }
 /* 視覚ノイズ低減：PWA時は若干のシャドウ強度を抑え、にじみを減らす */
 .ios-standalone .search-card,
@@ -21412,3 +21412,93 @@ body.theme-green{
     transform: none !important;
   }
 }
+
+
+/* ===================================================
+   v11: favorite modal render stability + scroll lock cleanup
+   =================================================== */
+/* 旧CSSの body.body-scroll-locked { position: fixed; height:100%; } を最終的に無効化。
+   body fixedはiOS/PWAでモーダル閉じ時の白飛び・全画面再合成を起こしやすいため使わない。 */
+html.scroll-locked,
+html.scroll-locked body.body-scroll-locked{
+  overflow: hidden !important;
+  overscroll-behavior: none !important;
+}
+html.scroll-locked body.body-scroll-locked{
+  position: static !important;
+  top: auto !important;
+  left: auto !important;
+  right: auto !important;
+  width: auto !important;
+  height: auto !important;
+  min-height: 100% !important;
+  touch-action: auto !important;
+}
+
+/* お気に入りモーダル開閉は opacity だけに限定し、背景ページの再合成を減らす */
+#favSceneModal.fav-scene-modal-overlay{
+  contain: layout paint !important;
+  isolation: isolate !important;
+  will-change: opacity !important;
+  transform: none !important;
+  backface-visibility: hidden !important;
+}
+#favSceneModal.fav-scene-modal-overlay .fav-scene-modal{
+  will-change: auto !important;
+  transform: translateZ(0) !important;
+  backface-visibility: hidden !important;
+}
+#favSceneModal.fav-scene-modal-overlay:not(.show):not(.closing){
+  pointer-events: none !important;
+}
+
+/* モーダル内のスクロールだけ許可 */
+#favSceneModal .fav-scene-body{
+  touch-action: pan-y !important;
+  -webkit-overflow-scrolling: touch !important;
+  overscroll-behavior: contain !important;
+}
+
+/* モーダルカード内の文字はJSの全カード再計測なしで表示できるよう保険 */
+#favSceneModal #favSceneEpisodeCard .guest-one-line,
+#favSceneModal #favSceneEpisodeCard .meta-one-line{
+  visibility: visible !important;
+}
+
+/* タッチ端末ではモーダル開閉時の追加エフェクトを抑える */
+@media (hover: none), (pointer: coarse), (max-width: 779px){
+  #favSceneModal.fav-scene-modal-overlay,
+  #favSceneModal.fav-scene-modal-overlay.show,
+  #favSceneModal.fav-scene-modal-overlay.closing{
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+  #favSceneModal .fav-scene-item.is-new{
+    animation: none !important;
+  }
+}
+
+/* ===================================================
+   ★★★ v14: Results card transition support ★★★
+   CSS animation方式は、既存の animation:none !important やiOS Safari/PWAの描画タイミングで
+   再生されないことがあったため廃止。JS側で opacity/transform のinline transitionを開始する。
+=================================================== */
+/* 古い常時 rise アニメーションはここで完全に止める。
+   v14のふわっと表示はJSのinline transitionだけで必要な時に発火する。 */
+#results .episode-item,
+#results .no-results,
+#results .did-you-mean-alert{
+  animation: none !important;
+}
+
+#results .thumbnail{
+  aspect-ratio: 16 / 9;
+}
+
+#results.results-transitioning .episode-item,
+#results.results-transitioning .no-results,
+#results.results-transitioning .did-you-mean-alert{
+  backface-visibility: hidden;
+  transform-style: flat;
+}
+

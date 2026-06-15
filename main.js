@@ -89,6 +89,8 @@ let isRestoringURL = false;
 let postRenderFitRaf = 0;
 let fitGuestLinesRetryTimer = 0;
 let resetSearchRaf = 0;
+let nextResultsAnimation = false;
+let resultsAnimationCleanupTimer = 0;
 
 // Guest colors (for active filters)
 const guestColorMap = {
@@ -845,7 +847,7 @@ function preloadThumbsFromData() {
   try {
     const head = document.head;
     const seen = new Set();
-    const preloadData = data;
+    const preloadData = data.slice(0, 8); // 初期表示で必要な分だけ先読みし、全件preloadによる初期描画の重さを避ける
 
     preloadData.forEach(ep => {
       const episodeFilename = ep.episode;
@@ -981,6 +983,7 @@ function search(opts = {}) {
   countEl.innerHTML = `表示数：<span class="impact-number">${res.length}</span>件`;
 
   currentPage = opts.gotoPage || 1;
+  if (opts.animateResults === true || opts.animate === true) requestResultsCardAnimation();
   if (!isRestoringURL) buildURLFromState({ method: 'push' });
 
   renderResults(res, currentPage, rawQuery, suggestionWords);
@@ -1041,7 +1044,7 @@ function resetSearchNow() {
 
   resetFilters({ runSearch: false });
   currentPage = 1;
-  if (shouldSearch) search({ gotoPage: 1 });
+  if (shouldSearch) search({ gotoPage: 1, animateResults: true });
   try { window.scrollTo({ top: 0, behavior: 'auto' }); } catch (e) { window.scrollTo(0, 0); }
 
   if (typeof window.toggleFilterDrawer === 'function') {
@@ -1067,7 +1070,7 @@ function exitFavoritesMode() {
   }
   
   // 検索条件（キーワードや絞り込み）は消さずに再検索を実行
-  search();
+  search({ animateResults: true });
   
   // 画面トップへスクロール
   try { window.scrollTo({ top: 0, behavior: 'auto' }); } catch (e) { window.scrollTo(0, 0); }
@@ -1078,6 +1081,98 @@ function exitFavoritesMode() {
  * ★★★ UIレンダリングと更新 ★★★
  * ===================================================
  */
+
+
+function requestResultsCardAnimation() {
+  nextResultsAnimation = true;
+}
+
+function shouldReduceResultsMotion() {
+  try {
+    return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  } catch (_) {
+    return false;
+  }
+}
+
+function clearResultsCardAnimationState(resultsEl) {
+  if (resultsAnimationCleanupTimer) {
+    clearTimeout(resultsAnimationCleanupTimer);
+    resultsAnimationCleanupTimer = 0;
+  }
+  if (!resultsEl) return;
+  resultsEl.classList.remove('results-fade-in', 'results-transitioning');
+  resultsEl.querySelectorAll('[data-result-enter="true"]').forEach(el => {
+    el.removeAttribute('data-result-enter');
+    el.style.removeProperty('opacity');
+    el.style.removeProperty('transform');
+    el.style.removeProperty('transition');
+    el.style.removeProperty('transition-delay');
+    el.style.removeProperty('will-change');
+  });
+}
+
+function prepResultsCardEnter(el, delayIndex = 0, shouldAnimate = false) {
+  if (!shouldAnimate || !el) return;
+  el.dataset.resultEnter = 'true';
+  el.style.setProperty('--result-anim-delay', `${Math.min(Math.max(0, delayIndex) * 22, 170)}ms`);
+  // CSSアニメーションではなくinline transitionで初期状態を先に固定する。
+  // 既存CSSの animation:none やテーマ別 !important 指定に邪魔されず、iOS Safari/PWAでも再生される。
+  const reduceMotion = shouldReduceResultsMotion();
+  el.style.opacity = reduceMotion ? '0.08' : '0';
+  el.style.transform = reduceMotion ? 'translate3d(0, 0, 0) scale(1)' : 'translate3d(0, 16px, 0) scale(.988)';
+  el.style.transition = 'none';
+  el.style.willChange = 'opacity, transform';
+}
+
+function runResultsCardTransition(resultsEl) {
+  if (!resultsEl) return;
+  const cards = Array.from(resultsEl.querySelectorAll('[data-result-enter="true"]'));
+  if (!cards.length) return;
+
+  if (resultsAnimationCleanupTimer) {
+    clearTimeout(resultsAnimationCleanupTimer);
+    resultsAnimationCleanupTimer = 0;
+  }
+
+  resultsEl.classList.add('results-transitioning');
+
+  let started = false;
+  const start = () => {
+    if (started) return;
+    started = true;
+    cards.forEach((el, index) => {
+      if (!el.isConnected) return;
+      const delay = el.style.getPropertyValue('--result-anim-delay') || `${Math.min(index * 22, 170)}ms`;
+      const reduceMotion = shouldReduceResultsMotion();
+      const duration = reduceMotion ? '260ms' : '520ms';
+      el.style.transition = `opacity ${duration} cubic-bezier(.16, 1, .3, 1), transform ${duration} cubic-bezier(.16, 1, .3, 1)`;
+      el.style.transitionDelay = delay;
+      el.style.opacity = '1';
+      el.style.transform = 'translate3d(0, 0, 0) scale(1)';
+    });
+
+    resultsAnimationCleanupTimer = window.setTimeout(() => {
+      cards.forEach(el => {
+        if (!el.isConnected) return;
+        el.removeAttribute('data-result-enter');
+        el.style.removeProperty('opacity');
+        el.style.removeProperty('transform');
+        el.style.removeProperty('transition');
+        el.style.removeProperty('transition-delay');
+        el.style.removeProperty('will-change');
+      });
+      resultsEl.classList.remove('results-transitioning');
+      resultsAnimationCleanupTimer = 0;
+    }, 900);
+  };
+
+  // 1フレーム目で opacity:0 / translate を確定させ、次のフレームで表示状態へ遷移させる。
+  // 単一rAFだとSafari/PWAで初期状態と最終状態が同フレーム扱いになり、見た目上アニメーションしないことがある。
+  requestAnimationFrame(() => requestAnimationFrame(start));
+  // backgroundタブ復帰などでrAFが詰まった場合の保険。
+  window.setTimeout(start, 80);
+}
 
 function formatYearButtons() {
   document.querySelectorAll('.btn-year').forEach(button => {
@@ -1106,7 +1201,20 @@ function schedulePostRenderTextFit() {
 // ★修正: renderResults (もっと見る機能 + 自動フォント調整)
 function renderResults(arr, page = 1, originalQuery = null, suggestions = []) {
   const ul = document.getElementById("results");
+  const shouldAnimateResults = nextResultsAnimation === true;
+  nextResultsAnimation = false;
+
+  clearResultsCardAnimationState(ul);
   ul.innerHTML = "";
+
+  const markResultEnter = (el, delayIndex = 0) => {
+    prepResultsCardEnter(el, delayIndex, shouldAnimateResults);
+  };
+
+  const cleanupResultEnter = () => {
+    if (!shouldAnimateResults) return;
+    runResultsCardTransition(ul);
+  };
 
   if (showFavoritesOnly) {
     const liFav = document.createElement('li');
@@ -1130,6 +1238,7 @@ function renderResults(arr, page = 1, originalQuery = null, suggestions = []) {
   if (suggestions && suggestions.length > 0 && originalQuery) {
     const li = document.createElement('li');
     li.className = 'did-you-mean-alert'; 
+    markResultEnter(li, 0);
     li.style.gridColumn = "1 / -1"; 
 
     const limit = 5; 
@@ -1140,7 +1249,7 @@ function renderResults(arr, page = 1, originalQuery = null, suggestions = []) {
     // ボタン生成用ヘルパー
     // ★修正: 初期状態を opacity: 0 (透明) に設定して、調整前のガタつきを隠す
     const createBtn = (word) => `
-      <button class="dym-word-btn" style="margin: 4px; opacity: 0;" onclick="document.getElementById('searchBox').value='${word}'; search(); scrollToResultsTop();">
+      <button class="dym-word-btn" style="margin: 4px; opacity: 0;" onclick="document.getElementById('searchBox').value='${word}'; search({ animateResults: true }); scrollToResultsTop();">
         ${word}
       </button>
     `;
@@ -1175,9 +1284,12 @@ function renderResults(arr, page = 1, originalQuery = null, suggestions = []) {
   }
 
   if (!arr || arr.length === 0) {
-    let html = '<li class="no-results"><div class="no-results-content"><div class="no-results-icon"><i class="fa-solid fa-circle-exclamation"></i>一致する回が見つかりませんでした。</div>';
-    html += '</div></li>';
-    ul.innerHTML += html; // append to existing header (if any)
+    const li = document.createElement('li');
+    li.className = 'no-results';
+    markResultEnter(li, 0);
+    li.innerHTML = '<div class="no-results-content"><div class="no-results-icon"><i class="fa-solid fa-circle-exclamation"></i>一致する回が見つかりませんでした。</div></div>';
+    ul.appendChild(li);
+    cleanupResultEnter();
     return;
   }
 
@@ -1264,6 +1376,8 @@ function renderResults(arr, page = 1, originalQuery = null, suggestions = []) {
     li.setAttribute('role', 'link');
     li.tabIndex = 0;
     li.style.setProperty('--i', index.toString());
+    li.style.setProperty('--result-anim-delay', `${Math.min(index * 18, 140)}ms`);
+    markResultEnter(li, index);
 
     let photoBtnHtml = '';
     let hasPhotoBtn = false; // ★追加: リンクボタンの有無を判定するフラグ
@@ -1325,6 +1439,7 @@ function renderResults(arr, page = 1, originalQuery = null, suggestions = []) {
   });
 
   ul.appendChild(fragment);
+  cleanupResultEnter();
 
   // ★修正: 描画後にボタンのサイズ調整を行う
   schedulePostRenderTextFit();
@@ -1763,7 +1878,7 @@ function setupEventListeners() {
     btn.setAttribute('aria-pressed', String(showFavoritesOnly));
     btn.classList.toggle('active', showFavoritesOnly);
     document.body.classList.toggle('fav-only', showFavoritesOnly);
-    search({ gotoPage: 1 });
+    search({ gotoPage: 1, animateResults: true });
   });
 
   document.getElementById('randomBtn').addEventListener('click', () => {
@@ -1784,7 +1899,7 @@ function setupEventListeners() {
   });
 
   document.getElementById('mainResetBtn').addEventListener('click', resetSearch);
-  document.getElementById('sortSelect').addEventListener('change', () => search());
+  // sortSelect の change は下側の1箇所に統一（二重検索・二重描画防止）
 
   const handleFilterClick = (e, collection, type) => {
       const btn = e.target.closest(`[data-${type}]`);
@@ -1793,7 +1908,7 @@ function setupEventListeners() {
       const index = collection.indexOf(value);
       index > -1 ? collection.splice(index, 1) : collection.push(value);
       updateFilterButtonStyles();
-      search();
+      search({ animateResults: true });
       scrollToResultsTop();
   };
 
@@ -1806,7 +1921,7 @@ function setupEventListeners() {
     const btn = e.target.closest('.page-btn');
     if (btn && !btn.classList.contains('active')) {
       currentPage = parseInt(btn.dataset.page, 10);
-      search({ gotoPage: currentPage });
+      search({ gotoPage: currentPage, animateResults: true });
       const mainContent = document.querySelector('.main-content');
       if (mainContent) {
         const top = mainContent.getBoundingClientRect().top + window.pageYOffset - 24;
@@ -1826,7 +1941,7 @@ function setupEventListeners() {
     else if (type === 'year') selectedYears = selectedYears.filter(y => y !== String(value));
     searchBox.dispatchEvent(new Event('input'));
     updateFilterButtonStyles();
-    search();
+    search({ animateResults: true });
     scrollToResultsTop();
   });
 
@@ -1909,7 +2024,7 @@ function setupEventListeners() {
   }, { passive: true });
 
   document.getElementById('sortSelect').addEventListener('change', () => {
-    search();
+    search({ animateResults: true });
     scrollToResultsTop();
   });
 
@@ -1926,7 +2041,7 @@ function setupEventListeners() {
     clearSearchBtn.addEventListener('click', () => {
       searchBoxForClear.value = '';
       toggleClearBtn();
-      search();
+      search({ animateResults: true });
       searchBoxForClear.focus();
     });
 
@@ -1936,7 +2051,7 @@ function setupEventListeners() {
   const mainSearchBtn = document.getElementById('mainSearchBtn');
   if (mainSearchBtn) {
     mainSearchBtn.addEventListener('click', () => {
-      search();
+      search({ animateResults: true });
       scrollToResultsTop();
       mainSearchBtn.blur();
     });
@@ -1950,8 +2065,8 @@ function setupEventListeners() {
   let isLocked = false;
   let lockedScrollY = 0;
   let lockedScrollX = 0;
-  let originalBodyStyle = null;
   let originalHtmlStyle = null;
+  let originalBodyStyle = null;
   let originalStickyPaddingRight = '';
   const htmlElement = document.documentElement;
   const bodyElement = document.body;
@@ -1959,36 +2074,28 @@ function setupEventListeners() {
 
   const LOCK_UI_IDS = ['filterDrawer', 'aboutModal', 'historyModal', 'photoModal', 'favSceneModal'];
 
-  const readCurrentScroll = () => {
-    if (isLocked) {
-      const top = parseFloat(bodyElement.style.top || '0');
-      const left = parseFloat(bodyElement.style.left || '0');
-      return {
-        x: Number.isFinite(left) ? Math.max(0, -left) : lockedScrollX,
-        y: Number.isFinite(top) ? Math.max(0, -top) : lockedScrollY
-      };
-    }
-    return {
-      x: window.pageXOffset || htmlElement.scrollLeft || bodyElement.scrollLeft || 0,
-      y: window.pageYOffset || htmlElement.scrollTop || bodyElement.scrollTop || 0
-    };
-  };
+  const readCurrentScroll = () => ({
+    x: window.pageXOffset || htmlElement.scrollLeft || bodyElement.scrollLeft || 0,
+    y: window.pageYOffset || htmlElement.scrollTop || bodyElement.scrollTop || 0
+  });
 
   const restoreScrollPosition = (x, y) => {
     const sx = Math.max(0, Number(x) || 0);
     const sy = Math.max(0, Number(y) || 0);
-    try { window.scrollTo(sx, sy); } catch (_) {}
-    requestAnimationFrame(() => {
+    const currentX = window.pageXOffset || htmlElement.scrollLeft || bodyElement.scrollLeft || 0;
+    const currentY = window.pageYOffset || htmlElement.scrollTop || bodyElement.scrollTop || 0;
+    if (Math.abs(currentX - sx) > 1 || Math.abs(currentY - sy) > 1) {
       try { window.scrollTo(sx, sy); } catch (_) {}
-    });
-    // iOS Safari / PWA ではキーボード閉じ直後に1フレーム遅れてスクロール補正が入るため、
-    // 短い時間だけ同じ位置へ戻す。ただしロック解除は確実に完了させる。
-    window.setTimeout(() => {
-      try { window.scrollTo(sx, sy); } catch (_) {}
-    }, 80);
-    window.setTimeout(() => {
-      try { window.scrollTo(sx, sy); } catch (_) {}
-    }, 220);
+      requestAnimationFrame(() => {
+        try { window.scrollTo(sx, sy); } catch (_) {}
+      });
+      window.setTimeout(() => {
+        const yNow = window.pageYOffset || htmlElement.scrollTop || bodyElement.scrollTop || 0;
+        if (Math.abs(yNow - sy) > 2) {
+          try { window.scrollTo(sx, sy); } catch (_) {}
+        }
+      }, 90);
+    }
   };
 
   const isLockUiActive = () => LOCK_UI_IDS.some(id => {
@@ -1997,12 +2104,24 @@ function setupEventListeners() {
     if (id === 'filterDrawer') {
       return window.getComputedStyle(el).display !== 'none';
     }
-    // closing中はアニメーション中なので、まだロック対象として扱う。
     if (el.classList.contains('show') || el.classList.contains('closing')) return true;
     if (el.hidden || el.getAttribute('aria-hidden') === 'true') return false;
     const style = window.getComputedStyle(el);
     return style.display !== 'none' && style.visibility !== 'hidden' && style.opacity !== '0';
   });
+
+  const isScrollableModalTarget = (target) => {
+    if (!(target instanceof Element)) return false;
+    return Boolean(target.closest(
+      '#favSceneModal .fav-scene-body, #photoModal .photo-body, #historyModal .history-body, #filterDrawer'
+    ));
+  };
+
+  const preventBackgroundTouchMove = (event) => {
+    if (!isLocked) return;
+    if (isScrollableModalTarget(event.target)) return;
+    event.preventDefault();
+  };
 
   const restoreInlineStyles = () => {
     if (stickyHeader) stickyHeader.style.paddingRight = originalStickyPaddingRight || '';
@@ -2018,18 +2137,15 @@ function setupEventListeners() {
     }
 
     if (originalBodyStyle) {
-      bodyElement.style.position = originalBodyStyle.position || '';
-      bodyElement.style.top = originalBodyStyle.top || '';
-      bodyElement.style.left = originalBodyStyle.left || '';
-      bodyElement.style.right = originalBodyStyle.right || '';
-      bodyElement.style.width = originalBodyStyle.width || '';
       bodyElement.style.overflow = originalBodyStyle.overflow || '';
+      bodyElement.style.touchAction = originalBodyStyle.touchAction || '';
     } else {
-      ['position', 'top', 'left', 'right', 'width', 'overflow'].forEach(prop => bodyElement.style.removeProperty(prop));
+      bodyElement.style.removeProperty('overflow');
+      bodyElement.style.removeProperty('touch-action');
     }
 
-    originalBodyStyle = null;
     originalHtmlStyle = null;
+    originalBodyStyle = null;
   };
 
   const applyLock = () => {
@@ -2037,17 +2153,13 @@ function setupEventListeners() {
     const current = readCurrentScroll();
     lockedScrollX = current.x;
     lockedScrollY = current.y;
-    originalBodyStyle = {
-      position: bodyElement.style.position,
-      top: bodyElement.style.top,
-      left: bodyElement.style.left,
-      right: bodyElement.style.right,
-      width: bodyElement.style.width,
-      overflow: bodyElement.style.overflow
-    };
     originalHtmlStyle = {
       overflow: htmlElement.style.overflow,
       overscrollBehavior: htmlElement.style.overscrollBehavior
+    };
+    originalBodyStyle = {
+      overflow: bodyElement.style.overflow,
+      touchAction: bodyElement.style.touchAction
     };
     originalStickyPaddingRight = stickyHeader ? stickyHeader.style.paddingRight : '';
 
@@ -2056,19 +2168,15 @@ function setupEventListeners() {
       stickyHeader.style.paddingRight = `${scrollbarWidth}px`;
     }
 
+    // v11: body を position: fixed にしない。
+    // iOS/PWAでは body fixed の付け外しが全画面再合成になり、モーダルを閉じた瞬間の白飛び/無描画の主因になる。
+    // 背面スクロールは overflow + touchmove guard で止め、解除時だけ元の scrollY へ戻す。
     htmlElement.classList.add('scroll-locked');
     bodyElement.classList.add('body-scroll-locked');
     htmlElement.style.overflow = 'hidden';
     htmlElement.style.overscrollBehavior = 'none';
-
-    // overflow:hidden だけだと、iOSのキーボード表示/非表示時に背面ページが補正スクロールされる。
-    // body自体を現在位置で fixed 固定し、解除時に同じ scrollY へ戻す。
-    bodyElement.style.position = 'fixed';
-    bodyElement.style.top = `-${lockedScrollY}px`;
-    bodyElement.style.left = `-${lockedScrollX}px`;
-    bodyElement.style.right = '0';
-    bodyElement.style.width = '100%';
     bodyElement.style.overflow = 'hidden';
+    bodyElement.style.touchAction = 'auto';
     isLocked = true;
   };
 
@@ -2081,8 +2189,6 @@ function setupEventListeners() {
   };
 
   const syncLockToVisibleUi = () => {
-    // タイマー/アニメーション競合で lockCount だけ残った時の保険。
-    // 実際に開いているロック対象UIが無いなら、必ずスクロール可能状態へ戻す。
     if (!isLockUiActive() && (isLocked || lockCount > 0 || htmlElement.classList.contains('scroll-locked') || bodyElement.classList.contains('body-scroll-locked'))) {
       lockCount = 0;
       clearLock({ restore: true });
@@ -2106,7 +2212,7 @@ function setupEventListeners() {
     }
     lockCount = Math.max(0, lockCount - 1);
     if (lockCount === 0) clearLock({ restore: true });
-    window.setTimeout(syncLockToVisibleUi, 120);
+    window.setTimeout(syncLockToVisibleUi, 90);
   };
 
   window.__hardUnlockScroll = () => {
@@ -2117,9 +2223,10 @@ function setupEventListeners() {
   window.__syncBodyLockToUi = () => {
     requestAnimationFrame(syncLockToVisibleUi);
     window.setTimeout(syncLockToVisibleUi, 120);
-    window.setTimeout(syncLockToVisibleUi, 360);
+    window.setTimeout(syncLockToVisibleUi, 320);
   };
 
+  document.addEventListener('touchmove', preventBackgroundTouchMove, { passive: false });
   window.addEventListener('pageshow', () => window.__syncBodyLockToUi(), { passive: true });
   window.addEventListener('focus', () => window.__syncBodyLockToUi(), { passive: true });
   document.addEventListener('visibilitychange', () => {
@@ -2539,6 +2646,10 @@ function setupFavoriteSceneModal() {
     const target = previouslyFocusedElement;
     previouslyFocusedElement = null;
     if (!target || !document.contains(target) || typeof target.focus !== 'function') return;
+    // タッチ端末では閉じる直後の focus 復元がスクロール復元/再描画と競合しやすい。
+    // PCのキーボード操作ではアクセシビリティのため従来通り復元する。
+    const coarsePointer = window.matchMedia?.('(hover: none), (pointer: coarse)')?.matches;
+    if (coarsePointer) return;
     try { target.focus({ preventScroll: true }); } catch (_) { target.focus(); }
   };
 
@@ -2650,7 +2761,6 @@ function setupFavoriteSceneModal() {
       // iOSのキーボード閉じアニメーション直後はフォント計測が一瞬だけズレるため、
       // 保存完了の描画が落ち着いてから1回だけ計測し直す。
       setTimeout(() => {
-        if (typeof fitGuestLines === 'function') fitGuestLines();
         updateFavoriteSceneListScrollHint();
       }, 120);
     });
@@ -2768,10 +2878,12 @@ function setupFavoriteSceneModal() {
   </a>
 `;
     requestAnimationFrame(() => {
-      if (typeof fitGuestLines === 'function') {
-        fitGuestLines();
-        setTimeout(fitGuestLines, 80);
-      }
+      // モーダル上部カードだけを表示状態へ戻す。
+      // fitGuestLines() はトップ画面全カードを再計測するため、モーダル開閉時のカクつき原因になる。
+      episodeCardEl.querySelectorAll('.guest-one-line, .meta-one-line').forEach(el => {
+        el.style.visibility = 'visible';
+      });
+      updateFavoriteSceneListScrollHint();
     });
   };
 
@@ -2810,7 +2922,6 @@ function setupFavoriteSceneModal() {
     try { modal.focus({ preventScroll: true }); } catch (_) { modal.focus(); }
     requestAnimationFrame(() => {
       modal.classList.add('show');
-      focusFirstModalControl();
       updateFavoriteSceneListScrollHint();
       requestAnimationFrame(updateFavoriteSceneListScrollHint);
       setTimeout(updateFavoriteSceneListScrollHint, 180);
@@ -2843,16 +2954,18 @@ function setupFavoriteSceneModal() {
     window.clearTimeout(closeModalTimer);
     const finish = () => {
       closeModalTimer = 0;
+      // 背面のロック解除を先に済ませてから hidden にする。
+      // hidden→body fixed解除 の順だと、低性能端末で背景が1フレーム白飛びしやすい。
+      window.releaseBodyLock?.();
       modal.hidden = true;
       modal.classList.remove('closing', 'is-keyboard-open', 'is-vv-compact-keyboard', 'is-vv-tiny-keyboard', 'is-editor-focused', 'is-comment-focused');
       closeEditor(false);
       setCommentError('');
       resetEditingState();
       restorePreviousFocus();
-      window.releaseBodyLock?.();
       window.__syncBodyLockToUi?.();
     };
-    closeModalTimer = setTimeout(finish, 220);
+    closeModalTimer = setTimeout(finish, 180);
   };
 
   commentInput.addEventListener('input', () => {
@@ -3366,7 +3479,7 @@ window.applyDidYouMean = function(word) {
   const searchBox = document.getElementById('searchBox');
   if (searchBox) {
     searchBox.value = word;
-    search();
+    search({ animateResults: true });
     scrollToResultsTop();
   }
 };
@@ -3560,7 +3673,7 @@ function initializeAutocomplete() {
         inputEl.value = viewItems[index].label;
         clear();
         setTimeout(() => {
-          search();
+          search({ animateResults: true });
           scrollToResultsTop(); 
           inputEl.focus();
           const len = inputEl.value.length;
@@ -3663,7 +3776,7 @@ const onInput = () => {
       } else {
         debouncedOnInput.cancel();
         clear();
-        search();
+        search({ animateResults: true });
         scrollToResultsTop();
       }
       return;
@@ -3811,14 +3924,14 @@ document.addEventListener('keydown', (e) => {
     // 次のページへ
     if (currentPage < totalPage) {
       e.preventDefault(); // デフォルトのスクロール動作を無効化
-      search({ gotoPage: currentPage + 1 });
+      search({ gotoPage: currentPage + 1, animateResults: true });
       scrollToResultsTop();
     }
   } else if (e.key === 'ArrowLeft') {
     // 前のページへ
     if (currentPage > 1) {
       e.preventDefault(); // デフォルトのスクロール動作を無効化
-      search({ gotoPage: currentPage - 1 });
+      search({ gotoPage: currentPage - 1, animateResults: true });
       scrollToResultsTop();
     }
   }
