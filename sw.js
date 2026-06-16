@@ -1,5 +1,5 @@
 // キャッシュの名前を定義。バージョンを更新すると古いキャッシュは自動的に削除。
-const SW_VERSION = '20260616d'; // ★バージョンを更新
+const SW_VERSION = '20260614a'; // ★バージョンを更新
 const CACHE_NAME = `radio-cache-${SW_VERSION}`;
 
 
@@ -17,8 +17,6 @@ const CORE_ASSETS = [
   'logo.png',
   'favicon.ico',
   'apple-touch-icon.png',
-  'android-chrome-192x192.png',
-  'android-chrome-512x512.png',
   'site.webmanifest',
   'https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css',
   'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css'

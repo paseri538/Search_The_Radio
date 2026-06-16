@@ -1,62 +1,5 @@
 let isInputFocused = false;
 
-
-/**
- * ===================================================
- * ★★★ Mobile visual viewport variables ★★★
- * ===================================================
- * iPhone Safari のコンパクトタブ/下部アドレスバー表示時は、CSS の 100vh / 100dvh と
- * 実際に見えている VisualViewport がズレることがあるため、モーダル用の高さを JS から同期する。
- */
-(function setupMobileVisualViewportVars() {
-  const root = document.documentElement;
-  let rafId = 0;
-
-  const setPx = (name, value) => {
-    const n = Number(value);
-    root.style.setProperty(name, `${Math.max(0, Number.isFinite(n) ? n : 0)}px`);
-  };
-
-  const syncFavoriteSceneModalRows = (height) => {
-    const modal = document.getElementById('favSceneModal');
-    if (!modal) return;
-
-    // CSSの @media(max-height) は iPhone Safari のコンパクトタブ時に
-    // 実際の表示領域(VisualViewport)より大きいレイアウト高を参照することがある。
-    // そのため、表示できるタイムスタンプ行数は JS 側で VisualViewport 基準に上書きする。
-    const h = Math.max(0, Number(height) || 0);
-    const rows = h <= 540 ? 2 : h <= 620 ? 3 : h <= 680 ? 4 : h <= 800 ? 5 : 7;
-    modal.style.setProperty('--fav-scene-visible-rows-final', String(rows));
-    modal.style.setProperty('--fav-scene-vv-height', `${Math.floor(h)}px`);
-  };
-
-  const update = () => {
-    rafId = 0;
-    const vv = window.visualViewport;
-    const height = vv ? vv.height : window.innerHeight;
-    const width = vv ? vv.width : window.innerWidth;
-    setPx('--app-vv-height', height);
-    setPx('--app-vv-width', width);
-    setPx('--app-vv-offset-top', vv ? vv.offsetTop : 0);
-    setPx('--app-vv-offset-left', vv ? vv.offsetLeft : 0);
-    syncFavoriteSceneModalRows(height);
-  };
-
-  const requestUpdate = () => {
-    if (rafId) return;
-    rafId = window.requestAnimationFrame(update);
-  };
-
-  update();
-  window.addEventListener('resize', requestUpdate, { passive: true });
-  window.addEventListener('orientationchange', () => setTimeout(requestUpdate, 80), { passive: true });
-  if (window.visualViewport) {
-    window.visualViewport.addEventListener('resize', requestUpdate, { passive: true });
-    window.visualViewport.addEventListener('scroll', requestUpdate, { passive: true });
-  }
-})();
-
-
 /**
  * ===================================================
  * ★★★ データと状態管理 ★★★
@@ -80,17 +23,9 @@ let historyData = [];
 let linksData = {}; // ★追加：リンクデータの格納先
 
 const FAV_KEY = 'str_favs_v1';
-const FAV_SCENES_KEY = 'str_fav_scenes_v1';
 let favorites = loadFavs();
-let favoriteScenes = loadFavoriteScenes();
-let pendingFavoriteEpisode = null;
 let showFavoritesOnly = false;
 let isRestoringURL = false;
-let postRenderFitRaf = 0;
-let fitGuestLinesRetryTimer = 0;
-let resetSearchRaf = 0;
-let nextResultsAnimation = false;
-let resultsAnimationCleanupTimer = 0;
 
 // Guest colors (for active filters)
 const guestColorMap = {
@@ -124,267 +59,6 @@ function toggleFavorite(id) {
   if (!id) return;
   favorites.has(id) ? favorites.delete(id) : favorites.add(id);
   saveFavs();
-}
-function loadFavoriteScenes() {
-  try {
-    const raw = JSON.parse(localStorage.getItem(FAV_SCENES_KEY) || '{}');
-    return raw && typeof raw === 'object' ? raw : {};
-  } catch {
-    return {};
-  }
-}
-function saveFavoriteScenes() {
-  try { localStorage.setItem(FAV_SCENES_KEY, JSON.stringify(favoriteScenes)); }
-  catch (e) { console.error('Failed to save favorite scenes:', e); }
-}
-function escapeHtml(value) {
-  return String(value ?? '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
-}
-function formatTimestamp(seconds) {
-  const total = Math.max(0, Math.floor(Number(seconds) || 0));
-  const h = Math.floor(total / 3600);
-  const m = Math.floor((total % 3600) / 60);
-  const sec = total % 60;
-  return h > 0
-    ? `${h}:${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`
-    : `${m}:${String(sec).padStart(2, '0')}`;
-}
-function parseTimestampInput(value) {
-  const v = String(value || '').trim().replace(/[０-９]/g, d => String.fromCharCode(d.charCodeAt(0) - 0xFEE0));
-  if (!v) return null;
-  if (/^\d+$/.test(v)) return Math.max(0, parseInt(v, 10));
-  const parts = v.split(':').map(p => p.trim());
-  if (parts.length < 2 || parts.length > 3 || parts.some(p => !/^\d+$/.test(p))) return null;
-  const nums = parts.map(Number);
-  if (nums.some(n => Number.isNaN(n)) || nums.slice(1).some(n => n > 59)) return null;
-  return parts.length === 3 ? nums[0] * 3600 + nums[1] * 60 + nums[2] : nums[0] * 60 + nums[1];
-}
-function parseDurationToSeconds(value) {
-  return parseTimestampInput(value);
-}
-function clampNumber(value, min, max) {
-  const n = Number(value);
-  if (!Number.isFinite(n)) return min;
-  return Math.min(max, Math.max(min, Math.floor(n)));
-}
-function fillSelectOptions(select, max, selectedValue) {
-  if (!select) return;
-  const safeMax = Math.max(0, Math.floor(Number(max) || 0));
-  const selected = clampNumber(selectedValue, 0, safeMax);
-  select.innerHTML = '';
-  for (let i = 0; i <= safeMax; i++) {
-    const option = document.createElement('option');
-    option.value = String(i);
-    option.textContent = String(i).padStart(2, '0');
-    if (i === selected) option.selected = true;
-    select.appendChild(option);
-  }
-}
-function getFavoriteSceneEntry(videoId) {
-  if (!videoId) return null;
-  const entry = favoriteScenes[videoId];
-  if (!entry || typeof entry !== 'object') return null;
-  entry.timestamps = Array.isArray(entry.timestamps) ? entry.timestamps : [];
-  return entry;
-}
-
-function hasFavoriteSceneTime(value) {
-  return value !== null && value !== undefined && value !== '' && Number.isFinite(Number(value));
-}
-
-function sortFavoriteScenesForDisplay(items = []) {
-  return items.slice().sort((a, b) => {
-    const ao = Number(a.order);
-    const bo = Number(b.order);
-    if (Number.isFinite(ao) && Number.isFinite(bo)) return ao - bo;
-    if (Number.isFinite(ao) !== Number.isFinite(bo)) return Number.isFinite(ao) ? -1 : 1;
-
-    const aHasTime = hasFavoriteSceneTime(a?.seconds);
-    const bHasTime = hasFavoriteSceneTime(b?.seconds);
-    if (aHasTime && bHasTime) return Number(a.seconds) - Number(b.seconds);
-    if (aHasTime !== bHasTime) return aHasTime ? -1 : 1;
-    const ac = a?.createdAt ? Date.parse(a.createdAt) : 0;
-    const bc = b?.createdAt ? Date.parse(b.createdAt) : 0;
-    return ac - bc;
-  });
-}
-
-
-function getFavoriteSceneEntryForEpisode(item) {
-  const videoId = getVideoId(item?.link);
-  return videoId ? getFavoriteSceneEntry(videoId) : null;
-}
-
-// 一言メモ用の軽量読み仮名ヒント。
-// 完全なAI読み取りではありませんが、よく使う言葉は辞書登録なしでも検索に拾いやすくします。
-const MEMO_READING_HINTS = {
-  '名言': ['めいげん', 'meigen'],
-  '神': ['かみ', 'しん', 'kami'],
-  '神回': ['かみかい', 'kamikai'],
-  '神シーン': ['かみしーん', 'kamiscene'],
-  '好き': ['すき', 'suki'],
-  '一言': ['ひとこと', 'hitokoto'],
-  '爆笑': ['ばくしょう', 'bakushou'],
-  '面白い': ['おもしろい', 'omoshiroi'],
-  '笑い': ['わらい', 'warai'],
-  '泣ける': ['なける', 'nakeru'],
-  '感動': ['かんどう', 'kandou'],
-  '最高': ['さいこう', 'saikou'],
-  'かわいい': ['可愛い', 'kawaii'],
-  '可愛い': ['かわいい', 'kawaii'],
-  'セリフ': ['台詞', 'せりふ', 'serifu'],
-  '台詞': ['セリフ', 'せりふ', 'serifu'],
-  '歌': ['うた', 'uta'],
-  '曲': ['きょく', 'kyoku'],
-  '告知': ['こくち', 'kokuchi'],
-  '裏話': ['うらばなし', 'urabanashi'],
-  '名シーン': ['めいしーん', 'meiscene'],
-  'オチ': ['おち', 'ochi'],
-  '伏線': ['ふくせん', 'fukusen'],
-  '尊い': ['とうとい', 'toutoi']
-};
-
-function getMemoReadingHintValues(text) {
-  const base = String(text || '');
-  const normBase = normalize(base);
-  const results = [];
-  for (const [key, values] of Object.entries(MEMO_READING_HINTS)) {
-    const normKey = normalize(key);
-    const matched = base.includes(key) || (normKey && normBase.includes(normKey)) || values.some(v => normBase.includes(normalize(v)));
-    if (matched) results.push(key, ...values);
-  }
-  return results;
-}
-
-function expandTextWithCustomReadings(text) {
-  const base = String(text || '');
-  if (!base) return '';
-  const parts = [base, ...getMemoReadingHintValues(base)];
-  try {
-    const normBase = normalize(base);
-    for (const [key, readings] of Object.entries(CUSTOM_READINGS || {})) {
-      const values = Array.isArray(readings) ? readings : [];
-      const normKey = normalize(key);
-      const matched = normKey && (normBase.includes(normKey) || values.some(r => {
-        const nr = normalize(r);
-        return nr && normBase.includes(nr);
-      }));
-      if (matched) parts.push(key, ...values);
-    }
-  } catch (_) {}
-  return parts.join(' ');
-}
-
-function buildSearchForms(value) {
-  const expanded = expandTextWithCustomReadings(value);
-  const forms = new Set();
-  const add = (v) => {
-    const raw = String(v || '').trim();
-    if (!raw) return;
-    const n = normalize(raw);
-    const s = superNormalize(raw);
-    const b = baseCharNormalize(s || n);
-    [raw, n, s, b].filter(Boolean).forEach(x => forms.add(x));
-    const roman = kanaToRomaji(n);
-    if (roman && roman !== n) forms.add(roman);
-  };
-  add(value);
-  add(expanded);
-  String(expanded).split(/[\s、，。・/／|｜:：()（）［］【】「」『』!！?？]+/).forEach(add);
-  return [...forms].filter(Boolean);
-}
-
-function buildFavoriteSceneSearchCandidates(scene, entry, item) {
-  const chunks = [
-    scene?.note || '',
-    scene?.label || formatTimestamp(scene?.seconds),
-    entry?.title || '',
-    entry?.episode || '',
-    item?.title || '',
-    item?.episode || ''
-  ];
-  const candidates = new Set();
-  chunks.forEach(chunk => buildSearchForms(chunk).forEach(v => candidates.add(v)));
-  buildSearchForms(chunks.join(' ')).forEach(v => candidates.add(v));
-  return [...candidates].filter(Boolean);
-}
-
-function buildFavoriteSceneSearchText(scene, entry, item) {
-  return buildFavoriteSceneSearchCandidates(scene, entry, item).join(' ');
-}
-
-function looseSceneTextMatch(query, candidate) {
-  const q = String(query || '').trim();
-  const c = String(candidate || '').trim();
-  if (!q || !c) return false;
-  if (c.includes(q) || q.includes(c)) return true;
-  if (q.length <= 1 || c.length <= 1) return false;
-
-  const qb = baseCharNormalize(q);
-  const cb = baseCharNormalize(c);
-  if (qb && cb && (cb.includes(qb) || qb.includes(cb))) return true;
-
-  // かな入力とローマ字入力の揺れを少し吸収
-  const qr = kanaToRomaji(q);
-  const cr = kanaToRomaji(c);
-  if (qr && cr && qr !== q && cr !== c && (cr.includes(qr) || qr.includes(cr))) return true;
-
-  // 短すぎる語は誤爆しやすいので、ゆるめ判定は3文字以上に限定
-  if (Math.min(q.length, c.length) < 3) return false;
-
-  const maxLen = Math.max(q.length, c.length);
-  const dist = damerauLevenshtein(q, c);
-  if (maxLen <= 5 && dist <= 1) return true;
-  if (maxLen > 5 && dist <= 2) return true;
-
-  const jw = jaroWinkler(q, c);
-  if (jw >= 0.90) return true;
-
-  const dice = diceCoefficient(q, c);
-  if (dice >= 0.62) return true;
-
-  return false;
-}
-
-function itemMatchesFavoriteSceneSearch(item, rawQuery, searchWords = []) {
-  const entry = getFavoriteSceneEntryForEpisode(item);
-  if (!entry || !Array.isArray(entry.timestamps) || entry.timestamps.length === 0) return false;
-  const queryForms = new Set();
-  buildSearchForms(rawQuery).forEach(v => queryForms.add(v));
-  searchWords.forEach(w => buildSearchForms(w).forEach(v => queryForms.add(v)));
-  if (queryForms.size === 0) return false;
-
-  return entry.timestamps.some(scene => {
-    const candidates = buildFavoriteSceneSearchCandidates(scene, entry, item);
-    return candidates.some(candidate => [...queryForms].some(q => looseSceneTextMatch(q, candidate)));
-  });
-}
-
-function findFavoriteSceneHitTime(item, rawQuery) {
-  if (!rawQuery) return null;
-  const entry = getFavoriteSceneEntryForEpisode(item);
-  if (!entry || !Array.isArray(entry.timestamps) || entry.timestamps.length === 0) return null;
-
-  const queryForms = buildSearchForms(rawQuery);
-  const sorted = sortFavoriteScenesForDisplay(entry.timestamps).filter(scene => hasFavoriteSceneTime(scene.seconds));
-  return sorted.find(scene => {
-    const candidates = buildFavoriteSceneSearchCandidates(scene, entry, item);
-    return candidates.some(candidate => queryForms.some(q => looseSceneTextMatch(q, candidate)));
-  }) || null;
-}
-function syncFavoriteFromScenes(videoId) {
-  if (!videoId) return;
-  const entry = getFavoriteSceneEntry(videoId);
-  if (entry && entry.timestamps.length > 0) favorites.add(videoId);
-  saveFavs();
-  saveFavoriteScenes();
-}
-function removeFavoriteCompletely(videoId) {
-  if (!videoId) return;
-  favorites.delete(videoId);
-  delete favoriteScenes[videoId];
-  saveFavs();
-  saveFavoriteScenes();
 }
 
 function debounce(fn, ms = 40) {
@@ -847,7 +521,7 @@ function preloadThumbsFromData() {
   try {
     const head = document.head;
     const seen = new Set();
-    const preloadData = data.slice(0, 8); // 初期表示で必要な分だけ先読みし、全件preloadによる初期描画の重さを避ける
+    const preloadData = data;
 
     preloadData.forEach(ep => {
       const episodeFilename = ep.episode;
@@ -907,10 +581,7 @@ function getFilteredData(query) {
         }
     }
     const searchWords = [...searchTerms].filter(Boolean);
-    res = res.filter(it => {
-      const baseMatch = searchWords.some(word => it.searchText.includes(word));
-      return baseMatch || itemMatchesFavoriteSceneSearch(it, raw, searchWords);
-    });
+    res = res.filter(it => searchWords.some(word => it.searchText.includes(word)));
   }
 
   if (selectedGuests.length) {
@@ -983,56 +654,33 @@ function search(opts = {}) {
   countEl.innerHTML = `表示数：<span class="impact-number">${res.length}</span>件`;
 
   currentPage = opts.gotoPage || 1;
-  if (opts.animateResults === true || opts.animate === true) requestResultsCardAnimation();
   if (!isRestoringURL) buildURLFromState({ method: 'push' });
 
   renderResults(res, currentPage, rawQuery, suggestionWords);
   renderPagination(res.length);
   updateActiveFilters();
-  updateFilterButtonStyles();
   updatePlaylistButtonVisibility();
 }
 
-function resetFilters({ runSearch = true } = {}) {
+function resetFilters() {
   selectedGuests = [];
   selectedCorners = [];
   selectedOthers = [];
   selectedYears = [];
   updateFilterButtonStyles();
-  if (runSearch) search();
+  search();
 }
 
 function resetSearch() {
-  if (resetSearchRaf) return;
-  resetSearchRaf = requestAnimationFrame(() => {
-    resetSearchRaf = 0;
-    resetSearchNow();
-  });
-}
-
-function resetSearchNow() {
   const searchBox = document.getElementById('searchBox');
   const sortSelect = document.getElementById('sortSelect');
-  const hadQuery = Boolean(searchBox && searchBox.value);
-  const hadSort = Boolean(sortSelect && sortSelect.value !== "newest");
-  const hadFilters = selectedGuests.length > 0 || selectedCorners.length > 0 || selectedOthers.length > 0 || selectedYears.length > 0;
-  const hadFavOnly = showFavoritesOnly;
-  const hadPage = currentPage !== 1;
-  const shouldSearch = hadQuery || hadSort || hadFilters || hadFavOnly || hadPage;
-
-  if (searchBox && hadQuery) {
-    searchBox.value = "";
-    searchBox.dispatchEvent(new Event('input'));
-  } else {
-    const clearSearchBtn = document.getElementById('clearSearchBtn');
-    if (clearSearchBtn) clearSearchBtn.hidden = true;
-    if (typeof clearAutocompleteSuggestions === 'function') clearAutocompleteSuggestions();
-  }
+  if (searchBox) searchBox.value = "";
+  searchBox.dispatchEvent(new Event('input'));
   if (sortSelect) sortSelect.value = "newest";
 
   if (showFavoritesOnly) {
-    // お気に入り一覧中の「リセット」は、お気に入り登録自体は消さず、
-    // お気に入り一覧モードだけ解除する。
+    favorites.clear();
+    saveFavs();
     showFavoritesOnly = false;
     document.body.classList.remove('fav-only');
     const favBtn = document.getElementById("favOnlyToggleBtn");
@@ -1040,11 +688,17 @@ function resetSearchNow() {
       favBtn.classList.remove("active");
       favBtn.setAttribute("aria-pressed", "false");
     }
+    document.querySelectorAll("#results .fav-btn.active").forEach(btn => {
+      btn.classList.remove("active");
+      const icon = btn.querySelector("i");
+      if (icon) {
+        icon.classList.remove("fa-solid");
+        icon.classList.add("fa-regular");
+      }
+    });
   }
 
-  resetFilters({ runSearch: false });
-  currentPage = 1;
-  if (shouldSearch) search({ gotoPage: 1, animateResults: true });
+  resetFilters();
   try { window.scrollTo({ top: 0, behavior: 'auto' }); } catch (e) { window.scrollTo(0, 0); }
 
   if (typeof window.toggleFilterDrawer === 'function') {
@@ -1070,7 +724,7 @@ function exitFavoritesMode() {
   }
   
   // 検索条件（キーワードや絞り込み）は消さずに再検索を実行
-  search({ animateResults: true });
+  search();
   
   // 画面トップへスクロール
   try { window.scrollTo({ top: 0, behavior: 'auto' }); } catch (e) { window.scrollTo(0, 0); }
@@ -1082,32 +736,6 @@ function exitFavoritesMode() {
  * ===================================================
  */
 
-
-function requestResultsCardAnimation() {
-  nextResultsAnimation = true;
-}
-
-function applyResultsCardAnimationState(resultsEl, shouldAnimate) {
-  if (!resultsEl) return;
-  if (resultsAnimationCleanupTimer) {
-    clearTimeout(resultsAnimationCleanupTimer);
-    resultsAnimationCleanupTimer = 0;
-  }
-
-  resultsEl.classList.remove('results-fade-in');
-  if (!shouldAnimate) return;
-
-  // 一度クラスを外してから次フレームで付与し、連続検索/リセットでも確実に再生する。
-  requestAnimationFrame(() => {
-    if (!resultsEl.isConnected) return;
-    resultsEl.classList.add('results-fade-in');
-    resultsAnimationCleanupTimer = window.setTimeout(() => {
-      resultsEl.classList.remove('results-fade-in');
-      resultsAnimationCleanupTimer = 0;
-    }, 760);
-  });
-}
-
 function formatYearButtons() {
   document.querySelectorAll('.btn-year').forEach(button => {
     const year = button.dataset.year;
@@ -1117,90 +745,10 @@ function formatYearButtons() {
   });
 }
 
-function schedulePostRenderTextFit() {
-  if (postRenderFitRaf) cancelAnimationFrame(postRenderFitRaf);
-  if (fitGuestLinesRetryTimer) {
-    clearTimeout(fitGuestLinesRetryTimer);
-    fitGuestLinesRetryTimer = 0;
-  }
-  postRenderFitRaf = requestAnimationFrame(() => {
-    postRenderFitRaf = requestAnimationFrame(() => {
-      postRenderFitRaf = 0;
-      fitGuestLines();
-      fitDymButtons();
-    });
-  });
-}
-
 // ★修正: renderResults (もっと見る機能 + 自動フォント調整)
 function renderResults(arr, page = 1, originalQuery = null, suggestions = []) {
   const ul = document.getElementById("results");
-  const shouldAnimateResults = nextResultsAnimation === true;
-  nextResultsAnimation = false;
-
-  // v13: 結果カードのフェードインは、親クラスの後付けではなく
-  // 新しく生成した各カードに class を直接付ける。
-  // これにより、スマホSafari/PWAでも「描画後に見えてしまってからクラス追加」にならず、
-  // 検索・リセット・フィルター更新直後に確実にアニメーションする。
-  if (resultsAnimationCleanupTimer) {
-    clearTimeout(resultsAnimationCleanupTimer);
-    resultsAnimationCleanupTimer = 0;
-  }
-  ul.classList.remove('results-fade-in');
   ul.innerHTML = "";
-
-  const resultEnterQueue = [];
-
-  const markResultEnter = (el, delayIndex = 0) => {
-    if (!shouldAnimateResults || !el) return;
-    const delay = Math.min(Math.max(0, delayIndex) * 18, 140);
-
-    // v19: CSS animation ではなく inline transition で直接制御する。
-    // 既存CSSの animation:none / prefers-reduced-motion / Safariの挿入タイミングに潰されないよう、
-    // DOM挿入前から初期状態を入れておき、挿入後2フレーム目で必ず表示へ遷移させる。
-    el.classList.add('result-card-enter');
-    el.dataset.resultEnter = 'true';
-    el.style.setProperty('--result-anim-delay', `${delay}ms`);
-    el.style.setProperty('opacity', '0', 'important');
-    el.style.setProperty('transform', 'translate3d(0, 10px, 0) scale(.992)', 'important');
-    el.style.setProperty('transition', 'none', 'important');
-    el.style.setProperty('will-change', 'opacity, transform', 'important');
-    resultEnterQueue.push({ el, delay });
-  };
-
-  const cleanupResultEnter = () => {
-    if (!shouldAnimateResults || resultEnterQueue.length === 0) return;
-    const entries = resultEnterQueue.filter(({ el }) => el && el.isConnected);
-    if (entries.length === 0) return;
-
-    const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        entries.forEach(({ el, delay }) => {
-          if (!el || !el.isConnected) return;
-          const d = reduceMotion ? 0 : delay;
-          const duration = reduceMotion ? 180 : 360;
-          el.style.setProperty('transition', `opacity ${duration}ms cubic-bezier(.16,1,.3,1) ${d}ms, transform ${duration}ms cubic-bezier(.16,1,.3,1) ${d}ms`, 'important');
-          el.style.setProperty('opacity', '1', 'important');
-          el.style.setProperty('transform', 'translate3d(0, 0, 0) scale(1)', 'important');
-        });
-      });
-    });
-
-    resultsAnimationCleanupTimer = window.setTimeout(() => {
-      entries.forEach(({ el }) => {
-        if (!el || !el.isConnected) return;
-        el.classList.remove('result-card-enter');
-        delete el.dataset.resultEnter;
-        el.style.removeProperty('opacity');
-        el.style.removeProperty('transform');
-        el.style.removeProperty('transition');
-        el.style.removeProperty('will-change');
-        el.style.removeProperty('--result-anim-delay');
-      });
-      resultsAnimationCleanupTimer = 0;
-    }, 980);
-  };
 
   if (showFavoritesOnly) {
     const liFav = document.createElement('li');
@@ -1224,7 +772,6 @@ function renderResults(arr, page = 1, originalQuery = null, suggestions = []) {
   if (suggestions && suggestions.length > 0 && originalQuery) {
     const li = document.createElement('li');
     li.className = 'did-you-mean-alert'; 
-    markResultEnter(li, 0);
     li.style.gridColumn = "1 / -1"; 
 
     const limit = 5; 
@@ -1235,7 +782,7 @@ function renderResults(arr, page = 1, originalQuery = null, suggestions = []) {
     // ボタン生成用ヘルパー
     // ★修正: 初期状態を opacity: 0 (透明) に設定して、調整前のガタつきを隠す
     const createBtn = (word) => `
-      <button class="dym-word-btn" style="margin: 4px; opacity: 0;" onclick="document.getElementById('searchBox').value='${word}'; search({ animateResults: true }); scrollToResultsTop();">
+      <button class="dym-word-btn" style="margin: 4px; opacity: 0;" onclick="document.getElementById('searchBox').value='${word}'; search(); scrollToResultsTop();">
         ${word}
       </button>
     `;
@@ -1270,12 +817,9 @@ function renderResults(arr, page = 1, originalQuery = null, suggestions = []) {
   }
 
   if (!arr || arr.length === 0) {
-    const li = document.createElement('li');
-    li.className = 'no-results';
-    markResultEnter(li, 0);
-    li.innerHTML = '<div class="no-results-content"><div class="no-results-icon"><i class="fa-solid fa-circle-exclamation"></i>一致する回が見つかりませんでした。</div></div>';
-    ul.appendChild(li);
-    cleanupResultEnter();
+    let html = '<li class="no-results"><div class="no-results-content"><div class="no-results-icon"><i class="fa-solid fa-circle-exclamation"></i>一致する回が見つかりませんでした。</div>';
+    html += '</div></li>';
+    ul.innerHTML += html; // append to existing header (if any)
     return;
   }
 
@@ -1324,10 +868,7 @@ function renderResults(arr, page = 1, originalQuery = null, suggestions = []) {
     if (!hit && cornerTarget) {
       hit = findHitTime(it, cornerTarget);
     }
-    const sceneHit = findFavoriteSceneHitTime(it, userQuery) || (suggestionQuery ? findFavoriteSceneHitTime(it, suggestionQuery) : null);
-    const displayTimestamp = hit || sceneHit || null;
-    const finalHit = hit || sceneHit;
-    const finalLink = finalHit ? withTimeParam(it.link, finalHit.seconds) : it.link;
+    const finalLink = hit ? withTimeParam(it.link, hit.seconds) : it.link;
 
     let guestText = "";
     if (it.episode.startsWith("京まふ大作戦") || it.episode === "CENTRALSTATION") {
@@ -1362,8 +903,6 @@ function renderResults(arr, page = 1, originalQuery = null, suggestions = []) {
     li.setAttribute('role', 'link');
     li.tabIndex = 0;
     li.style.setProperty('--i', index.toString());
-    li.style.setProperty('--result-anim-delay', `${Math.min(index * 18, 140)}ms`);
-    markResultEnter(li, index);
 
     let photoBtnHtml = '';
     let hasPhotoBtn = false; // ★追加: リンクボタンの有無を判定するフラグ
@@ -1376,10 +915,10 @@ function renderResults(arr, page = 1, originalQuery = null, suggestions = []) {
   <a href="${finalLink}" target="_blank" rel="noopener" style="display:flex;text-decoration:none;color:inherit;align-items:center;min-width:0;">
     <div class="thumb-col">
       <img src="${thumbUrlJpg}" class="thumbnail" alt="サムネイル：${hashOnly}" 
-           decoding="async" loading="${index < 4 ? 'eager' : 'lazy'}" fetchpriority="${index < 4 ? 'auto' : 'low'}" 
+           decoding="async" 
            onload="this.classList.add('loaded')"
            onerror="this.onerror=null; this.src='./thumb-fallback.svg'; this.classList.add('loaded');">
-      ${displayTimestamp ? `<div class="ts-buttons"><button class="ts-btn" data-url="${it.link}" data-ts="${displayTimestamp.seconds}" aria-label="${escapeHtml(displayTimestamp.label || formatTimestamp(displayTimestamp.seconds))} から再生"><span class="impact-number">${escapeHtml(displayTimestamp.label || formatTimestamp(displayTimestamp.seconds))}</span></button></div>` : ''}
+      ${hit ? `<div class="ts-buttons"><button class="ts-btn" data-url="${it.link}" data-ts="${hit.seconds}" aria-label="${hit.label} から再生"><span class="impact-number">${hit.label}</span></button></div>` : ''}
     </div>
     <div style="min-width:0;">
       <div class="d-flex align-items-start justify-content-between" style="min-width:0;">
@@ -1399,36 +938,27 @@ function renderResults(arr, page = 1, originalQuery = null, suggestions = []) {
     </div>
   </a>
   ${photoBtnHtml}
-  <button class="fav-btn"
-          data-id="${videoId}"
-          data-title="${escapeHtml(hashOnly)}"
-          data-episode="${escapeHtml(it.episode)}"
-          data-link="${escapeHtml(it.link)}"
-          data-duration="${escapeHtml(it.duration || '')}"
-          data-date="${escapeHtml(it.date || '')}"
-          data-guest="${escapeHtml(guestText || '')}"
-          data-thumbnail="${escapeHtml(thumbUrlJpg)}"
-          data-default-ts="${finalHit ? finalHit.seconds : 0}"
-          aria-label="お気に入りシーンを作成"
-          title="お気に入りシーンを作成"><i class="fa-regular fa-star"></i></button>
+  <button class="fav-btn" data-id="${videoId}" aria-label="お気に入り" title="お気に入り"><i class="fa-regular fa-star"></i></button>
 `;
     
     if (isFavorite(videoId)) {
       const favBtn = li.querySelector('.fav-btn');
       li.classList.add('is-fav');
       favBtn.classList.add('active');
-      favBtn.setAttribute('aria-label', 'お気に入りシーンを開く');
-      favBtn.setAttribute('title', 'お気に入りシーンを開く');
       favBtn.querySelector('i').classList.replace('fa-regular', 'fa-solid');
     }
     fragment.appendChild(li);
   });
 
   ul.appendChild(fragment);
-  cleanupResultEnter();
 
   // ★修正: 描画後にボタンのサイズ調整を行う
-  schedulePostRenderTextFit();
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+        fitGuestLines();
+        fitDymButtons(); // ボタンサイズ調整を実行
+    });
+  });
 }
 
 function renderPagination(totalCount) {
@@ -1474,89 +1004,35 @@ function updateActiveFilters() {
   area.innerHTML = html;
 }
 
-function getFilterSelectedButtonColors() {
-  const body = document.body;
-  if (!body) {
-    return { bg: '#000000', text: '#ffffff', border: '#000000', ring: 'rgba(0, 0, 0, 0.16)' };
-  }
-
-  if (body.classList.contains('dark-mode')) {
-    return { bg: '#ffffff', text: '#22272e', border: '#ffffff', ring: 'rgba(255, 255, 255, 0.30)' };
-  }
-
-  const themeTextMap = {
-    'theme-pink': '#eb5b89',
-    'theme-yellow': '#9a7400',
-    'theme-blue': '#0063a9',
-    'theme-red': '#cb003d',
-    'theme-green': '#108a72'
-  };
-  for (const [themeClass, text] of Object.entries(themeTextMap)) {
-    if (body.classList.contains(themeClass)) {
-      return { bg: '#ffffff', text, border: '#ffffff', ring: 'rgba(255, 255, 255, 0.42)' };
-    }
-  }
-
-  return { bg: '#000000', text: '#ffffff', border: '#000000', ring: 'rgba(0, 0, 0, 0.16)' };
-}
-
-function applyFilterSelectedButtonVisual(btn, active) {
-  if (!btn) return;
-
-  btn.classList.toggle('active', active);
-  btn.setAttribute('aria-pressed', String(active));
-  btn.toggleAttribute('data-filter-active', active);
-
-  const forcedProps = [
-    'background',
-    'background-color',
-    'color',
-    '-webkit-text-fill-color',
-    'border-color',
-    'box-shadow',
-    'text-shadow',
-    'filter'
-  ];
-
-  if (!active) {
-    forcedProps.forEach(prop => btn.style.removeProperty(prop));
-    return;
-  }
-
-  const colors = getFilterSelectedButtonColors();
-  // CSSの後段上書きやhover指定に負けないよう、選択中だけinline importantで固定する。
-  btn.style.setProperty('background', colors.bg, 'important');
-  btn.style.setProperty('background-color', colors.bg, 'important');
-  btn.style.setProperty('color', colors.text, 'important');
-  btn.style.setProperty('-webkit-text-fill-color', colors.text, 'important');
-  btn.style.setProperty('border-color', colors.border, 'important');
-  btn.style.setProperty('box-shadow', `0 0 0 2.5px ${colors.ring}`, 'important');
-  btn.style.setProperty('text-shadow', 'none', 'important');
-  btn.style.setProperty('filter', 'none', 'important');
-}
-
 function updateFilterButtonStyles() {
   document.querySelectorAll('.guest-button[data-guest]').forEach(btn => {
-    applyFilterSelectedButtonVisual(btn, selectedGuests.includes(btn.dataset.guest));
+    const active = selectedGuests.includes(btn.dataset.guest);
+    btn.classList.toggle('active', active);
+    btn.setAttribute('aria-pressed', String(active));
   });
   document.querySelectorAll('.btn-corner[data-corner]').forEach(btn => {
-    applyFilterSelectedButtonVisual(btn, selectedCorners.includes(btn.dataset.corner));
+    const active = selectedCorners.includes(btn.dataset.corner);
+    btn.classList.toggle('active', active);
+    btn.setAttribute('aria-pressed', String(active));
   });
   document.querySelectorAll('.btn-corner[data-other]').forEach(btn => {
-    applyFilterSelectedButtonVisual(btn, selectedOthers.includes(btn.dataset.other));
+    const active = selectedOthers.includes(btn.dataset.other);
+    btn.classList.toggle('active', active);
+    btn.setAttribute('aria-pressed', String(active));
   });
   document.querySelectorAll('.btn-year[data-year]').forEach(btn => {
-    applyFilterSelectedButtonVisual(btn, selectedYears.includes(String(btn.dataset.year)));
+    const active = selectedYears.includes(String(btn.dataset.year));
+    btn.classList.toggle('active', active);
+    btn.setAttribute('aria-pressed', String(active));
   });
 }
 
 function fitGuestLines() {
   let needsRetry = false;
-  const savingFavSceneModal = document.getElementById('favSceneModal')?.classList.contains('is-saving-scene');
 
   // --- 1. テキスト幅を計測して最適なサイズを計算する共通関数 ---
   const calculateSize = (line) => {
-    line.style.removeProperty('font-size');
+    line.style.fontSize = '';
     line.style.whiteSpace = 'normal';
     
     const parent = line.parentElement;
@@ -1588,17 +1064,13 @@ function fitGuestLines() {
   // --- 2. ゲスト名の処理（従来通り1行ごとに独立して計算・適用） ---
   const guestLines = document.querySelectorAll('.guest-one-line');
   guestLines.forEach(line => {
-    if (savingFavSceneModal && line.closest('#favSceneEpisodeCard')) {
-      line.style.visibility = 'visible';
-      return;
-    }
     const res = calculateSize(line);
     if (!res) {
       line.style.visibility = 'visible';
       return;
     }
     
-    line.style.setProperty('font-size', res.finalSize + 'px', 'important');
+    line.style.fontSize = res.finalSize + 'px';
 
     // ★微調整: 小数点以下の計算誤差を吸収するために +1 を追加
     if (res.finalSize === res.MIN_FONT_SIZE && line.scrollWidth > res.parentWidth + 1) {
@@ -1613,10 +1085,6 @@ function fitGuestLines() {
   const metaContainers = document.querySelectorAll('.episode-meta');
   metaContainers.forEach(container => {
     const lines = container.querySelectorAll('.meta-one-line');
-    if (savingFavSceneModal && container.closest('#favSceneEpisodeCard')) {
-      lines.forEach(line => { line.style.visibility = 'visible'; });
-      return;
-    }
     if (lines.length === 0) return;
 
     let minSize = 999;
@@ -1639,7 +1107,7 @@ function fitGuestLines() {
 
     // 計算結果をもとに、同じ親要素内の2行を「一番小さいサイズ」に揃えて適用
     results.forEach(({ line, res }) => {
-      line.style.setProperty('font-size', minSize + 'px', 'important');
+      line.style.fontSize = minSize + 'px';
       
       // ★微調整: 統一サイズ適用後、限界まで小さくしてもはみ出す場合は「...」を付与 (+1で誤差吸収)
       if (minSize === res.MIN_FONT_SIZE && line.scrollWidth > res.parentWidth + 1) {
@@ -1652,11 +1120,7 @@ function fitGuestLines() {
   });
 
   if (needsRetry) {
-    if (fitGuestLinesRetryTimer) clearTimeout(fitGuestLinesRetryTimer);
-    fitGuestLinesRetryTimer = setTimeout(() => {
-      fitGuestLinesRetryTimer = 0;
-      fitGuestLines();
-    }, 100);
+    setTimeout(fitGuestLines, 100);
   }
 }
 
@@ -1786,7 +1250,6 @@ function buildURLFromState({ method = 'push' } = {}) {
   const url = qs ? `?${qs}` : location.pathname;
   const state = { q, selectedGuests, selectedCorners, selectedOthers, selectedYears, sort, fav: showFavoritesOnly, p: currentPage };
   try {
-    if (`${location.pathname}${location.search}` === url) return;
     history[method === 'replace' ? 'replaceState' : 'pushState'](state, '', url);
   } catch {}
 }
@@ -1845,12 +1308,8 @@ function setupEventListeners() {
     filterToggleBtn.setAttribute('aria-expanded', String(isOpening));
     filterToggleBtn.setAttribute('aria-pressed', String(isOpening));
 
-    if (isOpening) {
-      updateFilterButtonStyles();
-      window.acquireBodyLock();
-    } else {
-      window.releaseBodyLock();
-    }
+    if (isOpening) window.acquireBodyLock();
+    else window.releaseBodyLock();
   };
   window.toggleFilterDrawer = toggleFilterDrawer;
 
@@ -1864,7 +1323,7 @@ function setupEventListeners() {
     btn.setAttribute('aria-pressed', String(showFavoritesOnly));
     btn.classList.toggle('active', showFavoritesOnly);
     document.body.classList.toggle('fav-only', showFavoritesOnly);
-    search({ gotoPage: 1, animateResults: true });
+    search({ gotoPage: 1 });
   });
 
   document.getElementById('randomBtn').addEventListener('click', () => {
@@ -1885,7 +1344,7 @@ function setupEventListeners() {
   });
 
   document.getElementById('mainResetBtn').addEventListener('click', resetSearch);
-  // sortSelect の change は下側の1箇所に統一（二重検索・二重描画防止）
+  document.getElementById('sortSelect').addEventListener('change', () => search());
 
   const handleFilterClick = (e, collection, type) => {
       const btn = e.target.closest(`[data-${type}]`);
@@ -1894,7 +1353,7 @@ function setupEventListeners() {
       const index = collection.indexOf(value);
       index > -1 ? collection.splice(index, 1) : collection.push(value);
       updateFilterButtonStyles();
-      search({ animateResults: true });
+      search();
       scrollToResultsTop();
   };
 
@@ -1907,7 +1366,7 @@ function setupEventListeners() {
     const btn = e.target.closest('.page-btn');
     if (btn && !btn.classList.contains('active')) {
       currentPage = parseInt(btn.dataset.page, 10);
-      search({ gotoPage: currentPage, animateResults: true });
+      search({ gotoPage: currentPage });
       const mainContent = document.querySelector('.main-content');
       if (mainContent) {
         const top = mainContent.getBoundingClientRect().top + window.pageYOffset - 24;
@@ -1927,7 +1386,7 @@ function setupEventListeners() {
     else if (type === 'year') selectedYears = selectedYears.filter(y => y !== String(value));
     searchBox.dispatchEvent(new Event('input'));
     updateFilterButtonStyles();
-    search({ animateResults: true });
+    search();
     scrollToResultsTop();
   });
 
@@ -1953,24 +1412,19 @@ function setupEventListeners() {
     const favBtn = target.closest('.fav-btn');
     if (favBtn) {
       e.preventDefault(); e.stopPropagation();
-      pendingFavoriteEpisode = {
-        id: favBtn.dataset.id,
-        title: favBtn.dataset.title || '',
-        episode: favBtn.dataset.episode || '',
-        link: favBtn.dataset.link || '',
-        duration: favBtn.dataset.duration || '',
-        date: favBtn.dataset.date || '',
-        guest: favBtn.dataset.guest || '',
-        thumbnail: favBtn.dataset.thumbnail || '',
-        defaultTs: Number(favBtn.dataset.defaultTs || 0)
-      };
-      if (window.openFavoriteSceneModal) window.openFavoriteSceneModal(pendingFavoriteEpisode);
+      const id = favBtn.dataset.id;
+      toggleFavorite(id);
+      favBtn.classList.toggle('active');
+      favBtn.querySelector('i').classList.toggle('fa-regular');
+      favBtn.querySelector('i').classList.toggle('fa-solid');
+      favBtn.closest('.episode-item').classList.toggle('is-fav', isFavorite(id));
+      if (showFavoritesOnly) search({ gotoPage: currentPage });
       return;
     }
     const tsBtn = target.closest('.ts-btn');
     if (tsBtn) {
       e.preventDefault(); e.stopPropagation();
-      openPlaybackUrl(withTimeParam(tsBtn.dataset.url, Number(tsBtn.dataset.ts)));
+      window.open(withTimeParam(tsBtn.dataset.url, Number(tsBtn.dataset.ts)), '_blank', 'noopener');
       return;
     }
   });
@@ -2010,7 +1464,7 @@ function setupEventListeners() {
   }, { passive: true });
 
   document.getElementById('sortSelect').addEventListener('change', () => {
-    search({ animateResults: true });
+    search();
     scrollToResultsTop();
   });
 
@@ -2027,7 +1481,7 @@ function setupEventListeners() {
     clearSearchBtn.addEventListener('click', () => {
       searchBoxForClear.value = '';
       toggleClearBtn();
-      search({ animateResults: true });
+      search();
       searchBoxForClear.focus();
     });
 
@@ -2037,7 +1491,7 @@ function setupEventListeners() {
   const mainSearchBtn = document.getElementById('mainSearchBtn');
   if (mainSearchBtn) {
     mainSearchBtn.addEventListener('click', () => {
-      search({ animateResults: true });
+      search();
       scrollToResultsTop();
       mainSearchBtn.blur();
     });
@@ -2048,177 +1502,35 @@ function setupEventListeners() {
 
 (function scrollLockModule() {
   let lockCount = 0;
-  let isLocked = false;
-  let lockedScrollY = 0;
-  let lockedScrollX = 0;
-  let originalHtmlStyle = null;
-  let originalBodyStyle = null;
-  let originalStickyPaddingRight = '';
   const htmlElement = document.documentElement;
-  const bodyElement = document.body;
   const stickyHeader = document.querySelector('.sticky-search-area');
 
-  const LOCK_UI_IDS = ['filterDrawer', 'aboutModal', 'historyModal', 'photoModal', 'favSceneModal'];
-
-  const readCurrentScroll = () => ({
-    x: window.pageXOffset || htmlElement.scrollLeft || bodyElement.scrollLeft || 0,
-    y: window.pageYOffset || htmlElement.scrollTop || bodyElement.scrollTop || 0
-  });
-
-  const restoreScrollPosition = (x, y) => {
-    const sx = Math.max(0, Number(x) || 0);
-    const sy = Math.max(0, Number(y) || 0);
-    const currentX = window.pageXOffset || htmlElement.scrollLeft || bodyElement.scrollLeft || 0;
-    const currentY = window.pageYOffset || htmlElement.scrollTop || bodyElement.scrollTop || 0;
-    if (Math.abs(currentX - sx) > 1 || Math.abs(currentY - sy) > 1) {
-      try { window.scrollTo(sx, sy); } catch (_) {}
-      requestAnimationFrame(() => {
-        try { window.scrollTo(sx, sy); } catch (_) {}
-      });
-      window.setTimeout(() => {
-        const yNow = window.pageYOffset || htmlElement.scrollTop || bodyElement.scrollTop || 0;
-        if (Math.abs(yNow - sy) > 2) {
-          try { window.scrollTo(sx, sy); } catch (_) {}
-        }
-      }, 90);
-    }
-  };
-
-  const isLockUiActive = () => LOCK_UI_IDS.some(id => {
-    const el = document.getElementById(id);
-    if (!el) return false;
-    if (id === 'filterDrawer') {
-      return window.getComputedStyle(el).display !== 'none';
-    }
-    if (el.classList.contains('show') || el.classList.contains('closing')) return true;
-    if (el.hidden || el.getAttribute('aria-hidden') === 'true') return false;
-    const style = window.getComputedStyle(el);
-    return style.display !== 'none' && style.visibility !== 'hidden' && style.opacity !== '0';
-  });
-
-  const isScrollableModalTarget = (target) => {
-    if (!(target instanceof Element)) return false;
-    return Boolean(target.closest(
-      '#favSceneModal .fav-scene-body, #photoModal .photo-body, #historyModal .history-body, #filterDrawer'
-    ));
-  };
-
-  const preventBackgroundTouchMove = (event) => {
-    if (!isLocked) return;
-    if (isScrollableModalTarget(event.target)) return;
-    event.preventDefault();
-  };
-
-  const restoreInlineStyles = () => {
-    if (stickyHeader) stickyHeader.style.paddingRight = originalStickyPaddingRight || '';
-    htmlElement.classList.remove('scroll-locked');
-    bodyElement.classList.remove('body-scroll-locked');
-
-    if (originalHtmlStyle) {
-      htmlElement.style.overflow = originalHtmlStyle.overflow || '';
-      htmlElement.style.overscrollBehavior = originalHtmlStyle.overscrollBehavior || '';
-    } else {
-      htmlElement.style.removeProperty('overflow');
-      htmlElement.style.removeProperty('overscroll-behavior');
-    }
-
-    if (originalBodyStyle) {
-      bodyElement.style.overflow = originalBodyStyle.overflow || '';
-      bodyElement.style.touchAction = originalBodyStyle.touchAction || '';
-    } else {
-      bodyElement.style.removeProperty('overflow');
-      bodyElement.style.removeProperty('touch-action');
-    }
-
-    originalHtmlStyle = null;
-    originalBodyStyle = null;
-  };
-
-  const applyLock = () => {
-    if (isLocked) return;
-    const current = readCurrentScroll();
-    lockedScrollX = current.x;
-    lockedScrollY = current.y;
-    originalHtmlStyle = {
-      overflow: htmlElement.style.overflow,
-      overscrollBehavior: htmlElement.style.overscrollBehavior
-    };
-    originalBodyStyle = {
-      overflow: bodyElement.style.overflow,
-      touchAction: bodyElement.style.touchAction
-    };
-    originalStickyPaddingRight = stickyHeader ? stickyHeader.style.paddingRight : '';
-
-    const scrollbarWidth = Math.max(0, window.innerWidth - htmlElement.clientWidth);
-    if (scrollbarWidth > 0 && stickyHeader) {
-      stickyHeader.style.paddingRight = `${scrollbarWidth}px`;
-    }
-
-    // v11: body を position: fixed にしない。
-    // iOS/PWAでは body fixed の付け外しが全画面再合成になり、モーダルを閉じた瞬間の白飛び/無描画の主因になる。
-    // 背面スクロールは overflow + touchmove guard で止め、解除時だけ元の scrollY へ戻す。
-    htmlElement.classList.add('scroll-locked');
-    bodyElement.classList.add('body-scroll-locked');
-    htmlElement.style.overflow = 'hidden';
-    htmlElement.style.overscrollBehavior = 'none';
-    bodyElement.style.overflow = 'hidden';
-    bodyElement.style.touchAction = 'auto';
-    isLocked = true;
-  };
-
-  const clearLock = ({ restore = true } = {}) => {
-    const restoreX = lockedScrollX;
-    const restoreY = lockedScrollY;
-    restoreInlineStyles();
-    isLocked = false;
-    if (restore) restoreScrollPosition(restoreX, restoreY);
-  };
-
-  const syncLockToVisibleUi = () => {
-    if (!isLockUiActive() && (isLocked || lockCount > 0 || htmlElement.classList.contains('scroll-locked') || bodyElement.classList.contains('body-scroll-locked'))) {
-      lockCount = 0;
-      clearLock({ restore: true });
-    }
-  };
-
   window.acquireBodyLock = () => {
-    if (lockCount <= 0) {
-      lockCount = 0;
-      applyLock();
+    if (lockCount === 0) {
+      const scrollbarWidth = window.innerWidth - htmlElement.clientWidth;
+      
+      if (scrollbarWidth > 0 && stickyHeader) {
+        stickyHeader.style.paddingRight = `${scrollbarWidth}px`;
+      }
+      htmlElement.classList.add('scroll-locked');
     }
-    lockCount += 1;
-    return lockCount;
+    lockCount++;
   };
 
-  window.releaseBodyLock = (options = {}) => {
-    const restore = !(options && options.restore === false);
-    if (lockCount <= 0) {
-      lockCount = 0;
-      requestAnimationFrame(syncLockToVisibleUi);
-      return;
-    }
+  window.releaseBodyLock = () => {
     lockCount = Math.max(0, lockCount - 1);
-    if (lockCount === 0) clearLock({ restore });
-    window.setTimeout(syncLockToVisibleUi, 90);
+    if (lockCount === 0) {
+      if (stickyHeader) {
+        stickyHeader.style.paddingRight = '';
+      }
+      htmlElement.classList.remove('scroll-locked');
+    }
   };
-
+  
   window.__hardUnlockScroll = () => {
     lockCount = 0;
-    clearLock({ restore: true });
+    window.releaseBodyLock();
   };
-
-  window.__syncBodyLockToUi = () => {
-    requestAnimationFrame(syncLockToVisibleUi);
-    window.setTimeout(syncLockToVisibleUi, 120);
-    window.setTimeout(syncLockToVisibleUi, 320);
-  };
-
-  document.addEventListener('touchmove', preventBackgroundTouchMove, { passive: false });
-  window.addEventListener('pageshow', () => window.__syncBodyLockToUi(), { passive: true });
-  window.addEventListener('focus', () => window.__syncBodyLockToUi(), { passive: true });
-  document.addEventListener('visibilitychange', () => {
-    if (!document.hidden) window.__syncBodyLockToUi();
-  }, { passive: true });
 })();
 
 function setupThemeSwitcher() {
@@ -2284,11 +1596,6 @@ function setupThemeSwitcher() {
         earlyStyle.textContent = '';
       }
     }
-
-    // テーマ変更直後に、選択中フィルターボタンの反転色も同期する。
-    if (typeof updateFilterButtonStyles === 'function') {
-      requestAnimationFrame(updateFilterButtonStyles);
-    }
   };
 
   toggleBtn.addEventListener('click', e => { e.stopPropagation(); panel.classList.toggle('show'); });
@@ -2306,945 +1613,6 @@ function setupThemeSwitcher() {
   });
 
   try { applyTheme(localStorage.getItem(THEME_KEY) || 'light'); } catch (e) { applyTheme('light'); }
-}
-
-
-function buildFavoriteSceneList(videoId) {
-  const list = document.getElementById('favSceneList');
-  const empty = document.getElementById('favSceneEmpty');
-  if (!list || !empty) return;
-  const savedBox = list.closest('.fav-scene-saved');
-  const entry = getFavoriteSceneEntry(videoId);
-  const timestamps = entry ? sortFavoriteScenesForDisplay(entry.timestamps) : [];
-  const hasTimestamps = timestamps.length > 0;
-
-  list.innerHTML = timestamps.map((ts) => {
-    const hasTime = hasFavoriteSceneTime(ts.seconds);
-    const playUrl = hasTime ? withTimeParam(entry.link, ts.seconds) : (entry.link || '#');
-    const label = hasTime ? (ts.label || formatTimestamp(ts.seconds)) : (ts.label || '??:??');
-    const note = ts.note || 'お気に入りシーン';
-    return `
-      <li class="fav-scene-item" data-scene-id="${escapeHtml(ts.id)}" data-play-url="${escapeHtml(playUrl)}" role="link" tabindex="0" aria-label="${escapeHtml(label + ' ' + note + (hasTime ? ' から再生' : ' タイムスタンプ未指定'))}">
-        <span class="fav-scene-time" aria-hidden="true">
-          <i class="fa-brands fa-youtube" aria-hidden="true"></i>
-          <span class="impact-number fav-scene-time-label${hasTime ? '' : ' is-unknown'}">${escapeHtml(label)}</span>
-        </span>
-        <span class="fav-scene-note"><span class="fav-scene-note-text">${escapeHtml(note)}</span></span>
-        <span class="fav-scene-actions-inline" aria-hidden="false">
-          <button type="button" class="fav-scene-delete" data-scene-id="${escapeHtml(ts.id)}" aria-label="このタイムスタンプを削除">
-            <i class="fa-solid fa-trash-can" aria-hidden="true"></i>
-          </button>
-        </span>
-      </li>
-    `;
-  }).join('');
-
-  // 幅はCSSで制御する。
-  // 以前ここで max-width:100%!important をJSから直接付けていたため、
-  // CSSで「登録済みタイムスタンプ行だけ短くする」指定が効かなくなっていた。
-  // 既存DOMに残っている可能性のあるインライン幅指定もここで解除する。
-  if (savedBox) {
-    savedBox.style.removeProperty('width');
-    savedBox.style.removeProperty('max-width');
-    savedBox.style.removeProperty('box-sizing');
-  }
-  list.style.removeProperty('width');
-  list.style.removeProperty('max-width');
-  list.style.removeProperty('box-sizing');
-  list.querySelectorAll('.fav-scene-item').forEach(item => {
-    item.style.removeProperty('width');
-    item.style.removeProperty('max-width');
-    item.style.removeProperty('box-sizing');
-  });
-
-  const sceneModal = document.getElementById('favSceneModal');
-  const isEditing = sceneModal?.classList?.contains('is-editing') || savedBox?.classList?.contains('is-editing');
-  const openEditorBtn = document.getElementById('favSceneOpenEditorBtn');
-
-  empty.hidden = isEditing || hasTimestamps;
-  empty.setAttribute('aria-hidden', (!isEditing && !hasTimestamps) ? 'false' : 'true');
-  if (empty.hidden) empty.style.setProperty('display', 'none', 'important');
-  else empty.style.removeProperty('display');
-
-  list.hidden = isEditing || !hasTimestamps;
-  list.setAttribute('aria-hidden', (!isEditing && hasTimestamps) ? 'false' : 'true');
-  if (list.hidden) list.style.setProperty('display', 'none', 'important');
-  else list.style.removeProperty('display');
-
-  const savedHead = openEditorBtn?.closest('.fav-scene-saved-head');
-  if (savedHead) {
-    savedHead.hidden = Boolean(isEditing);
-    savedHead.setAttribute('aria-hidden', isEditing ? 'true' : 'false');
-    if (isEditing) savedHead.style.setProperty('display', 'none', 'important');
-    else savedHead.style.removeProperty('display');
-  }
-
-  if (openEditorBtn) {
-    const label = hasTimestamps ? 'タイムスタンプ編集' : 'タイムスタンプを追加';
-    const iconClass = hasTimestamps ? 'fa-pen-to-square' : 'fa-plus';
-    openEditorBtn.innerHTML = `<i class="fa-solid ${iconClass}" aria-hidden="true"></i> <span class="fav-scene-open-editor-label">${label}</span>`;
-    openEditorBtn.setAttribute('aria-label', label);
-  }
-
-  savedBox?.classList.toggle('has-timestamps', hasTimestamps);
-  savedBox?.classList.toggle('is-empty', !hasTimestamps);
-  savedBox?.classList.toggle('is-editing', Boolean(isEditing));
-
-  const updateListScrollHint = () => updateFavoriteSceneListScrollHint({ measure: true });
-  updateListScrollHint();
-  requestAnimationFrame(updateListScrollHint);
-  setTimeout(updateListScrollHint, 90);
-  setTimeout(updateListScrollHint, 260);
-}
-
-function ensureFavoriteSceneListFade() {
-  // v18: 白い帯のように見えていた独立オーバーレイは使わない。
-  // スクロール可能ヒントは #favSceneList 自体の mask-image で表現する。
-  // 既に旧コードで生成済みの要素があれば削除して、テーマCSSの上書き事故を防ぐ。
-  const oldFade = document.getElementById('favSceneListFade');
-  if (oldFade) oldFade.remove();
-  return null;
-}
-
-let favoriteSceneListMeasureRaf = 0;
-let favoriteSceneListStateRaf = 0;
-
-function updateFavoriteSceneListScrollHint(options = {}) {
-  const list = document.getElementById('favSceneList');
-  if (!list) return;
-  const modal = document.getElementById('favSceneModal');
-  const savedBox = list.closest('.fav-scene-saved');
-  const fade = ensureFavoriteSceneListFade();
-  const hidden = list.hidden || list.getAttribute('aria-hidden') === 'true' || !modal || modal.hidden;
-
-  const resetState = () => {
-    list.classList.remove('is-scrollable', 'is-at-bottom', 'is-fixed-scroll-area');
-    list.style.removeProperty('--fav-scene-stable-list-height');
-    list.style.removeProperty('--fav-scene-fade-height');
-    savedBox?.classList.remove('has-list-overflow', 'is-list-at-bottom');
-    if (fade) {
-      fade.hidden = true;
-      fade.style.removeProperty('--fav-scene-list-fade-top');
-      fade.style.removeProperty('--fav-scene-list-fade-height');
-    }
-  };
-
-  if (hidden) {
-    resetState();
-    return;
-  }
-
-  const syncScrollState = () => {
-    favoriteSceneListStateRaf = 0;
-    const scrollable = list.scrollHeight > list.clientHeight + 2;
-    const atBottom = !scrollable || (list.scrollTop + list.clientHeight >= list.scrollHeight - 3);
-    list.classList.toggle('is-scrollable', scrollable);
-    list.classList.toggle('is-at-bottom', atBottom);
-    savedBox?.classList.toggle('has-list-overflow', scrollable);
-    savedBox?.classList.toggle('is-list-at-bottom', atBottom);
-
-    if (fade) {
-      const fadeHeight = Math.min(24, Math.max(16, Math.floor(list.clientHeight * 0.11)));
-      fade.style.setProperty('--fav-scene-list-fade-height', `${fadeHeight}px`);
-      fade.style.setProperty('--fav-scene-list-fade-top', `${Math.max(0, list.offsetTop + list.clientHeight - fadeHeight)}px`);
-      fade.hidden = !scrollable || atBottom;
-    }
-  };
-
-  const requestState = () => {
-    if (favoriteSceneListStateRaf) return;
-    favoriteSceneListStateRaf = requestAnimationFrame(syncScrollState);
-  };
-
-  if (options.measure) {
-    if (favoriteSceneListMeasureRaf) cancelAnimationFrame(favoriteSceneListMeasureRaf);
-    favoriteSceneListMeasureRaf = requestAnimationFrame(() => {
-      favoriteSceneListMeasureRaf = 0;
-      const items = Array.from(list.querySelectorAll('.fav-scene-item'));
-      // いったん自然なCSS計算へ戻してから測る。これにより、VisualViewportやフォント読み込みの途中値が
-      // そのまま固定されて、登録数が多い時に一覧の縦幅が伸び縮みするのを防ぐ。
-      list.classList.remove('is-fixed-scroll-area');
-      list.style.removeProperty('--fav-scene-stable-list-height');
-      void list.offsetHeight;
-
-      if (items.length === 0) {
-        resetState();
-        return;
-      }
-
-      const style = window.getComputedStyle(list);
-      const gap = Math.max(0, parseFloat(style.rowGap || style.gap || '0') || 0);
-      const firstHeight = Math.max(1, Math.ceil(items[0].getBoundingClientRect().height || 54));
-      const rowStep = firstHeight + gap;
-      const naturalClientHeight = Math.max(0, Math.floor(list.clientHeight));
-      const naturalScrollHeight = Math.max(0, Math.ceil(list.scrollHeight));
-      const needsOwnScroll = naturalScrollHeight > naturalClientHeight + 2;
-
-      if (needsOwnScroll) {
-        // 表示領域を「完全な行数」へ丸める。スクロール中に半端な空白が出たり、
-        // iOS Safari のツールバー変化で高さだけ再計算されるのを防ぐ。
-        const rowsFromCurrentHeight = Math.floor((naturalClientHeight + gap + 1) / rowStep);
-        const rowsFromViewport = Number(modal.style.getPropertyValue('--fav-scene-visible-rows-final')) || 0;
-        const visibleRows = Math.max(2, Math.min(items.length - 1, 6, rowsFromCurrentHeight || rowsFromViewport || 4));
-        const stableHeight = Math.round((firstHeight * visibleRows) + (gap * Math.max(0, visibleRows - 1)));
-        list.style.setProperty('--fav-scene-stable-list-height', `${stableHeight}px`);
-        list.classList.add('is-fixed-scroll-area');
-      } else {
-        list.classList.remove('is-fixed-scroll-area');
-        list.style.removeProperty('--fav-scene-stable-list-height');
-      }
-
-      requestState();
-    });
-    return;
-  }
-
-  requestState();
-}
-
-
-function updateFavoriteButtonsFor(videoId) {
-  const escapedId = (window.CSS && typeof CSS.escape === 'function') ? CSS.escape(videoId) : String(videoId).replace(/\"/g, '\\"');
-  document.querySelectorAll(`.fav-btn[data-id="${escapedId}"]`).forEach(btn => {
-    const active = isFavorite(videoId);
-    btn.classList.toggle('active', active);
-    const label = active ? 'お気に入りシーンを開く' : 'お気に入りシーンを作成';
-    btn.setAttribute('aria-label', label);
-    btn.setAttribute('title', label);
-    const icon = btn.querySelector('i');
-    if (icon) {
-      icon.classList.toggle('fa-solid', active);
-      icon.classList.toggle('fa-regular', !active);
-    }
-    btn.closest('.episode-item')?.classList.toggle('is-fav', active);
-  });
-}
-
-function setupFavoriteSceneModal() {
-  const modal = document.getElementById('favSceneModal');
-  const closeBtn = document.getElementById('favSceneCloseBtn');
-  const form = document.getElementById('favSceneForm');
-  const commentInput = document.getElementById('favSceneCommentInput');
-  const episodeInlineEl = document.getElementById('favSceneEpisodeInline');
-  const episodeCardEl = document.getElementById('favSceneEpisodeCard');
-  const removeBtn = document.getElementById('favSceneRemoveBtn');
-  const list = document.getElementById('favSceneList');
-  const errorEl = document.getElementById('favSceneError');
-  const savedHint = document.getElementById('favSceneSavedHint');
-  const openEditorBtn = document.getElementById('favSceneOpenEditorBtn');
-  const inlineCancelBtn = document.getElementById('favSceneInlineCancelBtn');
-  const saveBtn = form ? form.querySelector('.fav-scene-save-btn') : null;
-  if (!modal || !closeBtn || !form || !commentInput || !episodeInlineEl || !removeBtn || !list || !errorEl || !openEditorBtn) return { closeModal: () => {} };
-
-  let currentDurationSeconds = null;
-  let savedHintTimer = null;
-  let saveCommitTimer = 0;
-  let editingSceneId = null;
-  let previouslyFocusedElement = null;
-
-  const setSavedHint = (message, isSuccess = false) => {
-    if (!savedHint) return;
-    clearTimeout(savedHintTimer);
-    savedHint.textContent = message;
-    savedHint.hidden = !Boolean(message);
-    savedHint.classList.toggle('is-success', isSuccess);
-    if (isSuccess) {
-      savedHintTimer = setTimeout(() => {
-        savedHint.textContent = '';
-        savedHint.classList.remove('is-success');
-        savedHint.hidden = true;
-      }, 1800);
-    }
-  };
-
-  const setCommentError = (message, options = {}) => {
-    const hasError = Boolean(message);
-    if (options.html) errorEl.innerHTML = message || '';
-    else errorEl.textContent = message || '';
-    errorEl.hidden = !hasError;
-    commentInput.classList.toggle('is-invalid', hasError);
-    if (saveBtn) saveBtn.disabled = hasError;
-  };
-
-  const normalizeCommentText = (value, { keepLines = false } = {}) => {
-    const normalized = String(value || '')
-      .replace(/[０-９]/g, d => String.fromCharCode(d.charCodeAt(0) - 0xFEE0))
-      .replace(/[：]/g, ':')
-      .replace(/\r\n?/g, '\n');
-    if (keepLines) {
-      return normalized
-        .split('\n')
-        .map(line => line.replace(/[\t ]+/g, ' ').trim())
-        .join('\n')
-        .trim();
-    }
-    return normalized.replace(/\s+/g, ' ').trim();
-  };
-
-  const parseFavoriteSceneLine = (value, lineNumber = null) => {
-    const normalizedRaw = String(value || '')
-      .replace(/[０-９]/g, d => String.fromCharCode(d.charCodeAt(0) - 0xFEE0))
-      .replace(/[：]/g, ':')
-      .replace(/\r\n?/g, '\n')
-      .trim();
-    const raw = normalizedRaw.replace(/[\t ]+/g, ' ');
-    const prefix = lineNumber ? `${lineNumber}行目：` : '';
-    if (!raw) return { ok: false, error: `${prefix}時間とメモを入力してください。` };
-
-    // YouTubeコメント風に、文中の m:ss / h:mm:ss を拾う。
-    // 時間が無い行もメモとして保存できるようにし、表示は ??:?? にする。
-    const match = raw.match(/(^|\s)(\d{1,3}):(\d{1,2})(?::(\d{1,2}))?(?=\s|$)/);
-    if (!match) {
-      return {
-        ok: true,
-        seconds: null,
-        label: '??:??',
-        note: raw,
-        raw: normalizedRaw,
-        timeText: '',
-        hasTime: false
-      };
-    }
-
-    const hasHour = match[4] !== undefined;
-    const h = hasHour ? Number(match[2]) : 0;
-    const m = hasHour ? Number(match[3]) : Number(match[2]);
-    const sec = hasHour ? Number(match[4]) : Number(match[3]);
-
-    if (!Number.isFinite(h) || !Number.isFinite(m) || !Number.isFinite(sec) || h < 0 || m < 0 || sec < 0) {
-      return { ok: false, error: `${prefix}正しい時間を入力してください。` };
-    }
-    if (m > 59 || sec > 59) {
-      return { ok: false, error: `${prefix}分・秒は<span class="impact-number fav-scene-error-number">59</span>以下で入力してください。`, html: true };
-    }
-
-    const seconds = h * 3600 + m * 60 + sec;
-    if (Number.isFinite(currentDurationSeconds) && seconds > currentDurationSeconds) {
-      const durationLabel = escapeHtml(formatTimestamp(currentDurationSeconds));
-      return { ok: false, error: `${prefix}動画時間（<span class="impact-number fav-scene-error-duration">${durationLabel}</span>）を超えています。`, html: true };
-    }
-
-    const fullMatch = match[0];
-    const note = raw.replace(fullMatch, ' ').replace(/\s{2,}/g, ' ').trim() || 'お気に入りシーン';
-    return { ok: true, seconds, label: formatTimestamp(seconds), note, raw: normalizedRaw, timeText: fullMatch.trim(), hasTime: true };
-  };
-
-  const parseFavoriteSceneComment = (value) => parseFavoriteSceneLine(value);
-
-  const parseFavoriteSceneCommentList = (value) => {
-    const normalized = normalizeCommentText(value, { keepLines: true });
-    if (!normalized) return { ok: false, error: '時間とメモを入力してください。' };
-    const lines = normalized.split('\n').map(line => line.trim()).filter(Boolean);
-    if (lines.length === 0) return { ok: false, error: '時間とメモを入力してください。' };
-
-    const scenes = [];
-    const timedIndexMap = new Map();
-
-    for (let i = 0; i < lines.length; i++) {
-      const parsed = parseFavoriteSceneLine(lines[i], i + 1);
-      if (!parsed.ok) return parsed;
-      parsed.inputOrder = i;
-
-      const hasTime = hasFavoriteSceneTime(parsed.seconds);
-      if (hasTime) {
-        const key = Number(parsed.seconds);
-        // 同じ時間が複数ある場合は最後の行を優先。ただし順番も最後の入力位置へ移す。
-        if (timedIndexMap.has(key)) {
-          const oldIndex = timedIndexMap.get(key);
-          scenes.splice(oldIndex, 1);
-          for (const [k, idx] of timedIndexMap.entries()) {
-            if (idx > oldIndex) timedIndexMap.set(k, idx - 1);
-          }
-        }
-        timedIndexMap.set(key, scenes.length);
-        scenes.push(parsed);
-      } else {
-        // 時間なし行は「メモだけ」として全行登録する。
-        scenes.push(parsed);
-      }
-    }
-
-    return { ok: true, scenes };
-  };
-
-  const buildCommentEditorText = (videoId) => {
-    const entry = getFavoriteSceneEntry(videoId);
-    const timestamps = entry ? sortFavoriteScenesForDisplay(entry.timestamps) : [];
-    return timestamps.map(scene => {
-      const hasTime = hasFavoriteSceneTime(scene.seconds);
-      const prefix = hasTime ? (scene.label || formatTimestamp(scene.seconds)) : '';
-      return `${prefix} ${scene.note || 'お気に入りシーン'}`.trim();
-    }).join('\n');
-  };
-
-  const validateComment = () => {
-    const result = parseFavoriteSceneCommentList(commentInput.value);
-    if (!result.ok) {
-      setCommentError(result.error, { html: result.html });
-      return false;
-    }
-    setCommentError('');
-    return true;
-  };
-
-  const updateRemoveButtonVisibility = (forceHidden = false) => {
-    if (!removeBtn) return;
-    if (forceHidden) {
-      removeBtn.hidden = true;
-      removeBtn.setAttribute('aria-hidden', 'true');
-      return;
-    }
-
-    const videoId = pendingFavoriteEpisode?.id;
-    const entry = videoId ? getFavoriteSceneEntry(videoId) : null;
-    const hasScenes = Boolean(entry && Array.isArray(entry.timestamps) && entry.timestamps.length > 0);
-    const shouldShow = Boolean(videoId && (isFavorite(videoId) || hasScenes));
-
-    removeBtn.hidden = !shouldShow;
-    removeBtn.setAttribute('aria-hidden', shouldShow ? 'false' : 'true');
-  };
-
-  const getFocusableElements = () => Array.from(modal.querySelectorAll(
-    'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
-  )).filter(el => {
-    if (el === modal || el.hidden || el.getAttribute('aria-hidden') === 'true') return false;
-    const style = window.getComputedStyle(el);
-    return style.display !== 'none' && style.visibility !== 'hidden' && el.getClientRects().length > 0;
-  });
-
-  const focusFirstModalControl = () => {
-    const focusables = getFocusableElements();
-    const target = focusables[0] || modal;
-    try { target.focus({ preventScroll: true }); } catch (_) { target.focus(); }
-  };
-
-  const restorePreviousFocus = () => {
-    const target = previouslyFocusedElement;
-    previouslyFocusedElement = null;
-    if (!target || !document.contains(target) || typeof target.focus !== 'function') return;
-    // タッチ端末では閉じる直後の focus 復元がスクロール復元/再描画と競合しやすい。
-    // PCのキーボード操作ではアクセシビリティのため従来通り復元する。
-    const coarsePointer = window.matchMedia?.('(hover: none), (pointer: coarse)')?.matches;
-    if (coarsePointer) return;
-    try { target.focus({ preventScroll: true }); } catch (_) { target.focus(); }
-  };
-
-  const getFavoriteModalContent = () => modal.querySelector('.fav-scene-modal');
-
-  const clearClosingLayoutFreeze = () => {
-    const modalContent = getFavoriteModalContent();
-    modal.classList.remove('is-closing-stable');
-    if (!modalContent) return;
-    [
-      'position', 'top', 'left', 'right', 'bottom', 'width', 'height',
-      'max-height', 'margin', 'transform', 'overflow-y', 'overflow-x'
-    ].forEach(prop => modalContent.style.removeProperty(prop));
-  };
-
-  const freezeClosingLayout = () => {
-    const modalContent = getFavoriteModalContent();
-    if (!modalContent || modal.hidden) return;
-    const rect = modalContent.getBoundingClientRect();
-    if (!rect.width || !rect.height) return;
-
-    // iOS Safari/PWAでは、保存後のVisualViewport復帰中に閉じると
-    // overlayの中央寄せが1フレームだけ再計算されてモーダルがズレることがある。
-    // 閉じ始めた瞬間の見た目を固定してからフェードアウトさせる。
-    modal.classList.add('is-closing-stable');
-    modalContent.style.setProperty('position', 'fixed', 'important');
-    modalContent.style.setProperty('top', `${Math.round(rect.top)}px`, 'important');
-    modalContent.style.setProperty('left', `${Math.round(rect.left)}px`, 'important');
-    modalContent.style.setProperty('right', 'auto', 'important');
-    modalContent.style.setProperty('bottom', 'auto', 'important');
-    modalContent.style.setProperty('width', `${Math.round(rect.width)}px`, 'important');
-    modalContent.style.setProperty('height', `${Math.round(rect.height)}px`, 'important');
-    modalContent.style.setProperty('max-height', `${Math.round(rect.height)}px`, 'important');
-    modalContent.style.setProperty('margin', '0', 'important');
-    modalContent.style.setProperty('transform', 'none', 'important');
-    modalContent.style.setProperty('overflow-y', 'hidden', 'important');
-    modalContent.style.setProperty('overflow-x', 'hidden', 'important');
-  };
-
-  const setSaveButtonMode = (isEditing) => {
-    const editing = Boolean(isEditing);
-    const savedBox = list?.closest('.fav-scene-saved');
-    modal.classList.toggle('is-editing', editing);
-    form.classList.toggle('is-editing', editing);
-    savedBox?.classList.toggle('is-editing', editing);
-    updateRemoveButtonVisibility(editing);
-
-    if (editing) {
-      list.hidden = true;
-      list.setAttribute('aria-hidden', 'true');
-      const empty = document.getElementById('favSceneEmpty');
-      if (empty) {
-        empty.hidden = true;
-        empty.setAttribute('aria-hidden', 'true');
-      }
-    }
-
-    if (!saveBtn) return;
-    saveBtn.classList.toggle('is-editing', editing);
-    saveBtn.innerHTML = '<i class="fa-solid fa-check" aria-hidden="true"></i> 保存';
-  };
-
-  const resetEditingState = () => {
-    editingSceneId = null;
-    setSaveButtonMode(false);
-    list?.querySelectorAll('.fav-scene-item.is-editing').forEach(item => item.classList.remove('is-editing'));
-  };
-
-  const openEditor = () => {
-    if (!pendingFavoriteEpisode?.id) return;
-    resetEditingState();
-    commentInput.value = buildCommentEditorText(pendingFavoriteEpisode.id);
-    setSaveButtonMode(true);
-    if (saveBtn) saveBtn.disabled = !commentInput.value.trim();
-    setSavedHint('', false);
-    setCommentError('');
-    form.hidden = false;
-    form.classList.add('show');
-    openEditorBtn.hidden = true;
-    // 編集中は登録済み一覧・空表示を隠し、入力欄だけ見せる
-    buildFavoriteSceneList(pendingFavoriteEpisode.id);
-    try { modal.focus({ preventScroll: true }); } catch (_) { modal.focus(); }
-  };
-
-  const closeEditor = (reset = true) => {
-    if (form.hidden) {
-      if (reset) resetEditingState();
-      if (pendingFavoriteEpisode?.id) buildFavoriteSceneList(pendingFavoriteEpisode.id);
-      return;
-    }
-    form.classList.remove('show');
-    const finish = () => {
-      form.hidden = true;
-      commentInput.value = '';
-      setCommentError('');
-      openEditorBtn.hidden = false;
-      if (reset) {
-        resetEditingState();
-        setSavedHint('', false);
-      } else {
-        setSaveButtonMode(false);
-      }
-      if (pendingFavoriteEpisode?.id) buildFavoriteSceneList(pendingFavoriteEpisode.id);
-    };
-    setTimeout(finish, 80);
-  };
-
-  const isSoftKeyboardLikelyOpen = () => {
-    const vv = window.visualViewport;
-    const layoutHeight = Math.max(
-      Number(window.innerHeight) || 0,
-      Number(document.documentElement.clientHeight) || 0
-    );
-    const visualHeight = vv ? Number(vv.height) || layoutHeight : layoutHeight;
-    const offsetTop = vv ? Number(vv.offsetTop) || 0 : 0;
-    const shrink = Math.max(0, layoutHeight - visualHeight - offsetTop);
-    return shrink > 80 ||
-      document.documentElement.classList.contains('vv-keyboard-open') ||
-      modal.classList.contains('is-keyboard-open') ||
-      (document.activeElement === commentInput && modal.classList.contains('is-comment-focused'));
-  };
-
-  const finishSavedSceneUiCommit = (videoId, { refreshResults = false } = {}) => {
-    window.clearTimeout(saveCommitTimer);
-    saveCommitTimer = 0;
-    if (!modal || modal.hidden || pendingFavoriteEpisode?.id !== videoId) return;
-
-    modal.classList.remove('is-saving-scene');
-    form.classList.remove('show');
-    form.hidden = true;
-    commentInput.value = '';
-    setCommentError('');
-    openEditorBtn.hidden = false;
-    resetEditingState();
-    updateRemoveButtonVisibility(false);
-    buildFavoriteSceneList(videoId);
-    setSavedHint('保存しました。', true);
-
-    list.querySelectorAll('.fav-scene-item').forEach(item => item.classList.add('is-new'));
-    setTimeout(() => list.querySelectorAll('.fav-scene-item.is-new').forEach(item => item.classList.remove('is-new')), 900);
-
-    updateFavoriteSceneListScrollHint({ measure: true });
-    requestAnimationFrame(() => {
-      updateFavoriteSceneListScrollHint({ measure: true });
-      // iOSのキーボード閉じアニメーション直後はフォント計測が一瞬だけズレるため、
-      // 保存完了の描画が落ち着いてから1回だけ計測し直す。
-      setTimeout(() => {
-        updateFavoriteSceneListScrollHint({ measure: true });
-      }, 120);
-    });
-
-    if (refreshResults) {
-      requestAnimationFrame(() => {
-        window.setTimeout(() => search({ gotoPage: currentPage, animateResults: true }), 0);
-      });
-    }
-  };
-
-  const scheduleSavedSceneUiCommit = (videoId, options = {}) => {
-    window.clearTimeout(saveCommitTimer);
-    modal.classList.add('is-saving-scene');
-    if (saveBtn) saveBtn.disabled = true;
-
-    // 先にキーボードを閉じ、visualViewportの復帰中は編集画面のDOM構造を維持する。
-    // これにより、保存直後に「編集DOM→一覧DOM→キーボード閉じ」の順で再レイアウトされる一瞬のちらつきを防ぐ。
-    try { commentInput.blur(); } catch (_) {}
-
-    // v19: キーボードが閉じる前にフォーム→一覧へDOMを入れ替えると、
-    // VisualViewport復帰・モーダル高さ再計算・リスト計測が同時に走って一瞬乱れる。
-    // 保存時点でキーボードが開いていた場合は、閉じた状態が2フレーム続くまで待ってからUIを切り替える。
-    const startedAt = Date.now();
-    const keyboardWasOpen = isSoftKeyboardLikelyOpen();
-    const minWait = keyboardWasOpen ? 120 : 24;
-    const maxWait = keyboardWasOpen ? 680 : 180;
-    let closedStableFrames = 0;
-    const tick = () => {
-      const elapsed = Date.now() - startedAt;
-      const keyboardOpen = isSoftKeyboardLikelyOpen();
-      closedStableFrames = keyboardOpen ? 0 : (closedStableFrames + 1);
-      if (elapsed < minWait || ((keyboardOpen || closedStableFrames < 2) && elapsed < maxWait)) {
-        saveCommitTimer = window.setTimeout(tick, 24);
-        return;
-      }
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => finishSavedSceneUiCommit(videoId, options));
-      });
-    };
-    saveCommitTimer = window.setTimeout(tick, 24);
-  };
-
-  const startEditingScene = (sceneId) => {
-    if (!pendingFavoriteEpisode?.id || !sceneId) return;
-    const entry = getFavoriteSceneEntry(pendingFavoriteEpisode.id);
-    const scene = entry?.timestamps?.find(ts => ts.id === sceneId);
-    if (!scene) return;
-    openEditor(scene);
-  };
-
-  const formatImpactInlineHtml = (value) => {
-    const raw = String(value || '').trim();
-    if (!raw) return '';
-    const escaped = escapeHtml(raw);
-    return raw.startsWith('#')
-      ? `<span class="impact-number">${escaped}</span>`
-      : escaped.replace(/([A-Za-z0-9]+)/g, '<span class="impact-number">$1</span>');
-  };
-
-  const getEpisodeInlineLabel = (episode) => {
-    if (!episode || typeof episode !== 'object') return '';
-    const candidates = [episode.title, episode.episode, episode.label];
-    for (const candidate of candidates) {
-      const raw = String(candidate || '').trim();
-      if (!raw) continue;
-      const hashMatch = raw.match(/#\s*[A-Za-z0-9-]+/);
-      if (hashMatch) return hashMatch[0].replace(/#\s+/, '#');
-      return raw;
-    }
-    return '';
-  };
-
-  const getModalThumbnailUrl = (episode) => {
-    const explicit = String(episode?.thumbnail || '').trim();
-    if (explicit) return explicit;
-    const ep = String(episode?.episode || '').trim();
-    return ep ? `thumbnails/${ep}.jpg` : './thumb-fallback.svg';
-  };
-
-  const renderFavoriteEpisodeCard = (episode) => {
-    if (!episodeCardEl) return;
-    // 元の .fav-scene-episode-card を残したまま、トップ画面カード寄せのクラスも付与する。
-    // これを消してしまうと、後段CSSの幅・表示制御が一部効かず、
-    // お気に入り一覧から開いた時に上部エピソードカードが見えないことがある。
-    episodeCardEl.className = 'fav-scene-episode-card episode-item fav-scene-card-mirror';
-    episodeCardEl.hidden = false;
-    episodeCardEl.removeAttribute('aria-hidden');
-    episodeCardEl.style.removeProperty('display');
-    episodeCardEl.setAttribute('role', 'link');
-    episodeCardEl.tabIndex = 0;
-
-    const title = getEpisodeInlineLabel(episode) || episode?.title || '';
-    const guest = String(episode?.guest || '').trim();
-    const date = String(episode?.date || '').trim();
-    const duration = String(episode?.duration || '').trim();
-    const thumbUrl = getModalThumbnailUrl(episode);
-    const link = String(episode?.link || '#').trim() || '#';
-    const titleHtml = title.startsWith('#')
-      ? `<span class="impact-number">${escapeHtml(title)}</span>`
-      : escapeHtml(title).replace(/([A-Za-z0-9]+)/g, '<span class="impact-number">$1</span>');
-
-    episodeCardEl.innerHTML = `
-  <a href="${escapeHtml(link)}" target="_blank" rel="noopener" style="display:flex;text-decoration:none;color:inherit;align-items:center;min-width:0;">
-    <div class="thumb-col">
-      <img src="${escapeHtml(thumbUrl)}" class="thumbnail" alt="サムネイル：${escapeHtml(title)}"
-           decoding="async" loading="eager" fetchpriority="high"
-           onload="this.classList.add('loaded')"
-           onerror="this.onerror=null; this.src='./thumb-fallback.svg'; this.classList.add('loaded');">
-    </div>
-    <div style="min-width:0;">
-      <div class="d-flex align-items-start justify-content-between" style="min-width:0;">
-        <h5 class="mb-1">
-          ${titleHtml}${/\u3000/.test(String(episode?.title || '')) ? "<br>" : " "}
-          ${guest ? `<span class="guest-one-line" aria-label="${escapeHtml(guest)}" style="visibility: hidden;">${escapeHtml(guest)}</span>` : ''}
-        </h5>
-      </div>
-      <div class="episode-meta fav-scene-card-meta">
-        ${date ? `<div class="meta-one-line" style="visibility: hidden;">公開日時：<span class="impact-number">${escapeHtml(date)}</span></div>` : ''}
-        ${duration ? `<div class="meta-one-line" style="visibility: hidden;">動画時間：<span class="impact-number">${escapeHtml(duration)}</span></div>` : ''}
-      </div>
-    </div>
-  </a>
-`;
-    requestAnimationFrame(() => {
-      // モーダル上部カードだけを表示状態へ戻す。
-      // fitGuestLines() はトップ画面全カードを再計測するため、モーダル開閉時のカクつき原因になる。
-      episodeCardEl.querySelectorAll('.guest-one-line, .meta-one-line').forEach(el => {
-        el.style.visibility = 'visible';
-      });
-      updateFavoriteSceneListScrollHint();
-    });
-  };
-
-  const openModal = (episode) => {
-    clearClosingLayoutFreeze();
-    previouslyFocusedElement = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    pendingFavoriteEpisode = episode;
-    const entry = getFavoriteSceneEntry(episode.id);
-    currentDurationSeconds = parseDurationToSeconds(episode.duration);
-    episodeInlineEl.innerHTML = '';
-    if (episodeCardEl) {
-      episodeCardEl.hidden = false;
-      episodeCardEl.removeAttribute('aria-hidden');
-      episodeCardEl.style.removeProperty('display');
-    }
-    renderFavoriteEpisodeCard(episode);
-    commentInput.value = '';
-    form.hidden = true;
-    form.classList.remove('show');
-    openEditorBtn.hidden = false;
-    resetEditingState();
-    setSavedHint('');
-    updateRemoveButtonVisibility(false);
-    buildFavoriteSceneList(episode.id);
-    setCommentError('');
-    closeEditor(false);
-    try {
-      const vv = window.visualViewport;
-      const h = vv ? vv.height : window.innerHeight;
-      const rows = h <= 540 ? 2 : h <= 620 ? 3 : h <= 680 ? 4 : h <= 800 ? 5 : 7;
-      modal.style.setProperty('--fav-scene-visible-rows-final', String(rows));
-      modal.style.setProperty('--fav-scene-vv-height', `${Math.floor(h)}px`);
-    } catch (_) {}
-    window.acquireBodyLock?.();
-    modal.hidden = false;
-    modal.setAttribute('tabindex', '-1');
-    try { modal.focus({ preventScroll: true }); } catch (_) { modal.focus(); }
-    requestAnimationFrame(() => {
-      modal.classList.add('show');
-      updateFavoriteSceneListScrollHint({ measure: true });
-      requestAnimationFrame(() => updateFavoriteSceneListScrollHint({ measure: true }));
-      setTimeout(() => updateFavoriteSceneListScrollHint({ measure: true }), 180);
-      if (document.fonts?.ready) document.fonts.ready.then(() => updateFavoriteSceneListScrollHint({ measure: true })).catch(() => {});
-    });
-  };
-
-  let closeModalTimer = 0;
-  const closeModal = () => {
-    window.clearTimeout(saveCommitTimer);
-    saveCommitTimer = 0;
-    modal.classList.remove('is-saving-scene');
-
-    // 保存直後のキーボード復帰/visualViewport同期が残っている状態で閉じると、
-    // is-keyboard-open系クラスの付け外しとoverlay中央寄せが競合して1フレームだけズレる。
-    // 閉じ始める前に現在の見た目を固定し、同期系クラスは即クリアする。
-    freezeClosingLayout();
-    modal.classList.remove('is-keyboard-open', 'is-vv-compact-keyboard', 'is-vv-tiny-keyboard', 'is-editor-focused', 'is-comment-focused');
-    document.documentElement.classList.remove('vv-keyboard-open', 'vv-keyboard-compact', 'vv-keyboard-tiny');
-    try { commentInput.blur(); } catch (_) {}
-
-    const cleanupAfterClose = () => {
-      modal.hidden = true;
-      modal.classList.remove('closing', 'show', 'is-keyboard-open', 'is-vv-compact-keyboard', 'is-vv-tiny-keyboard', 'is-editor-focused', 'is-comment-focused');
-      closeEditor(false);
-      setCommentError('');
-      resetEditingState();
-      clearClosingLayoutFreeze();
-      restorePreviousFocus();
-      window.__syncBodyLockToUi?.();
-    };
-
-    // まれに二重発火で show が既に外れている場合も、見た目固定を解除して必ずロックを解放する。
-    if (!modal.classList.contains('show')) {
-      window.releaseBodyLock?.({ restore: true });
-      requestAnimationFrame(cleanupAfterClose);
-      return;
-    }
-
-    if (modal.classList.contains('closing')) return;
-    modal.classList.remove('show');
-    modal.classList.add('closing');
-    window.clearTimeout(closeModalTimer);
-    const finish = () => {
-      closeModalTimer = 0;
-      // v19: iOS/PWAでは入力欄フォーカス中に背面ページのscrollYが動くことがある。
-      // 閉じる前のロック位置へ戻してからモーダルを完全にhidden化することで、
-      // 背景が footer 側へ飛んだり、閉じた直後にサイト全体が動くのを防ぐ。
-      window.releaseBodyLock?.({ restore: true });
-      requestAnimationFrame(() => {
-        requestAnimationFrame(cleanupAfterClose);
-      });
-    };
-    closeModalTimer = setTimeout(finish, 160);
-  };
-
-  commentInput.addEventListener('input', () => {
-    const normalized = String(commentInput.value || '')
-      .replace(/[０-９]/g, d => String.fromCharCode(d.charCodeAt(0) - 0xFEE0))
-      .replace(/[：]/g, ':');
-    if (commentInput.value !== normalized) commentInput.value = normalized;
-    // 入力中は自由に書けるよう、保存時だけ形式チェックする
-    setCommentError('');
-    if (saveBtn) saveBtn.disabled = !commentInput.value.trim();
-  });
-
-  openEditorBtn.addEventListener('click', () => openEditor());
-
-  inlineCancelBtn?.addEventListener('click', () => closeEditor(true));
-
-  form.addEventListener('submit', e => {
-    e.preventDefault();
-    if (!pendingFavoriteEpisode || !pendingFavoriteEpisode.id) return;
-    const parsed = parseFavoriteSceneCommentList(commentInput.value);
-    if (!parsed.ok) {
-      setCommentError(parsed.error, { html: parsed.html });
-      return;
-    }
-    setCommentError('');
-    const videoId = pendingFavoriteEpisode.id;
-    const previousEntry = favoriteScenes[videoId] || getFavoriteSceneEntry(videoId) || { timestamps: [] };
-    const previousBySeconds = new Map((previousEntry.timestamps || []).filter(ts => hasFavoriteSceneTime(ts.seconds)).map(ts => [Number(ts.seconds), ts]));
-
-    const entry = {
-      title: pendingFavoriteEpisode.title,
-      episode: pendingFavoriteEpisode.episode,
-      link: pendingFavoriteEpisode.link,
-      duration: pendingFavoriteEpisode.duration,
-      timestamps: []
-    };
-
-    entry.timestamps = sortFavoriteScenesForDisplay(parsed.scenes.map((parsedScene, index) => {
-      const hasTime = hasFavoriteSceneTime(parsedScene.seconds);
-      const old = hasTime ? previousBySeconds.get(Number(parsedScene.seconds)) : null;
-      return {
-        id: old?.id || `${Date.now()}-${index}-${Math.random().toString(16).slice(2)}`,
-        seconds: hasTime ? Number(parsedScene.seconds) : null,
-        label: parsedScene.label || (hasTime ? formatTimestamp(parsedScene.seconds) : '??:??'),
-        note: parsedScene.note,
-        order: Number.isFinite(Number(parsedScene.inputOrder)) ? Number(parsedScene.inputOrder) : index,
-        createdAt: old?.createdAt || new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      };
-    }));
-
-    favoriteScenes[videoId] = entry;
-    favorites.add(videoId);
-    syncFavoriteFromScenes(videoId);
-    updateFavoriteButtonsFor(videoId);
-    scheduleSavedSceneUiCommit(videoId, { refreshResults: Boolean(showFavoritesOnly) });
-  });
-
-  list.addEventListener('click', e => {
-    const del = e.target.closest('.fav-scene-delete');
-    if (del) {
-      if (!pendingFavoriteEpisode) return;
-      e.preventDefault();
-      e.stopPropagation();
-      const videoId = pendingFavoriteEpisode.id;
-      const entry = getFavoriteSceneEntry(videoId);
-      if (!entry) return;
-      const deletedSceneId = del.dataset.sceneId;
-      entry.timestamps = entry.timestamps.filter(ts => ts.id !== deletedSceneId);
-      if (editingSceneId === deletedSceneId) resetEditingState();
-      if (entry.timestamps.length === 0) {
-        removeFavoriteCompletely(videoId);
-        updateRemoveButtonVisibility(false);
-      } else {
-        favoriteScenes[videoId] = entry;
-        syncFavoriteFromScenes(videoId);
-      }
-      updateFavoriteButtonsFor(videoId);
-      buildFavoriteSceneList(videoId);
-      setSavedHint('', false);
-      if (showFavoritesOnly) search({ gotoPage: currentPage });
-      return;
-    }
-
-    const item = e.target.closest('.fav-scene-item');
-    if (!item || !list.contains(item)) return;
-    if (typeof e.clientX === 'number') {
-      const rect = item.getBoundingClientRect();
-      if (e.clientX > rect.right - 72) return;
-    }
-    const url = item.dataset.playUrl;
-    if (url) openPlaybackUrl(url);
-  });
-
-  list.addEventListener('keydown', e => {
-    if (e.key !== 'Enter' && e.key !== ' ') return;
-    if (e.target.closest('.fav-scene-delete')) return;
-    const item = e.target.closest('.fav-scene-item');
-    if (!item || !list.contains(item)) return;
-    e.preventDefault();
-    const url = item.dataset.playUrl;
-    if (url) openPlaybackUrl(url);
-  });
-
-  list.addEventListener('scroll', () => {
-    updateFavoriteSceneListScrollHint();
-  }, { passive: true });
-
-  removeBtn.addEventListener('click', () => {
-    if (!pendingFavoriteEpisode?.id) return;
-    removeFavoriteCompletely(pendingFavoriteEpisode.id);
-    updateFavoriteButtonsFor(pendingFavoriteEpisode.id);
-    buildFavoriteSceneList(pendingFavoriteEpisode.id);
-    updateRemoveButtonVisibility(false);
-    if (showFavoritesOnly) search({ gotoPage: currentPage });
-    closeModal();
-  });
-
-  closeBtn.addEventListener('click', closeModal);
-  modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
-  modal.addEventListener('keydown', e => {
-    if (e.key === 'Escape') {
-      e.preventDefault();
-      closeModal();
-      return;
-    }
-    if (e.key !== 'Tab') return;
-    const focusables = getFocusableElements();
-    if (focusables.length === 0) {
-      e.preventDefault();
-      try { modal.focus({ preventScroll: true }); } catch (_) { modal.focus(); }
-      return;
-    }
-    const first = focusables[0];
-    const last = focusables[focusables.length - 1];
-    const active = document.activeElement;
-    if (e.shiftKey && (active === first || active === modal || !modal.contains(active))) {
-      e.preventDefault();
-      try { last.focus({ preventScroll: true }); } catch (_) { last.focus(); }
-      return;
-    }
-    if (!e.shiftKey && (active === last || active === modal || !modal.contains(active))) {
-      e.preventDefault();
-      try { first.focus({ preventScroll: true }); } catch (_) { first.focus(); }
-    }
-  });
-  window.openFavoriteSceneModal = openModal;
-  return { closeModal };
 }
 
 function setupModals() {
@@ -3325,7 +1693,6 @@ function setupModals() {
     
     // ★追加: フォトメモリンク用モーダルのセットアップ
     const { openModal: openPhoto, closeModal: closePhoto } = setup('photoModal', null, 'photoCloseBtn');
-    const { closeModal: closeFavoriteScene } = setupFavoriteSceneModal();
     
     // グローバルから呼べるようにする
     window.openPhotoModal = (ep) => {
@@ -3350,7 +1717,6 @@ function setupModals() {
             if (document.getElementById('aboutModal')?.classList.contains('show')) closeAbout();
             if (document.getElementById('historyModal')?.classList.contains('show')) closeHistory();
             if (document.getElementById('photoModal')?.classList.contains('show')) closePhoto(); // ★追加
-            if (document.getElementById('favSceneModal')?.classList.contains('show')) closeFavoriteScene();
         }
     });
 
@@ -3436,124 +1802,6 @@ function withTimeParam(url, seconds) {
   }
 }
 
-
-function parseYouTubeStartSeconds(value) {
-  const raw = String(value || '').trim().toLowerCase();
-  if (!raw) return null;
-  if (/^\d+$/.test(raw)) return Math.max(0, parseInt(raw, 10));
-  if (/^\d+s$/.test(raw)) return Math.max(0, parseInt(raw, 10));
-  const match = raw.match(/^(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s?)?$/);
-  if (!match) return null;
-  const h = parseInt(match[1] || '0', 10);
-  const m = parseInt(match[2] || '0', 10);
-  const s = parseInt(match[3] || '0', 10);
-  const total = h * 3600 + m * 60 + s;
-  return Number.isFinite(total) ? Math.max(0, total) : null;
-}
-
-function getYouTubePlaybackInfo(url) {
-  const raw = String(url || '').trim();
-  if (!raw) return null;
-  try {
-    const u = new URL(raw, window.location.href);
-    const host = u.hostname.replace(/^www\./, '').toLowerCase();
-    let videoId = '';
-    if (host === 'youtu.be') {
-      videoId = u.pathname.split('/').filter(Boolean)[0] || '';
-    } else if (host === 'youtube.com' || host.endsWith('.youtube.com')) {
-      if (u.pathname === '/watch') videoId = u.searchParams.get('v') || '';
-      else if (u.pathname.startsWith('/shorts/')) videoId = u.pathname.split('/').filter(Boolean)[1] || '';
-      else if (u.pathname.startsWith('/embed/')) videoId = u.pathname.split('/').filter(Boolean)[1] || '';
-    }
-    if (!/^[\w-]{11}$/.test(videoId)) return null;
-
-    const start = parseYouTubeStartSeconds(u.searchParams.get('t')) ??
-      parseYouTubeStartSeconds(u.searchParams.get('start')) ?? 0;
-    const t = Math.max(0, Math.floor(start));
-    const timeParam = t > 0 ? `&t=${t}s` : '';
-    const encodedId = encodeURIComponent(videoId);
-    return {
-      videoId,
-      seconds: t,
-      webUrl: `https://www.youtube.com/watch?v=${encodedId}${timeParam}`,
-      appUrl: `youtube://www.youtube.com/watch?v=${encodedId}${timeParam}`
-    };
-  } catch (_) {
-    return null;
-  }
-}
-
-function isStandalonePwaMode() {
-  return Boolean(
-    window.matchMedia?.('(display-mode: standalone)')?.matches ||
-    window.navigator.standalone === true ||
-    document.documentElement.classList.contains('is-standalone')
-  );
-}
-
-function isIOSFamilyDevice() {
-  const ua = String(window.navigator.userAgent || '');
-  const platform = String(window.navigator.platform || '');
-  // iPadOS 13+ のSafariはMacとして名乗ることがあるため、タッチ点数も見る。
-  return /iP(hone|ad|od)/.test(ua) || (platform === 'MacIntel' && Number(window.navigator.maxTouchPoints || 0) > 1);
-}
-
-function isIOSStandalonePwaMode() {
-  return isStandalonePwaMode() && isIOSFamilyDevice();
-}
-
-function openPlaybackUrl(url) {
-  const safeUrl = String(url || '').trim();
-  if (!safeUrl || safeUrl === '#') return;
-
-  const youtubeInfo = getYouTubePlaybackInfo(safeUrl);
-
-  // iOS/iPadOS のPWA / ホーム画面アプリでは window.open(_blank) が白い空ページを残すことがある。
-  // PC版PWAや通常ブラウザには影響させず、iOS/iPadOSのPWAだけYouTubeアプリへのdeep linkを優先する。
-  if (youtubeInfo && isIOSStandalonePwaMode()) {
-    let pageLeft = false;
-    let cleaned = false;
-    const cleanup = () => {
-      if (cleaned) return;
-      cleaned = true;
-      window.removeEventListener('pagehide', markLeft);
-      document.removeEventListener('visibilitychange', onVisibilityChange);
-    };
-    const markLeft = () => {
-      pageLeft = true;
-      cleanup();
-    };
-    const onVisibilityChange = () => {
-      if (document.hidden) markLeft();
-    };
-
-    window.addEventListener('pagehide', markLeft, { once: true });
-    document.addEventListener('visibilitychange', onVisibilityChange);
-
-    try {
-      window.location.href = youtubeInfo.appUrl;
-    } catch (_) {
-      cleanup();
-      window.location.href = youtubeInfo.webUrl;
-      return;
-    }
-
-    // YouTubeアプリが入っていない場合だけ、同じPWA内で通常URLへフォールバックする。
-    // _blank は使わないため、謎の白ページは増えない。
-    window.setTimeout(() => {
-      cleanup();
-      if (!pageLeft && !document.hidden) {
-        window.location.href = youtubeInfo.webUrl;
-      }
-    }, 900);
-    return;
-  }
-
-  const targetUrl = youtubeInfo ? youtubeInfo.webUrl : safeUrl;
-  const opened = window.open(targetUrl, '_blank', 'noopener,noreferrer');
-  if (!opened) window.location.href = targetUrl;
-}
-
 function buildTimeline(data) {
     const list = document.getElementById('historyTimeline');
     if(!list) return;
@@ -3614,7 +1862,7 @@ window.applyDidYouMean = function(word) {
   const searchBox = document.getElementById('searchBox');
   if (searchBox) {
     searchBox.value = word;
-    search({ animateResults: true });
+    search();
     scrollToResultsTop();
   }
 };
@@ -3715,27 +1963,28 @@ window.applyDidYouMean = function(word) {
 })();
 
 (function robustScrollUnlock() {
-    const modalIds = ['filterDrawer', 'aboutModal', 'historyModal', 'photoModal', 'favSceneModal'];
-    let syncTimer = 0;
-    const requestSync = () => {
-        if (syncTimer) window.clearTimeout(syncTimer);
-        syncTimer = window.setTimeout(() => {
-            syncTimer = 0;
-            window.__syncBodyLockToUi?.();
-        }, 80);
+    const modalIds = ['filterDrawer', 'aboutModal', 'historyModal', 'photoModal']; // ★追加: photoModalを追加
+    const observerCallback = (mutationsList) => {
+        for (const mutation of mutationsList) {
+            const targetElement = mutation.target;
+            const style = window.getComputedStyle(targetElement);
+            if (style.display === 'none' || targetElement.hidden) {
+                if (window.releaseBodyLock) {
+                    window.releaseBodyLock();
+                }
+            }
+        }
     };
-    const observer = new MutationObserver(requestSync);
+    const observer = new MutationObserver(observerCallback);
     modalIds.forEach(id => {
         const modalElement = document.getElementById(id);
         if (modalElement) {
             observer.observe(modalElement, {
                 attributes: true,
-                attributeFilter: ['class', 'style', 'hidden', 'aria-hidden']
+                attributeFilter: ['style', 'hidden']
             });
         }
     });
-    window.addEventListener('pageshow', requestSync, { passive: true });
-    window.addEventListener('orientationchange', () => window.setTimeout(requestSync, 320), { passive: true });
 })();
 
 function initializeAutocomplete() {
@@ -3808,7 +2057,7 @@ function initializeAutocomplete() {
         inputEl.value = viewItems[index].label;
         clear();
         setTimeout(() => {
-          search({ animateResults: true });
+          search();
           scrollToResultsTop(); 
           inputEl.focus();
           const len = inputEl.value.length;
@@ -3911,7 +2160,7 @@ const onInput = () => {
       } else {
         debouncedOnInput.cancel();
         clear();
-        search({ animateResults: true });
+        search();
         scrollToResultsTop();
       }
       return;
@@ -4043,12 +2292,10 @@ document.addEventListener('keydown', (e) => {
   const historyModal = document.getElementById('historyModal');
   const aboutModal = document.getElementById('aboutModal');
   const photoModal = document.getElementById('photoModal'); // ★追加
-  const favSceneModal = document.getElementById('favSceneModal');
   if ((filterDrawer && filterDrawer.style.display === 'block') || 
       (historyModal && historyModal.classList.contains('show')) ||
       (aboutModal && aboutModal.classList.contains('show')) ||
-      (photoModal && photoModal.classList.contains('show')) ||
-      (favSceneModal && favSceneModal.classList.contains('show'))) { // ★追加
+      (photoModal && photoModal.classList.contains('show'))) { // ★追加
     return;
   }
 
@@ -4059,266 +2306,15 @@ document.addEventListener('keydown', (e) => {
     // 次のページへ
     if (currentPage < totalPage) {
       e.preventDefault(); // デフォルトのスクロール動作を無効化
-      search({ gotoPage: currentPage + 1, animateResults: true });
+      search({ gotoPage: currentPage + 1 });
       scrollToResultsTop();
     }
   } else if (e.key === 'ArrowLeft') {
     // 前のページへ
     if (currentPage > 1) {
       e.preventDefault(); // デフォルトのスクロール動作を無効化
-      search({ gotoPage: currentPage - 1, animateResults: true });
+      search({ gotoPage: currentPage - 1 });
       scrollToResultsTop();
     }
   }
 });
-
-/**
- * ===================================================
- * ★★★ Favorite scene modal keyboard viewport fix v84 ★★★
- * ===================================================
- * iOS Safari ではソフトキーボード表示時に fixed 要素の基準になる
- * layout viewport と、実際に見えている visualViewport がズレる。
- * 編集欄にフォーカスしている間だけ VisualViewport にモーダルを追従させ、
- * キーボード直上に自然に吸着させるための状態クラスとCSS変数を同期する。
- */
-(function setupFavoriteSceneKeyboardViewportFix() {
-  const root = document.documentElement;
-  let rafId = 0;
-  let revealTimer = 0;
-  let delayedSyncTimers = [];
-  let stableViewportHeight = Math.max(
-    Number(window.innerHeight) || 0,
-    Number(document.documentElement.clientHeight) || 0,
-    Number(window.visualViewport?.height) || 0
-  );
-
-  const px = (value) => `${Math.max(0, Math.floor(Number(value) || 0))}px`;
-  const getModal = () => document.getElementById('favSceneModal');
-  const isEditableTarget = (el) => {
-    if (!el) return false;
-    const tag = String(el.tagName || '').toUpperCase();
-    return tag === 'TEXTAREA' || tag === 'INPUT' || tag === 'SELECT' || el.isContentEditable;
-  };
-
-  const revealEditorActions = (modal) => {
-    if (!modal || !modal.classList.contains('is-editing')) return;
-    const scroller = modal.querySelector('.fav-scene-body');
-    const actions = modal.querySelector('.fav-scene-save-btn');
-    const cancel = modal.querySelector('#favSceneInlineCancelBtn');
-    if (!scroller || !actions || !cancel) return;
-
-    const vv = window.visualViewport;
-    const visualBottom = vv ? vv.offsetTop + vv.height : window.innerHeight;
-    const modalContent = modal.querySelector('.fav-scene-modal');
-    const modalBottom = modalContent ? modalContent.getBoundingClientRect().bottom : visualBottom;
-    const scrollerBottom = scroller.getBoundingClientRect().bottom;
-    const safeBottom = Math.min(visualBottom, modalBottom, scrollerBottom) - 18;
-    const actionBottom = Math.max(
-      actions.getBoundingClientRect().bottom,
-      cancel.getBoundingClientRect().bottom
-    );
-    const overflow = actionBottom - safeBottom;
-    if (overflow <= 0) return;
-    scroller.scrollTop += Math.ceil(overflow + 8);
-  };
-
-  const requestRevealEditorActions = (modal) => {
-    window.clearTimeout(revealTimer);
-    revealTimer = window.setTimeout(() => revealEditorActions(modal || getModal()), 90);
-  };
-
-  // v98: iOSキーボード表示時に flex/max-height の組み合わせでモーダル本文だけが
-  // VisualViewportいっぱいに伸び、保存/キャンセル下に空白が出る問題への対策。
-  // CSSだけでは iOS Safari の再計算タイミングに負けるため、編集中・入力欄フォーカス中だけ
-  // 実際に見えている要素の高さを測り、モーダルと本文の高さを明示固定する。
-  const parsePx = (value) => {
-    const n = parseFloat(value);
-    return Number.isFinite(n) ? n : 0;
-  };
-
-  const outerHeight = (el) => {
-    if (!el || el.hidden || el.getAttribute('aria-hidden') === 'true') return 0;
-    const rect = el.getBoundingClientRect();
-    if (!rect.height) return 0;
-    const st = window.getComputedStyle(el);
-    if (st.display === 'none' || st.visibility === 'hidden') return 0;
-    return rect.height + parsePx(st.marginTop) + parsePx(st.marginBottom);
-  };
-
-  const clearCompactEditorHeight = (modal) => {
-    if (!modal) return;
-    const modalContent = modal.querySelector('.fav-scene-modal');
-    const body = modal.querySelector('.fav-scene-body');
-    [modalContent, body].forEach(el => {
-      if (!el) return;
-      el.style.removeProperty('height');
-      el.style.removeProperty('max-height');
-      el.style.removeProperty('overflow-y');
-      el.style.removeProperty('overflow-x');
-    });
-  };
-
-  const applyCompactEditorHeight = (modal, visualHeight) => {
-    if (!modal || !modal.classList.contains('is-editing')) {
-      clearCompactEditorHeight(modal);
-      return;
-    }
-
-    const modalContent = modal.querySelector('.fav-scene-modal');
-    const topbar = modal.querySelector('.fav-scene-topbar');
-    const body = modal.querySelector('.fav-scene-body');
-    const episodeCard = modal.querySelector('#favSceneEpisodeCard');
-    const savedBox = modal.querySelector('.fav-scene-saved');
-    const form = modal.querySelector('#favSceneForm:not([hidden])');
-    if (!modalContent || !topbar || !body || !savedBox || !form) {
-      clearCompactEditorHeight(modal);
-      return;
-    }
-
-    const bodyStyle = window.getComputedStyle(body);
-    const savedStyle = window.getComputedStyle(savedBox);
-    const topbarHeight = outerHeight(topbar);
-    const bodyPadding = parsePx(bodyStyle.paddingTop) + parsePx(bodyStyle.paddingBottom);
-    const savedPadding = parsePx(savedStyle.paddingTop) + parsePx(savedStyle.paddingBottom);
-
-    // body/savedBox は過去CSSで flex:1 になっている場合があるため、
-    // それらの clientHeight / scrollHeight は使わず、実際に見える子要素だけを合算する。
-    const bodyContentHeight = Math.ceil(
-      bodyPadding +
-      outerHeight(episodeCard) +
-      savedPadding +
-      outerHeight(form)
-    );
-
-    const safeMax = Math.max(260, Math.floor((Number(visualHeight) || window.innerHeight || 0) - 6));
-    const bodyMax = Math.max(140, safeMax - Math.ceil(topbarHeight));
-    const finalBodyHeight = Math.min(bodyContentHeight, bodyMax);
-    const finalModalHeight = Math.min(safeMax, Math.ceil(topbarHeight) + finalBodyHeight);
-
-    if (!Number.isFinite(finalBodyHeight) || !Number.isFinite(finalModalHeight) || finalBodyHeight <= 0 || finalModalHeight <= 0) {
-      clearCompactEditorHeight(modal);
-      return;
-    }
-
-    modalContent.style.setProperty('height', px(finalModalHeight), 'important');
-    modalContent.style.setProperty('max-height', px(safeMax), 'important');
-    modalContent.style.setProperty('overflow-y', 'hidden', 'important');
-    modalContent.style.setProperty('overflow-x', 'hidden', 'important');
-
-    body.style.setProperty('height', px(finalBodyHeight), 'important');
-    body.style.setProperty('max-height', px(bodyMax), 'important');
-    body.style.setProperty('overflow-y', bodyContentHeight > bodyMax + 1 ? 'auto' : 'hidden', 'important');
-    body.style.setProperty('overflow-x', 'hidden', 'important');
-  };
-
-  const sync = () => {
-    rafId = 0;
-    const modal = getModal();
-    const vv = window.visualViewport;
-    const layoutHeight = Math.max(
-      Number(window.innerHeight) || 0,
-      Number(document.documentElement.clientHeight) || 0
-    );
-    const visualHeight = vv ? vv.height : layoutHeight;
-    const visualWidth = vv ? vv.width : (window.innerWidth || document.documentElement.clientWidth || 0);
-    const offsetTop = vv ? vv.offsetTop : 0;
-    const offsetLeft = vv ? vv.offsetLeft : 0;
-    const keyboardHeight = Math.max(0, layoutHeight - visualHeight - offsetTop);
-    const active = document.activeElement;
-    const modalIsOpen = Boolean(modal && !modal.hidden && modal.classList.contains('show'));
-    if (modal && (modal.hidden || modal.classList.contains('closing') || modal.classList.contains('is-closing-stable') || !modalIsOpen)) {
-      clearCompactEditorHeight(modal);
-      modal.classList.remove('is-editor-focused', 'is-comment-focused', 'is-keyboard-open', 'is-vv-compact-keyboard', 'is-vv-tiny-keyboard');
-      root.classList.remove('vv-keyboard-open', 'vv-keyboard-compact', 'vv-keyboard-tiny');
-      root.style.setProperty('--app-keyboard-height', '0px');
-      return;
-    }
-    const focusedInModal = Boolean(modal && active && modal.contains(active) && isEditableTarget(active));
-    const commentFocused = Boolean(modal && active && active.id === 'favSceneCommentInput');
-    const mobileViewport = visualWidth <= 779 || window.matchMedia?.('(max-width: 779px)')?.matches;
-    if (!focusedInModal) {
-      stableViewportHeight = Math.max(stableViewportHeight, layoutHeight, visualHeight + offsetTop);
-    }
-    const shrinkFromStable = Math.max(0, stableViewportHeight - visualHeight - offsetTop);
-    // v97: モバイル幅というだけで keyboard-open 扱いにすると、iOS が入力欄を自動スクロールした瞬間に
-    // モーダル本文だけが余った高さまで伸び、保存/キャンセル下に大きな空白が出ることがある。
-    // 実際に VisualViewport が縮んだ時だけ keyboard-open にし、フォーカス中の見た目調整は is-comment-focused で行う。
-    const keyboardOpen = modalIsOpen && focusedInModal && (keyboardHeight > 80 || shrinkFromStable > 80);
-    const compactKeyboard = keyboardOpen && visualHeight <= 560;
-    const tinyKeyboard = keyboardOpen && visualHeight <= 480;
-
-    root.style.setProperty('--app-vv-height', px(visualHeight));
-    root.style.setProperty('--app-vv-width', px(visualWidth));
-    root.style.setProperty('--app-vv-offset-top', px(offsetTop));
-    root.style.setProperty('--app-vv-offset-left', px(offsetLeft));
-    root.style.setProperty('--app-keyboard-height', px(keyboardHeight));
-
-    root.classList.toggle('vv-keyboard-open', keyboardOpen);
-    root.classList.toggle('vv-keyboard-compact', compactKeyboard);
-    root.classList.toggle('vv-keyboard-tiny', tinyKeyboard);
-
-    if (modal) {
-      modal.classList.toggle('is-editor-focused', focusedInModal);
-      modal.classList.toggle('is-comment-focused', commentFocused);
-      modal.classList.toggle('is-keyboard-open', keyboardOpen);
-      modal.classList.toggle('is-vv-compact-keyboard', compactKeyboard);
-      modal.classList.toggle('is-vv-tiny-keyboard', tinyKeyboard);
-      if (keyboardOpen || commentFocused) {
-        // v99: 入力中も「入力前のモーダル形状」を保つため、
-        // v98 の inline height 固定は使わない。iOS の入力補助スクロール後に
-        // height/max-height が残ると、保存・キャンセル下の余白が再発する。
-        clearCompactEditorHeight(modal);
-      } else {
-        clearCompactEditorHeight(modal);
-      }
-    }
-  };
-
-  const requestSync = () => {
-    if (rafId) return;
-    rafId = window.requestAnimationFrame(sync);
-  };
-
-  const delayedSync = () => {
-    const modal = getModal();
-    if (modal && (modal.hidden || modal.classList.contains('closing') || modal.classList.contains('is-closing-stable'))) return;
-    // 入力のたびに複数のsetTimeoutを積み増すと、低性能端末で重くなる。
-    // 常に最新の同期予約だけ残す。
-    delayedSyncTimers.forEach(timerId => window.clearTimeout(timerId));
-    delayedSyncTimers = [];
-    requestSync();
-    [80, 220, 420, 700].forEach(delay => {
-      delayedSyncTimers.push(window.setTimeout(requestSync, delay));
-    });
-  };
-
-  document.addEventListener('focusin', (event) => {
-    const modal = getModal();
-    if (modal && modal.contains(event.target)) delayedSync();
-  }, true);
-
-  document.addEventListener('focusout', (event) => {
-    const modal = getModal();
-    if (modal && modal.contains(event.target)) delayedSync();
-  }, true);
-
-  window.addEventListener('resize', requestSync, { passive: true });
-  window.addEventListener('orientationchange', () => window.setTimeout(requestSync, 120), { passive: true });
-  if (window.visualViewport) {
-    window.visualViewport.addEventListener('resize', requestSync, { passive: true });
-    window.visualViewport.addEventListener('scroll', requestSync, { passive: true });
-  }
-
-  // Bootstrapや自前アニメーションの後に show クラスが付くため、クリック/タップ後も少し遅らせて同期する。
-  document.addEventListener('click', (event) => {
-    const modal = getModal();
-    if (modal && modal.contains(event.target)) delayedSync();
-  }, true);
-
-  document.addEventListener('input', (event) => {
-    const modal = getModal();
-    if (modal && event.target && event.target.id === 'favSceneCommentInput') delayedSync();
-  }, true);
-
-  sync();
-})();
