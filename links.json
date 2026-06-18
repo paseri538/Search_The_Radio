@@ -1,4 +1,8 @@
 {
+  "106": [
+    {"platform": "x","text": "#106 オフショット","url": "https://x.com/onsenradio/status/2067172648308662394?s=20"},
+    {"platform": "instagram","text": "#106 オフショット","url": "https://www.instagram.com/p/DZrnpJSicRf/?img_index=1"}
+  ],
   "105": [
     {"platform": "x","text": "#105 オフショット","url": "https://x.com/onsenradio/status/2062099218182078737?s=20"},
     {"platform": "instagram","text": "#105 オフショット","url": "https://www.instagram.com/p/DZHuctrpGQD/"}
@@ -534,7 +538,8 @@
   ],
   "06": [
     {"platform": "x","text": "#06 青山吉能ポスト","url": "https://x.com/Yopipi555/status/1585284796657172483?s=20"},
-    {"platform": "x","text": "#06 鈴代紗弓ポスト","url": "https://x.com/s_suzushiro/status/1585226990961184769?s=20"},
+    {"platform": "x","text": "#06 鈴代紗弓ポスト①","url": "https://x.com/s_suzushiro/status/1585226990961184769?s=20"},
+    {"platform": "x","text": "#06 鈴代紗弓ポスト②","url": "https://x.com/s_suzushiro/status/1585964792707420160?s=20"},
     {"platform": "x","text": "#06 オフショット","url": "https://x.com/onsenradio/status/1585196787517661184?s=20"},
     {"platform": "instagram","text": "#06 オフショット","url": "https://www.instagram.com/p/Ckce0NNPDD6/?img_index=1"}
   ],

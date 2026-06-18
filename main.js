@@ -1568,7 +1568,7 @@ function setupThemeSwitcher() {
     if (themeColorMeta) {
       let color = '#f9fafe';
       switch (themeName) {
-        case 'dark':   color = '#22272e'; break;
+        case 'dark':   color = '#000000'; break;
         case 'pink':   color = '#ff6496'; break;
         case 'yellow': color = '#fabe00'; break;
         case 'blue':   color = '#006ebe'; break;
@@ -1582,7 +1582,7 @@ function setupThemeSwitcher() {
     if (earlyStyle) {
       let bodyBg = '';
       switch (themeName) {
-        case 'dark':   bodyBg = '#22272e'; break;
+        case 'dark':   bodyBg = '#000000'; break;
         case 'pink':   bodyBg = '#ff6496'; break;
         case 'yellow': bodyBg = '#fabe00'; break;
         case 'blue':   bodyBg = '#006ebe'; break;

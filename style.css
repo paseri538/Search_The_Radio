@@ -216,7 +216,7 @@ body {
   margin: 0 auto;
   display: none;
   width: 100vw; max-width: 900px;
-  background: #f9f8ff;
+  background: var(--bg-color, #f9fafe) !important;
   border-radius: 0 0 14px 14px;
   border: 1px solid #e7e7ef;
   box-shadow: 0 10px 32px -8px rgba(80,80,160,0.13);
@@ -233,7 +233,7 @@ body {
   border-top: none;
   transition: opacity .17s;
 }
-@keyframes fadein-drawer { from { opacity: 0; transform: translateY(-8px);} to { opacity: 1; transform: translateY(0);} } to { opacity: 1; transform: translate(-50%, 0);}
+@keyframes fadein-drawer { from { opacity: 0; transform: translateY(-8px);} to { opacity: 1; transform: translateY(0);} }
 .filter-section { margin-bottom: 13px; padding-left: 1.2rem; padding-right: 1.2rem; }
 @media (min-width: 780px){
   .filter-section { padding-left: 0; padding-right: 0; }
@@ -2123,7 +2123,7 @@ body[class*="theme-"] .searchbox-select {
 body[class*="theme-"] .searchbox-input::placeholder { color: var(--muted) !important; opacity: 1 !important; }
 body[class*="theme-"] .searchbox-input:focus { border-color: var(--btn-main) !important; box-shadow: 0 0 0 2px var(--input-focus-shadow) !important; }
 body[class*="theme-"] .results-count-under-bar { color: var(--btn-hover) !important; background: transparent !important; }
-body[class*="theme-"] #filterDrawer { background: var(--card-bg) !important; border-color: var(--history-card-bd) !important; }
+body[class*="theme-"] #filterDrawer { background: var(--bg-color) !important; border-color: var(--bg-color) !important; }
 body[class*="theme-"] .filter-title { color: var(--btn-hover) !important; }
 body[class*="theme-"] .guest-button, body[class*="theme-"] .btn-corner, body[class*="theme-"] .btn-year { background: var(--btn-bg) !important; border-color: var(--history-card-bd) !important; color: var(--text-color) !important; }
 body[class*="theme-"] .guest-button.active, body[class*="theme-"] .btn-corner.active, body[class*="theme-"] .btn-year.active { border-color: var(--btn-main) !important; background: var(--filter-btn-active) !important; box-shadow: 0 0 0 2.5px var(--input-focus-shadow) !important; }
@@ -2514,17 +2514,6 @@ body[class*="theme-"] .btn-year.active {
   見た目上の変化はありませんが、ブラウザの描画を安定させます。
 */
 
-/*
-  ===== ダークモード時の選択中フィルタータグの色を修正 =====
-  「青山吉能」などの主要な出演者タグの色はそのままに、
-  「その他」タグおよび、それ以外のタグ（年、コーナーなど）の背景を白に変更します。
-*/
-body.dark-mode .filter-tag:not([data-type="guest"]),
-body.dark-mode .filter-tag[data-value="その他"] {
-  background: #ffffff !important;       /* 背景色を白に */
-  color: #22272e !important;           /* 文字色をダークモードの背景色に近い濃い色に */
-}
-
 /* ===== 検索候補のアイコンスタイル ===== */
 
 /* アイコンを格納する.type要素のスタイル調整 */
@@ -2689,7 +2678,7 @@ body.body-scroll-locked {
 .reset-btn,
 #createPlaylistBtn {
   display: inline-flex !important; align-items: center !important; justify-content: center !important;
-  border: 1.5px solid !important; border-radius: 10px !important; font-weight: 700 !important;
+  border: 1px solid !important; border-radius: 10px !important; font-weight: 700 !important;
   line-height: 1 !important; white-space: nowrap !important;
   transition: background-color 0.1s ease, border-color 0.1s ease, color 0.1s ease, transform 0.1s ease, opacity 0.2s ease !important;
   cursor: pointer !important; user-select: none !important;
@@ -5394,3 +5383,456 @@ body[class*="theme-"] .photo-body::-webkit-scrollbar-thumb {
   border-radius: 50px;
 }
 
+/* ======================================================================== */
+/* ===== X(Twitter) ブラックテーマ風 ダークモード完全上書き設定 (統合版) ===== */
+/* ======================================================================== */
+
+/* --- 1. 全体と各種パーツの背景色を完全な黒（ピュアブラック）に --- */
+body.dark-mode,
+body.dark-mode .sticky-search-area,
+body.dark-mode .search-card,
+body.dark-mode .filters-bar,
+body.dark-mode #filterDrawer,
+body.dark-mode .episode-item,
+body.dark-mode .modal-content.history-modal,
+body.dark-mode .history-item,
+body.dark-mode .modal-header,
+body.dark-mode #aboutModalContent,
+body.dark-mode .autocomplete,
+body.dark-mode .modal-content.photo-modal,
+body.dark-mode .photo-link-btn,
+body.dark-mode .pwa-bottom-nav,
+body.dark-mode .history-toggle,
+body.dark-mode #loading-screen,
+body.dark-mode #theme-toggle-btn,
+body.dark-mode .results-count-under-bar,
+body.dark-mode .dym-alert-content,
+body.dark-mode .did-you-mean-container,
+body.dark-mode #filterDrawer .drawer-footer {
+  background-color: #000000 !important;
+  background: #000000 !important;
+}
+
+/* サムネイルのフォールバック背景色 */
+body.dark-mode .thumbnail {
+  background-color: #16181c !important;
+}
+
+/* --- 2. 境界線（ボーダー）の基本色とレイアウトズレ防止 --- */
+/* 一般的なパーツの境界線 */
+body.dark-mode .episode-item,
+body.dark-mode .modal-content.history-modal,
+body.dark-mode .history-item,
+body.dark-mode #aboutModalContent,
+body.dark-mode .autocomplete,
+body.dark-mode .modal-content.photo-modal,
+body.dark-mode .photo-link-btn,
+body.dark-mode .history-toggle {
+  border-color: #2f3336 !important;
+  border: 1px solid #2f3336 !important;
+  box-shadow: none !important;
+}
+
+/* ガタつき（レイアウトズレ）防止用の個別枠線設定 */
+body.dark-mode .sticky-search-area {
+  border-color: #2f3336 !important;
+  border-style: solid !important;
+  border-width: 0 0 1.5px 0 !important;
+  box-shadow: none !important;
+}
+body.dark-mode .search-card {
+  border: none !important;
+  box-shadow: 0 0 0 1px #2f3336 !important; /* 枠線の代わりにシャドウを使用 */
+}
+body.dark-mode #filterDrawer {
+  border-color: #2f3336 !important;
+  border-style: solid !important;
+  border-width: 0 1px 1px 1px !important;
+  box-shadow: none !important;
+}
+body.dark-mode .modal-header {
+  border-color: #2f3336 !important;
+  border-style: solid !important;
+  border-width: 0 0 1px 0 !important;
+}
+body.dark-mode .pwa-bottom-nav {
+  border-color: #2f3336 !important;
+  border-style: solid !important;
+  border-width: 1px 0 0 0 !important;
+}
+body.dark-mode #theme-toggle-btn {
+  border-color: #2f3336 !important;
+  border-style: solid !important;
+  border-width: 2px !important;
+}
+
+/* --- 3. 検索ボックスとセレクトボックス --- */
+body.dark-mode .searchbox-input,
+body.dark-mode .form-select.searchbox-select {
+  background-color: #000000 !important;
+  border: 1px solid #2f3336 !important;
+  color: #e7e9ea !important;
+}
+body.dark-mode .searchbox-input:focus {
+  background-color: #000000 !important;
+  border-color: #1d9bf0 !important; /* Xの青色アクセント */
+}
+
+/* --- 4. テキスト・アイコンカラーの調整 --- */
+body.dark-mode {
+  color: #e7e9ea !important; /* Xの基本テキストカラー */
+}
+body.dark-mode .filter-title,
+body.dark-mode .history-year,
+body.dark-mode .history-item .date,
+body.dark-mode .history-sticky-year,
+body.dark-mode #aboutModalContent a,
+body.dark-mode .results-count-under-bar,
+body.dark-mode .photo-modal .modal-title,
+body.dark-mode .dym-label,
+body.dark-mode .dym-alert-main {
+  color: #e7e9ea !important;
+}
+
+/* サブテキスト（メタ情報など）は少し暗いグレーに */
+body.dark-mode .episode-meta,
+body.dark-mode .history-item .desc,
+body.dark-mode .about-body,
+body.dark-mode .photo-link-icon,
+body.dark-mode .autocomplete-item .type,
+body.dark-mode .dym-alert-sub,
+body.dark-mode .site-footer,
+body.dark-mode .site-footer a {
+  color: #71767b !important;
+}
+
+/* パレットアイコン */
+body.dark-mode #theme-toggle-btn,
+body.dark-mode #theme-toggle-btn i {
+  color: #ffffff !important;
+}
+
+/* --- 5. ボタン類（通常時） --- */
+body.dark-mode .guest-button,
+body.dark-mode .btn-corner,
+body.dark-mode .btn-year,
+body.dark-mode .page-btn,
+body.dark-mode .more-btn,
+body.dark-mode .share-btn,
+body.dark-mode .drawer-close-btn,
+body.dark-mode .photo-btn,
+body.dark-mode .fav-btn,
+body.dark-mode .fav-home-btn,
+body.dark-mode #filterToggleBtn,
+body.dark-mode #favOnlyToggleBtn,
+body.dark-mode #randomBtn,
+body.dark-mode .reset-btn,
+body.dark-mode .dym-link,
+body.dark-mode .dym-word-btn,
+body.dark-mode #createPlaylistBtn {
+  background-color: #000000 !important;
+  border: 1px solid #2f3336 !important; /* 暗いグレーの枠線に統一 */
+  color: #e7e9ea !important;
+}
+
+/* タイムスタンプボタン */
+body.dark-mode .ts-btn {
+  background-color: #16181c !important;
+  color: #ffffff !important; /* 白色に変更 */
+  border-color: #2f3336 !important;
+}
+
+/* --- 6. ホバーエフェクト（マウスオーバー時） --- */
+@media (hover: hover) {
+  body.dark-mode .episode-item:hover,
+  body.dark-mode .guest-button:hover,
+  body.dark-mode .btn-corner:hover,
+  body.dark-mode .btn-year:hover,
+  body.dark-mode .page-btn:not(.active):hover,
+  body.dark-mode .share-btn:hover,
+  body.dark-mode .drawer-close-btn:hover,
+  body.dark-mode .photo-link-btn:hover,
+  body.dark-mode .photo-btn:hover,
+  body.dark-mode .fav-home-btn:hover,
+  body.dark-mode #filterToggleBtn:hover,
+  body.dark-mode #favOnlyToggleBtn:hover,
+  body.dark-mode #randomBtn:hover,
+  body.dark-mode .reset-btn:hover,
+  body.dark-mode .dym-link:hover,
+  body.dark-mode .dym-word-btn:hover,
+  body.dark-mode .autocomplete-item:hover,
+  body.dark-mode #createPlaylistBtn:hover {
+    background-color: #16181c !important; /* 少し明るい黒 */
+    border-color: #536471 !important;
+    color: #e7e9ea !important;
+  }
+}
+
+/* --- 7. アクティブ・選択中の状態 --- */
+body.dark-mode .guest-button[aria-pressed="true"],
+body.dark-mode .guest-button.active,
+body.dark-mode .btn-corner[aria-pressed="true"],
+body.dark-mode .btn-corner.active,
+body.dark-mode .btn-year[aria-pressed="true"],
+body.dark-mode .btn-year.active,
+body.dark-mode .page-btn.active,
+body.dark-mode .more-btn:active,
+body.dark-mode #filterToggleBtn[aria-expanded="true"],
+body.dark-mode #favOnlyToggleBtn[aria-pressed="true"] {
+  background-color: #e7e9ea !important; /* 背景を白に */
+  color: #0f1419 !important; /* 文字色を黒に */
+  border-color: #e7e9ea !important;
+}
+
+/* お気に入り(☆)ボタンのアクティブ状態 */
+body.dark-mode #results .episode-item .fav-btn.active {
+  background-color: #000000 !important;
+  border-color: #ffd24e !important;
+}
+body.dark-mode #results .episode-item .fav-btn.active i {
+  color: #ffd24e !important; /* 星らしい黄色 */
+}
+
+body.dark-mode .history-timeline::before {
+  background: #2f3336 !important;
+}
+body.dark-mode .history-item::before {
+  background: #1d9bf0 !important; /* タイムラインの点をXブルーに */
+  box-shadow: 0 0 0 4px rgba(29, 155, 240, 0.2) !important;
+}
+
+body.dark-mode .clear-search-btn {
+  background-color: #2f3336 !important;
+  color: #e7e9ea !important;
+}
+@media (hover: hover) {
+  body.dark-mode .clear-search-btn:hover {
+    background-color: #536471 !important;
+  }
+}
+
+/* ======================================================================== */
+/* ===== 最終修正：並び替えボタンのズレ解消 ＆ 再生リストボタン色統一 ===== */
+/* ======================================================================== */
+
+/* 1. フィルタ欄の不要なグレー枠線と検索カードの枠線切れを修正 */
+body.dark-mode #filterDrawer {
+  border: none !important;
+  box-shadow: none !important;
+}
+body.dark-mode .search-card {
+  border: none !important;
+  box-shadow: inset 0 0 0 1px #2f3336 !important; 
+}
+
+/* 2. 左に寄る原因となっていた余白を消去し、ホワイトカラーと全く同じ設定に強制統一 */
+body.dark-mode .form-select.searchbox-select,
+body[class*="theme-"] .form-select.searchbox-select {
+  padding: 0.18em 1.7em 0.18em 1em !important; /* ホワイトカラーと同じ上下左右の余白 */
+  height: 2.5em !important;
+  line-height: normal !important;
+  text-align-last: center !important; /* 中央揃え */
+}
+
+/* 3. 検索キーワード入力欄もホワイトカラーと統一 */
+body.dark-mode .searchbox-input,
+body[class*="theme-"] .searchbox-input {
+  padding: 0.32em 1em !important; 
+  height: 2.3em !important;
+  line-height: normal !important;
+}
+
+/* 4. 再生リスト作成ボタンをダークモードでも赤（YouTube色）に */
+/* （ホワイトカラーは設定済み。他のテーマカラーは元の色に戻す） */
+body.dark-mode #createPlaylistBtn {
+  background-color: #e52d27 !important;
+  color: #ffffff !important;
+  border-color: #e52d27 !important;
+}
+
+/* マウスを乗せた時の色（少し暗い赤） */
+@media (hover: hover) {
+  body.dark-mode #createPlaylistBtn:hover {
+    background-color: #c21d19 !important;
+    color: #ffffff !important;
+    border-color: #c21d19 !important;
+  }
+}
+
+/* ======================================================================== */
+/* ===== 追加修正：「0件」表示 ＆ ひすとりーの丸マークの色変更 ===== */
+/* ======================================================================== */
+
+/* 1. 「一致する回が見つかりませんでした」のエリアを黒背景・枠線付きに変更 */
+body.dark-mode #results .no-results {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #e7e9ea !important;
+  border: 1px solid #2f3336 !important;
+  box-shadow: none !important;
+}
+
+/* 2. 「ひすとりー」モーダル内のタイムラインの丸マークを白色に変更 */
+body.dark-mode .history-item::before {
+  background: #ffffff !important;
+  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.2) !important;
+}
+
+/* ======================================================================== */
+/* ===== 追加修正：モーダルの閉じる(×)ボタンをダークモードに馴染ませる ===== */
+/* ======================================================================== */
+
+body.dark-mode #aboutCloseBtn,
+body.dark-mode #historyModal .modal-close,
+body.dark-mode .photo-modal .modal-close {
+  background: #000000 !important;
+  color: #e7e9ea !important;
+  border: 1px solid #2f3336 !important;
+  box-shadow: none !important;
+}
+
+@media (hover: hover) {
+  body.dark-mode #aboutCloseBtn:hover,
+  body.dark-mode #historyModal .modal-close:hover,
+  body.dark-mode .photo-modal .modal-close:hover {
+    background: #16181c !important;
+  }
+}
+
+/* ======================================================================== */
+/* ===== 追加修正：検索入力欄のフォーカス色とプレースホルダーの文字色 ===== */
+/* ======================================================================== */
+
+/* 1. キーワード入力欄を選択（フォーカス）した時の枠線を「青」から「白」に変更 */
+body.dark-mode .searchbox-input:focus {
+  border-color: #ffffff !important;
+}
+
+/* 2. キーワード入力欄の薄い文字（プレースホルダー）を「薄い白色」に変更 */
+body.dark-mode .searchbox-input::placeholder {
+  color: rgba(255, 255, 255, 0.5) !important; /* 真っ白を半透明にして薄い白を表現 */
+  opacity: 1 !important; /* ブラウザ仕様で透明度が二重にかかるのを防ぐ */
+}
+
+/* （※一部のブラウザで確実に色を適用するための予備設定） */
+body.dark-mode .searchbox-input::-webkit-input-placeholder {
+  color: rgba(255, 255, 255, 0.5) !important;
+}
+body.dark-mode .searchbox-input::-moz-placeholder {
+  color: rgba(255, 255, 255, 0.5) !important;
+}
+
+/* ======================================================================== */
+/* ===== 追加修正：検索エリアのボタンと入力欄をエピソードカードに統一 ===== */
+/* ======================================================================== */
+
+/* --- 1. ホワイトカラー（ライトモード）の枠線太さと角丸 --- */
+body:not(.dark-mode):not([class*="theme-"]) .searchbox-input,
+body:not(.dark-mode):not([class*="theme-"]) #filterToggleBtn,
+body:not(.dark-mode):not([class*="theme-"]) #favOnlyToggleBtn,
+body:not(.dark-mode):not([class*="theme-"]) #randomBtn,
+body:not(.dark-mode):not([class*="theme-"]) .reset-btn {
+  border-width: 1px !important; /* エピソードカードと同じ太さ */
+  border-radius: var(--radius, 11px) !important; /* エピソードカードと同じ角丸(11px) */
+}
+
+/* ホワイトカラーの「通常時」の枠線色（入力・ON状態を保護して除外） */
+body:not(.dark-mode):not([class*="theme-"]) .searchbox-input:not(:focus),
+body:not(.dark-mode):not([class*="theme-"]) #filterToggleBtn:not([aria-expanded="true"]),
+body:not(.dark-mode):not([class*="theme-"]) #favOnlyToggleBtn:not(.active):not([aria-pressed="true"]),
+body:not(.dark-mode):not([class*="theme-"]) #randomBtn,
+body:not(.dark-mode):not([class*="theme-"]) .reset-btn {
+  border-color: #d3d8e0 !important; /* エピソードカードと同じ少し濃いグレー */
+}
+
+/* --- 2. ダークカラーの枠線太さと角丸 --- */
+body.dark-mode .searchbox-input,
+body.dark-mode #filterToggleBtn,
+body.dark-mode #favOnlyToggleBtn,
+body.dark-mode #randomBtn,
+body.dark-mode .reset-btn {
+  border-width: 1px !important; /* ダーク時のエピソードカードと同じ太さ */
+  border-radius: var(--radius, 11px) !important; /* 角丸を統一 */
+}
+
+/* ダークカラーの「通常時」の枠線色（入力・ON状態を保護して除外） */
+body.dark-mode .searchbox-input:not(:focus),
+body.dark-mode #filterToggleBtn:not([aria-expanded="true"]),
+body.dark-mode #favOnlyToggleBtn:not(.active):not([aria-pressed="true"]),
+body.dark-mode #randomBtn,
+body.dark-mode .reset-btn {
+  border-color: #2f3336 !important; /* ダーク時のエピソードカードと同じX風グレー */
+}
+
+/* ======================================================================== */
+/* ===== 追加修正：並び替え(セレクトボックス)のデザインを他ボタンと統一 ===== */
+/* ======================================================================== */
+
+/* ホワイトカラー（ライトモード）時の並び替えボタンのデザイン統一 */
+body:not(.dark-mode):not([class*="theme-"]) .form-select.searchbox-select {
+  background-color: #ffffff !important; /* 背景色をピュアな白に統一 */
+  color: #22272e !important;            /* 文字色を統一 */
+  border-width: 1px !important;         /* 枠線の太さを1pxに統一 */
+  border-color: #d3d8e0 !important;     /* 枠線の色を少し濃いグレーに統一 */
+  border-radius: var(--radius, 11px) !important; /* 角丸を統一 */
+}
+
+/* 並び替えボタンを選択（フォーカス）した時のスタイル統一 */
+body:not(.dark-mode):not([class*="theme-"]) .form-select.searchbox-select:focus {
+  border-color: #000000 !important;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* ======================================================================== */
+/* ===== 追加修正：フィルターの「閉じる」ボタンをダークモード色に統一 ===== */
+/* ======================================================================== */
+body.dark-mode #filterDrawer .drawer-close-btn {
+  background-color: #000000 !important; /* 背景色を真っ黒に統一 */
+  color: #e7e9ea !important;            /* 文字色を統一 */
+  border: 1px solid #2f3336 !important; /* 枠線を他のボタンと統一 */
+  box-shadow: none !important;
+}
+
+/* マウスホバー・タップ時の色も他のボタンに合わせる */
+@media (hover: hover) {
+  body.dark-mode #filterDrawer .drawer-close-btn:hover,
+  body.dark-mode #filterDrawer .drawer-close-btn:focus {
+    background-color: #16181c !important;
+    border-color: #536471 !important;
+  }
+}
+
+/* ======================================================================== */
+/* ===== 追加修正：フィルターの「閉じる」ボタンを他のボタンと統一（ライトモード） ===== */
+/* ======================================================================== */
+body:not(.dark-mode):not([class*="theme-"]) #filterDrawer .drawer-close-btn {
+  border-width: 1px !important;         /* ダークモードや他のボタンと同じ1pxに統一 */
+  border-color: #d3d8e0 !important;     /* 他のボタンと同じ枠線色に統一 */
+  border-radius: var(--radius, 11px) !important; /* 角丸も他のボタンと統一 */
+}
+
+/* ======================================================================== */
+/* ===== 【最終確定版】スマホ・iPad版のフィルタ背景色をPC版と完全統一 ===== */
+/* ======================================================================== */
+@media screen and (max-width: 1069px) {
+  /* 1. ホワイトカラー（ライトモード） */
+  /* PC版と同じピュアな白寄りの明るい色に強制統一 */
+  html body:not(.dark-mode):not([class*="theme-"]) div#filterDrawer {
+    background: var(--bg-color, #f9fafe) !important;
+    background-color: var(--bg-color, #f9fafe) !important;
+  }
+  
+  /* 2. カラーテーマ全般（ピンク・ブルーなど） */
+  /* PC版で実際に透けて見えている「一番明るい背景色（--btn-bg）」に合わせる */
+  html body[class*="theme-"] div#filterDrawer {
+    background: var(--btn-bg) !important;
+    background-color: var(--btn-bg) !important;
+    border-color: var(--btn-bg) !important;
+  }
+  
+  /* 3. ダークモード（ブラック統一） */
+  html body.dark-mode div#filterDrawer {
+    background: #000000 !important;
+    background-color: #000000 !important;
+  }
+}
