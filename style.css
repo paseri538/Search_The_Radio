@@ -5836,3 +5836,46 @@ body:not(.dark-mode):not([class*="theme-"]) #filterDrawer .drawer-close-btn {
     background-color: #000000 !important;
   }
 }
+
+/* ======================================================================== */
+/* ===== 追加修正：PWA版下部ナビゲーションをPC版ダークカラーと完全統一 ===== */
+/* ======================================================================== */
+
+/* 1. 通常ボタンのアイコンと文字色をPC版の白系グレーに統一 */
+html.is-standalone body.dark-mode .pwa-bottom-nav-btn {
+  color: #e7e9ea !important;
+}
+
+/* 2. 中央の「カラー」丸ボタンの背景・枠線・アイコン色をPC版ボタンに統一 */
+html.is-standalone body.dark-mode #pwa-theme-toggle-btn {
+  background-color: #000000 !important;
+  border-color: #2f3336 !important;
+  box-shadow: none !important;
+}
+html.is-standalone body.dark-mode #pwa-theme-toggle-btn i {
+  color: #e7e9ea !important;
+}
+
+/* 3. 中央の「カラー」丸ボタンがアクティブ(開いている)時の色を白黒反転（PC版と同じ） */
+html.is-standalone body.dark-mode #pwa-theme-toggle-btn.is-active {
+  background-color: #e7e9ea !important;
+  border-color: #e7e9ea !important;
+}
+html.is-standalone body.dark-mode #pwa-theme-toggle-btn.is-active i {
+  color: #0f1419 !important;
+}
+
+/* 4. 通常ボタンがアクティブ(ON)になった時は真っ白にして強調 */
+html.is-standalone body.dark-mode .pwa-bottom-nav-btn.is-active {
+  color: #ffffff !important;
+}
+
+/* ======================================================================== */
+/* ===== 追加修正：スマホ・iPad版でのフィルタ上部の隙間(描画誤差)を埋める ===== */
+/* ======================================================================== */
+@media (max-width: 1069px) {
+  #filterDrawer {
+    /* サブピクセル描画による1pxの隙間を埋めるため、少しだけ上に食い込ませる */
+    margin-top: -1px !important; 
+  }
+}
