@@ -1540,32 +1540,6 @@ function setupThemeSwitcher() {
 
   const THEME_KEY = 'site_theme_v1';
   const allThemeClasses = ['dark-mode', 'theme-pink', 'theme-yellow', 'theme-blue', 'theme-red', 'theme-green'];
-  const themeSettings = {
-    light:  { color: '#f9fafe', statusBarStyle: 'default', bodyBg: '' },
-    dark:   { color: '#000000', statusBarStyle: 'black-translucent', bodyBg: '#000000' },
-    pink:   { color: '#ff6496', statusBarStyle: 'black-translucent', bodyBg: '#ff6496' },
-    yellow: { color: '#fabe00', statusBarStyle: 'black-translucent', bodyBg: '#fabe00' },
-    blue:   { color: '#006ebe', statusBarStyle: 'black-translucent', bodyBg: '#006ebe' },
-    red:    { color: '#e60046', statusBarStyle: 'black-translucent', bodyBg: '#e60046' },
-    green:  { color: '#13a286', statusBarStyle: 'black-translucent', bodyBg: '#13a286' },
-  };
-
-  const updateMetaContent = (name, id, content) => {
-    let meta = document.getElementById(id) || document.querySelector(`meta[name="${name}"]`);
-
-    if (!meta) {
-      meta = document.createElement('meta');
-      meta.id = id;
-      meta.name = name;
-      document.head.appendChild(meta);
-    }
-
-    meta.setAttribute('content', content);
-
-    // iOS PWA can keep the old status bar style unless the meta tag itself changes.
-    const refreshedMeta = meta.cloneNode(false);
-    meta.replaceWith(refreshedMeta);
-  };
 
   const observer = new MutationObserver(() => {
     const isActive = panel.classList.contains('show');
@@ -1576,24 +1550,48 @@ function setupThemeSwitcher() {
   toggleBtn.classList.toggle('is-active', panel.classList.contains('show'));
 
   applyTheme = (themeName) => {
-    const normalizedTheme = themeSettings[themeName] ? themeName : 'light';
-    const settings = themeSettings[normalizedTheme];
-
     document.body.classList.remove(...allThemeClasses);
-    if (normalizedTheme === 'dark') document.body.classList.add('dark-mode');
-    else if (normalizedTheme !== 'light') document.body.classList.add(`theme-${normalizedTheme}`);
+    if (themeName === 'dark') document.body.classList.add('dark-mode');
+    else if (themeName && themeName !== 'light') document.body.classList.add(`theme-${themeName}`);
     panel.querySelectorAll('.theme-btn').forEach(btn => btn.classList.remove('active'));
-    panel.querySelector(`.theme-btn[data-theme="${normalizedTheme}"]`)?.classList.add('active');
-    try { localStorage.setItem(THEME_KEY, normalizedTheme); } catch (e) {}
+    panel.querySelector(`.theme-btn[data-theme="${themeName}"]`)?.classList.add('active');
+    try { localStorage.setItem(THEME_KEY, themeName); } catch (e) {}
 
-    updateMetaContent('apple-mobile-web-app-status-bar-style', 'status-bar-style', settings.statusBarStyle);
-    updateMetaContent('theme-color', 'theme-color-meta', settings.color);
-    document.documentElement.style.backgroundColor = settings.bodyBg || settings.color;
+    const isDarkStyleStatusBar = ['dark', 'pink', 'blue', 'red', 'green'].includes(themeName);
+    const statusBar = document.getElementById('status-bar-style');
+    const themeColorMeta = document.getElementById('theme-color-meta');
+    
+    if (statusBar) {
+      statusBar.content = isDarkStyleStatusBar ? 'black-translucent' : 'default';
+    }
+
+    if (themeColorMeta) {
+      let color = '#f9fafe';
+      switch (themeName) {
+        case 'dark':   color = '#000000'; break;
+        case 'pink':   color = '#ff6496'; break;
+        case 'yellow': color = '#fabe00'; break;
+        case 'blue':   color = '#006ebe'; break;
+        case 'red':    color = '#e60046'; break;
+        case 'green':  color = '#13a286'; break;
+      }
+      themeColorMeta.content = color;
+    }
 
     const earlyStyle = document.getElementById('early-theme-style');
     if (earlyStyle) {
-      if (settings.bodyBg) {
-        earlyStyle.textContent = 'html, body, #loading-screen { background-color: ' + settings.bodyBg + ' !important; } .loading-ball { background-color: #ffffff !important; }';
+      let bodyBg = '';
+      switch (themeName) {
+        case 'dark':   bodyBg = '#000000'; break;
+        case 'pink':   bodyBg = '#ff6496'; break;
+        case 'yellow': bodyBg = '#fabe00'; break;
+        case 'blue':   bodyBg = '#006ebe'; break;
+        case 'red':    bodyBg = '#e60046'; break;
+        case 'green':  bodyBg = '#13a286'; break;
+      }
+
+      if (bodyBg) {
+        earlyStyle.textContent = 'html, body, #loading-screen { background-color: ' + bodyBg + ' !important; }';
       } else {
         earlyStyle.textContent = '';
       }
