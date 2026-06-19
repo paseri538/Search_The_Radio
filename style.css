@@ -1702,7 +1702,6 @@ body.fav-only .episode-item:not(.is-fav) {
 /* 100vh問題対策（--vh は JS で更新） */
 html, body {
   min-height: calc(var(--vh, 1vh) * 100);
-  overscroll-behavior-y: none; /* iOS のゴムスク抑制（モーダル時の背景スクロール防止に効く） */
 }
 
 /* ローディング全面背景をdvhベースに */
@@ -5544,27 +5543,48 @@ body.dark-mode .ts-btn {
 
 /* --- 6. ホバーエフェクト（マウスオーバー時） --- */
 @media (hover: hover) {
+  /* エピソードカードと各種ボタンのホバー色を完全統一 */
   body.dark-mode .episode-item:hover,
+  body.dark-mode #filterDrawer .guest-button:not(.active):not([aria-pressed="true"]):hover,
+  body.dark-mode #filterDrawer .btn-corner:not(.active):not([aria-pressed="true"]):hover,
+  body.dark-mode #filterDrawer .btn-year:not(.active):not([aria-pressed="true"]):hover,
   body.dark-mode .guest-button:hover,
   body.dark-mode .btn-corner:hover,
   body.dark-mode .btn-year:hover,
   body.dark-mode .page-btn:not(.active):hover,
   body.dark-mode .share-btn:hover,
+  body.dark-mode #filterDrawer .drawer-close-btn:hover,
   body.dark-mode .drawer-close-btn:hover,
   body.dark-mode .photo-link-btn:hover,
   body.dark-mode .photo-btn:hover,
   body.dark-mode .fav-home-btn:hover,
+  body.dark-mode .dym-link:hover,
+  body.dark-mode .dym-word-btn:hover,
+  body.dark-mode .autocomplete-item:hover {
+    background-color: #16181c !important; /* 少し明るい黒 */
+    border-color: #536471 !important; /* グレーの枠線 */
+    color: #e7e9ea !important;
+  }
+
+  /* コントロールボタンの白黒反転（ホバー時） */
   body.dark-mode #filterToggleBtn:hover,
   body.dark-mode #favOnlyToggleBtn:hover,
   body.dark-mode #randomBtn:hover,
-  body.dark-mode .reset-btn:hover,
-  body.dark-mode .dym-link:hover,
-  body.dark-mode .dym-word-btn:hover,
-  body.dark-mode .autocomplete-item:hover,
-  body.dark-mode #createPlaylistBtn:hover {
-    background-color: #16181c !important; /* 少し明るい黒 */
-    border-color: #536471 !important;
-    color: #e7e9ea !important;
+  body.dark-mode .reset-btn:hover {
+    background-color: #e7e9ea !important; /* 背景を白系に */
+    color: #0f1419 !important; /* 文字・アイコン色を黒に */
+    border-color: #e7e9ea !important;
+  }
+
+
+  /* ★★★ ここから新しく追加：コントロールボタンの白黒反転（ホバー時） ★★★ */
+  body.dark-mode #filterToggleBtn:hover,
+  body.dark-mode #favOnlyToggleBtn:hover,
+  body.dark-mode #randomBtn:hover,
+  body.dark-mode .reset-btn:hover {
+    background-color: #e7e9ea !important; /* 背景を白系に */
+    color: #0f1419 !important; /* 文字・アイコン色を黒に */
+    border-color: #e7e9ea !important;
   }
 }
 
@@ -5878,4 +5898,49 @@ html.is-standalone body.dark-mode .pwa-bottom-nav-btn.is-active {
     /* サブピクセル描画による1pxの隙間を埋めるため、少しだけ上に食い込ませる */
     margin-top: -1px !important; 
   }
+}
+
+/* ======================================================================== */
+/* ===== 追加修正：ダークモード時のカラーパレット背景色を黒に統一 ===== */
+/* ======================================================================== */
+
+body.dark-mode .floating-panel {
+  background-color: rgba(0, 0, 0, 0.85) !important; /* 黒系の半透明に */
+  border-color: #2f3336 !important; /* 枠線を他のダークモードUIと統一 */
+  box-shadow: 0 8px 24px -8px rgba(0, 0, 0, 0.6) !important; /* 影を濃くして馴染ませる */
+}
+
+/* ======================================================================== */
+/* ===== 追加修正：全テーマで検索エリア外側の枠線と背景色を完全に消去 ===== */
+/* ===== （＋表示数との隙間を最適化）                                 ===== */
+/* ======================================================================== */
+
+.search-card,
+body.dark-mode .search-card,
+body[class*="theme-"] .search-card {
+  background: transparent !important; /* 背景色を完全に透明化 */
+  border: none !important;            /* 枠線を消去 */
+  box-shadow: none !important;        /* 影や疑似的な枠線を消去 */
+  padding-bottom: 0 !important;       /* ★追加：検索カード下部の余分な隙間を詰める */
+}
+
+/* ======================================================================== */
+/* ===== 追加修正：検索エリア・表示数・フィルタタグ間の縦余白を最適化 ===== */
+/* ======================================================================== */
+
+/* 1. 検索ボタン群の下の余白を削る */
+.search-card {
+  padding-bottom: 0 !important;
+}
+
+/* 2. 表示数（XX件）の上下の余白をバランス良く整える */
+.results-count-under-bar {
+  padding-top: 6px !important;    /* 上のボタン群との間隔 */
+  padding-bottom: 2px !important; /* 下のフィルタタグとの間隔 */
+}
+
+/* 3. フィルタタグエリアの上余白を詰めて一体感を出す */
+.filters-bar {
+  padding-top: 0 !important;
+  padding-bottom: 6px !important;
 }
