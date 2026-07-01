@@ -358,6 +358,14 @@
   <script>
   // ---- Service Worker register (network-first) ----
   if ('serviceWorker' in navigator) {
+    // ★追加: 新しいキャッシュへの切り替えが完了したら自動でリロードする
+    let refreshing = false;
+    navigator.serviceWorker.addEventListener('controllerchange', function() {
+      if (refreshing) return;
+      refreshing = true;
+      window.location.reload();
+    });
+
     window.addEventListener('load', function () {
       navigator.serviceWorker.register('/sw.js?20260702a').then(function(reg) {
         return navigator.serviceWorker.ready;
@@ -366,7 +374,9 @@
         reg.addEventListener('updatefound', function () {
           const nw = reg.installing;
           if (nw) nw.addEventListener('statechange', function () {
-            if (nw.state === 'installed') reg.waiting && reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+            if (nw.state === 'installed') {
+               if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+            }
           });
         });
       }).catch(console.error);

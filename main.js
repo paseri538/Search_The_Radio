@@ -705,6 +705,16 @@ function resetSearch() {
     window.toggleFilterDrawer(false);
   }
   document.getElementById('mainResetBtn')?.blur();
+
+  // ★追加: リセットボタンを押した際に、サイトの最新版がないかチェックする
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistration().then(reg => {
+      if (reg) {
+        // 更新があればダウンロードを開始し、完了次第 index.html 側でリロードされる
+        reg.update(); 
+      }
+    });
+  }
 }
 
 
