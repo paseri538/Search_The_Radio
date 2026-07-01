@@ -2014,6 +2014,29 @@ function initializeAutocomplete() {
     (Array.isArray(ep.guest) ? ep.guest : [ep.guest]).filter(Boolean).forEach(g => ensureEntry(g, '出演者'));
   });
 
+  // ==========================================
+  // 出演者と関連キーワードの紐付け
+  // ==========================================
+  const GUEST_RELATED_KEYWORDS = {
+    "青山吉能": ["リスアニ！LIVE","大港開唱 MEGAPORT Festival","CENTRAL MUSIC & ENTERTAINMENT FESTIVAL","日清焼そばU.F.O.presents 後藤ひとり生誕記念LIVE","ワイちゃん","EAA","幼稚園","声優グランプリ","ChatGPT","ゆで卵","味噌汁","Re:Re:","二重敬語警察","たべっ子どうぶつ","お茶っ葉","自動車教習所","私の家の近所に住むヒーローへの道","心の夏バテ","心のpixiv","密着音声","熊本","運転免許","点鼻薬","口内炎ガール","慮ったの","はせみの膝","内見予約","電子音","泣いちゃった","匂わせ","おしゃべりピンク","キルミーのベイベー!","よぴえもん","よぴいく"],
+    "鈴代紗弓": ["豚","他力本願寺","ハッピーイエロー","車庫入れの紗弓","ツートン","冷麺","3mm","UNITE","それは違う〜","鈴代ナス弓","paypay","なにが悪い","ツボ代紗弓","ボブ代紗弓","事後しちゃうわ通販","SHINY DAYS"],
+    "水野朔": ["惑う星","Daydream café","ヒーリングブルー","愛してる","泣いちゃった","髪の毛ちょびっとしろしろ","ワイちゃん","ﾐｼﾞｭﾉｼｬｸﾃﾞｼｭ"],
+    "長谷川育美": ["NHKWORLDJAPANMusicFestival","JAPAN JAM","リスアニ！LIVE","大港開唱 MEGAPORT Festival","CENTRAL MUSIC & ENTERTAINMENT FESTIVAL","日清焼そばU.F.O.presents 後藤ひとり生誕記念LIVE","パワフルレッド","友達が減りま〜す","青椒肉絲","雨降らんかな","ぬくもりの家具イクミ","偏見撲滅委員会","黒光りマッチョ育美","もっと固執してよ私に","成人の女なんだからさ。","アメイジング声優ズ","夢小説","匂わせ","Cagayake!GIRLS","Won(*3*)Chu KissMe!","はせみの膝","優しさで言ってない","エロ女上司","よぴいく","お前それ渋谷でできんのかよ"],
+    // 他の出演者も同様に追加可能
+  };
+
+  for (const [guest, keywords] of Object.entries(GUEST_RELATED_KEYWORDS)) {
+    const guestEntry = entriesByLabel.get(guest);
+    if (guestEntry) {
+      keywords.forEach(kw => {
+        const kwEntry = entriesByLabel.get(kw);
+        if (kwEntry) {
+          guestEntry.norms.forEach(norm => kwEntry.norms.add(norm));
+        }
+      });
+    }
+  }
+
   const entries = Array.from(entriesByLabel.values());
   let cursor = -1;
   let viewItems = [];
@@ -2132,7 +2155,7 @@ const onInput = () => {
     scored.sort((a, b) => b.s - a.s);
     
     const seen = new Set();
-    const items = scored.slice(0, 20).map(({ e }) => {
+    const items = scored.slice(0, 100).map(({ e }) => {
       let label = e.label;
       const nlabel = normalize(label);
       if (!hasKanji(label) && READING_TO_LABEL[nlabel]) {
@@ -2143,7 +2166,7 @@ const onInput = () => {
       return { label: label, type: e.type };
     }).filter(Boolean);
     
-    render(items.slice(0, 12));
+    render(items.slice(0, 100));
   };
   
   const debouncedOnInput = debounce(onInput, 150);
