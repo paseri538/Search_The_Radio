@@ -1503,6 +1503,15 @@ function setupEventListeners() {
   window.addEventListener('popstate', () => applyStateFromURL({ replace: false }));
   window.addEventListener('orientationchange', () => setTimeout(fitGuestLines, 120), { passive: true });
 
+  // ★修正: Webフォント読み込み完了後に文字幅を再計測する。
+  // 初回描画がフォント読込より先に走ると、代替フォントの幅で計測した
+  // 縮小サイズが残ってゲスト名などが小さくなったままになるため。
+  if (document.fonts) {
+    document.fonts.ready.then(() => { fitGuestLines(); fitDymButtons(); });
+    // Adobe Fonts等はready解決後に遅れて読み込まれることがあるため、都度追従する
+    document.fonts.addEventListener('loadingdone', () => { fitGuestLines(); fitDymButtons(); });
+  }
+
   ['filterToggleBtn', 'favOnlyToggleBtn', 'randomBtn', 'mainResetBtn', 'historyToggle'].forEach(id => {
     const el = document.getElementById(id);
     if (el) {
@@ -1757,6 +1766,19 @@ function setupModals() {
     // ★追加: タイムスタンプ登録モーダルのセットアップ
     const { openModal: openTs, closeModal: closeTs } = setup('tsModal', null, 'tsCloseBtn');
     let tsCtx = null; // { id, link, cardEl, durationSec, editing, wasFav }
+    // iOSはキーボード表示時にスクロールロックを無視してページを動かすため、
+    // モーダルを開いた時点の位置を記憶し、キーボード終了時に戻す
+    let tsSavedScrollY = 0;
+    const restoreTsScroll = () => {
+      if (Math.abs(window.scrollY - tsSavedScrollY) > 1) {
+        // scroll-behavior: smooth の影響を受けず一瞬で戻す
+        const html = document.documentElement;
+        const prev = html.style.scrollBehavior;
+        html.style.scrollBehavior = 'auto';
+        window.scrollTo(0, tsSavedScrollY);
+        html.style.scrollBehavior = prev;
+      }
+    };
 
     const tsEls = () => ({
       input: document.getElementById('tsInput'),
@@ -1869,6 +1891,7 @@ function setupModals() {
 
     window.openTsModal = (videoId, title, link, cardEl, duration) => {
       if (!videoId) return;
+      tsSavedScrollY = window.scrollY;
       tsCtx = { id: videoId, link, cardEl, durationSec: durationToSec(duration), editing: false, wasFav: isFavorite(videoId) };
       document.getElementById('tsModalTitle').innerHTML =
         `${title.trim().replace(/([#A-Za-z0-9:]+)/g, '<span class="impact-number">$1</span>')} タイムスタンプ`;
@@ -1986,13 +2009,17 @@ function setupModals() {
         if (document.getElementById('tsModal')?.classList.contains('show')) {
           window.scrollBy(0, 1); window.scrollBy(0, -1);
         }
+        restoreTsScroll(); // キーボードでページがずらされていたら元の位置へ戻す
         scheduleKbAdjust();
       }, 120);
     });
-    // モーダルを閉じる操作時はキーボードも閉じ、オフセットを戻す
+    // モーダルを閉じる操作時はキーボードも閉じ、オフセットとスクロール位置を戻す
     const resetTsKeyboard = () => {
       document.getElementById('tsInput')?.blur();
       window.__adjustTsForKeyboard(0);
+      // キーボードの閉じアニメーション後にも復元（blur経由と二重でも無害）
+      setTimeout(restoreTsScroll, 150);
+      setTimeout(restoreTsScroll, 450);
     };
     document.getElementById('tsCloseBtn').addEventListener('click', resetTsKeyboard);
     document.getElementById('tsModal').addEventListener('click', e => {
