@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content" />
 
   <script>
     (function() {
@@ -120,7 +120,7 @@
 <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
 <link rel="preconnect" href="https://code.jquery.com" crossorigin>
 <link rel="preconnect" href="https://i.ytimg.com" crossorigin>
-  <link href="style.css?v=20260702b" rel="stylesheet" />
+  <link href="style.css?v=20260717c" rel="stylesheet" />
 
 
 </head>
@@ -317,6 +317,39 @@
   </div>
 </div>
 
+<div id="tsModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="tsModalTitle" hidden>
+  <div class="modal-content ts-modal">
+    <div class="modal-header">
+      <h2 id="tsModalTitle" class="modal-title">タイムスタンプ</h2>
+      <button class="modal-close" id="tsCloseBtn" aria-label="閉じる">
+        <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+      </button>
+    </div>
+    <div class="ts-body">
+      <div class="ts-add-area">
+        <textarea id="tsInput" class="ts-input" rows="3" enterkeyhint="enter" autocomplete="off"
+                  aria-label="タイムスタンプとメモを入力（複数行で一括登録できます）"
+                  placeholder="例）3:00 好きなシーン&#10;メモだけでも登録できます"></textarea>
+        <div class="ts-actions">
+          <button id="tsCancelBtn" class="ts-cancel-btn" hidden>キャンセル</button>
+          <button id="tsEditAllBtn" class="ts-edit-all-btn" hidden aria-label="登録済みタイムスタンプをまとめて編集">
+            <i class="fa-solid fa-pen"></i><span>まとめて編集</span>
+          </button>
+          <button id="tsAddBtn" class="ts-add-btn" aria-label="タイムスタンプを登録">
+            <i class="fa-solid fa-plus"></i><span>登録</span>
+          </button>
+        </div>
+      </div>
+      <div id="tsError" class="ts-error" hidden></div>
+      <ul id="tsList" class="ts-list" aria-label="登録済みタイムスタンプ"></ul>
+      <button id="tsClearAllBtn" class="ts-clear-all-btn" hidden aria-label="登録済みタイムスタンプをすべて削除">
+        <i class="fa-solid fa-trash-can"></i><span>すべて削除</span>
+      </button>
+      <p class="ts-hint">時間をタップするとその場面からYouTubeで再生されます。<br>1件でも登録するとお気に入り（★）に表示されます。</p>
+    </div>
+  </div>
+</div>
+
 <div id="historyModal" class="modal-overlay" role="dialog" aria-modal="true"
      aria-labelledby="historyModalTitle" hidden aria-label="ひすとりー・おぶ・らじお！">
   <div class="modal-content history-modal" role="document">
@@ -353,7 +386,7 @@
     h=d.documentElement,t=setTimeout(function(){h.className=h.className.replace(/\bwf-loading\b/g,"")+" wf-inactive";},config.scriptTimeout),tk=d.createElement("script"),f=false,s=d.getElementsByTagName("script")[0],a;h.className+=" wf-loading";tk.src='https://use.typekit.net/'+config.kitId+'.js';tk.async=true;tk.onload=tk.onreadystatechange=function(){a=this.readyState;if(f||a&&a!="complete"&&a!="loaded")return;f=true;clearTimeout(t);try{Typekit.load(config)}catch(e){}};s.parentNode.insertBefore(tk,s)
   })(document);
 </script>
-  <script src="main.js?v=20260702b" defer></script>
+  <script src="main.js?v=20260717c" defer></script>
 
   <script>
   // ---- Service Worker register (network-first) ----
