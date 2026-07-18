@@ -46,13 +46,31 @@ self.addEventListener('install', (event) => {
     const cache = await caches.open(CACHE_NAME);
     console.log('[SW] Caching core assets');
     await cache.addAll(CORE_ASSETS);
-    // サムネイルは個別に追加する。
+
+    const thumbs = await getThumbnailAssets();
+
+    // サムネイルは内容が変わらないため、旧バージョンのキャッシュから使い回す。
+    // （これがないとSW更新のたびに全サムネイル約8MBを再ダウンロードしてしまう）
+    const oldKeys = (await caches.keys()).filter(key => key !== CACHE_NAME);
+    for (const key of oldKeys) {
+      const oldCache = await caches.open(key);
+      for (const url of thumbs) {
+        if (await cache.match(url)) continue;
+        const oldRes = await oldCache.match(url);
+        if (oldRes) await cache.put(url, oldRes);
+      }
+    }
+
+    // 足りない分だけネットワークから個別に追加する。
     // （addAllは1件の404で全体が失敗しSWのインストール自体が壊れるため、
     //   画像が未配置の回があっても他のキャッシュは続行する）
-    const thumbs = await getThumbnailAssets();
-    const results = await Promise.allSettled(thumbs.map(url => cache.add(url)));
+    const missing = [];
+    for (const url of thumbs) {
+      if (!(await cache.match(url))) missing.push(url);
+    }
+    const results = await Promise.allSettled(missing.map(url => cache.add(url)));
     const failed = results.filter(r => r.status === 'rejected').length;
-    if (failed) console.warn(`[SW] ${failed}/${thumbs.length} thumbnails failed to cache`);
+    console.log(`[SW] Thumbnails: ${thumbs.length - missing.length} reused, ${missing.length - failed} fetched, ${failed} failed`);
   })());
 });
 

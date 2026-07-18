@@ -526,17 +526,25 @@ async function loadExternalData() {
 
     // 抽出した全文字を結合
     const charStr = Array.from(allChars).join('');
-    
-    // 画面外に透明な要素として配置
-    const hiddenFontDiv = document.createElement('div');
-    hiddenFontDiv.style.cssText = 'position:absolute;width:1px;height:1px;overflow:hidden;opacity:0;pointer-events:none;z-index:-1;font-family:fot-udkakugoc70-pro,fot-udkakugoc80-pro,sans-serif;';
-    
-    // 通常(400)と太字(700)の両方のウェイトを読み込ませる
-    hiddenFontDiv.innerHTML = `
-      <span style="font-weight:400">${charStr}</span>
-      <span style="font-weight:700">${charStr}</span>
-    `;
-    document.body.appendChild(hiddenFontDiv);
+
+    // 全文字プリロードはフォントの全チャンク読み込み（数MB）を誘発するため、
+    // 初回描画と帯域を取り合わないようアイドル時間まで遅らせて配置する。
+    // （検索候補などの文字が最初からブランドフォントで出るようにする仕組み自体は維持）
+    const appendFontPreloadDiv = () => {
+      const hiddenFontDiv = document.createElement('div');
+      hiddenFontDiv.style.cssText = 'position:absolute;width:1px;height:1px;overflow:hidden;opacity:0;pointer-events:none;z-index:-1;font-family:fot-udkakugoc70-pro,fot-udkakugoc80-pro,sans-serif;';
+      // 通常(400)と太字(700)の両方のウェイトを読み込ませる
+      hiddenFontDiv.innerHTML = `
+        <span style="font-weight:400">${charStr}</span>
+        <span style="font-weight:700">${charStr}</span>
+      `;
+      document.body.appendChild(hiddenFontDiv);
+    };
+    if (window.requestIdleCallback) {
+      requestIdleCallback(appendFontPreloadDiv, { timeout: 5000 });
+    } else {
+      setTimeout(appendFontPreloadDiv, 2500);
+    }
 
     console.log("All data loaded successfully.");
   } catch (error) {
@@ -550,7 +558,6 @@ async function loadExternalData() {
 
 async function initializeApp() {
   await loadExternalData();
-  preloadThumbsFromData();
 
   if (!applyStateFromURL({ replace: true })) {
     search();
@@ -567,27 +574,10 @@ async function initializeApp() {
   console.log("Application initialized.");
 }
 
-function preloadThumbsFromData() {
-  try {
-    const head = document.head;
-    const seen = new Set();
-    const preloadData = data;
-
-    preloadData.forEach(ep => {
-      const episodeFilename = ep.episode;
-      if (!episodeFilename || seen.has(episodeFilename)) return;
-      seen.add(episodeFilename);
-
-      const linkJpg = document.createElement('link');
-      linkJpg.rel = 'preload';
-      linkJpg.as = 'image';
-      linkJpg.href = `thumbnails/${episodeFilename}.jpg`;
-      head.appendChild(linkJpg);
-    });
-  } catch (e) {
-    console.error('Thumbnail preload error:', e);
-  }
-}
+/* ★削除: preloadThumbsFromData()
+ * 全サムネイル(約8MB)を起動直後に一括preloadしていたが、初回表示の帯域を圧迫し
+ * モバイルの通信量も浪費するため廃止。カード画像はloading="lazy"で必要時に読み込み、
+ * オフライン用の全件キャッシュはService Workerがバックグラウンドで1回だけ行う。 */
 
 /**
  * ===================================================
@@ -982,8 +972,8 @@ function renderResults(arr, page = 1, originalQuery = null, suggestions = []) {
     li.innerHTML = `
   <a href="${finalLink}" target="_blank" rel="noopener" style="display:flex;text-decoration:none;color:inherit;align-items:center;min-width:0;">
     <div class="thumb-col">
-      <img src="${thumbUrlJpg}" class="thumbnail" alt="サムネイル：${hashOnly}" 
-           decoding="async" 
+      <img src="${thumbUrlJpg}" class="thumbnail" alt="サムネイル：${hashOnly}"
+           loading="lazy" decoding="async"
            onload="this.classList.add('loaded')"
            onerror="this.onerror=null; this.src='./thumb-fallback.svg'; this.classList.add('loaded');">
       ${hit ? `<div class="ts-buttons"><button class="ts-btn" data-url="${it.link}" data-ts="${hit.seconds}" aria-label="${hit.label} から再生"><span class="impact-number">${hit.label}</span></button></div>` : ''}
@@ -1628,8 +1618,6 @@ function setupThemeSwitcher() {
 
   const THEME_KEY = 'site_theme_v1';
   const allThemeClasses = ['dark-mode', 'theme-pink', 'theme-yellow', 'theme-blue', 'theme-red', 'theme-green'];
-  // ページ読み込み時に適用されていたステータスバー様式（iOSはこれ以降の変更を反映しない）
-  const loadedStatusBarStyle = document.getElementById('status-bar-style')?.content || 'default';
 
   const observer = new MutationObserver(() => {
     const isActive = panel.classList.contains('show');
@@ -1648,23 +1636,14 @@ function setupThemeSwitcher() {
     try { localStorage.setItem(THEME_KEY, themeName); } catch (e) {}
 
     // カラーテーマは全て白文字ステータスバー（black-translucent）。黒文字はライトのみ。
+    // （この値はiOSがホーム画面追加時にキャッシュするため実行中の変更は効かないが、
+    //   時計の文字色は theme-color の明暗でiOSが動的に決めるので、リロードは行わない）
     const isDarkStyleStatusBar = ['dark', 'pink', 'yellow', 'blue', 'red', 'green'].includes(themeName);
-    const neededStatusBarStyle = isDarkStyleStatusBar ? 'black-translucent' : 'default';
     const statusBar = document.getElementById('status-bar-style');
     const themeColorMeta = document.getElementById('theme-color-meta');
 
     if (statusBar) {
-      statusBar.content = neededStatusBarStyle;
-    }
-
-    // iOSはステータスバー様式（時計の文字色）をページ読み込み時にしか反映しないため、
-    // スタンドアロン起動中にユーザーがテーマを変えて様式が変わる場合は再読み込みで適用する。
-    // （テーマはlocalStorage保存済みなので、リロード後に冒頭のスクリプトが正しい様式で書き出す）
-    if (opts.fromUser && neededStatusBarStyle !== loadedStatusBarStyle) {
-      const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
-      if (isStandalone) {
-        setTimeout(() => location.reload(), 200);
-      }
+      statusBar.content = isDarkStyleStatusBar ? 'black-translucent' : 'default';
     }
 
     if (themeColorMeta) {

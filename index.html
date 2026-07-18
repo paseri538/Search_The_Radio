@@ -82,7 +82,8 @@
     })();
   </script>
   <link rel="preload" as="image" href="logo.webp" type="image/webp">
-  <link rel="preload" as="image" href="logo.png">
+  <!-- logo.png のpreloadは削除: <picture>がwebp対応環境ではpngを使わないため、二重読み込みになっていた -->
+
   <title>さーち・ざ・らじお！ - 「ぼっち・ざ・らじお！」非公式検索エンジン</title>
   
   <meta name="color-scheme" content="dark light">
@@ -114,7 +115,7 @@
 <meta name="apple-mobile-web-app-title" content="さーち・ざ・らじお！">
 
 
-<link rel="manifest" href="./site.webmanifest?v=20260718a">
+<link rel="manifest" href="./site.webmanifest?v=20260719a">
 
   
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
@@ -124,7 +125,7 @@
 <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
 <link rel="preconnect" href="https://code.jquery.com" crossorigin>
 <link rel="preconnect" href="https://i.ytimg.com" crossorigin>
-  <link href="style.css?v=20260718a" rel="stylesheet" />
+  <link href="style.css?v=20260719a" rel="stylesheet" />
 
 
 </head>
@@ -397,21 +398,25 @@
     h=d.documentElement,t=setTimeout(function(){h.className=h.className.replace(/\bwf-loading\b/g,"")+" wf-inactive";},config.scriptTimeout),tk=d.createElement("script"),f=false,s=d.getElementsByTagName("script")[0],a;h.className+=" wf-loading";tk.src='https://use.typekit.net/'+config.kitId+'.js';tk.async=true;tk.onload=tk.onreadystatechange=function(){a=this.readyState;if(f||a&&a!="complete"&&a!="loaded")return;f=true;clearTimeout(t);try{Typekit.load(config)}catch(e){}};s.parentNode.insertBefore(tk,s)
   })(document);
 </script>
-  <script src="main.js?v=20260718a" defer></script>
+  <script src="main.js?v=20260719a" defer></script>
 
   <script>
   // ---- Service Worker register (network-first) ----
   if ('serviceWorker' in navigator) {
     // ★追加: 新しいキャッシュへの切り替えが完了したら自動でリロードする
     let refreshing = false;
+    // 初回訪問時（SWがまだページを制御していない状態）のclaimではリロードしない。
+    // これがないと初回アクセスやPWA初回起動で不要な強制リロードが発生する。
+    var hadController = !!navigator.serviceWorker.controller;
     navigator.serviceWorker.addEventListener('controllerchange', function() {
       if (refreshing) return;
+      if (!hadController) { hadController = true; return; }
       refreshing = true;
       window.location.reload();
     });
 
     window.addEventListener('load', function () {
-      navigator.serviceWorker.register('/sw.js?20260718a').then(function(reg) {
+      navigator.serviceWorker.register('/sw.js?20260719a').then(function(reg) {
         return navigator.serviceWorker.ready;
       }).then(function(reg) {
         if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
