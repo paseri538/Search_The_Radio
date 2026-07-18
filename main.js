@@ -1503,13 +1503,32 @@ function setupEventListeners() {
   window.addEventListener('popstate', () => applyStateFromURL({ replace: false }));
   window.addEventListener('orientationchange', () => setTimeout(fitGuestLines, 120), { passive: true });
 
-  // ★修正: Webフォント読み込み完了後に文字幅を再計測する。
-  // 初回描画がフォント読込より先に走ると、代替フォントの幅で計測した
-  // 縮小サイズが残ってゲスト名などが小さくなったままになるため。
-  if (document.fonts) {
-    document.fonts.ready.then(() => { fitGuestLines(); fitDymButtons(); });
-    // Adobe Fonts等はready解決後に遅れて読み込まれることがあるため、都度追従する
-    document.fonts.addEventListener('loadingdone', () => { fitGuestLines(); fitDymButtons(); });
+  // ★修正: Webフォント確定後に文字幅を再計測する。
+  // 初回描画がフォント読込より先に走ると、幅の広い代替フォントで計測した縮小サイズが
+  // 残ってゲスト名が小さくなったままになる。Typekit(webfontloader)のフォントは
+  // document.fonts のイベントを発火しないことがあるため、webfontloaderが<html>に
+  // 付与する wf-active / wf-inactive クラスを監視して確実に再計測する。
+  {
+    const refitAfterFonts = () => { fitGuestLines(); fitDymButtons(); };
+    const htmlEl = document.documentElement;
+    const fontsSettled = () => htmlEl.classList.contains('wf-active') || htmlEl.classList.contains('wf-inactive');
+    if (fontsSettled()) {
+      refitAfterFonts();
+    } else {
+      const fontObserver = new MutationObserver(() => {
+        if (fontsSettled()) {
+          fontObserver.disconnect();
+          refitAfterFonts();
+          setTimeout(refitAfterFonts, 800); // 動的サブセットの遅れ分をもう一度
+        }
+      });
+      fontObserver.observe(htmlEl, { attributes: true, attributeFilter: ['class'] });
+    }
+    // 補助: document.fonts のイベントが発火する環境ではそちらでも再計測
+    if (document.fonts) {
+      document.fonts.ready.then(refitAfterFonts);
+      document.fonts.addEventListener('loadingdone', refitAfterFonts);
+    }
   }
 
   ['filterToggleBtn', 'favOnlyToggleBtn', 'randomBtn', 'mainResetBtn', 'historyToggle'].forEach(id => {
@@ -1609,6 +1628,8 @@ function setupThemeSwitcher() {
 
   const THEME_KEY = 'site_theme_v1';
   const allThemeClasses = ['dark-mode', 'theme-pink', 'theme-yellow', 'theme-blue', 'theme-red', 'theme-green'];
+  // ページ読み込み時に適用されていたステータスバー様式（iOSはこれ以降の変更を反映しない）
+  const loadedStatusBarStyle = document.getElementById('status-bar-style')?.content || 'default';
 
   const observer = new MutationObserver(() => {
     const isActive = panel.classList.contains('show');
@@ -1618,7 +1639,7 @@ function setupThemeSwitcher() {
   
   toggleBtn.classList.toggle('is-active', panel.classList.contains('show'));
 
-  applyTheme = (themeName) => {
+  applyTheme = (themeName, opts = {}) => {
     document.body.classList.remove(...allThemeClasses);
     if (themeName === 'dark') document.body.classList.add('dark-mode');
     else if (themeName && themeName !== 'light') document.body.classList.add(`theme-${themeName}`);
@@ -1626,23 +1647,37 @@ function setupThemeSwitcher() {
     panel.querySelector(`.theme-btn[data-theme="${themeName}"]`)?.classList.add('active');
     try { localStorage.setItem(THEME_KEY, themeName); } catch (e) {}
 
-    const isDarkStyleStatusBar = ['dark', 'pink', 'blue', 'red', 'green'].includes(themeName);
+    // カラーテーマは全て白文字ステータスバー（black-translucent）。黒文字はライトのみ。
+    const isDarkStyleStatusBar = ['dark', 'pink', 'yellow', 'blue', 'red', 'green'].includes(themeName);
+    const neededStatusBarStyle = isDarkStyleStatusBar ? 'black-translucent' : 'default';
     const statusBar = document.getElementById('status-bar-style');
     const themeColorMeta = document.getElementById('theme-color-meta');
-    
+
     if (statusBar) {
-      statusBar.content = isDarkStyleStatusBar ? 'black-translucent' : 'default';
+      statusBar.content = neededStatusBarStyle;
+    }
+
+    // iOSはステータスバー様式（時計の文字色）をページ読み込み時にしか反映しないため、
+    // スタンドアロン起動中にユーザーがテーマを変えて様式が変わる場合は再読み込みで適用する。
+    // （テーマはlocalStorage保存済みなので、リロード後に冒頭のスクリプトが正しい様式で書き出す）
+    if (opts.fromUser && neededStatusBarStyle !== loadedStatusBarStyle) {
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+      if (isStandalone) {
+        setTimeout(() => location.reload(), 200);
+      }
     }
 
     if (themeColorMeta) {
+      // iOSはtheme-colorの明るさでステータスバーの文字色(黒/白)を自動決定するため、
+      // カラーテーマでは白文字判定になる濃色を渡す（index.html冒頭のスクリプトと同期）
       let color = '#f9fafe';
       switch (themeName) {
         case 'dark':   color = '#000000'; break;
-        case 'pink':   color = '#ff6496'; break;
-        case 'yellow': color = '#fabe00'; break;
-        case 'blue':   color = '#006ebe'; break;
-        case 'red':    color = '#e60046'; break;
-        case 'green':  color = '#13a286'; break;
+        case 'pink':   color = '#8f3a55'; break;
+        case 'yellow': color = '#8a6900'; break;
+        case 'blue':   color = '#00477c'; break;
+        case 'red':    color = '#8c002b'; break;
+        case 'green':  color = '#0b5f4e'; break;
       }
       themeColorMeta.content = color;
     }
@@ -1676,7 +1711,7 @@ function setupThemeSwitcher() {
   panel.addEventListener('click', e => {
     const themeBtn = e.target.closest('.theme-btn');
     if (themeBtn) {
-      applyTheme(themeBtn.dataset.theme);
+      applyTheme(themeBtn.dataset.theme, { fromUser: true });
       panel.classList.remove('show');
     }
   });
@@ -1841,6 +1876,7 @@ function setupModals() {
       const { input, addBtn, cancelBtn, editAllBtn, clearAllBtn } = tsEls();
       tsCtx.editing = on;
       cancelBtn.hidden = !on;
+      hideClearConfirm();
       // 編集中はキャンセル/保存の2ボタンに切り替える（まとめて編集・すべて削除は非表示）
       editAllBtn.hidden = on || getTimestamps(tsCtx.id).length === 0;
       clearAllBtn.hidden = on || getTimestamps(tsCtx.id).length === 0;
@@ -1856,9 +1892,16 @@ function setupModals() {
     };
 
     // 件数が多くても軽いように、リストは変更確定時に1回だけ組み立てる
+    // すべて削除の確認パネル（ブラウザ標準confirmの代替）
+    const hideClearConfirm = () => {
+      const panel = document.getElementById('tsClearConfirm');
+      if (panel && !panel.hidden) panel.hidden = true;
+    };
+
     const renderTsList = () => {
       const { list, editAllBtn, clearAllBtn } = tsEls();
       const items = getTimestamps(tsCtx.id);
+      hideClearConfirm(); // リストが変わったら確認パネルは一旦閉じる
       editAllBtn.hidden = items.length === 0 || tsCtx.editing;
       clearAllBtn.hidden = items.length === 0 || tsCtx.editing;
       if (items.length === 0) {
@@ -1926,11 +1969,20 @@ function setupModals() {
       tsEls().input.focus();
     });
     document.getElementById('tsClearAllBtn').addEventListener('click', () => {
-      const count = getTimestamps(tsCtx.id).length;
-      if (!count) return;
-      if (!confirm(`登録済みのタイムスタンプ${count}件をすべて削除しますか？`)) return;
+      if (getTimestamps(tsCtx.id).length === 0) return;
+      // サイト内の確認パネルを表示（すべて削除ボタンと入れ替え）
+      tsEls().clearAllBtn.hidden = true;
+      const panel = document.getElementById('tsClearConfirm');
+      panel.hidden = false;
+      panel.scrollIntoView({ block: 'nearest' });
+    });
+    document.getElementById('tsClearCancelBtn').addEventListener('click', () => {
+      hideClearConfirm();
+      tsEls().clearAllBtn.hidden = getTimestamps(tsCtx.id).length === 0 || tsCtx.editing;
+    });
+    document.getElementById('tsClearOkBtn').addEventListener('click', () => {
       setTimestampsAll(tsCtx.id, []);
-      renderTsList();
+      renderTsList(); // 内部で確認パネルも閉じる
       syncAfterTsChange();
     });
     document.getElementById('tsInput').addEventListener('input', () => {
@@ -1956,9 +2008,21 @@ function setupModals() {
     const tsModalContent = document.querySelector('#tsModal .ts-modal');
     let kbRafId = 0;
     let lastKb = 0;
+    let lastKbAdjustAt = 0;
+    let kbFollowTimer = 0;
     window.__adjustTsForKeyboard = (kb, visibleHeight) => {
       if (!tsModalContent) return;
       if (kb === lastKb && kb === 0) return; // 変化なしなら何もしない（無駄なstyle書き込み防止）
+      // iOS 26はキーボードのアニメーション中に連続してイベントが届くため、
+      // 連続中（120ms以内）は遷移を切って1:1追従＝ネイティブ同様に滑らかに動かす。
+      // 単発イベント（Android等）はCSS遷移でスムーズに移動させる。
+      const now = performance.now();
+      if (now - lastKbAdjustAt < 120) {
+        tsModalContent.classList.add('ts-kb-follow');
+        clearTimeout(kbFollowTimer);
+        kbFollowTimer = setTimeout(() => tsModalContent.classList.remove('ts-kb-follow'), 180);
+      }
+      lastKbAdjustAt = now;
       if (kb > 0) {
         tsModalContent.style.setProperty('--kb-offset', `${kb}px`);
         if (visibleHeight) tsModalContent.style.maxHeight = `${Math.round(visibleHeight - 16)}px`;
@@ -2127,6 +2191,9 @@ function findHitTime(item, rawQuery) {
 
 function withTimeParam(url, seconds) {
   if (!seconds && seconds !== 0) return url;
+  // t=0 はYouTube（特にアプリ）が「指定なし」とみなして続きから再生してしまうため、
+  // 冒頭指定は t=1 として確実に頭から再生させる
+  if (seconds === 0) seconds = 1;
   try {
     const u = new URL(url);
     u.searchParams.set("t", String(seconds));

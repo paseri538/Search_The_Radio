@@ -5771,6 +5771,7 @@ body[class*="theme-"] .search-card {
 .ts-modal .ts-cancel-btn,
 .ts-modal .ts-edit-all-btn,
 .ts-modal .ts-clear-all-btn,
+.ts-modal .ts-clear-confirm,
 .ts-modal .ts-time,
 .ts-modal .ts-label,
 .ts-modal .ts-empty,
@@ -5813,6 +5814,62 @@ body[class*="theme-"] .search-card {
 .ts-clear-all-btn:active { transform: scale(0.98); }
 @media (hover: hover) {
   .ts-clear-all-btn:hover { background: #fee2e2; border-color: #fca5a5; }
+}
+
+/* --- すべて削除の確認パネル（サイト内confirm） --- */
+.ts-clear-confirm {
+  border: 1.5px solid #fecaca;
+  border-radius: 14px;
+  background: #fff1f2;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.ts-clear-confirm[hidden] { display: none; }
+.ts-clear-confirm-text {
+  margin: 0;
+  color: #b91c1c;
+  font-size: 0.88rem;
+  text-align: center;
+  line-height: 1.6;
+}
+/* スマホ（狭い画面）では「よろしいですか？」を改行して2行で綺麗に見せる */
+@media (max-width: 600px) {
+  .ts-clear-confirm-q { display: block; }
+}
+.ts-clear-confirm-actions { display: flex; gap: 8px; }
+.ts-clear-confirm-actions > button { flex: 1; }
+.ts-clear-cancel-btn {
+  padding: 10px 14px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
+  background: #ffffff;
+  color: #374151;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+@media (hover: hover) {
+  .ts-clear-cancel-btn:hover { background: #f3f4f6; }
+}
+.ts-clear-ok-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 14px;
+  border: none;
+  border-radius: 12px;
+  background: #ef4444;
+  color: #ffffff;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+}
+.ts-clear-ok-btn:active { transform: scale(0.97); }
+@media (hover: hover) {
+  .ts-clear-ok-btn:hover { background: #dc2626; }
 }
 
 .ts-empty {
@@ -5867,19 +5924,13 @@ body[class*="theme-"] .search-card {
     border-bottom: none;
     padding-bottom: env(safe-area-inset-bottom);
     transform: translateY(calc(-1 * var(--kb-offset)));
-    transition: transform 0.2s ease, max-height 0.2s ease;
+    /* ネイティブのシートに近いイージング */
+    transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1), max-height 0.25s cubic-bezier(0.32, 0.72, 0, 1);
+    will-change: transform;
   }
-  .ts-modal .modal-header { padding-top: 22px; }
-  .ts-modal .modal-header::before {
-    content: '';
-    position: absolute;
-    top: 9px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 44px;
-    height: 4px;
-    border-radius: 999px;
-    background: #d1d5db;
+  /* キーボード追従中は遷移を切ってキーボードに1:1で追従させる */
+  .modal-content.ts-modal.ts-kb-follow {
+    transition: none;
   }
 }
 
@@ -5931,7 +5982,12 @@ body.dark-mode .ts-clear-all-btn { background: #000000; border-color: rgba(239,6
 @media (hover: hover) {
   body.dark-mode .ts-clear-all-btn:hover { background: rgba(239,68,68,0.15); }
 }
-body.dark-mode .ts-modal .modal-header::before { background: #2f3336; }
+body.dark-mode .ts-clear-confirm { background: #000000; border-color: rgba(239,68,68,0.45); }
+body.dark-mode .ts-clear-confirm-text { color: #f87171; }
+body.dark-mode .ts-clear-cancel-btn { background: #000000; border-color: #2f3336; color: #e7e9ea; }
+@media (hover: hover) {
+  body.dark-mode .ts-clear-cancel-btn:hover { background: #16181c; }
+}
 
 /* --- カラーテーマ（photo-modalと同じ変数体系に準拠） --- */
 body[class*="theme-"] .modal-content.ts-modal {
@@ -5985,7 +6041,6 @@ body[class*="theme-"] .ts-clear-all-btn {
   body[class*="theme-"] .ts-delete:hover,
   body[class*="theme-"] .ts-clear-all-btn:hover { background: #fee2e2; border-color: #fca5a5; }
 }
-body[class*="theme-"] .ts-modal .modal-header::before { background: var(--history-card-bd); }
 body[class*="theme-"] .fav-count { background: var(--active-filter); color: var(--active-filter-text); }
 body[class*="theme-"] .ts-cancel-btn { border-color: var(--history-card-bd); color: var(--muted); }
 @media (hover: hover) {

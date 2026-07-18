@@ -22,28 +22,38 @@ const CORE_ASSETS = [
   'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css'
 ];
 
-// サムネイル画像（#01〜#107 の連番 + 特別回）。連番はループで生成する。
-const SPECIAL_THUMBS = ['京まふ大作戦2025', 'CENTRALSTATION', '緊急', '京まふ大作戦2022'];
-const THUMBNAIL_ASSETS = [
-  ...Array.from({ length: 107 }, (_, i) => `thumbnails/${String(i + 1).padStart(2, '0')}.jpg`),
-  ...SPECIAL_THUMBS.map(name => `thumbnails/${name}.jpg`)
-];
-
-// インストール時にキャッシュする全アセット
-const PRECACHE_ASSETS = [...CORE_ASSETS, ...THUMBNAIL_ASSETS];
-
-
+// サムネイル画像の一覧は episodes.json から動的に生成する。
+// （エピソード追加時にこのファイルを手で更新する必要がない。
+//   カードの画像パスも main.js が同じ `thumbnails/{episode}.jpg` 規則で組み立てている）
+async function getThumbnailAssets() {
+  try {
+    const res = await fetch('episodes.json', { cache: 'no-cache' });
+    if (!res.ok) return [];
+    const episodes = await res.json();
+    const names = episodes.map(ep => ep && ep.episode).filter(Boolean);
+    return [...new Set(names)].map(name => `thumbnails/${name}.jpg`);
+  } catch (e) {
+    console.warn('[SW] Failed to build thumbnail list from episodes.json:', e);
+    return [];
+  }
+}
 
 // 1. Service Workerのインストール処理
 self.addEventListener('install', (event) => {
   console.log('[SW] Install event');
   self.skipWaiting();
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      console.log('[SW] Caching core assets');
-      return cache.addAll(PRECACHE_ASSETS);
-    })
-  );
+  event.waitUntil((async () => {
+    const cache = await caches.open(CACHE_NAME);
+    console.log('[SW] Caching core assets');
+    await cache.addAll(CORE_ASSETS);
+    // サムネイルは個別に追加する。
+    // （addAllは1件の404で全体が失敗しSWのインストール自体が壊れるため、
+    //   画像が未配置の回があっても他のキャッシュは続行する）
+    const thumbs = await getThumbnailAssets();
+    const results = await Promise.allSettled(thumbs.map(url => cache.add(url)));
+    const failed = results.filter(r => r.status === 'rejected').length;
+    if (failed) console.warn(`[SW] ${failed}/${thumbs.length} thumbnails failed to cache`);
+  })());
 });
 
 // 2. Service Workerの有効化処理

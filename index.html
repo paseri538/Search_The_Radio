@@ -13,6 +13,10 @@
         let bodyBg = '';
         let ballColor = '';
 
+        /* theme-color(=color)はiOSがステータスバーの背景色に使い、その明るさで
+           時計の文字色(黒/白)を自動決定する。明るいテーマ色をそのまま渡すと黒文字に
+           なってしまうため、ステータスバーには白文字判定になる濃色を渡す。
+           ページ背景(bodyBg)は従来どおり明るいテーマ色のまま。main.js側と同期すること。 */
         switch (theme) {
           case 'dark':
             color = '#000000';
@@ -20,33 +24,33 @@
             bodyBg = color;
             break;
           case 'pink':
-            color = '#ff6496';
+            color = '#8f3a55';
             statusBarStyle = 'black-translucent';
-            bodyBg = color;
+            bodyBg = '#ff6496';
             ballColor = '#ffffff';
             break;
           case 'yellow':
-            color = '#fabe00';
-            statusBarStyle = 'default';
-            bodyBg = color;
+            color = '#8a6900';
+            statusBarStyle = 'black-translucent';
+            bodyBg = '#fabe00';
             ballColor = '#ffffff';
             break;
           case 'blue':
-            color = '#006ebe';
+            color = '#00477c';
             statusBarStyle = 'black-translucent';
-            bodyBg = color;
+            bodyBg = '#006ebe';
             ballColor = '#ffffff';
             break;
           case 'red':
-            color = '#e60046';
+            color = '#8c002b';
             statusBarStyle = 'black-translucent';
-            bodyBg = color;
+            bodyBg = '#e60046';
             ballColor = '#ffffff';
             break;
           case 'green':
-            color = '#13a286';
+            color = '#0b5f4e';
             statusBarStyle = 'black-translucent';
-            bodyBg = color;
+            bodyBg = '#13a286';
             ballColor = '#ffffff';
             break;
         }
@@ -345,6 +349,13 @@
       <button id="tsClearAllBtn" class="ts-clear-all-btn" hidden aria-label="登録済みタイムスタンプをすべて削除">
         <i class="fa-solid fa-trash-can"></i><span>すべて削除</span>
       </button>
+      <div id="tsClearConfirm" class="ts-clear-confirm" hidden role="alertdialog" aria-labelledby="tsClearConfirmText">
+        <p id="tsClearConfirmText" class="ts-clear-confirm-text">登録済みのタイムスタンプをすべて削除します。<span class="ts-clear-confirm-q">よろしいですか？</span></p>
+        <div class="ts-clear-confirm-actions">
+          <button id="tsClearCancelBtn" class="ts-clear-cancel-btn">キャンセル</button>
+          <button id="tsClearOkBtn" class="ts-clear-ok-btn"><i class="fa-solid fa-trash-can"></i><span>すべて削除</span></button>
+        </div>
+      </div>
       <p class="ts-hint">時間をタップするとその場面からYouTubeで再生されます。<br>1件でも登録するとお気に入り（★）に表示されます。</p>
     </div>
   </div>
