@@ -804,6 +804,19 @@ function updateFavStar(li) {
   }
 }
 
+// エピソードのゲスト/出演者テキスト（カードとタイムスタンプモーダルで共用）
+function getEpisodeGuestText(it) {
+  if (it.episode.startsWith("京まふ大作戦") || it.episode === "CENTRALSTATION") {
+    const guestList = Array.isArray(it.guest) ? it.guest : [it.guest].filter(Boolean);
+    const members = [...new Set(["青山吉能", ...guestList])];
+    return "出演：" + members.join("、");
+  }
+  if (Array.isArray(it.guest)) return "ゲスト：" + it.guest.join("、");
+  if (it.guest === "青山吉能") return "パーソナリティ：青山吉能";
+  if (it.guest && it.guest !== "その他") return `ゲスト：${it.guest}`;
+  return "";
+}
+
 function renderResults(arr, page = 1, originalQuery = null, suggestions = []) {
   const ul = document.getElementById("results");
   ul.innerHTML = "";
@@ -928,20 +941,7 @@ function renderResults(arr, page = 1, originalQuery = null, suggestions = []) {
     }
     const finalLink = hit ? withTimeParam(it.link, hit.seconds) : it.link;
 
-    let guestText = "";
-    if (it.episode.startsWith("京まふ大作戦") || it.episode === "CENTRALSTATION") {
-      const guestList = Array.isArray(it.guest) ? it.guest : [it.guest].filter(Boolean);
-      const membersSet = new Set(["青山吉能", ...guestList]);
-      const members = [...membersSet];
-      guestText = "出演：" + members.join("、");
-    }
-    else if (Array.isArray(it.guest)) {
-      guestText = "ゲスト：" + it.guest.join("、");
-    } else if (it.guest === "青山吉能") {
-      guestText = "パーソナリティ：青山吉能";
-    } else if (it.guest && it.guest !== "その他") {
-      guestText = `ゲスト：${it.guest}`;
-    }
+    let guestText = getEpisodeGuestText(it);
 
     if (isLuckyButtonSearch) {
       const episodeKey = it.episode === "02" && it.title.includes("京まふ") ? "京まふ" : it.episode;
@@ -1917,6 +1917,50 @@ function setupModals() {
       tsCtx = { id: videoId, link, cardEl, durationSec: durationToSec(duration), editing: false, wasFav: isFavorite(videoId) };
       document.getElementById('tsModalTitle').innerHTML =
         `${title.trim().replace(/([#A-Za-z0-9:]+)/g, '<span class="impact-number">$1</span>')} タイムスタンプ`;
+
+      // どの回への登録か一目で分かるよう、トップ画面と全く同じエピソードカードを表示する。
+      // （renderResultsのカードと同一のクラス・構造を使い、同じCSSを適用させる。
+      //   ★ボタン/リンクボタン等の操作系だけ除外）
+      const epCard = document.getElementById('tsEpisodeCard');
+      if (epCard) {
+        const epItem = data.find(it => getVideoId(it.link) === videoId);
+        if (epItem) {
+          const hashOnly = getHashNumber(epItem.title);
+          const guestText = getEpisodeGuestText(epItem);
+          epCard.innerHTML = `
+  <li class="episode-item" style="--i:0;">
+    <a href="${epItem.link}" target="_blank" rel="noopener" style="display:flex;text-decoration:none;color:inherit;align-items:center;min-width:0;">
+      <div class="thumb-col">
+        <img src="thumbnails/${epItem.episode}.jpg" class="thumbnail" alt="サムネイル：${hashOnly}"
+             loading="lazy" decoding="async"
+             onload="this.classList.add('loaded')"
+             onerror="this.onerror=null; this.src='./thumb-fallback.svg'; this.classList.add('loaded');">
+      </div>
+      <div style="min-width:0;">
+        <div class="d-flex align-items-start justify-content-between" style="min-width:0;">
+          <h5 class="mb-1">
+            ${
+              hashOnly.startsWith('#')
+                ? `<span class="impact-number">${hashOnly}</span>`
+                : hashOnly.replace(/([A-Za-z0-9]+)/g, '<span class="impact-number">$1</span>')
+            }${/　/.test(epItem.title) ? "<br>" : " "}
+            <span class="guest-one-line" aria-label="${guestText}" style="visibility: hidden;">${guestText}</span>
+          </h5>
+        </div>
+        <div class="episode-meta">
+          <div class="meta-one-line" style="visibility: hidden;">公開日時：<span class="impact-number">${epItem.date}</span></div>
+          <div class="meta-one-line" style="visibility: hidden;">動画時間：${(epItem.duration ? `<span class="impact-number">${epItem.duration}</span>` : '?')}</div>
+        </div>
+      </div>
+    </a>
+  </li>`;
+          epCard.hidden = false;
+          // モーダル表示後に文字幅を計測（トップ画面と同じ縮小フィットを適用する）
+          requestAnimationFrame(() => requestAnimationFrame(fitGuestLines));
+        } else {
+          epCard.hidden = true;
+        }
+      }
       setEditingMode(false);
       renderTsList();
       openTs();
