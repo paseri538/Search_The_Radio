@@ -6016,12 +6016,30 @@ body[class*="theme-"] .search-card {
     width: 100vw;
     max-width: 100vw;
     margin-bottom: 0;
-    /* dvhはキーボードでレイアウトビューポートが縮む(resizes-content)環境で一緒に縮むため、
-       キーボード表示中もシート全体が可視領域内に収まる。transform等のJS補正は廃止。 */
     max-height: 90dvh;
     border-radius: 24px 24px 0 0;
     border-bottom: none;
     padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  /* 入力中（コンポーズモード）: シートを全画面化し、入力欄を画面上部に置く。
+     入力欄が常に画面上部にあるため、キーボードがどう出ても物理的に隠れない。
+     ビューポート計算での位置合わせは実機iOSで不安定なため行わない。 */
+  .modal-content.ts-modal.ts-typing {
+    height: 100dvh;
+    max-height: 100dvh;
+    border-radius: 0;
+  }
+  .ts-typing .modal-header {
+    padding-top: max(8px, env(safe-area-inset-top)); /* ステータスバーと重ならないように */
+  }
+  /* 入力に不要な要素は畳んで、入力欄と登録/保存ボタンだけに集中させる */
+  .ts-typing .ts-episode-card,
+  .ts-typing .ts-list,
+  .ts-typing .ts-list-actions,
+  .ts-typing .ts-clear-confirm,
+  .ts-typing .ts-hint {
+    display: none !important;
   }
 }
 

@@ -2095,9 +2095,11 @@ function setupModals() {
     const submitTs = () => {
       const { input } = tsEls();
       const text = input.value;
-      if (!text.trim() && !tsCtx.editing) return;
+      // 空のまま登録タップ: キーボードだけ閉じる
+      // （iOSはボタンタップで入力欄のフォーカスが外れないため、明示的にblurする）
+      if (!text.trim() && !tsCtx.editing) { input.blur(); return; }
       const { entries, errors } = parseTsLines(text, tsCtx.durationSec);
-      if (errors.length > 0) { showTsError(errors); return; }
+      if (errors.length > 0) { showTsError(errors); return; } // エラー時は入力を続けられるようフォーカス維持
       if (tsCtx.editing) {
         setTimestampsAll(tsCtx.id, entries); // まとめて編集: 全置換
         setEditingMode(false);
@@ -2109,10 +2111,16 @@ function setupModals() {
       clearTsError();
       renderTsList();
       syncAfterTsChange();
+      // 登録/保存成功: キーボードを閉じて結果の一覧を見せる
+      // （iOSはボタンタップでblurしないため明示的に閉じないとコンポーズモードが残る）
+      input.blur();
     };
 
     document.getElementById('tsAddBtn').addEventListener('click', submitTs);
-    document.getElementById('tsCancelBtn').addEventListener('click', () => setEditingMode(false));
+    document.getElementById('tsCancelBtn').addEventListener('click', () => {
+      setEditingMode(false);
+      tsEls().input.blur(); // キャンセル時もキーボードを閉じて一覧に戻す
+    });
     document.getElementById('tsEditAllBtn').addEventListener('click', () => {
       setEditingMode(true);
       tsEls().input.focus();
@@ -2195,70 +2203,42 @@ function setupModals() {
       }
     });
 
-    /* ソフトキーボード対応（iOS 26 Safari/PWA・Android Chrome）:
-     * 基本は viewport meta の interactive-widget=resizes-content に任せる。
-     * 対応環境ではキーボード表示時にレイアウトビューポート自体が縮むため、
-     * 下部固定のシートがブラウザネイティブでキーボードの真上に配置される（JS補正不要）。
-     * 背景ページはモーダル表示中 body固定(ts-kb-lock)しているため動かない。
-     *
-     * 非対応環境向けフォールバック: visualViewportから求めた「可視領域の下端」を
-     * オーバーレイの高さに設定するだけの最小補正（flex-endのシートがキーボード直上に座る）。
-     * transform持ち上げ・全画面ドッキング等の複合補正は実機iOSで不安定だったため全廃。 */
-    const tsOverlayEl = document.getElementById('tsModal');
+    /* キーボード対応（iOS Safari/PWA・Android共通の「コンポーズモード」方式）:
+     * visualViewport等のビューポート計算による位置合わせは、実機iOSのパンや
+     * offsetTop残留バグ等で不安定だったため全廃した。
+     * 代わりに「入力中はシートを全画面化し、入力欄を画面上部に置く」。
+     * 入力欄が常に画面上部にあるため、キーボードがどう出ても物理的に隠れない。
+     * （Android等のresizes-content対応環境ではdvhが縮み、同じく自然に収まる） */
     const tsSheetEl = document.querySelector('#tsModal .ts-modal');
-    let kbRafId = 0;
-    // (kb, 可視高さ, パンオフセット) を反映。テストから直接呼べるよう公開している。
-    window.__adjustTsForKeyboard = (kb, visibleHeight = 0, offsetTop = 0) => {
-      if (!tsOverlayEl || !tsSheetEl) return;
-      if (kb > 4 && visibleHeight) {
-        const visibleBottom = Math.round(offsetTop + visibleHeight); // レイアウト座標での可視領域下端
-        tsOverlayEl.style.height = `${visibleBottom}px`;
-        tsSheetEl.style.maxHeight = `${Math.max(220, Math.round(visibleHeight) - 8)}px`; // シート全体を可視領域内に
-      } else {
-        tsOverlayEl.style.height = '';
-        tsSheetEl.style.maxHeight = '';
-      }
+    const tsInputEl = document.getElementById('tsInput');
+    let typingEndTimer = 0;
+    const startTypingMode = () => {
+      if (!window.matchMedia('(max-width: 600px)').matches) return; // ボトムシート時のみ
+      clearTimeout(typingEndTimer);
+      tsSheetEl.classList.add('ts-typing');
     };
-    const scheduleKbAdjust = () => {
-      if (kbRafId) return; // 1フレーム1回に間引き
-      kbRafId = requestAnimationFrame(() => {
-        kbRafId = 0;
-        if (!tsOverlayEl.classList.contains('show')) { window.__adjustTsForKeyboard(0); return; }
-        const vv = window.visualViewport;
-        if (!vv) return;
-        // resizes-content対応環境では innerHeight 自体が縮むので kb≒0 → 補正なし（ネイティブ配置）。
-        // 非対応環境でのみ kb>0 となり、フォールバック補正が効く。
-        // 補正は入力欄フォーカス中のみ（iOSのoffsetTop残留バグの影響を受けないように）。
-        const inputFocused = document.activeElement === document.getElementById('tsInput');
-        const kbRaw = Math.max(0, Math.round(window.innerHeight - vv.height - vv.offsetTop));
-        const kb = inputFocused ? kbRaw : 0;
-        window.__adjustTsForKeyboard(kb, vv.height, vv.offsetTop);
-        if (kb > 4 && inputFocused) {
-          document.getElementById('tsInput').scrollIntoView({ block: 'nearest' });
-        }
-      });
+    const endTypingMode = () => {
+      clearTimeout(typingEndTimer);
+      // blur直後のタップ（登録ボタン等）がレイアウト変化で外れないよう少し待ってから戻す
+      typingEndTimer = setTimeout(() => tsSheetEl.classList.remove('ts-typing'), 150);
     };
-    if (window.visualViewport) {
-      window.visualViewport.addEventListener('resize', scheduleKbAdjust);
-      window.visualViewport.addEventListener('scroll', scheduleKbAdjust);
-    }
-    // VVイベントとフォーカスの前後関係は環境差があるため、フォーカス系でも追従させる
-    document.getElementById('tsInput').addEventListener('focus', () => {
-      scheduleKbAdjust();
-      setTimeout(scheduleKbAdjust, 300); // キーボードアニメーション完了後にもう一度
-      setTimeout(scheduleKbAdjust, 700);
+    tsInputEl.addEventListener('focus', startTypingMode);
+    tsInputEl.addEventListener('blur', () => {
+      endTypingMode();
+      setTimeout(restoreTsScroll, 150); // 万一ページがずらされていても元へ
     });
-    document.getElementById('tsInput').addEventListener('blur', () => {
-      setTimeout(() => {
-        window.__adjustTsForKeyboard(0);
-        restoreTsScroll();
-        scheduleKbAdjust();
-      }, 120);
+    // iOSはボタンや余白をタップしても入力欄のフォーカスが外れないため、
+    // コンポーズモード中にシート内の入力欄以外へ触れたらキーボードを閉じる
+    tsSheetEl.addEventListener('pointerdown', (e) => {
+      if (!tsSheetEl.classList.contains('ts-typing')) return;
+      if (e.target === tsInputEl || tsInputEl.contains(e.target)) return;
+      tsInputEl.blur();
     });
     // モーダルを閉じる操作時はキーボードも閉じ、body固定を解除して位置を戻す
     const resetTsKeyboard = () => {
-      document.getElementById('tsInput')?.blur();
-      window.__adjustTsForKeyboard(0);
+      tsInputEl?.blur();
+      clearTimeout(typingEndTimer);
+      tsSheetEl.classList.remove('ts-typing');
       unlockTsBody();
       // キーボードの閉じアニメーション後にも復元（blur経由と二重でも無害）
       setTimeout(restoreTsScroll, 150);
