@@ -1117,9 +1117,12 @@ function fitGuestLines() {
     const paddingLeft = parseFloat(compStyle.paddingLeft) || 0;
     const paddingRight = parseFloat(compStyle.paddingRight) || 0;
     const parentWidth = parent.clientWidth - paddingLeft - paddingRight;
-    
+
     if (parentWidth <= 10) {
-      needsRetry = true;
+      // display:none で隠れている行（閉じたタイムスタンプモーダル内のエピソードカード等）は
+      // 幅が永遠に0のままなので再試行対象にしない。これを再試行し続けると
+      // 100ms間隔の無限リフローループになり、低速端末で常時カクつく原因になる。
+      if (line.offsetParent !== null) needsRetry = true;
       return null;
     }
 
@@ -1194,8 +1197,11 @@ function fitGuestLines() {
     });
   });
 
-  if (needsRetry) {
+  // 保険: 万一の再試行も上限を設け、無限ループを構造的に不可能にする
+  if (needsRetry && (fitGuestLines._retries = (fitGuestLines._retries || 0) + 1) <= 30) {
     setTimeout(fitGuestLines, 100);
+  } else if (!needsRetry) {
+    fitGuestLines._retries = 0;
   }
 }
 
