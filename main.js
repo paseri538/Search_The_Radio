@@ -2195,64 +2195,45 @@ function setupModals() {
       }
     });
 
-    /* ソフトキーボード対応（iOS 26 Safari / Android Chrome 両対応）:
-     * ・visualViewport でキーボードによる可視領域の縮みを検知し、差分だけシートを持ち上げる
-     * ・レイアウトビューポート自体が縮む環境（interactive-widget=resizes-content が効く環境）では kb≒0 となり補正不要
-     * ・イベントは requestAnimationFrame で間引き、キーボードのアニメーション中も軽く滑らかに追従する
-     * ・キーボード表示後は入力欄をシート内スクロールで見える位置へ */
-    const tsModalContent = document.querySelector('#tsModal .ts-modal');
+    /* ソフトキーボード対応（iOS 26 Safari/PWA・Android Chrome）:
+     * 基本は viewport meta の interactive-widget=resizes-content に任せる。
+     * 対応環境ではキーボード表示時にレイアウトビューポート自体が縮むため、
+     * 下部固定のシートがブラウザネイティブでキーボードの真上に配置される（JS補正不要）。
+     * 背景ページはモーダル表示中 body固定(ts-kb-lock)しているため動かない。
+     *
+     * 非対応環境向けフォールバック: visualViewportから求めた「可視領域の下端」を
+     * オーバーレイの高さに設定するだけの最小補正（flex-endのシートがキーボード直上に座る）。
+     * transform持ち上げ・全画面ドッキング等の複合補正は実機iOSで不安定だったため全廃。 */
+    const tsOverlayEl = document.getElementById('tsModal');
+    const tsSheetEl = document.querySelector('#tsModal .ts-modal');
     let kbRafId = 0;
-    let lastKb = 0;
-    let lastKbAdjustAt = 0;
-    let kbFollowTimer = 0;
-    // キーボード表示中はtransformでの持ち上げをやめ、シートを可視領域
-    // (visualViewport)の位置とサイズに直接ドッキングさせる。
-    // iOSのビジュアルビューポートのパンやアクセサリバーの高さ誤差など、
-    // 位置計算のズレ要因をすべて排除できる（全画面エディタ的な表示になる）。
-    window.__adjustTsForKeyboard = (kb, visibleHeight, offsetTop = 0) => {
-      if (!tsModalContent) return;
-      if (kb === lastKb && kb === 0) return; // 変化なしなら何もしない（無駄なstyle書き込み防止）
-      // キーボードのアニメーション中は連続してイベントが届くため、
-      // 連続中（120ms以内）は遷移を切って1:1追従させる。
-      const now = performance.now();
-      if (now - lastKbAdjustAt < 120) {
-        tsModalContent.classList.add('ts-kb-follow');
-        clearTimeout(kbFollowTimer);
-        kbFollowTimer = setTimeout(() => tsModalContent.classList.remove('ts-kb-follow'), 180);
-      }
-      lastKbAdjustAt = now;
-      if (kb > 0 && visibleHeight) {
-        tsModalContent.classList.add('ts-kb-docked');
-        tsModalContent.style.top = `${Math.max(0, Math.round(offsetTop))}px`;
-        tsModalContent.style.height = `${Math.round(visibleHeight)}px`;
-        tsModalContent.style.maxHeight = `${Math.round(visibleHeight)}px`;
+    // (kb, 可視高さ, パンオフセット) を反映。テストから直接呼べるよう公開している。
+    window.__adjustTsForKeyboard = (kb, visibleHeight = 0, offsetTop = 0) => {
+      if (!tsOverlayEl || !tsSheetEl) return;
+      if (kb > 4 && visibleHeight) {
+        const visibleBottom = Math.round(offsetTop + visibleHeight); // レイアウト座標での可視領域下端
+        tsOverlayEl.style.height = `${visibleBottom}px`;
+        tsSheetEl.style.maxHeight = `${Math.max(220, Math.round(visibleHeight) - 8)}px`; // シート全体を可視領域内に
       } else {
-        tsModalContent.classList.remove('ts-kb-docked');
-        tsModalContent.style.top = '';
-        tsModalContent.style.height = '';
-        tsModalContent.style.maxHeight = '';
+        tsOverlayEl.style.height = '';
+        tsSheetEl.style.maxHeight = '';
       }
-      lastKb = kb;
     };
     const scheduleKbAdjust = () => {
       if (kbRafId) return; // 1フレーム1回に間引き
       kbRafId = requestAnimationFrame(() => {
         kbRafId = 0;
-        const tsModalEl = document.getElementById('tsModal');
-        if (!tsModalEl || !tsModalEl.classList.contains('show')) {
-          window.__adjustTsForKeyboard(0);
-          return;
-        }
+        if (!tsOverlayEl.classList.contains('show')) { window.__adjustTsForKeyboard(0); return; }
         const vv = window.visualViewport;
         if (!vv) return;
-        // iOS 26には「キーボードを閉じた後も offsetTop が0に戻らない」既知バグがあるため、
-        // キーボード補正は「入力欄がフォーカスされている間」だけ有効にする（＝ずれた値を信用しない）
+        // resizes-content対応環境では innerHeight 自体が縮むので kb≒0 → 補正なし（ネイティブ配置）。
+        // 非対応環境でのみ kb>0 となり、フォールバック補正が効く。
+        // 補正は入力欄フォーカス中のみ（iOSのoffsetTop残留バグの影響を受けないように）。
         const inputFocused = document.activeElement === document.getElementById('tsInput');
         const kbRaw = Math.max(0, Math.round(window.innerHeight - vv.height - vv.offsetTop));
         const kb = inputFocused ? kbRaw : 0;
-        window.__adjustTsForKeyboard(kb > 4 ? kb : 0, vv.height, vv.offsetTop);
-        // 入力中はテキストエリアが隠れないようシート内でスクロール
-        if (kb > 4 && document.activeElement === document.getElementById('tsInput')) {
+        window.__adjustTsForKeyboard(kb, vv.height, vv.offsetTop);
+        if (kb > 4 && inputFocused) {
           document.getElementById('tsInput').scrollIntoView({ block: 'nearest' });
         }
       });
@@ -2261,21 +2242,16 @@ function setupModals() {
       window.visualViewport.addEventListener('resize', scheduleKbAdjust);
       window.visualViewport.addEventListener('scroll', scheduleKbAdjust);
     }
-    // iOSはVVイベントの発火がフォーカスと前後することがあるため、フォーカス系でも追従させる
+    // VVイベントとフォーカスの前後関係は環境差があるため、フォーカス系でも追従させる
     document.getElementById('tsInput').addEventListener('focus', () => {
       scheduleKbAdjust();
       setTimeout(scheduleKbAdjust, 300); // キーボードアニメーション完了後にもう一度
       setTimeout(scheduleKbAdjust, 700);
     });
     document.getElementById('tsInput').addEventListener('blur', () => {
-      // iOS 26バグ対策: キーボードが閉じた後に固定要素がずれたままになることがあるため、
-      // 補正を即時解除し、±1pxの微小スクロールでSafariにビューポートを再計算させる
       setTimeout(() => {
         window.__adjustTsForKeyboard(0);
-        if (document.getElementById('tsModal')?.classList.contains('show')) {
-          window.scrollBy(0, 1); window.scrollBy(0, -1);
-        }
-        restoreTsScroll(); // キーボードでページがずらされていたら元の位置へ戻す
+        restoreTsScroll();
         scheduleKbAdjust();
       }, 120);
     });

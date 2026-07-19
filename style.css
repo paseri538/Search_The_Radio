@@ -5589,7 +5589,6 @@ body[class*="theme-"] .search-card {
    PC/iPad: 中央モーダル / スマホ: ボトムシート
    =================================================== */
 .modal-content.ts-modal {
-  --kb-offset: 0px; /* ソフトキーボード表示時にJSがセット */
   background: #ffffff;
   width: min(480px, 92vw);
   max-height: 84vh;
@@ -6017,33 +6016,12 @@ body[class*="theme-"] .search-card {
     width: 100vw;
     max-width: 100vw;
     margin-bottom: 0;
-    max-height: 90dvh; /* エピソードカード分の余裕を確保（キーボード表示時の実寸制限はJS側でinline指定） */
+    /* dvhはキーボードでレイアウトビューポートが縮む(resizes-content)環境で一緒に縮むため、
+       キーボード表示中もシート全体が可視領域内に収まる。transform等のJS補正は廃止。 */
+    max-height: 90dvh;
     border-radius: 24px 24px 0 0;
     border-bottom: none;
     padding-bottom: env(safe-area-inset-bottom);
-    transform: translateY(calc(-1 * var(--kb-offset)));
-    /* ネイティブのシートに近いイージング */
-    transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1), max-height 0.25s cubic-bezier(0.32, 0.72, 0, 1);
-    will-change: transform;
-  }
-  /* キーボード追従中は遷移を切ってキーボードに1:1で追従させる */
-  .modal-content.ts-modal.ts-kb-follow {
-    transition: none;
-  }
-  /* キーボード表示中: シートを可視領域(visualViewport)へ全面ドッキング。
-     top/height はJSが実測値を設定する。transformの持ち上げは使わない。 */
-  .modal-content.ts-modal.ts-kb-docked {
-    position: fixed;
-    left: 0;
-    right: 0;
-    margin: 0;
-    border-radius: 0;
-    padding-bottom: 0;
-    transform: none !important;
-  }
-  /* ドッキング中が画面最上部の場合、ヘッダーがステータスバーと重ならないように */
-  .modal-content.ts-modal.ts-kb-docked .modal-header {
-    padding-top: max(8px, env(safe-area-inset-top));
   }
 }
 
