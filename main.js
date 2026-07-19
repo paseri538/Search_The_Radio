@@ -1883,15 +1883,34 @@ function setupModals() {
     // iOSはキーボード表示時にスクロールロックを無視してページを動かすため、
     // モーダルを開いた時点の位置を記憶し、キーボード終了時に戻す
     let tsSavedScrollY = 0;
+    const instantScrollTo = (y) => {
+      // scroll-behavior: smooth の影響を受けず一瞬で移動する
+      const html = document.documentElement;
+      const prev = html.style.scrollBehavior;
+      html.style.scrollBehavior = 'auto';
+      window.scrollTo(0, y);
+      html.style.scrollBehavior = prev;
+    };
     const restoreTsScroll = () => {
       if (Math.abs(window.scrollY - tsSavedScrollY) > 1) {
-        // scroll-behavior: smooth の影響を受けず一瞬で戻す
-        const html = document.documentElement;
-        const prev = html.style.scrollBehavior;
-        html.style.scrollBehavior = 'auto';
-        window.scrollTo(0, tsSavedScrollY);
-        html.style.scrollBehavior = prev;
+        instantScrollTo(tsSavedScrollY);
       }
+    };
+
+    // スマホ（ボトムシート表示）ではさらに強い固定を使う:
+    // bodyをposition:fixedにすると、iOSが「入力欄を見せるため」に行う
+    // ページスクロール自体が物理的に不可能になり、背景が一切動かなくなる。
+    const lockTsBody = () => {
+      if (document.body.classList.contains('ts-kb-lock')) return;
+      if (!window.matchMedia('(max-width: 600px)').matches) return;
+      document.body.style.top = `-${tsSavedScrollY}px`;
+      document.body.classList.add('ts-kb-lock');
+    };
+    const unlockTsBody = () => {
+      if (!document.body.classList.contains('ts-kb-lock')) return;
+      document.body.classList.remove('ts-kb-lock');
+      document.body.style.top = '';
+      instantScrollTo(tsSavedScrollY); // 固定解除で0に飛ぶので即座に元の位置へ
     };
 
     const tsEls = () => ({
@@ -2020,6 +2039,7 @@ function setupModals() {
     window.openTsModal = (videoId, title, link, cardEl, duration) => {
       if (!videoId) return;
       tsSavedScrollY = window.scrollY;
+      lockTsBody();
       tsCtx = { id: videoId, link, cardEl, durationSec: durationToSec(duration), editing: false, wasFav: isFavorite(videoId) };
       document.getElementById('tsModalTitle').innerHTML =
         `${title.trim().replace(/([#A-Za-z0-9:]+)/g, '<span class="impact-number">$1</span>')} タイムスタンプ`;
@@ -2252,10 +2272,11 @@ function setupModals() {
         scheduleKbAdjust();
       }, 120);
     });
-    // モーダルを閉じる操作時はキーボードも閉じ、オフセットとスクロール位置を戻す
+    // モーダルを閉じる操作時はキーボードも閉じ、body固定を解除して位置を戻す
     const resetTsKeyboard = () => {
       document.getElementById('tsInput')?.blur();
       window.__adjustTsForKeyboard(0);
+      unlockTsBody();
       // キーボードの閉じアニメーション後にも復元（blur経由と二重でも無害）
       setTimeout(restoreTsScroll, 150);
       setTimeout(restoreTsScroll, 450);

@@ -3350,6 +3350,17 @@ html.scroll-locked {
   overflow: hidden !important;
 }
 
+/* タイムスタンプモーダル表示中（スマホ）: iOSはoverflow:hiddenを無視して
+   キーボード表示時にページをスクロールさせるため、bodyごと固定して
+   背景ページが物理的に動けないようにする（topはJSが -scrollY を設定） */
+body.ts-kb-lock {
+  position: fixed !important;
+  left: 0 !important;
+  right: 0 !important;
+  width: 100% !important;
+  overflow: hidden !important;
+}
+
 .sort-wrapper {
   display: block;
   position: relative;
