@@ -2205,12 +2205,15 @@ function setupModals() {
     let lastKb = 0;
     let lastKbAdjustAt = 0;
     let kbFollowTimer = 0;
-    window.__adjustTsForKeyboard = (kb, visibleHeight) => {
+    // キーボード表示中はtransformでの持ち上げをやめ、シートを可視領域
+    // (visualViewport)の位置とサイズに直接ドッキングさせる。
+    // iOSのビジュアルビューポートのパンやアクセサリバーの高さ誤差など、
+    // 位置計算のズレ要因をすべて排除できる（全画面エディタ的な表示になる）。
+    window.__adjustTsForKeyboard = (kb, visibleHeight, offsetTop = 0) => {
       if (!tsModalContent) return;
       if (kb === lastKb && kb === 0) return; // 変化なしなら何もしない（無駄なstyle書き込み防止）
-      // iOS 26はキーボードのアニメーション中に連続してイベントが届くため、
-      // 連続中（120ms以内）は遷移を切って1:1追従＝ネイティブ同様に滑らかに動かす。
-      // 単発イベント（Android等）はCSS遷移でスムーズに移動させる。
+      // キーボードのアニメーション中は連続してイベントが届くため、
+      // 連続中（120ms以内）は遷移を切って1:1追従させる。
       const now = performance.now();
       if (now - lastKbAdjustAt < 120) {
         tsModalContent.classList.add('ts-kb-follow');
@@ -2218,11 +2221,15 @@ function setupModals() {
         kbFollowTimer = setTimeout(() => tsModalContent.classList.remove('ts-kb-follow'), 180);
       }
       lastKbAdjustAt = now;
-      if (kb > 0) {
-        tsModalContent.style.setProperty('--kb-offset', `${kb}px`);
-        if (visibleHeight) tsModalContent.style.maxHeight = `${Math.round(visibleHeight - 16)}px`;
+      if (kb > 0 && visibleHeight) {
+        tsModalContent.classList.add('ts-kb-docked');
+        tsModalContent.style.top = `${Math.max(0, Math.round(offsetTop))}px`;
+        tsModalContent.style.height = `${Math.round(visibleHeight)}px`;
+        tsModalContent.style.maxHeight = `${Math.round(visibleHeight)}px`;
       } else {
-        tsModalContent.style.setProperty('--kb-offset', '0px');
+        tsModalContent.classList.remove('ts-kb-docked');
+        tsModalContent.style.top = '';
+        tsModalContent.style.height = '';
         tsModalContent.style.maxHeight = '';
       }
       lastKb = kb;
@@ -2243,7 +2250,7 @@ function setupModals() {
         const inputFocused = document.activeElement === document.getElementById('tsInput');
         const kbRaw = Math.max(0, Math.round(window.innerHeight - vv.height - vv.offsetTop));
         const kb = inputFocused ? kbRaw : 0;
-        window.__adjustTsForKeyboard(kb > 4 ? kb : 0, vv.height);
+        window.__adjustTsForKeyboard(kb > 4 ? kb : 0, vv.height, vv.offsetTop);
         // 入力中はテキストエリアが隠れないようシート内でスクロール
         if (kb > 4 && document.activeElement === document.getElementById('tsInput')) {
           document.getElementById('tsInput').scrollIntoView({ block: 'nearest' });
