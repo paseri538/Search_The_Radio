@@ -103,6 +103,12 @@ function durationToSec(str) {
   if (!m) return null;
   return (m[1] ? parseInt(m[1], 10) * 3600 : 0) + parseInt(m[2], 10) * 60 + parseInt(m[3], 10);
 }
+// 全エピソードのタイムスタンプ（＝お気に入り）を一括削除する
+function clearAllTimestamps() {
+  for (const key of Object.keys(timestamps)) delete timestamps[key];
+  saveTimestamps();
+}
+
 function removeTimestamp(id, index) {
   if (!timestamps[id]) return;
   timestamps[id].splice(index, 1);
@@ -621,7 +627,8 @@ function getFilteredData(query) {
         }
     }
     const searchWords = [...searchTerms].filter(Boolean);
-    res = res.filter(it => searchWords.some(word => it.searchText.includes(word)));
+    // サイト側キーワードに加え、ユーザーが登録したタイムスタンプのメモも検索対象にする
+    res = res.filter(it => searchWords.some(word => it.searchText.includes(word)) || matchesUserMemo(it, searchWords));
   }
 
   if (selectedGuests.length) {
@@ -826,15 +833,30 @@ function renderResults(arr, page = 1, originalQuery = null, suggestions = []) {
     liFav.className = 'favorites-title-header';
     liFav.style.gridColumn = "1 / -1";
     
-    // ★タイトルとボタンをセットで表示
+    // ★タイトルとボタンをセットで表示（お気に入りがある時だけ一括削除ボタンも出す）
+    const hasFavorites = Object.keys(timestamps).length > 0;
     liFav.innerHTML = `
       <div class="favorites-header-layout">
         <div class="favorites-title-inner">
           <span>★お気に入り★</span>
         </div>
-        <button id="favGoHomeBtn" class="fav-home-btn">
-          <i class="fa-solid fa-rotate-left"></i> トップへ戻る
-        </button>
+        <div class="fav-header-actions">
+          <button id="favGoHomeBtn" class="fav-home-btn">
+            <i class="fa-solid fa-rotate-left"></i> トップへ戻る
+          </button>
+          ${hasFavorites ? `
+          <button id="favClearAllBtn" class="fav-clear-btn" aria-label="お気に入りをすべて削除">
+            <i class="fa-solid fa-trash-can"></i> すべて削除
+          </button>` : ''}
+        </div>
+        ${hasFavorites ? `
+        <div id="favClearConfirm" class="ts-clear-confirm fav-clear-confirm" hidden role="alertdialog" aria-labelledby="favClearConfirmText">
+          <p id="favClearConfirmText" class="ts-clear-confirm-text">すべてのお気に入りと登録済みタイムスタンプを削除します。<span class="ts-clear-confirm-q">よろしいですか？</span></p>
+          <div class="ts-clear-confirm-actions">
+            <button id="favClearCancelBtn" class="ts-clear-cancel-btn">キャンセル</button>
+            <button id="favClearOkBtn" class="ts-clear-ok-btn"><i class="fa-solid fa-trash-can"></i><span>すべて削除</span></button>
+          </div>
+        </div>` : ''}
       </div>
     `;
     ul.appendChild(liFav);
@@ -1177,6 +1199,57 @@ function fitGuestLines() {
   }
 }
 
+// 「！」「（）」など全角約物はグリフ内に余白を持つため、レイアウト上は中央でも
+// 文字の実体（インク）が左右にずれて見える。Canvasで実描画範囲を計測し、
+// ずれを打ち消す補正量(px)を返す。（正の値 = 右へ動かすべき）
+let labelMeasureCtx = null;
+function getOpticalXOffset(text, font) {
+  try {
+    if (!labelMeasureCtx) labelMeasureCtx = document.createElement('canvas').getContext('2d');
+    labelMeasureCtx.font = font;
+    const m = labelMeasureCtx.measureText(text);
+    if (m.actualBoundingBoxLeft === undefined) return 0;
+    const inkCenter = (m.actualBoundingBoxRight - m.actualBoundingBoxLeft) / 2;
+    const boxCenter = m.width / 2;
+    const offset = boxCenter - inkCenter; // インクが左寄りなら正（右へ寄せる）
+    return Math.max(-6, Math.min(6, offset)); // 異常値ガード
+  } catch (_) { return 0; }
+}
+
+// フィルタボタンの長いラベルを、文字サイズは変えずに水平圧縮(scaleX)で収める。
+// あわせて全ラベルをインク基準で光学センタリングする。
+function fitFilterButtons() {
+  document.querySelectorAll('.guest-button, .btn-corner, .btn-year').forEach(btn => {
+    // 初回のみテキストを計測用spanで包む
+    let span = btn.querySelector('.btn-label-fit');
+    if (!span) {
+      if (btn.childElementCount > 0) return; // テキスト以外を含む想定外の構造はスキップ
+      span = document.createElement('span');
+      span.className = 'btn-label-fit';
+      span.textContent = btn.textContent;
+      btn.textContent = '';
+      btn.appendChild(span);
+    }
+    span.style.transform = '';
+    const styles = window.getComputedStyle(btn);
+    const BREATHING = 28; // 圧縮後も左右に14pxずつの余白が残るようにする
+    const avail = btn.clientWidth
+      - (parseFloat(styles.paddingLeft) || 0)
+      - (parseFloat(styles.paddingRight) || 0)
+      - BREATHING;
+    if (avail <= 10) return; // 非表示中（ドロワーが閉じている等）は何もしない
+    const need = span.scrollWidth;
+
+    const parts = [];
+    // 約物の見えない余白による左右ズレを打ち消す（インク基準の光学センタリング）
+    const spanStyles = window.getComputedStyle(span);
+    const optX = getOpticalXOffset(span.textContent, `${spanStyles.fontWeight} ${spanStyles.fontSize} ${spanStyles.fontFamily}`);
+    if (Math.abs(optX) >= 0.5) parts.push(`translateX(${optX.toFixed(1)}px)`);
+    if (need > avail) parts.push(`scaleX(${(avail / need).toFixed(3)})`);
+    if (parts.length) span.style.transform = parts.join(' ');
+  });
+}
+
 // ★修正: もしかしてボタンのサイズ調整関数 (透明化解除付き)
 function fitDymButtons() {
   const buttons = document.querySelectorAll('.dym-word-btn');
@@ -1363,6 +1436,9 @@ function setupEventListeners() {
 
     if (isOpening) window.acquireBodyLock();
     else window.releaseBodyLock();
+
+    // ドロワーが開いて幅が確定してから、長いラベルの水平圧縮を計算する
+    if (isOpening) requestAnimationFrame(() => requestAnimationFrame(fitFilterButtons));
   };
   window.toggleFilterDrawer = toggleFilterDrawer;
 
@@ -1448,8 +1524,25 @@ function setupEventListeners() {
     const homeBtn = e.target.closest('#favGoHomeBtn');
   if (homeBtn) {
     // ★変更: resetSearch() ではなく exitFavoritesMode() を呼ぶ
-    exitFavoritesMode(); 
+    exitFavoritesMode();
   }
+
+    // お気に入り一括削除（サイト内確認パネル経由）
+    if (e.target.closest('#favClearAllBtn')) {
+      document.getElementById('favClearAllBtn').hidden = true;
+      document.getElementById('favClearConfirm').hidden = false;
+      return;
+    }
+    if (e.target.closest('#favClearCancelBtn')) {
+      document.getElementById('favClearConfirm').hidden = true;
+      document.getElementById('favClearAllBtn').hidden = false;
+      return;
+    }
+    if (e.target.closest('#favClearOkBtn')) {
+      clearAllTimestamps();
+      search({ gotoPage: 1 }); // 再描画（お気に入り一覧は空になり、★やバッジも同期される）
+      return;
+    }
 
     const target = e.target;
     
@@ -1499,7 +1592,7 @@ function setupEventListeners() {
   // document.fonts のイベントを発火しないことがあるため、webfontloaderが<html>に
   // 付与する wf-active / wf-inactive クラスを監視して確実に再計測する。
   {
-    const refitAfterFonts = () => { fitGuestLines(); fitDymButtons(); };
+    const refitAfterFonts = () => { fitGuestLines(); fitDymButtons(); fitFilterButtons(); };
     const htmlEl = document.documentElement;
     const fontsSettled = () => htmlEl.classList.contains('wf-active') || htmlEl.classList.contains('wf-inactive');
     if (fontsSettled()) {
@@ -1538,6 +1631,7 @@ function setupEventListeners() {
     resizeTimer = setTimeout(() => {
         fitGuestLines();
         fitDymButtons(); // ★リサイズ時も調整を実行
+        fitFilterButtons();
     }, 150);
   }, { passive: true });
 
@@ -1799,7 +1893,7 @@ function setupModals() {
       addBtn: document.getElementById('tsAddBtn'),
       cancelBtn: document.getElementById('tsCancelBtn'),
       editAllBtn: document.getElementById('tsEditAllBtn'),
-      clearAllBtn: document.getElementById('tsClearAllBtn'),
+      listActions: document.getElementById('tsListActions'),
       list: document.getElementById('tsList'),
       error: document.getElementById('tsError'),
     });
@@ -1827,7 +1921,7 @@ function setupModals() {
     const showTsError = (errors) => {
       const { error, input } = tsEls();
       const items = errors.slice(0, 4).map(e =>
-        `<div class="ts-error-line"><i class="fa-solid fa-circle-exclamation"></i> ${errors.length > 1 || e.line > 1 ? `${e.line}行目 ` : ''}「${escapeHtml(e.text.slice(0, 24))}」: ${e.reason}</div>`
+        `<div class="ts-error-line"><i class="fa-solid fa-circle-exclamation"></i> ${errors.length > 1 || e.line > 1 ? `${e.line}行目: ` : ''}${e.reason}</div>`
       ).join('');
       const more = errors.length > 4 ? `<div class="ts-error-line">…他${errors.length - 4}件</div>` : '';
       error.innerHTML = items + more;
@@ -1852,17 +1946,18 @@ function setupModals() {
     };
 
     const setEditingMode = (on) => {
-      const { input, addBtn, cancelBtn, editAllBtn, clearAllBtn } = tsEls();
+      const { input, addBtn, cancelBtn, editAllBtn, listActions, list } = tsEls();
       tsCtx.editing = on;
       cancelBtn.hidden = !on;
       hideClearConfirm();
-      // 編集中はキャンセル/保存の2ボタンに切り替える（まとめて編集・すべて削除は非表示）
+      // 編集中は入力欄に集中できるよう、編集・コピー/すべて削除に加えて
+      // 登録済みリスト自体も非表示にする（内容は入力欄の下書きに展開されている）
       editAllBtn.hidden = on || getTimestamps(tsCtx.id).length === 0;
-      clearAllBtn.hidden = on || getTimestamps(tsCtx.id).length === 0;
+      listActions.hidden = on || getTimestamps(tsCtx.id).length === 0;
+      list.hidden = on;
       addBtn.querySelector('span').textContent = on ? '保存' : '登録';
       if (on) {
-        // 時間指定なしのメモはラベルのみで書き出す（再解析時も時間なしとして扱われる）
-        input.value = getTimestamps(tsCtx.id).map(e => e.t == null ? e.label : `${formatTs(e.t)} ${e.label}`.trimEnd()).join('\n');
+        input.value = tsEntriesToText(getTimestamps(tsCtx.id));
       } else {
         input.value = '';
       }
@@ -1877,12 +1972,17 @@ function setupModals() {
       if (panel && !panel.hidden) panel.hidden = true;
     };
 
+    // 一覧のテキスト化（まとめて編集の下書き・コピー機能で共用。
+    // 時間指定なしのメモはラベルのみで書き出し、再解析時も時間なしとして扱われる）
+    const tsEntriesToText = (entries) =>
+      entries.map(e => e.t == null ? e.label : `${formatTs(e.t)} ${e.label}`.trimEnd()).join('\n');
+
     const renderTsList = () => {
-      const { list, editAllBtn, clearAllBtn } = tsEls();
+      const { list, editAllBtn, listActions } = tsEls();
       const items = getTimestamps(tsCtx.id);
       hideClearConfirm(); // リストが変わったら確認パネルは一旦閉じる
       editAllBtn.hidden = items.length === 0 || tsCtx.editing;
-      clearAllBtn.hidden = items.length === 0 || tsCtx.editing;
+      listActions.hidden = items.length === 0 || tsCtx.editing;
       if (items.length === 0) {
         list.innerHTML = '<li class="ts-empty"><i class="fa-regular fa-clock"></i> まだ登録がありません</li>';
         return;
@@ -1993,20 +2093,66 @@ function setupModals() {
     });
     document.getElementById('tsClearAllBtn').addEventListener('click', () => {
       if (getTimestamps(tsCtx.id).length === 0) return;
-      // サイト内の確認パネルを表示（すべて削除ボタンと入れ替え）
-      tsEls().clearAllBtn.hidden = true;
+      // サイト内の確認パネルを表示（コピー/すべて削除の行と入れ替え）
+      tsEls().listActions.hidden = true;
       const panel = document.getElementById('tsClearConfirm');
       panel.hidden = false;
       panel.scrollIntoView({ block: 'nearest' });
     });
     document.getElementById('tsClearCancelBtn').addEventListener('click', () => {
       hideClearConfirm();
-      tsEls().clearAllBtn.hidden = getTimestamps(tsCtx.id).length === 0 || tsCtx.editing;
+      tsEls().listActions.hidden = getTimestamps(tsCtx.id).length === 0 || tsCtx.editing;
     });
     document.getElementById('tsClearOkBtn').addEventListener('click', () => {
       setTimestampsAll(tsCtx.id, []);
       renderTsList(); // 内部で確認パネルも閉じる
       syncAfterTsChange();
+    });
+
+    // 登録済みタイムスタンプ一覧をテキストとしてクリップボードへコピー
+    const copyBtn = document.getElementById('tsCopyBtn');
+    let copyResetTimer = 0;
+    const showCopyFeedback = (success) => {
+      const span = copyBtn.querySelector('span');
+      const icon = copyBtn.querySelector('i');
+      span.textContent = success ? 'コピーしました' : 'コピーできません';
+      icon.className = success ? 'fa-solid fa-check' : 'fa-regular fa-copy';
+      copyBtn.classList.toggle('is-copied', success);
+      clearTimeout(copyResetTimer);
+      copyResetTimer = setTimeout(() => {
+        span.textContent = 'コピー';
+        icon.className = 'fa-regular fa-copy';
+        copyBtn.classList.remove('is-copied');
+      }, 1600);
+    };
+    copyBtn.addEventListener('click', async () => {
+      const items = getTimestamps(tsCtx.id);
+      if (!items.length) return;
+      const text = tsEntriesToText(items);
+      let success = false;
+      try {
+        await navigator.clipboard.writeText(text);
+        success = true;
+      } catch (_) {
+        // 非対応環境（http接続など非セキュアコンテキスト）向けフォールバック。
+        // textareaをreadonly化し、focus/selectではなくRange選択でコピーすることで
+        // ソフトキーボードが表示されるのを防ぐ。
+        try {
+          const ta = document.createElement('textarea');
+          ta.value = text;
+          ta.readOnly = true; // readonlyならfocusしてもソフトキーボードは表示されない
+          ta.setAttribute('aria-hidden', 'true');
+          ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0;pointer-events:none;font-size:16px;';
+          document.body.appendChild(ta);
+          ta.focus({ preventScroll: true }); // execCommandが選択を拾うためにfocusは必要
+          ta.setSelectionRange(0, text.length);
+          success = document.execCommand('copy');
+          ta.blur();
+          ta.remove();
+          copyBtn.focus({ preventScroll: true }); // フォーカスをボタンへ戻す
+        } catch (_) { /* noop */ }
+      }
+      showCopyFeedback(success);
     });
     document.getElementById('tsInput').addEventListener('input', () => {
       clearTsError();
@@ -2117,6 +2263,16 @@ function setupModals() {
     window.openPhotoModal = (ep) => {
       const links = linksData[ep] || [];
       const body = document.getElementById('photoBody');
+
+      // タイムスタンプモーダルと同様に「#107 関連リンク集」の形式でタイトルを表示する
+      const titleEl = document.getElementById('photoModalTitle');
+      if (titleEl) {
+        const epItem = data.find(it => it.episode === ep);
+        const hashOnly = epItem ? getHashNumber(epItem.title) : '';
+        titleEl.innerHTML = hashOnly
+          ? `${hashOnly.trim().replace(/([#A-Za-z0-9:]+)/g, '<span class="impact-number">$1</span>')} 関連リンク集`
+          : '関連リンク集';
+      }
       
       body.innerHTML = links.map(link => {
         const faIcon = link.platform === 'instagram' ? '<i class="fa-brands fa-instagram"></i>' : '<i class="fa-brands fa-x-twitter"></i>';
@@ -2197,6 +2353,16 @@ function parseKeywordTime(kw) {
   return { base, label, seconds };
 }
 
+// ユーザー登録タイムスタンプのメモが検索語のいずれかに部分一致するか
+function matchesUserMemo(item, words) {
+  const entries = getTimestamps(getVideoId(item.link));
+  if (!entries.length) return false;
+  return entries.some(e => {
+    const ln = normalize(e.label || '');
+    return ln && words.some(w => ln.includes(w));
+  });
+}
+
 function findHitTime(item, rawQuery) {
   if (!rawQuery) return null;
   const qn = normalize(rawQuery);
@@ -2207,6 +2373,14 @@ function findHitTime(item, rawQuery) {
     const baseN = normalize(p.base);
     if (baseN.includes(qn) || qn.includes(baseN)) {
       return p;
+    }
+  }
+  // ユーザー登録タイムスタンプのメモにも一致すれば、その場面へジャンプできるようにする
+  for (const e of getTimestamps(getVideoId(item.link))) {
+    if (e.t == null) continue; // 時間なしメモはジャンプ先がないため対象外
+    const ln = normalize(e.label || '');
+    if (ln && (ln.includes(qn) || qn.includes(ln))) {
+      return { base: e.label, label: formatTs(e.t), seconds: e.t };
     }
   }
   return null;
@@ -2256,7 +2430,12 @@ function buildTimeline(data) {
       }
       
       const formattedLabel = it.label.replace(/([A-Za-z0-9]+)/g, '<span class="impact-number">$1</span>');
-      
+
+      // リンクがある出来事は、リンクの当たり判定をカード全面に広げる（ストレッチリンク）。
+      // 本物の<a>のままなので、ホバーでブラウザ左下にURLが表示され、
+      // 中クリック/右クリックメニュー/キーボード操作もネイティブに動く。
+      if (it.url) el.classList.add('has-link');
+
       el.innerHTML = `
         ${dateText ? `<div class="date"><span class="impact-number">${dateText}</span></div>` : ''}
         <div class="label">${it.url ? `<a href="${it.url}" target="_blank" rel="noopener">${formattedLabel}</a>` : formattedLabel}</div>
@@ -2486,7 +2665,9 @@ function initializeAutocomplete() {
       const html = (i >= 0)
         ? `${item.label.slice(0, i)}<span class="match">${item.label.slice(i, i + qRaw.length)}</span>${item.label.slice(i + qRaw.length)}`
         : item.label;
-      const icon = item.type === '出演者' ? '<i class="fa-solid fa-user"></i>' : '<i class="fa-solid fa-magnifying-glass"></i>';
+      const icon = item.type === '出演者' ? '<i class="fa-solid fa-user"></i>'
+        : item.type === 'メモ' ? '<i class="fa-solid fa-star memo-star"></i>'
+        : '<i class="fa-solid fa-magnifying-glass"></i>';
       el.innerHTML = `<span class="type">${icon}</span><span class="label">${html}</span>`;
       el.addEventListener('mousedown', (e) => { e.preventDefault(); pick(idx); });
       fragment.appendChild(el);
@@ -2578,7 +2759,7 @@ const onInput = () => {
 
     const scored = entries.map(e => ({ e, s: scoreEntry(e, normQ, raw) })).filter(item => item.s !== null);
     scored.sort((a, b) => b.s - a.s);
-    
+
     const seen = new Set();
     const items = scored.slice(0, 100).map(({ e }) => {
       let label = e.label;
@@ -2590,8 +2771,26 @@ const onInput = () => {
       seen.add(label);
       return { label: label, type: e.type };
     }).filter(Boolean);
-    
-    render(items.slice(0, 100));
+
+    // ユーザー登録タイムスタンプのメモも候補に出す（部分一致・★マークで区別）。
+    // 登録内容は随時変わるため、固定のentriesではなく毎回その場で探す。
+    const memoItems = [];
+    const seenMemo = new Set();
+    for (const id in timestamps) {
+      for (const e of (timestamps[id] || [])) {
+        const label = (e.label || '').trim();
+        if (!label || seenMemo.has(label)) continue;
+        if (!normalize(label).includes(normQ)) continue;
+        seenMemo.add(label);
+        memoItems.push({ label, type: 'メモ' });
+        if (memoItems.length >= 20) break;
+      }
+      if (memoItems.length >= 20) break;
+    }
+
+    // 自分のメモを先頭に表示し、同名のサイト側キーワードは重複させない
+    const merged = [...memoItems, ...items.filter(i => !seenMemo.has(i.label))];
+    render(merged.slice(0, 100));
   };
   
   const debouncedOnInput = debounce(onInput, 150);
