@@ -5646,10 +5646,11 @@ body[class*="theme-"] .search-card {
 }
 
 .ts-body {
-  padding: 18px 20px 20px;
+  padding: 14px 20px 20px;
   display: flex;
   flex-direction: column;
   gap: 12px;
+  min-height: 0; /* フッター固定時にこの領域だけがスクロールするように */
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
 }
@@ -5657,21 +5658,38 @@ body[class*="theme-"] .search-card {
 .ts-body::-webkit-scrollbar-track { background: transparent; }
 .ts-body::-webkit-scrollbar-thumb { background-color: rgba(0,0,0,0.12); border-radius: 10px; }
 
-/* --- エピソードカード（トップ画面の .episode-item をそのまま表示するコンテナ） --- */
+/* 下部固定エリア（編集/すべて削除・確認パネル・ヒント）。
+   リストが長いときは .ts-body 側だけがスクロールし、ここは常に見える */
+.ts-footer {
+  flex-shrink: 0;
+  margin-top: auto; /* 内容が少なくてもモーダル最下部に張り付ける */
+  padding: 12px 20px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+}
+.ts-footer[hidden] { display: none !important; } /* 編集中はフッターごと隠す */
+
+/* --- エピソードカード（トップ画面の .episode-item をそのまま表示するコンテナ） ---
+   ヘッダー直下に固定し、スクロールするのはその下の .ts-body（リスト）だけにする */
 .ts-episode-card {
   list-style: none;
-  margin: 0;
-  padding: 0;
+  flex-shrink: 0;
+  margin: 14px 20px 0; /* 左右は .ts-body の横paddingと揃える */
+  padding: 0 0 14px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06); /* スクロール領域との区切り */
 }
 .ts-episode-card[hidden] { display: none; }
 /* 文字サイズ・余白は #results h5.mb-1 系の各ルールに .ts-episode-card を併記して完全一致させている */
 
-/* --- 入力エリア（複数行で一括登録） --- */
+/* --- 入力エリア（「編集」タップ時のみ表示。複数行で一括登録） --- */
 .ts-add-area {
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
+.ts-add-area[hidden] { display: none !important; }
 .ts-input {
   width: 100%;
   box-sizing: border-box;
@@ -5714,6 +5732,34 @@ body[class*="theme-"] .search-card {
 }
 @media (hover: hover) {
   .ts-cancel-btn:hover { background: #f3f4f6; }
+}
+/* 入力欄の右上に重ねる小型コピーボタン（下書き＝登録済み一覧のコピー用） */
+.ts-input-wrap { position: relative; }
+.ts-input-wrap .ts-input { padding-right: 52px; } /* ボタンの下に文字が潜らないように */
+.ts-copy-btn {
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  width: 38px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #6b7280;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+@media (hover: hover) {
+  .ts-copy-btn:hover { background: #f3f4f6; }
+}
+.ts-copy-btn:disabled {
+  opacity: 0.45;
+  pointer-events: none; /* ホバー演出も無効にする */
 }
 .ts-input-error { animation: tsShake 0.4s ease; border-color: #ef4444 !important; }
 @keyframes tsShake {
@@ -5785,9 +5831,9 @@ body[class*="theme-"] .search-card {
 .ts-list[hidden] { display: none; } /* display:flex がhidden属性に勝つのを防ぐ */
 .ts-list {
   list-style: none;
-  margin: 4px 0 0;
-  padding: 12px 0 0;
-  border-top: 1px solid rgba(0, 0, 0, 0.06);
+  margin: 0;
+  padding: 0;
+  /* カード下の区切り線（.ts-episode-card側）があるため、ここでは線を引かない */
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -5796,6 +5842,10 @@ body[class*="theme-"] .search-card {
   display: flex;
   align-items: stretch;
   gap: 8px;
+  /* 登録数が多いとき、画面外の行のレイアウト・描画を省略して軽くする
+     （非対応環境では単に無視される。66pxは1行分の実測高さ） */
+  content-visibility: auto;
+  contain-intrinsic-size: auto 66px;
 }
 .ts-play {
   flex: 1;
@@ -5840,9 +5890,9 @@ body[class*="theme-"] .search-card {
 /* モーダル内のUIテキストをタイトルと同じ書体・太さ（700）に統一する */
 .ts-modal .ts-add-btn,
 .ts-modal .ts-cancel-btn,
+.ts-modal .ts-copy-btn,
 .ts-modal .ts-edit-all-btn,
 .ts-modal .ts-clear-all-btn,
-.ts-modal .ts-copy-btn,
 .ts-modal .ts-clear-confirm,
 .ts-modal .ts-time,
 .ts-modal .ts-label,
@@ -5874,25 +5924,7 @@ body[class*="theme-"] .search-card {
 }
 .ts-list-actions[hidden] { display: none; }
 .ts-list-actions > button { flex: 1 1 50%; min-width: 0; }
-.ts-copy-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 8px 16px;
-  min-height: 39px; /* フィルタボタンと同じ縦幅 */
-  border: 1.5px solid #e2e8f0;
-  border-radius: 14px;
-  background: #ffffff;
-  color: #374151;
-  font-size: 0.95rem;
-  cursor: pointer;
-  transition: background 0.15s, border-color 0.15s, color 0.15s, transform 0.1s;
-}
-.ts-copy-btn:active { transform: scale(0.98); }
-@media (hover: hover) {
-  .ts-copy-btn:hover { background: #f3f4f6; border-color: #cbd5e1; }
-}
+.ts-list-actions > button[hidden] { display: none; } /* 0件時は「すべて削除」だけ隠す */
 .ts-clear-all-btn {
   display: flex;
   align-items: center;
@@ -5976,10 +6008,22 @@ body[class*="theme-"] .search-card {
   font-size: 0.92rem;
   padding: 22px 0;
   display: flex;
+  flex-direction: column; /* 1行目: アイコン+本文 / 2行目: 登録方法の案内 */
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.ts-empty-main {
+  display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
 }
+.ts-empty-sub {
+  font-size: 0.8rem;
+  opacity: 0.85;
+}
+.ts-hint[hidden] { display: none !important; } /* 編集中は一覧向けのヒント文を隠す */
 .ts-hint {
   margin: 4px 0 0;
   font-size: 0.78rem;
@@ -6012,33 +6056,31 @@ body[class*="theme-"] .search-card {
 /* --- スマホ: ボトムシート化（キーボードと相性の良い下部配置） --- */
 @media (max-width: 600px) {
   #tsModal { align-items: flex-end; }
+  /* スマホは最初から全画面表示（キーボード表示時の高さ変化をなくし挙動を安定させる） */
   .modal-content.ts-modal {
-    width: 100vw;
-    max-width: 100vw;
+    /* 100dvh指定は端末やアドレスバーの状態によって実際の画面高さとズレ、
+       上に隙間が出ることがある（一部iOS等）。ビューポートの四辺に直接
+       固定すれば、単位の解釈差に関係なく常に全画面になる */
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    max-width: 100%;
     margin-bottom: 0;
-    max-height: 90dvh;
-    border-radius: 24px 24px 0 0;
+    height: auto;
+    max-height: none;
+    border-radius: 0;
     border-bottom: none;
     padding-bottom: env(safe-area-inset-bottom);
   }
-
-  /* 入力中（コンポーズモード）: シートを全画面化し、入力欄を画面上部に置く。
-     入力欄が常に画面上部にあるため、キーボードがどう出ても物理的に隠れない。
-     ビューポート計算での位置合わせは実機iOSで不安定なため行わない。 */
-  .modal-content.ts-modal.ts-typing {
-    height: 100dvh;
-    max-height: 100dvh;
-    border-radius: 0;
-  }
-  .ts-typing .modal-header {
+  .ts-modal .modal-header {
     padding-top: max(8px, env(safe-area-inset-top)); /* ステータスバーと重ならないように */
   }
-  /* 入力に不要な要素は畳んで、入力欄と登録/保存ボタンだけに集中させる */
-  .ts-typing .ts-episode-card,
+
+  /* 入力中（コンポーズモード）: リストと下部固定エリアを畳み、入力欄を画面上部へ。
+     エピソードカードはどの回への登録か確認できるよう表示したままにする
+     （カード+入力欄+保存ボタンでも画面上半分に収まり、キーボードに隠れない）。 */
   .ts-typing .ts-list,
-  .ts-typing .ts-list-actions,
-  .ts-typing .ts-clear-confirm,
-  .ts-typing .ts-hint {
+  .ts-typing .ts-footer {
     display: none !important;
   }
 }
@@ -6063,8 +6105,9 @@ body.dark-mode .ts-input { background: #000000; border-color: #2f3336; color: #e
 body.dark-mode .ts-input::placeholder { color: #71767b; }
 body.dark-mode .ts-input:focus { border-color: #71767b; background: #000000; }
 body.dark-mode .ts-cancel-btn { border-color: #2f3336; color: #71767b; }
+body.dark-mode .ts-copy-btn { background: #000000; border-color: #2f3336; color: #71767b; }
 @media (hover: hover) {
-  body.dark-mode .ts-cancel-btn:hover { background: #16181c; }
+  body.dark-mode .ts-cancel-btn:hover, body.dark-mode .ts-copy-btn:hover { background: #16181c; }
 }
 /* ダークでは登録ボタンを白の反転ボタンに、時間バッジは半透明白で馴染ませる */
 body.dark-mode .ts-add-btn { background: #e7e9ea; border-color: #e7e9ea; color: #0f1419; }
@@ -6072,7 +6115,8 @@ body.dark-mode .ts-add-btn { background: #e7e9ea; border-color: #e7e9ea; color: 
   body.dark-mode .ts-add-btn:hover { background: #ffffff; border-color: #ffffff; }
 }
 body.dark-mode .ts-time { background: rgba(255, 255, 255, 0.16); color: #e7e9ea; }
-body.dark-mode .ts-list { border-top-color: #2f3336; }
+body.dark-mode .ts-episode-card { border-bottom-color: #2f3336; }
+body.dark-mode .ts-footer { border-top-color: #2f3336; }
 body.dark-mode .ts-edit-all-btn { background: #000000; border-color: #2f3336; color: #e7e9ea; }
 @media (hover: hover) {
   body.dark-mode .ts-edit-all-btn:hover { background: #16181c; border-color: #71767b; }
@@ -6090,10 +6134,6 @@ body.dark-mode .ts-delete { background: #000000; border-color: rgba(239,68,68,0.
 body.dark-mode .ts-clear-all-btn { background: #000000; border-color: rgba(239,68,68,0.45); color: #f87171; /* 黒地で読める明るい赤 */ }
 @media (hover: hover) {
   body.dark-mode .ts-clear-all-btn:hover { background: rgba(239,68,68,0.15); }
-}
-body.dark-mode .ts-copy-btn { background: #000000; border-color: #2f3336; color: #e7e9ea; }
-@media (hover: hover) {
-  body.dark-mode .ts-copy-btn:hover { background: #16181c; }
 }
 body.dark-mode .ts-clear-confirm { background: #000000; border-color: rgba(239,68,68,0.45); }
 body.dark-mode .ts-clear-confirm-text { color: #f87171; }
@@ -6164,10 +6204,17 @@ body[class*="theme-"] .ts-clear-all-btn {
 }
 body[class*="theme-"] .fav-count { background: var(--active-filter); color: var(--active-filter-text); }
 body[class*="theme-"] .ts-cancel-btn { background: var(--card-bg); border-color: transparent; color: var(--text-color); }
+/* コピーはカード色の入力欄の上に載るため、ひとつ明るい色で浮かせる */
+body[class*="theme-"] .ts-copy-btn { background: var(--filter-btn-active); border-color: transparent; color: var(--text-color); }
 @media (hover: hover) {
-  body[class*="theme-"] .ts-cancel-btn:hover { background: var(--filter-btn-active); }
+  body[class*="theme-"] .ts-cancel-btn:hover,
+  body[class*="theme-"] .ts-copy-btn:hover { background: var(--filter-btn-active); }
 }
-body[class*="theme-"] .ts-list {
+body[class*="theme-"] .ts-episode-card {
+  border-bottom-color: rgba(255, 255, 255, 0.4);
+  border-bottom-color: color-mix(in srgb, var(--text-color) 40%, transparent);
+}
+body[class*="theme-"] .ts-footer {
   border-top-color: rgba(255, 255, 255, 0.4);
   border-top-color: color-mix(in srgb, var(--text-color) 40%, transparent);
 }
@@ -6177,22 +6224,6 @@ body[class*="theme-"] .ts-episode-card .episode-item { border-color: transparent
 body[class*="theme-"] .ts-edit-all-btn { background: var(--card-bg); border-color: transparent; color: var(--text-color); }
 @media (hover: hover) {
   body[class*="theme-"] .ts-edit-all-btn:hover { background: var(--filter-btn-active); }
-}
-body[class*="theme-"] .ts-copy-btn { background: var(--card-bg); border-color: transparent; color: var(--text-color); }
-@media (hover: hover) {
-  body[class*="theme-"] .ts-copy-btn:hover { background: var(--filter-btn-active); }
-}
-/* コピー完了フィードバック（どのテーマでも緑系でハッキリ分かるように） */
-.ts-copy-btn.is-copied,
-body[class*="theme-"] .ts-copy-btn.is-copied {
-  background: #f0fdf4;
-  border-color: #86efac;
-  color: #16a34a;
-}
-body.dark-mode .ts-copy-btn.is-copied {
-  background: #000000;
-  border-color: rgba(74, 222, 128, 0.5);
-  color: #4ade80;
 }
 
 /* ======================================================================== */
@@ -6207,8 +6238,8 @@ body[class*="theme-"] .history-item { border-width: 1.5px !important; }
   /* 通常サーフェス: 背景がひとつ明るくなり、半透明白の枠線が現れる */
   body[class*="theme-"] .ts-play:hover,
   body[class*="theme-"] .ts-edit-all-btn:hover,
-  body[class*="theme-"] .ts-copy-btn:hover,
   body[class*="theme-"] .ts-cancel-btn:hover,
+  body[class*="theme-"] .ts-copy-btn:hover,
   body[class*="theme-"] .photo-link-btn:hover,
   body[class*="theme-"] .history-item:hover {
     background: var(--filter-btn-active) !important;
@@ -6302,7 +6333,7 @@ body[class*="theme-"] .history-item { border-width: 1.5px !important; }
 .drawer-close-btn, .history-toggle, .fav-btn, .photo-btn, .ts-btn,
 .dym-word-btn, .fav-home-btn, #theme-toggle-btn, #createPlaylistBtn,
 .photo-link-btn, .history-item, .episode-item,
-.ts-play, .ts-edit-all-btn, .ts-copy-btn, .ts-cancel-btn, .ts-add-btn,
+.ts-play, .ts-edit-all-btn, .ts-cancel-btn, .ts-copy-btn, .ts-add-btn,
 .ts-delete, .ts-clear-all-btn, .ts-clear-ok-btn, .ts-clear-cancel-btn, .fav-clear-btn,
 .modal-close, #historyCloseBtn, #aboutCloseBtn {
   transition:
@@ -6320,7 +6351,7 @@ body[class*="theme-"] .history-item { border-width: 1.5px !important; }
   .drawer-close-btn:hover, .history-toggle:hover, .fav-btn:hover, .photo-btn:hover, .ts-btn:hover,
   .dym-word-btn:hover, .fav-home-btn:hover, #theme-toggle-btn:hover, #createPlaylistBtn:hover,
   .photo-link-btn:hover, .history-item:hover, .episode-item:hover,
-  .ts-play:hover, .ts-edit-all-btn:hover, .ts-copy-btn:hover, .ts-cancel-btn:hover, .ts-add-btn:hover,
+  .ts-play:hover, .ts-edit-all-btn:hover, .ts-cancel-btn:hover, .ts-copy-btn:hover, .ts-add-btn:hover,
   .ts-delete:hover, .ts-clear-all-btn:hover, .ts-clear-ok-btn:hover, .ts-clear-cancel-btn:hover, .fav-clear-btn:hover,
   .modal-close:hover, #historyCloseBtn:hover, #aboutCloseBtn:hover {
     transform: translateY(-1.5px) !important;
@@ -6332,7 +6363,7 @@ body[class*="theme-"] .history-item { border-width: 1.5px !important; }
   .drawer-close-btn:active, .history-toggle:active, .fav-btn:active, .photo-btn:active, .ts-btn:active,
   .dym-word-btn:active, .fav-home-btn:active, #theme-toggle-btn:active, #createPlaylistBtn:active,
   .photo-link-btn:active, .history-item:active, .episode-item:active,
-  .ts-play:active, .ts-edit-all-btn:active, .ts-copy-btn:active, .ts-cancel-btn:active, .ts-add-btn:active,
+  .ts-play:active, .ts-edit-all-btn:active, .ts-cancel-btn:active, .ts-copy-btn:active, .ts-add-btn:active,
   .ts-delete:active, .ts-clear-all-btn:active, .ts-clear-ok-btn:active, .ts-clear-cancel-btn:active, .fav-clear-btn:active,
   .modal-close:active, #historyCloseBtn:active, #aboutCloseBtn:active {
     transform: translateY(0) scale(0.98) !important;

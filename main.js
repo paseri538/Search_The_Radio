@@ -78,19 +78,7 @@ function compareTs(a, b) {
   if (b.t == null) return -1;
   return a.t - b.t;
 }
-// 複数件をまとめて追加（完全重複はスキップ）。保存は1回だけ行う。
-function addTimestampsBulk(id, entries) {
-  if (!id || !entries.length) return;
-  if (!timestamps[id]) timestamps[id] = [];
-  const seen = new Set(timestamps[id].map(e => `${e.t}|${e.label}`));
-  for (const e of entries) {
-    const key = `${e.t}|${e.label}`;
-    if (!seen.has(key)) { timestamps[id].push(e); seen.add(key); }
-  }
-  timestamps[id].sort(compareTs);
-  saveTimestamps();
-}
-// 全件を置き換え（まとめて編集の保存用）。保存は1回だけ行う。
+// 全件を置き換え（登録・編集の保存用）。保存は1回だけ行う。
 function setTimestampsAll(id, entries) {
   if (!id) return;
   if (entries.length === 0) { delete timestamps[id]; }
@@ -1915,12 +1903,15 @@ function setupModals() {
 
     const tsEls = () => ({
       input: document.getElementById('tsInput'),
+      addArea: document.querySelector('#tsModal .ts-add-area'),
       addBtn: document.getElementById('tsAddBtn'),
+      copyBtn: document.getElementById('tsCopyBtn'),
       cancelBtn: document.getElementById('tsCancelBtn'),
-      editAllBtn: document.getElementById('tsEditAllBtn'),
       listActions: document.getElementById('tsListActions'),
+      clearAllBtn: document.getElementById('tsClearAllBtn'),
       list: document.getElementById('tsList'),
       error: document.getElementById('tsError'),
+      footer: document.querySelector('#tsModal .ts-footer'),
     });
 
     // 複数行テキストを一括解析。エラー行は理由付きで返す。
@@ -1971,24 +1962,40 @@ function setupModals() {
     };
 
     const setEditingMode = (on) => {
-      const { input, addBtn, cancelBtn, editAllBtn, listActions, list } = tsEls();
+      const { input, addArea, cancelBtn, copyBtn, listActions, list, footer } = tsEls();
       tsCtx.editing = on;
+      // 入力欄と保存ボタンは「編集」をタップした時だけ表示する。
+      // 通常時は一覧だけを見せて、登録・変更はすべて編集モード経由に一本化。
+      addArea.hidden = !on;
       cancelBtn.hidden = !on;
       hideClearConfirm();
-      // 編集中は入力欄に集中できるよう、編集・コピー/すべて削除に加えて
-      // 登録済みリスト自体も非表示にする（内容は入力欄の下書きに展開されている）
-      editAllBtn.hidden = on || getTimestamps(tsCtx.id).length === 0;
-      listActions.hidden = on || getTimestamps(tsCtx.id).length === 0;
+      // 編集中は入力欄に集中できるよう、登録済みリストと
+      // 下部固定エリア（編集/すべて削除・ヒント文）ごと非表示にする
+      listActions.hidden = on;
       list.hidden = on;
-      addBtn.querySelector('span').textContent = on ? '保存' : '登録';
-      if (on) {
-        input.value = tsEntriesToText(getTimestamps(tsCtx.id));
-      } else {
-        input.value = '';
-      }
+      footer.hidden = on;
+      input.value = on ? tsEntriesToText(getTimestamps(tsCtx.id)) : '';
+      copyBtn.disabled = !input.value.trim(); // 空の下書きはコピー不可
       autosizeTsInput();
       clearTsError();
+      syncTsBodyScrollbar();
     };
+
+    // リストが長くスクロールバーが幅を取る環境（PC/iPad等）で、
+    // 右paddingを実測のバー幅ぶん詰めて、固定表示のカード/フッターと左右位置を揃える。
+    // オーバーレイスクロールバー環境（バー幅0）では何もしない。
+    let tsSbwRafId = 0;
+    const syncTsBodyScrollbar = () => {
+      if (tsSbwRafId) return;
+      tsSbwRafId = requestAnimationFrame(() => {
+        tsSbwRafId = 0;
+        const body = document.querySelector('#tsModal .ts-body');
+        if (!body) return;
+        const sbw = body.offsetWidth - body.clientWidth; // 実際に占有しているバー幅
+        body.style.paddingRight = sbw > 0 ? Math.max(8, 20 - sbw) + 'px' : '';
+      });
+    };
+    window.addEventListener('resize', syncTsBodyScrollbar);
 
     // 件数が多くても軽いように、リストは変更確定時に1回だけ組み立てる
     // すべて削除の確認パネル（ブラウザ標準confirmの代替）
@@ -2003,13 +2010,15 @@ function setupModals() {
       entries.map(e => e.t == null ? e.label : `${formatTs(e.t)} ${e.label}`.trimEnd()).join('\n');
 
     const renderTsList = () => {
-      const { list, editAllBtn, listActions } = tsEls();
+      const { list, listActions, clearAllBtn } = tsEls();
       const items = getTimestamps(tsCtx.id);
       hideClearConfirm(); // リストが変わったら確認パネルは一旦閉じる
-      editAllBtn.hidden = items.length === 0 || tsCtx.editing;
-      listActions.hidden = items.length === 0 || tsCtx.editing;
+      // 編集ボタンが登録の入口なので、0件でもボタン行は表示する（すべて削除だけ隠す）
+      listActions.hidden = tsCtx.editing;
+      clearAllBtn.hidden = items.length === 0;
+      syncTsBodyScrollbar(); // 件数変化でスクロールバーの有無が変わるため毎回同期
       if (items.length === 0) {
-        list.innerHTML = '<li class="ts-empty"><i class="fa-regular fa-clock"></i> まだ登録がありません</li>';
+        list.innerHTML = '<li class="ts-empty"><span class="ts-empty-main"><i class="fa-regular fa-clock"></i> まだ登録がありません</span><span class="ts-empty-sub">「編集」からタイムスタンプやメモを登録できます</span></li>';
         return;
       }
       list.innerHTML = items.map((item, i) => {
@@ -2094,32 +2103,60 @@ function setupModals() {
 
     const submitTs = () => {
       const { input } = tsEls();
-      const text = input.value;
-      // 空のまま登録タップ: キーボードだけ閉じる
-      // （iOSはボタンタップで入力欄のフォーカスが外れないため、明示的にblurする）
-      if (!text.trim() && !tsCtx.editing) { input.blur(); return; }
-      const { entries, errors } = parseTsLines(text, tsCtx.durationSec);
+      // 空のまま登録: 変更せず一覧に戻る（全削除は確認付きの「すべて削除」経由に限定し、誤消去を防ぐ）
+      if (!input.value.trim()) { setEditingMode(false); endTypingModeNow(); return; }
+      const { entries, errors } = parseTsLines(input.value, tsCtx.durationSec);
       if (errors.length > 0) { showTsError(errors); return; } // エラー時は入力を続けられるようフォーカス維持
-      if (tsCtx.editing) {
-        setTimestampsAll(tsCtx.id, entries); // まとめて編集: 全置換
-        setEditingMode(false);
-      } else {
-        addTimestampsBulk(tsCtx.id, entries); // 一括追加
-        input.value = '';
-        autosizeTsInput();
-      }
-      clearTsError();
+      // 完全に同じ行（時間+メモ）が複数あっても1件にまとめる
+      const seen = new Set();
+      const unique = entries.filter(e => {
+        const key = `${e.t}|${e.label}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+      setTimestampsAll(tsCtx.id, unique); // 入力欄の内容で全置換（登録・編集とも同じ経路）
+      setEditingMode(false);
       renderTsList();
       syncAfterTsChange();
-      // 登録/保存成功: キーボードを閉じて結果の一覧を見せる
-      // （iOSはボタンタップでblurしないため明示的に閉じないとコンポーズモードが残る）
-      input.blur();
+      // 登録成功: キーボードを閉じ、待ち時間なしで結果の一覧を見せる
+      endTypingModeNow();
     };
 
     document.getElementById('tsAddBtn').addEventListener('click', submitTs);
     document.getElementById('tsCancelBtn').addEventListener('click', () => {
       setEditingMode(false);
-      tsEls().input.blur(); // キャンセル時もキーボードを閉じて一覧に戻す
+      endTypingModeNow(); // キャンセル時もキーボードを閉じて即座に一覧へ戻す
+    });
+    // 入力欄の内容（下書き）をコピー。編集直後の下書きは登録済み一覧そのものなので、
+    // 「登録した一覧をコピーする」用途もこのボタン1つでまかなえる
+    let tsCopyResetTimer = 0;
+    document.getElementById('tsCopyBtn').addEventListener('click', async () => {
+      const btn = document.getElementById('tsCopyBtn');
+      const text = tsEls().input.value.trim();
+      if (!text) return;
+      let copied = false;
+      try {
+        await navigator.clipboard.writeText(text);
+        copied = true;
+      } catch (_) {
+        // 非対応環境用: 画面外のreadonly要素で選択コピー（キーボードを出さない）
+        const tmp = document.createElement('textarea');
+        tmp.value = text;
+        tmp.setAttribute('readonly', '');
+        tmp.style.cssText = 'position:fixed;left:-9999px;top:0;';
+        document.body.appendChild(tmp);
+        tmp.select();
+        try { copied = document.execCommand('copy'); } catch (_) { copied = false; }
+        tmp.remove();
+      }
+      if (!copied) return;
+      // アイコンを一瞬チェックに変えてフィードバック
+      btn.innerHTML = '<i class="fa-solid fa-check"></i>';
+      clearTimeout(tsCopyResetTimer);
+      tsCopyResetTimer = setTimeout(() => {
+        btn.innerHTML = '<i class="fa-regular fa-copy"></i>';
+      }, 1400);
     });
     document.getElementById('tsEditAllBtn').addEventListener('click', () => {
       setEditingMode(true);
@@ -2135,7 +2172,7 @@ function setupModals() {
     });
     document.getElementById('tsClearCancelBtn').addEventListener('click', () => {
       hideClearConfirm();
-      tsEls().listActions.hidden = getTimestamps(tsCtx.id).length === 0 || tsCtx.editing;
+      tsEls().listActions.hidden = tsCtx.editing;
     });
     document.getElementById('tsClearOkBtn').addEventListener('click', () => {
       setTimestampsAll(tsCtx.id, []);
@@ -2143,54 +2180,11 @@ function setupModals() {
       syncAfterTsChange();
     });
 
-    // 登録済みタイムスタンプ一覧をテキストとしてクリップボードへコピー
-    const copyBtn = document.getElementById('tsCopyBtn');
-    let copyResetTimer = 0;
-    const showCopyFeedback = (success) => {
-      const span = copyBtn.querySelector('span');
-      const icon = copyBtn.querySelector('i');
-      span.textContent = success ? 'コピーしました' : 'コピーできません';
-      icon.className = success ? 'fa-solid fa-check' : 'fa-regular fa-copy';
-      copyBtn.classList.toggle('is-copied', success);
-      clearTimeout(copyResetTimer);
-      copyResetTimer = setTimeout(() => {
-        span.textContent = 'コピー';
-        icon.className = 'fa-regular fa-copy';
-        copyBtn.classList.remove('is-copied');
-      }, 1600);
-    };
-    copyBtn.addEventListener('click', async () => {
-      const items = getTimestamps(tsCtx.id);
-      if (!items.length) return;
-      const text = tsEntriesToText(items);
-      let success = false;
-      try {
-        await navigator.clipboard.writeText(text);
-        success = true;
-      } catch (_) {
-        // 非対応環境（http接続など非セキュアコンテキスト）向けフォールバック。
-        // textareaをreadonly化し、focus/selectではなくRange選択でコピーすることで
-        // ソフトキーボードが表示されるのを防ぐ。
-        try {
-          const ta = document.createElement('textarea');
-          ta.value = text;
-          ta.readOnly = true; // readonlyならfocusしてもソフトキーボードは表示されない
-          ta.setAttribute('aria-hidden', 'true');
-          ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0;pointer-events:none;font-size:16px;';
-          document.body.appendChild(ta);
-          ta.focus({ preventScroll: true }); // execCommandが選択を拾うためにfocusは必要
-          ta.setSelectionRange(0, text.length);
-          success = document.execCommand('copy');
-          ta.blur();
-          ta.remove();
-          copyBtn.focus({ preventScroll: true }); // フォーカスをボタンへ戻す
-        } catch (_) { /* noop */ }
-      }
-      showCopyFeedback(success);
-    });
     document.getElementById('tsInput').addEventListener('input', () => {
       clearTsError();
       autosizeTsInput();
+      const { input, copyBtn } = tsEls();
+      copyBtn.disabled = !input.value.trim();
     });
     document.getElementById('tsList').addEventListener('click', e => {
       const delBtn = e.target.closest('.ts-delete');
@@ -2222,6 +2216,13 @@ function setupModals() {
       // blur直後のタップ（登録ボタン等）がレイアウト変化で外れないよう少し待ってから戻す
       typingEndTimer = setTimeout(() => tsSheetEl.classList.remove('ts-typing'), 150);
     };
+    // 登録・キャンセルの確定時用: 150msの猶予を待たずに即座に通常表示へ戻す。
+    // （猶予中は入力欄もリストも全部隠れた状態になり、画面が一瞬白く見えるため）
+    const endTypingModeNow = () => {
+      tsInputEl.blur(); // iOSはボタンタップでblurしないため明示的に閉じる
+      clearTimeout(typingEndTimer);
+      tsSheetEl.classList.remove('ts-typing');
+    };
     tsInputEl.addEventListener('focus', startTypingMode);
     tsInputEl.addEventListener('blur', () => {
       endTypingMode();
@@ -2232,6 +2233,9 @@ function setupModals() {
     tsSheetEl.addEventListener('pointerdown', (e) => {
       if (!tsSheetEl.classList.contains('ts-typing')) return;
       if (e.target === tsInputEl || tsInputEl.contains(e.target)) return;
+      // コピーは入力を中断しない操作なので、キーボードは開いたままにする
+      const copyBtn = document.getElementById('tsCopyBtn');
+      if (copyBtn && copyBtn.contains(e.target)) return;
       tsInputEl.blur();
     });
     // モーダルを閉じる操作時はキーボードも閉じ、body固定を解除して位置を戻す
@@ -2343,12 +2347,24 @@ function parseKeywordTime(kw) {
   return { base, label, seconds };
 }
 
+// メモの正規化はキー入力のたびに全件で走るため、結果をエントリごとにキャッシュする。
+// WeakMapなので保存・再読込でエントリが作り直されると自動的に破棄され、古い結果は残らない。
+const tsNormCache = new WeakMap();
+function tsNormLabel(e) {
+  let v = tsNormCache.get(e);
+  if (v === undefined) {
+    v = normalize(e.label || '');
+    tsNormCache.set(e, v);
+  }
+  return v;
+}
+
 // ユーザー登録タイムスタンプのメモが検索語のいずれかに部分一致するか
 function matchesUserMemo(item, words) {
   const entries = getTimestamps(getVideoId(item.link));
   if (!entries.length) return false;
   return entries.some(e => {
-    const ln = normalize(e.label || '');
+    const ln = tsNormLabel(e);
     return ln && words.some(w => ln.includes(w));
   });
 }
@@ -2368,7 +2384,7 @@ function findHitTime(item, rawQuery) {
   // ユーザー登録タイムスタンプのメモにも一致すれば、その場面へジャンプできるようにする
   for (const e of getTimestamps(getVideoId(item.link))) {
     if (e.t == null) continue; // 時間なしメモはジャンプ先がないため対象外
-    const ln = normalize(e.label || '');
+    const ln = tsNormLabel(e);
     if (ln && (ln.includes(qn) || qn.includes(ln))) {
       return { base: e.label, label: formatTs(e.t), seconds: e.t };
     }
@@ -2770,7 +2786,7 @@ const onInput = () => {
       for (const e of (timestamps[id] || [])) {
         const label = (e.label || '').trim();
         if (!label || seenMemo.has(label)) continue;
-        if (!normalize(label).includes(normQ)) continue;
+        if (!tsNormLabel(e).includes(normQ)) continue;
         seenMemo.add(label);
         memoItems.push({ label, type: 'メモ' });
         if (memoItems.length >= 20) break;

@@ -118,7 +118,7 @@
 <meta name="apple-mobile-web-app-title" content="さーち・ざ・らじお！">
 
 
-<link rel="manifest" href="./site.webmanifest?v=20260720e">
+<link rel="manifest" href="./site.webmanifest?v=20260720f">
 
   
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
@@ -128,7 +128,7 @@
 <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
 <link rel="preconnect" href="https://code.jquery.com" crossorigin>
 <link rel="preconnect" href="https://i.ytimg.com" crossorigin>
-  <link href="style.css?v=20260720e" rel="stylesheet" />
+  <link href="style.css?v=20260720f" rel="stylesheet" />
 
 
 </head>
@@ -333,27 +333,33 @@
         <i class="fa-solid fa-xmark" aria-hidden="true"></i>
       </button>
     </div>
+    <!-- エピソードカードはヘッダー直下に固定（スクロールしない） -->
+    <ul id="tsEpisodeCard" class="ts-episode-card" hidden></ul>
     <div class="ts-body">
-      <ul id="tsEpisodeCard" class="ts-episode-card" hidden></ul>
-      <div class="ts-add-area">
-        <textarea id="tsInput" class="ts-input" rows="3" enterkeyhint="enter" autocomplete="off"
-                  aria-label="タイムスタンプとメモを入力（複数行で一括登録できます）"
-                  placeholder="例）3:00 好きなシーン&#10;メモだけでも登録できます"></textarea>
+      <div class="ts-add-area" hidden>
+        <div class="ts-input-wrap">
+          <textarea id="tsInput" class="ts-input" rows="3" enterkeyhint="enter" autocomplete="off"
+                    aria-label="タイムスタンプとメモを入力（複数行で一括登録できます）"
+                    placeholder="例）3:00 好きなシーン&#10;メモだけでも登録できます"></textarea>
+          <button id="tsCopyBtn" class="ts-copy-btn" aria-label="入力内容をコピー" title="入力内容をコピー">
+            <i class="fa-regular fa-copy"></i>
+          </button>
+        </div>
         <div class="ts-actions">
           <button id="tsCancelBtn" class="ts-cancel-btn" hidden>キャンセル</button>
-          <button id="tsEditAllBtn" class="ts-edit-all-btn" hidden aria-label="登録済みタイムスタンプを編集">
-            <i class="fa-solid fa-pen"></i><span>編集</span>
-          </button>
-          <button id="tsAddBtn" class="ts-add-btn" aria-label="タイムスタンプを登録">
-            <i class="fa-solid fa-plus"></i><span>登録</span>
+          <button id="tsAddBtn" class="ts-add-btn" aria-label="タイムスタンプを保存">
+            <i class="fa-solid fa-check"></i><span>保存</span>
           </button>
         </div>
       </div>
       <div id="tsError" class="ts-error" hidden></div>
       <ul id="tsList" class="ts-list" aria-label="登録済みタイムスタンプ"></ul>
+    </div>
+    <!-- 下部固定エリア: リストが長くてもボタンとヒントは常に見える -->
+    <div class="ts-footer">
       <div id="tsListActions" class="ts-list-actions" hidden>
-        <button id="tsCopyBtn" class="ts-copy-btn" aria-label="登録済みタイムスタンプをコピー">
-          <i class="fa-regular fa-copy"></i><span>コピー</span>
+        <button id="tsEditAllBtn" class="ts-edit-all-btn" aria-label="タイムスタンプを登録・編集">
+          <i class="fa-solid fa-pen"></i><span>編集</span>
         </button>
         <button id="tsClearAllBtn" class="ts-clear-all-btn" aria-label="登録済みタイムスタンプをすべて削除">
           <i class="fa-solid fa-trash-can"></i><span>すべて削除</span>
@@ -407,7 +413,7 @@
     h=d.documentElement,t=setTimeout(function(){h.className=h.className.replace(/\bwf-loading\b/g,"")+" wf-inactive";},config.scriptTimeout),tk=d.createElement("script"),f=false,s=d.getElementsByTagName("script")[0],a;h.className+=" wf-loading";tk.src='https://use.typekit.net/'+config.kitId+'.js';tk.async=true;tk.onload=tk.onreadystatechange=function(){a=this.readyState;if(f||a&&a!="complete"&&a!="loaded")return;f=true;clearTimeout(t);try{Typekit.load(config)}catch(e){}};s.parentNode.insertBefore(tk,s)
   })(document);
 </script>
-  <script src="main.js?v=20260720e" defer></script>
+  <script src="main.js?v=20260720f" defer></script>
 
   <script>
   // ---- Service Worker register (network-first) ----
@@ -425,7 +431,7 @@
     });
 
     window.addEventListener('load', function () {
-      navigator.serviceWorker.register('/sw.js?20260720e').then(function(reg) {
+      navigator.serviceWorker.register('/sw.js?20260720f').then(function(reg) {
         return navigator.serviceWorker.ready;
       }).then(function(reg) {
         if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
