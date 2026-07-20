@@ -1207,29 +1207,66 @@ function fitGuestLines() {
 // 文字の実体（インク）が左右にずれて見える。Canvasで実描画範囲を計測し、
 // ずれを打ち消す補正量(px)を返す。（正の値 = 右へ動かすべき）
 let labelMeasureCtx = null;
-// 末尾がこの約物のときは字面が細く右が空いて見えるため、右アキの一部を
-// ぶら下げて視覚的な重心を合わせる（全角の文末約物のみ。半角括弧等は対象外）
+let labelMeasureCanvas = null;
+const inkBoundsCache = new Map();
 const HANGING_TRAIL = /[！？。]$/;
-function getOpticalXOffset(text, font) {
-  try {
-    if (!labelMeasureCtx) labelMeasureCtx = document.createElement('canvas').getContext('2d');
-    labelMeasureCtx.font = font;
-    const m = labelMeasureCtx.measureText(text);
-    if (m.actualBoundingBoxLeft === undefined) return 0;
-    const inkCenter = (m.actualBoundingBoxRight - m.actualBoundingBoxLeft) / 2;
-    const boxCenter = m.width / 2;
-    let offset = boxCenter - inkCenter; // インクが左寄りなら正（右へ寄せる）
 
-    // 文末が全角約物（！？。）の場合、インク基準で中央に合わせても
-    // 細い字面のせいで右が空いて見える。約物の右アキの一部だけ余分に右へ寄せて
-    // ぶら下げ（光学マージン揃え）、見た目の中央を取る。
-    if (HANGING_TRAIL.test(text)) {
-      const last = labelMeasureCtx.measureText(text[text.length - 1]);
-      const rightBearing = last.width - last.actualBoundingBoxRight; // 約物の右アキ
-      if (rightBearing > 0) offset += rightBearing * 0.25;
+// テキストを実際にオフスクリーンcanvasへ描き、ピクセルからインク（実描画）の左右端を測る。
+// canvas.measureText().actualBoundingBox* は WebKit(iOS Safari) が末尾約物や字形の
+// アキを正しく返さないため、実ピクセル走査に切り替えて全エンジンで同じ結果を得る。
+// ラベルは固定なので (font+text) 単位でキャッシュし、初回のみ計測する。
+function getInkBounds(text, font, fontSizePx) {
+  const key = font + '|' + text;
+  if (inkBoundsCache.has(key)) return inkBoundsCache.get(key);
+  let result = null;
+  try {
+    if (!labelMeasureCtx) {
+      labelMeasureCanvas = document.createElement('canvas');
+      labelMeasureCtx = labelMeasureCanvas.getContext('2d', { willReadFrequently: true });
     }
-    return Math.max(-8, Math.min(8, offset)); // 異常値ガード
-  } catch (_) { return 0; }
+    const ctx = labelMeasureCtx;
+    ctx.font = font;
+    const advance = ctx.measureText(text).width;
+    const pad = Math.ceil(fontSizePx * 0.7) + 4; // 左右のはみ出し（イタリック等）を拾う余白
+    const W = Math.ceil(advance) + pad * 2;
+    const H = Math.ceil(fontSizePx * 1.8) + 4;
+    labelMeasureCanvas.width = W;
+    labelMeasureCanvas.height = H;
+    ctx.font = font;
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#000';
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillText(text, pad, H / 2);
+    const data = ctx.getImageData(0, 0, W, H).data;
+    let minX = W, maxX = -1;
+    for (let x = 0; x < W; x++) {
+      for (let y = 0; y < H; y++) {
+        if (data[(y * W + x) * 4 + 3] > 24) { // alpha>24 を「インクあり」とみなす
+          if (x < minX) minX = x;
+          if (x > maxX) maxX = x;
+          break;
+        }
+      }
+    }
+    if (maxX >= 0) {
+      // テキスト原点(x=pad)基準のインク左右端と送り幅
+      result = { inkLeft: minX - pad, inkRight: maxX - pad + 1, advance };
+    }
+  } catch (_) { result = null; }
+  inkBoundsCache.set(key, result);
+  return result;
+}
+
+function getOpticalXOffset(text, font, fontSizePx) {
+  const b = getInkBounds(text, font, fontSizePx);
+  if (!b || !b.advance) return 0;
+  const inkCenter = (b.inkLeft + b.inkRight) / 2;
+  const boxCenter = b.advance / 2;
+  let offset = boxCenter - inkCenter; // インクが左寄りなら正（右へ寄せる）
+  // 末尾が全角約物（！？。）は字面が細く、インク中央に合わせても視覚的に右が空いて見える。
+  // font-size 基準で少しだけ余分にぶら下げて見た目の重心を合わせる。
+  if (HANGING_TRAIL.test(text) && fontSizePx) offset += fontSizePx * 0.06;
+  return Math.max(-8, Math.min(8, offset)); // 異常値ガード
 }
 
 // フィルタボタンの長いラベルを、文字サイズは変えずに水平圧縮(scaleX)で収める。
@@ -1265,6 +1302,7 @@ function fitFilterButtons() {
       - BREATHING;
     job.need = job.span.scrollWidth;
     job.font = `${spanStyles.fontWeight} ${spanStyles.fontSize} ${spanStyles.fontFamily}`;
+    job.fontSizePx = parseFloat(spanStyles.fontSize) || 0;
   }
 
   // フェーズ3: 変形を一括適用（書き込みのみ。canvas計測はレイアウト非依存）
@@ -1275,7 +1313,7 @@ function fitFilterButtons() {
     // 光学補正量は圧縮前サイズで測っているため、scaleX圧縮ぶん(scale)を掛けて
     // 実際の描画サイズに合わせる（transformは translateX→scaleX の順で適用されるため、
     // インク中心を画面中央へ戻すのに必要な移動量は optX×scale になる）
-    const optX = getOpticalXOffset(job.span.textContent, job.font) * scale;
+    const optX = getOpticalXOffset(job.span.textContent, job.font, job.fontSizePx) * scale;
     if (Math.abs(optX) >= 0.5) parts.push(`translateX(${optX.toFixed(1)}px)`);
     if (scale < 1) parts.push(`scaleX(${scale.toFixed(3)})`);
     if (parts.length) job.span.style.transform = parts.join(' ');
@@ -1632,7 +1670,8 @@ function setupEventListeners() {
   // document.fonts のイベントを発火しないことがあるため、webfontloaderが<html>に
   // 付与する wf-active / wf-inactive クラスを監視して確実に再計測する。
   {
-    const refitAfterFonts = () => { fitGuestLines(); fitDymButtons(); fitFilterButtons(); };
+    // フォント確定で描画が変わるため、代替フォントで測ったインク境界キャッシュは破棄して測り直す
+    const refitAfterFonts = () => { inkBoundsCache.clear(); fitGuestLines(); fitDymButtons(); fitFilterButtons(); };
     const htmlEl = document.documentElement;
     const fontsSettled = () => htmlEl.classList.contains('wf-active') || htmlEl.classList.contains('wf-inactive');
     if (fontsSettled()) {

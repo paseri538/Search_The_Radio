@@ -1152,7 +1152,8 @@ body.dark-mode{
 /* 追加：フェードイン＆ポップ */
 .modal-overlay[hidden]{display:none;}
 .modal-overlay.show{display:flex; animation:modalFade .22s ease-out both;}
-.history-modal{transform:translateY(8px) scale(.98); animation:modalPop .24s ease-out both; will-change: transform, opacity;}
+/* 開く時は動かさずフェードインのみ（オーバーレイのopacityが上げる）。位置・サイズは固定 */
+.history-modal{transform:none; animation:none; will-change: opacity;}
 @keyframes modalFade{from{opacity:0}to{opacity:1}}
 @keyframes modalPop{to{transform:translateY(0) scale(1)}}
 
@@ -1181,17 +1182,20 @@ body.dark-mode .history-modal .modal-close{
 .history-modal .modal-header{ padding:14px 56px 12px; } /* 右=56pxで×が食い込まない */
 .history-modal .history-body{  padding:16px 22px 22px 16px; } /* ←右側にゆとり */
 
-/* 閉じる時：フェードアウト＋少し沈む */
-.modal-overlay.closing{ animation: modalFadeOut .20s ease-in forwards; }
-.modal-overlay.closing .history-modal{ animation: modalPopOut .18s ease-in forwards; }
+/* 閉じる時：フェードアウト＋少し沈む。
+   display:flex を明示しないと show を外した瞬間に base の display:none になり、
+   アニメーションが見えないまま消えてしまう（＝フェードアウトが無効になる）ので必ず指定する。 */
+.modal-overlay.closing{ display: flex; animation: modalFadeOut .20s ease-in forwards; }
+/* 閉じる時は動かさず、開いた位置に留めたままフェードアウトのみ（オーバーレイのopacityが下げる） */
+.modal-overlay.closing .history-modal{ animation: none; transform: translateY(0) scale(1); }
 
 @keyframes modalFadeOut { from{opacity:1} to{opacity:0} }
 @keyframes modalPopOut  { from{transform: translateY(0) scale(1); opacity:1}
                           to  {transform: translateY(6px) scale(.98); opacity:.96} }
 
 /* フェードアウト（closing） */
-.modal-overlay.closing{ animation: modalHide .18s ease-in both; }
-.modal-overlay.closing .history-modal{ animation: modalPopOut .18s ease-in both; }
+.modal-overlay.closing{ display: flex; animation: modalHide .18s ease-in both; }
+.modal-overlay.closing .history-modal{ animation: none; transform: translateY(0) scale(1); }
 
 @keyframes modalHide { from{opacity:1} to{opacity:0} }
 @keyframes modalPopOut { from{transform:translateY(0) scale(1)} to{transform:translateY(8px) scale(.98)} }
@@ -2942,8 +2946,10 @@ body.dark-mode #createPlaylistBtn {
 #aboutModal.closing {
   animation: modalFadeOut .20s ease-in forwards;
 }
+/* 閉じる時は動かさず、フェードアウトのみ（オーバーレイのopacityが下げる） */
 #aboutModal.closing #aboutModalContent {
-  animation: modalPopOut .18s ease-in forwards;
+  animation: none;
+  transform: translateY(0) scale(1);
 }
 
 html {
