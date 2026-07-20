@@ -61,6 +61,11 @@
         document.write('<meta name="theme-color" id="theme-color-meta" content="' + color + '">');
         document.write('<meta name="apple-mobile-web-app-status-bar-style" id="status-bar-style" content="' + statusBarStyle + '">');
 
+        // 最初の1フレームから正しい色で塗るため、html要素の背景を即座にインライン指定する。
+        // document.write によるstyle注入やstyle.css適用より確実に早く効くので、
+        // テーマがホワイト以外のとき初回描画で一瞬白くなるチラつきを防ぐ。
+        document.documentElement.style.backgroundColor = bodyBg || '#f9fafe';
+
         let styleContent = '';
         if (bodyBg) {
           styleContent += 'html, body, #loading-screen { background-color: ' + bodyBg + ' !important; }';
@@ -118,7 +123,7 @@
 <meta name="apple-mobile-web-app-title" content="さーち・ざ・らじお！">
 
 
-<link rel="manifest" href="./site.webmanifest?v=20260720f">
+<link rel="manifest" href="./site.webmanifest?v=20260720q">
 
   
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
@@ -128,7 +133,7 @@
 <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
 <link rel="preconnect" href="https://code.jquery.com" crossorigin>
 <link rel="preconnect" href="https://i.ytimg.com" crossorigin>
-  <link href="style.css?v=20260720f" rel="stylesheet" />
+  <link href="style.css?v=20260720q" rel="stylesheet" />
 
 
 </head>
@@ -413,7 +418,7 @@
     h=d.documentElement,t=setTimeout(function(){h.className=h.className.replace(/\bwf-loading\b/g,"")+" wf-inactive";},config.scriptTimeout),tk=d.createElement("script"),f=false,s=d.getElementsByTagName("script")[0],a;h.className+=" wf-loading";tk.src='https://use.typekit.net/'+config.kitId+'.js';tk.async=true;tk.onload=tk.onreadystatechange=function(){a=this.readyState;if(f||a&&a!="complete"&&a!="loaded")return;f=true;clearTimeout(t);try{Typekit.load(config)}catch(e){}};s.parentNode.insertBefore(tk,s)
   })(document);
 </script>
-  <script src="main.js?v=20260720f" defer></script>
+  <script src="main.js?v=20260720q" defer></script>
 
   <script>
   // ---- Service Worker register (network-first) ----
@@ -431,7 +436,7 @@
     });
 
     window.addEventListener('load', function () {
-      navigator.serviceWorker.register('/sw.js?20260720f').then(function(reg) {
+      navigator.serviceWorker.register('/sw.js?20260720q').then(function(reg) {
         return navigator.serviceWorker.ready;
       }).then(function(reg) {
         if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });

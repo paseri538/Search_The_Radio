@@ -225,7 +225,7 @@ body {
 #filterDrawer { /* centered without transform */
   margin: 0 auto;
   display: none;
-  width: 100vw; max-width: 900px;
+  width: 100vw; max-width: 1400px; /* iPad(〜1366px)まで画面いっぱい。超ワイドPCのみ抑制 */
   background: var(--bg-color, #f9fafe) !important;
   border-radius: 0 0 14px 14px;
   border: 1px solid #e7e7ef;
@@ -266,7 +266,9 @@ body {
   border: 1.3px solid rgba(80,80,160,0.10);
   background: #fff;
   cursor: pointer;
-  transition: all var(--transition);
+  /* transition:all は全プロパティを監視して重いため、実際に変化するものだけに限定
+     （動き系のtransitionは末尾の統一モーションブロックが !important で管理） */
+  transition: background-color var(--transition), border-color var(--transition), color var(--transition), box-shadow var(--transition);
   position: relative;
   outline: none;
   box-shadow: none;
@@ -283,7 +285,8 @@ body {
   justify-content: center;
   text-align: center;
   min-height: 39px;
-  transform: translateZ(0);
+  /* translateZ(0)による常時レイヤー化は撤去（27ボタン分の合成レイヤーがスクロールを重くしていた）。
+     ホバーの浮き上がり時だけ統一モーションブロックが一時的にレイヤーを作るので問題ない */
 }
 .btn-corner, .guest-button {
   font-size: 0.97em;
@@ -323,7 +326,8 @@ body {
   display: inline-block;
   white-space: nowrap;
   transform-origin: center;
-  will-change: transform;
+  /* will-change: transform は撤去。scaleXは一度きりの静的変形でアニメーションしないため
+     恒常的なレイヤー確保はメモリの無駄になっていた */
 }
 
 @media (max-width: 600px) {
@@ -633,7 +637,7 @@ body.dark-mode .searchbox-input::placeholder {
 #loading-screen.fadeout {
     opacity: 0;
     pointer-events: none;
-    transition: opacity 1.0s cubic-bezier(.52,0,.37,1.09);
+    transition: opacity 0.45s ease-out; /* フェードは素早く（表示時間の長さで魅せる） */
   }
 
   #loading-screen {
@@ -1590,8 +1594,10 @@ body.dark-mode .share-btn:focus-visible {
   --ctl-gap: .38em;
 }
 
-/* 「お気に入りだけ」ON時の保険（JSがクラス付与する前提） */
-body.fav-only .episode-item:not(.is-fav) {
+/* 「お気に入りだけ」ON時の保険（JSがクラス付与する前提）。
+   検索結果グリッド内のみに限定する。#results外のエピソードカード
+   （タイムスタンプモーダル内に複製したカード）まで隠さないようにするため。 */
+body.fav-only #results .episode-item:not(.is-fav) {
   display: none !important;
 }
 
@@ -1730,7 +1736,7 @@ html[data-theme="dark"] #filterDrawer .drawer-footer{
   left: 0 !important;
   right: 0 !important;
   margin: 0 auto !important;
-  width: min(100vw, 900px) !important; /* 基本の最大幅を900pxに設定 */
+  width: min(100vw, 1400px) !important; /* iPad(〜1366px)まで画面いっぱい。超ワイドPCのみ抑制 */
   top: var(--header-height, 96px) !important;
   bottom: max(0px, env(safe-area-inset-bottom, 0px)) !important;
   height: auto !important;
@@ -1751,6 +1757,12 @@ html[data-theme="dark"] #filterDrawer .drawer-footer{
   /* 追加: Drawer の余白（PC時に効く） */
   --drawer-px: clamp(12px, 2.2vw, 22px); /* 左右 */
   --drawer-pt: clamp(10px, 1.8vw, 18px); /* 上下 */
+}
+/* 780px以上では .filter-section の左右パディング(1.2rem)が0になり、
+   --drawer-px の22px頭打ちだけになって左右が急に狭くなる。
+   広い画面でも余白を保つため、この帯だけ横パディングを広げる。 */
+@media (min-width: 780px) {
+  :root { --drawer-px: 34px; }
 }
 
 /* ===== これより下を全て差し替えてください ===== */
@@ -2231,7 +2243,7 @@ body:not(.dark-mode):not([class*="theme-"]) .btn-year[aria-pressed="true"] {
   body:not(.dark-mode):not([class*="theme-"]) .guest-button:hover,
   body:not(.dark-mode):not([class*="theme-"]) .btn-corner:hover,
   body:not(.dark-mode):not([class*="theme-"]) .btn-year:hover {
-    box-shadow: 0 6px 18px -6px rgba(0, 0, 0, 0.15) !important;
+    box-shadow: none !important; /* 浮き上がり撤去（枠線＋暗転に統一） */
   }
 }
 
@@ -5847,6 +5859,12 @@ body[class*="theme-"] .search-card {
   content-visibility: auto;
   contain-intrinsic-size: auto 66px;
 }
+@media (hover: hover) {
+  /* content-visibility:auto は paint 収納を伴い、ホバー時の浮き上がり影を
+     項目の枠で切ってしまう。ホバー中だけ収納を解除して影を全周表示する
+     （画面外項目のスキップ最適化はホバーしていない行で維持される）。 */
+  .ts-item:hover { content-visibility: visible; }
+}
 .ts-play {
   flex: 1;
   min-width: 0;
@@ -6345,7 +6363,7 @@ body[class*="theme-"] .history-item { border-width: 1.5px !important; }
 }
 
 @media (hover: hover) {
-  /* ホバー: わずかに浮き上がり、柔らかい影で立体感を出す */
+  /* ホバー: 浮き上がり・影は使わず、枠線＋控えめな暗転で反応を示す（別ブロックで色付け） */
   .guest-button:hover, .btn-corner:hover, .btn-year:hover, .page-btn:hover, .share-btn:hover,
   #filterToggleBtn:hover, #favOnlyToggleBtn:hover, #randomBtn:hover, .reset-btn:hover,
   .drawer-close-btn:hover, .history-toggle:hover, .fav-btn:hover, .photo-btn:hover, .ts-btn:hover,
@@ -6354,10 +6372,10 @@ body[class*="theme-"] .history-item { border-width: 1.5px !important; }
   .ts-play:hover, .ts-edit-all-btn:hover, .ts-cancel-btn:hover, .ts-copy-btn:hover, .ts-add-btn:hover,
   .ts-delete:hover, .ts-clear-all-btn:hover, .ts-clear-ok-btn:hover, .ts-clear-cancel-btn:hover, .fav-clear-btn:hover,
   .modal-close:hover, #historyCloseBtn:hover, #aboutCloseBtn:hover {
-    transform: translateY(-1.5px) !important;
-    box-shadow: 0 5px 14px rgba(0, 0, 0, 0.16) !important;
+    transform: none !important;
+    box-shadow: none !important;
   }
-  /* クリック（押し込み）: 沈み込んで即座に反応を返す */
+  /* クリック（押し込み）: 浮かず、わずかに沈むだけの控えめな反応 */
   .guest-button:active, .btn-corner:active, .btn-year:active, .page-btn:active, .share-btn:active,
   #filterToggleBtn:active, #favOnlyToggleBtn:active, #randomBtn:active, .reset-btn:active,
   .drawer-close-btn:active, .history-toggle:active, .fav-btn:active, .photo-btn:active, .ts-btn:active,
@@ -6366,8 +6384,8 @@ body[class*="theme-"] .history-item { border-width: 1.5px !important; }
   .ts-play:active, .ts-edit-all-btn:active, .ts-cancel-btn:active, .ts-copy-btn:active, .ts-add-btn:active,
   .ts-delete:active, .ts-clear-all-btn:active, .ts-clear-ok-btn:active, .ts-clear-cancel-btn:active, .fav-clear-btn:active,
   .modal-close:active, #historyCloseBtn:active, #aboutCloseBtn:active {
-    transform: translateY(0) scale(0.98) !important;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12) !important;
+    transform: scale(0.985) !important;
+    box-shadow: none !important;
   }
 
   /* お気に入りボタンはベースの枠線ルールが:not()連打で詳細度が高くホバーに勝つため、
@@ -6383,13 +6401,112 @@ body[class*="theme-"] .history-item { border-width: 1.5px !important; }
     animation-fill-mode: none !important;
   }
 
-  /* ダークモードはベース側の box-shadow:none(高詳細度)に影が負けるため個別に上書き。
-     黒背景でも見えるよう影は濃いめにする */
+  /* ダークモードも浮き上がり影は使わない（枠線＋暗転に統一） */
   body.dark-mode .episode-item:hover,
   body.dark-mode .history-item:hover,
   body.dark-mode .photo-link-btn:hover,
   body.dark-mode .history-toggle:hover {
-    box-shadow: 0 5px 14px rgba(0, 0, 0, 0.5) !important;
+    box-shadow: none !important;
+  }
+
+  /* ===== ホバーの反応を「枠線＋控えめな暗転」に統一 =====
+     暗転は色に依存しない filter:brightness で一律に効かせる（白/黒/色ボタン共通）。
+     テーマは既存マスターが背景=--filter-btn-active で暗転＋枠線を付けるので filter は掛けない。 */
+  body:not(.dark-mode):not([class*="theme-"]) .guest-button:hover,
+  body:not(.dark-mode):not([class*="theme-"]) .btn-corner:hover,
+  body:not(.dark-mode):not([class*="theme-"]) .btn-year:hover,
+  body:not(.dark-mode):not([class*="theme-"]) .page-btn:hover,
+  body:not(.dark-mode):not([class*="theme-"]) .share-btn:hover,
+  body:not(.dark-mode):not([class*="theme-"]) #filterToggleBtn:hover,
+  body:not(.dark-mode):not([class*="theme-"]) #favOnlyToggleBtn:hover,
+  body:not(.dark-mode):not([class*="theme-"]) #randomBtn:hover,
+  body:not(.dark-mode):not([class*="theme-"]) .reset-btn:hover,
+  body:not(.dark-mode):not([class*="theme-"]) .drawer-close-btn:hover,
+  body:not(.dark-mode):not([class*="theme-"]) .history-toggle:hover,
+  body:not(.dark-mode):not([class*="theme-"]) .fav-btn:hover,
+  body:not(.dark-mode):not([class*="theme-"]) .photo-btn:hover,
+  body:not(.dark-mode):not([class*="theme-"]) .ts-btn:hover,
+  body:not(.dark-mode):not([class*="theme-"]) .dym-word-btn:hover,
+  body:not(.dark-mode):not([class*="theme-"]) .fav-home-btn:hover,
+  body:not(.dark-mode):not([class*="theme-"]) #theme-toggle-btn:hover,
+  body:not(.dark-mode):not([class*="theme-"]) #createPlaylistBtn:hover,
+  body:not(.dark-mode):not([class*="theme-"]) .photo-link-btn:hover,
+  body:not(.dark-mode):not([class*="theme-"]) .history-item:hover,
+  body:not(.dark-mode):not([class*="theme-"]) .episode-item:hover,
+  body:not(.dark-mode):not([class*="theme-"]) .ts-play:hover,
+  body:not(.dark-mode):not([class*="theme-"]) .ts-edit-all-btn:hover,
+  body:not(.dark-mode):not([class*="theme-"]) .ts-cancel-btn:hover,
+  body:not(.dark-mode):not([class*="theme-"]) .ts-copy-btn:hover,
+  body:not(.dark-mode):not([class*="theme-"]) .ts-add-btn:hover,
+  body:not(.dark-mode):not([class*="theme-"]) .ts-delete:hover,
+  body:not(.dark-mode):not([class*="theme-"]) .ts-clear-all-btn:hover,
+  body:not(.dark-mode):not([class*="theme-"]) .ts-clear-ok-btn:hover,
+  body:not(.dark-mode):not([class*="theme-"]) .ts-clear-cancel-btn:hover,
+  body:not(.dark-mode):not([class*="theme-"]) .fav-clear-btn:hover,
+  body:not(.dark-mode):not([class*="theme-"]) .modal-close:hover,
+  body:not(.dark-mode):not([class*="theme-"]) #historyCloseBtn:hover,
+  body:not(.dark-mode):not([class*="theme-"]) #aboutCloseBtn:hover {
+    filter: brightness(0.95) !important; /* 控えめな暗転 */
+  }
+  /* ライト: 危険系以外は暗いグレーの枠線を出す（危険系は赤枠を維持） */
+  body:not(.dark-mode):not([class*="theme-"]) .guest-button:hover,
+  body:not(.dark-mode):not([class*="theme-"]) .btn-corner:hover,
+  body:not(.dark-mode):not([class*="theme-"]) .btn-year:hover,
+  body:not(.dark-mode):not([class*="theme-"]) .page-btn:hover,
+  body:not(.dark-mode):not([class*="theme-"]) .share-btn:hover,
+  body:not(.dark-mode):not([class*="theme-"]) #filterToggleBtn:hover,
+  body:not(.dark-mode):not([class*="theme-"]) #favOnlyToggleBtn:hover,
+  body:not(.dark-mode):not([class*="theme-"]) #randomBtn:hover,
+  body:not(.dark-mode):not([class*="theme-"]) .reset-btn:hover,
+  body:not(.dark-mode):not([class*="theme-"]) .drawer-close-btn:hover,
+  body:not(.dark-mode):not([class*="theme-"]) .history-toggle:hover,
+  body:not(.dark-mode):not([class*="theme-"]) .fav-btn:hover,
+  body:not(.dark-mode):not([class*="theme-"]) .photo-btn:hover,
+  body:not(.dark-mode):not([class*="theme-"]) .ts-btn:hover,
+  body:not(.dark-mode):not([class*="theme-"]) .dym-word-btn:hover,
+  body:not(.dark-mode):not([class*="theme-"]) .fav-home-btn:hover,
+  body:not(.dark-mode):not([class*="theme-"]) #theme-toggle-btn:hover,
+  body:not(.dark-mode):not([class*="theme-"]) .photo-link-btn:hover,
+  body:not(.dark-mode):not([class*="theme-"]) .history-item:hover,
+  body:not(.dark-mode):not([class*="theme-"]) .episode-item:hover,
+  body:not(.dark-mode):not([class*="theme-"]) .ts-play:hover,
+  body:not(.dark-mode):not([class*="theme-"]) .ts-edit-all-btn:hover,
+  body:not(.dark-mode):not([class*="theme-"]) .ts-cancel-btn:hover,
+  body:not(.dark-mode):not([class*="theme-"]) .ts-copy-btn:hover,
+  body:not(.dark-mode):not([class*="theme-"]) .modal-close:hover,
+  body:not(.dark-mode):not([class*="theme-"]) #historyCloseBtn:hover,
+  body:not(.dark-mode):not([class*="theme-"]) #aboutCloseBtn:hover {
+    border-color: #b8c2d0 !important;
+  }
+  /* ダーク: 暗転は効きにくいので枠線を主役にする（背景の微変化は既存ルール維持） */
+  body.dark-mode .guest-button:hover,
+  body.dark-mode .btn-corner:hover,
+  body.dark-mode .btn-year:hover,
+  body.dark-mode .page-btn:hover,
+  body.dark-mode .share-btn:hover,
+  body.dark-mode #filterToggleBtn:hover,
+  body.dark-mode #favOnlyToggleBtn:hover,
+  body.dark-mode #randomBtn:hover,
+  body.dark-mode .reset-btn:hover,
+  body.dark-mode .drawer-close-btn:hover,
+  body.dark-mode .history-toggle:hover,
+  body.dark-mode .fav-btn:hover,
+  body.dark-mode .photo-btn:hover,
+  body.dark-mode .ts-btn:hover,
+  body.dark-mode .dym-word-btn:hover,
+  body.dark-mode .fav-home-btn:hover,
+  body.dark-mode #theme-toggle-btn:hover,
+  body.dark-mode .photo-link-btn:hover,
+  body.dark-mode .history-item:hover,
+  body.dark-mode .episode-item:hover,
+  body.dark-mode .ts-play:hover,
+  body.dark-mode .ts-edit-all-btn:hover,
+  body.dark-mode .ts-cancel-btn:hover,
+  body.dark-mode .ts-copy-btn:hover,
+  body.dark-mode .modal-close:hover,
+  body.dark-mode #historyCloseBtn:hover,
+  body.dark-mode #aboutCloseBtn:hover {
+    border-color: #565b62 !important;
   }
 }
 

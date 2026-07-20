@@ -1,5 +1,15 @@
 let isInputFocused = false;
 
+// リロードのたびにブラウザがスクロール位置を復元し、動的ビューポート(iOSのアドレスバー等)や
+// 非同期描画とのズレで少しずつ下へずれていくのを防ぐ。常に先頭表示が正しいサイトなので
+// 復元は手動管理にし、初期化時と読み込み完了時に先頭へ戻す。
+if ('scrollRestoration' in history) {
+  try { history.scrollRestoration = 'manual'; } catch (e) {}
+}
+const resetScrollTop = () => { try { window.scrollTo(0, 0); } catch (e) {} };
+window.addEventListener('load', resetScrollTop);
+window.addEventListener('pageshow', resetScrollTop); // BFキャッシュ復帰時も先頭へ
+
 /**
  * ===================================================
  * ★★★ データと状態管理 ★★★
@@ -1197,6 +1207,9 @@ function fitGuestLines() {
 // 文字の実体（インク）が左右にずれて見える。Canvasで実描画範囲を計測し、
 // ずれを打ち消す補正量(px)を返す。（正の値 = 右へ動かすべき）
 let labelMeasureCtx = null;
+// 末尾がこの約物のときは字面が細く右が空いて見えるため、右アキの一部を
+// ぶら下げて視覚的な重心を合わせる（全角の文末約物のみ。半角括弧等は対象外）
+const HANGING_TRAIL = /[！？。]$/;
 function getOpticalXOffset(text, font) {
   try {
     if (!labelMeasureCtx) labelMeasureCtx = document.createElement('canvas').getContext('2d');
@@ -1205,16 +1218,30 @@ function getOpticalXOffset(text, font) {
     if (m.actualBoundingBoxLeft === undefined) return 0;
     const inkCenter = (m.actualBoundingBoxRight - m.actualBoundingBoxLeft) / 2;
     const boxCenter = m.width / 2;
-    const offset = boxCenter - inkCenter; // インクが左寄りなら正（右へ寄せる）
-    return Math.max(-6, Math.min(6, offset)); // 異常値ガード
+    let offset = boxCenter - inkCenter; // インクが左寄りなら正（右へ寄せる）
+
+    // 文末が全角約物（！？。）の場合、インク基準で中央に合わせても
+    // 細い字面のせいで右が空いて見える。約物の右アキの一部だけ余分に右へ寄せて
+    // ぶら下げ（光学マージン揃え）、見た目の中央を取る。
+    if (HANGING_TRAIL.test(text)) {
+      const last = labelMeasureCtx.measureText(text[text.length - 1]);
+      const rightBearing = last.width - last.actualBoundingBoxRight; // 約物の右アキ
+      if (rightBearing > 0) offset += rightBearing * 0.25;
+    }
+    return Math.max(-8, Math.min(8, offset)); // 異常値ガード
   } catch (_) { return 0; }
 }
 
 // フィルタボタンの長いラベルを、文字サイズは変えずに水平圧縮(scaleX)で収める。
 // あわせて全ラベルをインク基準で光学センタリングする。
+// レイアウトスラッシング（読み↔書きの交互）を避けるため、
+// 「変形リセット→計測→変形適用」を3フェーズに分けてまとめて処理する。
 function fitFilterButtons() {
+  const BREATHING = 28; // 圧縮後も左右に14pxずつの余白が残るようにする
+  const jobs = [];
+
+  // フェーズ1: spanを用意し、全ボタンの変形を一括リセット（書き込みのみ）
   document.querySelectorAll('.guest-button, .btn-corner, .btn-year').forEach(btn => {
-    // 初回のみテキストを計測用spanで包む
     let span = btn.querySelector('.btn-label-fit');
     if (!span) {
       if (btn.childElementCount > 0) return; // テキスト以外を含む想定外の構造はスキップ
@@ -1225,23 +1252,34 @@ function fitFilterButtons() {
       btn.appendChild(span);
     }
     span.style.transform = '';
-    const styles = window.getComputedStyle(btn);
-    const BREATHING = 28; // 圧縮後も左右に14pxずつの余白が残るようにする
-    const avail = btn.clientWidth
+    jobs.push({ btn, span });
+  });
+
+  // フェーズ2: 全ボタンをまとめて計測（読み取りのみ＝強制レイアウトは実質1回）
+  for (const job of jobs) {
+    const styles = window.getComputedStyle(job.btn);
+    const spanStyles = window.getComputedStyle(job.span);
+    job.avail = job.btn.clientWidth
       - (parseFloat(styles.paddingLeft) || 0)
       - (parseFloat(styles.paddingRight) || 0)
       - BREATHING;
-    if (avail <= 10) return; // 非表示中（ドロワーが閉じている等）は何もしない
-    const need = span.scrollWidth;
+    job.need = job.span.scrollWidth;
+    job.font = `${spanStyles.fontWeight} ${spanStyles.fontSize} ${spanStyles.fontFamily}`;
+  }
 
+  // フェーズ3: 変形を一括適用（書き込みのみ。canvas計測はレイアウト非依存）
+  for (const job of jobs) {
+    if (job.avail <= 10) continue; // 非表示中（ドロワーが閉じている等）は何もしない
+    const scale = job.need > job.avail ? job.avail / job.need : 1;
     const parts = [];
-    // 約物の見えない余白による左右ズレを打ち消す（インク基準の光学センタリング）
-    const spanStyles = window.getComputedStyle(span);
-    const optX = getOpticalXOffset(span.textContent, `${spanStyles.fontWeight} ${spanStyles.fontSize} ${spanStyles.fontFamily}`);
+    // 光学補正量は圧縮前サイズで測っているため、scaleX圧縮ぶん(scale)を掛けて
+    // 実際の描画サイズに合わせる（transformは translateX→scaleX の順で適用されるため、
+    // インク中心を画面中央へ戻すのに必要な移動量は optX×scale になる）
+    const optX = getOpticalXOffset(job.span.textContent, job.font) * scale;
     if (Math.abs(optX) >= 0.5) parts.push(`translateX(${optX.toFixed(1)}px)`);
-    if (need > avail) parts.push(`scaleX(${(avail / need).toFixed(3)})`);
-    if (parts.length) span.style.transform = parts.join(' ');
-  });
+    if (scale < 1) parts.push(`scaleX(${scale.toFixed(3)})`);
+    if (parts.length) job.span.style.transform = parts.join(' ');
+  }
 }
 
 // ★修正: もしかしてボタンのサイズ調整関数 (透明化解除付き)
@@ -1431,8 +1469,13 @@ function setupEventListeners() {
     if (isOpening) window.acquireBodyLock();
     else window.releaseBodyLock();
 
-    // ドロワーが開いて幅が確定してから、長いラベルの水平圧縮を計算する
-    if (isOpening) requestAnimationFrame(() => requestAnimationFrame(fitFilterButtons));
+    // ドロワーが開いて幅が確定してから、長いラベルの水平圧縮を計算する。
+    // 低速端末でレイアウトやWebフォントの確定が2フレームに間に合わない場合に備え、
+    // 少し遅らせた保険パスも走らせる（fitFilterButtonsは何度呼んでも同じ結果になる）。
+    if (isOpening) {
+      requestAnimationFrame(() => requestAnimationFrame(fitFilterButtons));
+      setTimeout(fitFilterButtons, 350);
+    }
   };
   window.toggleFilterDrawer = toggleFilterDrawer;
 
@@ -1474,8 +1517,11 @@ function setupEventListeners() {
       if (!btn) return;
       const value = btn.dataset[type];
       const index = collection.indexOf(value);
-      index > -1 ? collection.splice(index, 1) : collection.push(value);
-      updateFilterButtonStyles();
+      const active = index === -1; // 押す前に無ければ今回ONにする
+      active ? collection.push(value) : collection.splice(index, 1);
+      // 変わったのは押したボタン1つだけなので、全ボタン走査せずここだけ更新する
+      btn.classList.toggle('active', active);
+      btn.setAttribute('aria-pressed', String(active));
       search();
       scrollToResultsTop();
   };
@@ -1749,24 +1795,25 @@ function setupThemeSwitcher() {
       themeColorMeta.content = color;
     }
 
+    let bodyBg = '';
+    switch (themeName) {
+      case 'dark':   bodyBg = '#000000'; break;
+      case 'pink':   bodyBg = '#ff6496'; break;
+      case 'yellow': bodyBg = '#fabe00'; break;
+      case 'blue':   bodyBg = '#006ebe'; break;
+      case 'red':    bodyBg = '#e60046'; break;
+      case 'green':  bodyBg = '#13a286'; break;
+    }
+
     const earlyStyle = document.getElementById('early-theme-style');
     if (earlyStyle) {
-      let bodyBg = '';
-      switch (themeName) {
-        case 'dark':   bodyBg = '#000000'; break;
-        case 'pink':   bodyBg = '#ff6496'; break;
-        case 'yellow': bodyBg = '#fabe00'; break;
-        case 'blue':   bodyBg = '#006ebe'; break;
-        case 'red':    bodyBg = '#e60046'; break;
-        case 'green':  bodyBg = '#13a286'; break;
-      }
-
-      if (bodyBg) {
-        earlyStyle.textContent = 'html, body, #loading-screen { background-color: ' + bodyBg + ' !important; }';
-      } else {
-        earlyStyle.textContent = '';
-      }
+      earlyStyle.textContent = bodyBg
+        ? 'html, body, #loading-screen { background-color: ' + bodyBg + ' !important; }'
+        : '';
     }
+    // html要素のインライン背景（初回チラつき防止用）もテーマ切替に追従させ、
+    // カラーテーマ→ライトへ戻したときに古い色が残らないようにする。
+    document.documentElement.style.backgroundColor = bodyBg || '#f9fafe';
   };
 
   toggleBtn.addEventListener('click', e => { e.stopPropagation(); panel.classList.toggle('show'); });
@@ -2510,35 +2557,31 @@ window.applyDidYouMean = function(word) {
 
         const loadingScreen = document.getElementById("loading-screen");
         if (loadingScreen) {
-            // ローディング画面を消す共通関数（前回と同じく800ms待機）
+            let hidden = false;
             const hideLoadingScreen = () => {
-                setTimeout(() => {
-                    loadingScreen.classList.add("fadeout");
-                    loadingScreen.addEventListener('transitionend', () => loadingScreen.remove(), { once: true });
-                }, 800);
+                if (hidden) return;
+                hidden = true;
+                loadingScreen.classList.add("fadeout");
+                loadingScreen.addEventListener('transitionend', () => loadingScreen.remove(), { once: true });
+                setTimeout(() => loadingScreen.remove(), 700); // フェード(0.45s)完了後に確実に除去する保険
             };
 
-            const htmlEl = document.documentElement;
-            
-            // 既にフォントの読み込みが完了している場合
-            if (htmlEl.classList.contains('wf-active') || htmlEl.classList.contains('wf-inactive')) {
-                hideLoadingScreen();
-            } else {
-                // まだ読み込み中の場合は完了の合図を監視
-                const observer = new MutationObserver((mutations, obs) => {
-                    if (htmlEl.classList.contains('wf-active') || htmlEl.classList.contains('wf-inactive')) {
-                        obs.disconnect(); // 監視を終了
-                        hideLoadingScreen();
-                    }
-                });
-                observer.observe(htmlEl, { attributes: true, attributeFilter: ['class'] });
-                
-                // 通信エラー等に備えた保険（最大3秒で強制的に消す）
-                setTimeout(() => {
-                    observer.disconnect();
-                    hideLoadingScreen();
-                }, 3000);
-            }
+            const cardsReady = () => !!document.querySelector('#results .fav-btn') || !!document.querySelector('#results .episode-item');
+
+            // タイトル画面は「ほどよい表示時間(MIN_SHOW)」と「データ(カード)描画完了」の
+            // 両方を満たしたら消す。速い回線でも一瞬で消えずタイトルをしっかり見せ、
+            // フェード自体は素早く行う。日本語フォント(約5MB)の完了は待たない
+            // （MIN_SHOWの間に間に合えばちらつかず、遅い回線でも待たせない。
+            //   フォント確定後の文字幅再調整は refitAfterFonts が担当）。
+            const MIN_SHOW = 1500; // ナビ開始からタイトルを最低これだけ表示する
+            const tryHide = () => {
+                if (cardsReady() && performance.now() >= MIN_SHOW) { hideLoadingScreen(); return; }
+                requestAnimationFrame(tryHide);
+            };
+            tryHide();
+
+            // 最終保険（データ取得が失敗しても必ず消す）
+            setTimeout(hideLoadingScreen, 6000);
         }
     });
 
