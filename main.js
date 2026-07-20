@@ -528,26 +528,40 @@ async function loadExternalData() {
       });
     }
 
-    // 抽出した全文字を結合
-    const charStr = Array.from(allChars).join('');
+    // ---- フォントの明示プリロード（FOUT＝一瞬フォールバック表示 の防止） ----
+    // データだけでなく、履歴・関連リンク・画面内の静的テキストまで全ての文字を集め、
+    // document.fonts.load() で必要なサブセットを先に読み込む。読み込み完了までは
+    // ローディング画面で隠すため（下記 __fontsReady を待つ）、どの文字も
+    // 最初からAdobeフォントで表示され、一瞬だけ別フォントになる現象が起きない。
+    let corpus = Array.from(allChars).join('');
+    try {
+      corpus += JSON.stringify(data) + JSON.stringify(historyData || '') + JSON.stringify(linksData || '');
+      if (document.body) corpus += (document.body.textContent || '');
+    } catch (e) {}
+    const uniqueChars = Array.from(new Set(corpus)).join('');
 
-    // 全文字プリロードはフォントの全チャンク読み込み（数MB）を誘発するため、
-    // 初回描画と帯域を取り合わないようアイドル時間まで遅らせて配置する。
-    // （検索候補などの文字が最初からブランドフォントで出るようにする仕組み自体は維持）
-    const appendFontPreloadDiv = () => {
+    // 全文字ぶんのフォントを読み込む Promise。ローディング画面はこれ（＋上限時間）を待つ。
+    // Adobe本文フォント(400/700)に加え、番号・日時に使う Impact Numbers も先読みする。
+    const impactChars = '0123456789#:.／/・-〜~ ' + uniqueChars;
+    window.__fontsReady = (async () => {
+      try {
+        if (document.fonts && document.fonts.load) {
+          await Promise.all([
+            document.fonts.load('400 1em fot-udkakugoc70-pro', uniqueChars),
+            document.fonts.load('700 1em fot-udkakugoc80-pro', uniqueChars),
+            document.fonts.load('1em "Impact Numbers"', impactChars),
+          ]);
+          await document.fonts.ready;
+        }
+      } catch (e) {}
+    })();
+
+    // 互換フォールバック: document.fonts 非対応環境では隠しdivでも読み込ませる
+    if (!(document.fonts && document.fonts.load)) {
       const hiddenFontDiv = document.createElement('div');
       hiddenFontDiv.style.cssText = 'position:absolute;width:1px;height:1px;overflow:hidden;opacity:0;pointer-events:none;z-index:-1;font-family:fot-udkakugoc70-pro,fot-udkakugoc80-pro,sans-serif;';
-      // 通常(400)と太字(700)の両方のウェイトを読み込ませる
-      hiddenFontDiv.innerHTML = `
-        <span style="font-weight:400">${charStr}</span>
-        <span style="font-weight:700">${charStr}</span>
-      `;
-      document.body.appendChild(hiddenFontDiv);
-    };
-    if (window.requestIdleCallback) {
-      requestIdleCallback(appendFontPreloadDiv, { timeout: 5000 });
-    } else {
-      setTimeout(appendFontPreloadDiv, 2500);
+      hiddenFontDiv.innerHTML = `<span style="font-weight:400">${uniqueChars}</span><span style="font-weight:700">${uniqueChars}</span>`;
+      document.body && document.body.appendChild(hiddenFontDiv);
     }
 
     console.log("All data loaded successfully.");
@@ -1970,6 +1984,33 @@ function setupModals() {
         instantScrollTo(tsSavedScrollY);
       }
     };
+    // 閉じた後の遅延スクロール復元は、iOSがキーボードを閉じる際に起こす不本意な
+    // ページずれを元に戻すためのもの。ただしユーザーが自分でスクロールした場合は
+    // その操作を尊重して復元を中止する（閉じた直後にスクロールすると戻される不具合の対策）。
+    let tsRestoreTimers = [];
+    const cancelTsScrollRestore = () => {
+      tsRestoreTimers.forEach(clearTimeout);
+      tsRestoreTimers = [];
+      window.removeEventListener('wheel', onTsUserScroll);
+      window.removeEventListener('touchstart', onTsUserScroll);
+      window.removeEventListener('touchmove', onTsUserScroll);
+      window.removeEventListener('keydown', onTsScrollKey);
+    };
+    function onTsUserScroll() { cancelTsScrollRestore(); }
+    function onTsScrollKey(e) {
+      // スクロール系キー操作もユーザー意思とみなす
+      if (['ArrowUp','ArrowDown','PageUp','PageDown','Home','End',' ','Spacebar'].includes(e.key)) cancelTsScrollRestore();
+    }
+    const scheduleTsScrollRestore = () => {
+      cancelTsScrollRestore();
+      // touchstart はスワイプ開始を即検知（閉じた直後にすぐ触っても取りこぼさない）
+      window.addEventListener('wheel', onTsUserScroll, { passive: true });
+      window.addEventListener('touchstart', onTsUserScroll, { passive: true });
+      window.addEventListener('touchmove', onTsUserScroll, { passive: true });
+      window.addEventListener('keydown', onTsScrollKey);
+      tsRestoreTimers.push(setTimeout(restoreTsScroll, 150));
+      tsRestoreTimers.push(setTimeout(() => { restoreTsScroll(); cancelTsScrollRestore(); }, 450));
+    };
 
     // スマホ（ボトムシート表示）ではさらに強い固定を使う:
     // bodyをposition:fixedにすると、iOSが「入力欄を見せるため」に行う
@@ -2312,7 +2353,7 @@ function setupModals() {
     tsInputEl.addEventListener('focus', startTypingMode);
     tsInputEl.addEventListener('blur', () => {
       endTypingMode();
-      setTimeout(restoreTsScroll, 150); // 万一ページがずらされていても元へ
+      scheduleTsScrollRestore(); // 万一ページがずらされていても元へ（ユーザー操作時は中止）
     });
     // iOSはボタンや余白をタップしても入力欄のフォーカスが外れないため、
     // コンポーズモード中にシート内の入力欄以外へ触れたらキーボードを閉じる
@@ -2330,9 +2371,8 @@ function setupModals() {
       clearTimeout(typingEndTimer);
       tsSheetEl.classList.remove('ts-typing');
       unlockTsBody();
-      // キーボードの閉じアニメーション後にも復元（blur経由と二重でも無害）
-      setTimeout(restoreTsScroll, 150);
-      setTimeout(restoreTsScroll, 450);
+      // キーボードの閉じアニメーション後にも復元（ユーザーが自分でスクロールしたら中止）
+      scheduleTsScrollRestore();
     };
     document.getElementById('tsCloseBtn').addEventListener('click', resetTsKeyboard);
     document.getElementById('tsModal').addEventListener('click', e => {
@@ -2607,20 +2647,30 @@ window.applyDidYouMean = function(word) {
 
             const cardsReady = () => !!document.querySelector('#results .fav-btn') || !!document.querySelector('#results .episode-item');
 
-            // タイトル画面は「ほどよい表示時間(MIN_SHOW)」と「データ(カード)描画完了」の
-            // 両方を満たしたら消す。速い回線でも一瞬で消えずタイトルをしっかり見せ、
-            // フェード自体は素早く行う。日本語フォント(約5MB)の完了は待たない
-            // （MIN_SHOWの間に間に合えばちらつかず、遅い回線でも待たせない。
-            //   フォント確定後の文字幅再調整は refitAfterFonts が担当）。
-            const MIN_SHOW = 1500; // ナビ開始からタイトルを最低これだけ表示する
+            // フォントの全文字読み込み完了フラグ（__fontsReady はデータ読込後に生成される）
+            let fontsDone = false;
+            const hookFonts = () => {
+                if (window.__fontsReady) { window.__fontsReady.then(() => { fontsDone = true; }); return true; }
+                return false;
+            };
+            hookFonts();
+
+            // タイトル画面は「ほどよい表示時間(MIN_SHOW)」「データ(カード)描画完了」
+            // 「フォントの全文字読み込み完了」を満たしたら消す。フォントまで待つことで、
+            // どの文字も最初からAdobeフォントで表示され、一瞬だけフォールバックになるFOUTを防ぐ。
+            // 低速回線で永遠に待たないよう FONT_CAP を上限にする。
+            const MIN_SHOW = 1500;   // タイトル最低表示時間
+            const FONT_CAP = 8000;   // フォントを待つ上限（超えたら諦めて表示）
             const tryHide = () => {
-                if (cardsReady() && performance.now() >= MIN_SHOW) { hideLoadingScreen(); return; }
+                const t = performance.now();
+                if (!fontsDone) hookFonts();
+                if (cardsReady() && t >= MIN_SHOW && (fontsDone || t >= FONT_CAP)) { hideLoadingScreen(); return; }
                 requestAnimationFrame(tryHide);
             };
             tryHide();
 
-            // 最終保険（データ取得が失敗しても必ず消す）
-            setTimeout(hideLoadingScreen, 6000);
+            // 最終保険（データ取得やフォントが失敗しても必ず消す）
+            setTimeout(hideLoadingScreen, 9000);
         }
     });
 

@@ -4,9 +4,10 @@
 @font-face {
   font-family: 'Impact Numbers';
   src: url('Impact.ttf') format('truetype');
-  /* font-weightの指定は不要になります。
-    JSで強制適用するため、シンプルな定義に戻します。
-  */
+  /* block: 読み込み中はフォールバックを見せず（不可視で待つ）、読み込めたら表示する。
+     先読み(__fontsReady)で事前に読み込むため待ち時間はほぼ無く、番号(#108・日時等)が
+     一瞬だけ別フォントで見えるチラつき(FOUT)を防ぐ。 */
+  font-display: block;
 }
 
 /* 変数・レイアウト */
