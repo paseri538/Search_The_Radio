@@ -5878,7 +5878,7 @@ body[class*="theme-"] .search-card {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 12px 14px;
+  padding: 7px 14px; /* 縦幅を少し詰める（旧12px） */
   border: 1.5px solid #e2e8f0; /* 枠線幅は1.5pxで統一 */
   border-radius: 14px;
   background: #ffffff;
@@ -5897,7 +5897,7 @@ body[class*="theme-"] .search-card {
   justify-content: center;
   gap: 6px;
   min-width: 4.6em; /* 3:00 と 12:34 などで幅を揃え、メモの開始位置を揃える */
-  padding: 5px 12px;
+  padding: 4px 12px;
   border-radius: 999px;
   background: #e2e8f0;
   color: #334155;

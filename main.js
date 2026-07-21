@@ -2360,9 +2360,11 @@ function setupModals() {
     tsSheetEl.addEventListener('pointerdown', (e) => {
       if (!tsSheetEl.classList.contains('ts-typing')) return;
       if (e.target === tsInputEl || tsInputEl.contains(e.target)) return;
-      // コピーは入力を中断しない操作なので、キーボードは開いたままにする
-      const copyBtn = document.getElementById('tsCopyBtn');
-      if (copyBtn && copyBtn.contains(e.target)) return;
+      // アクション行（キャンセル/コピー/保存）はここではblurしない。
+      // pointerdownでblurするとキーボードが閉じてレイアウトが動き、指の下からボタンが
+      // ずれてclickが外れる＝ボタンが押せない（iOS Safari）。keyboardはclickの各ハンドラ
+      // （submitTs / キャンセル）が endTypingModeNow() で閉じるので取りこぼさない。
+      if (e.target.closest('.ts-actions')) return;
       tsInputEl.blur();
     });
     // モーダルを閉じる操作時はキーボードも閉じ、body固定を解除して位置を戻す
