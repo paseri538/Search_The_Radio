@@ -1996,7 +1996,14 @@ function setupModals() {
       window.removeEventListener('touchmove', onTsUserScroll);
       window.removeEventListener('keydown', onTsScrollKey);
     };
-    function onTsUserScroll() { cancelTsScrollRestore(); }
+    function onTsUserScroll() {
+      // body固定中（モーダル表示中のスマホ）はページ自体がスクロールできないため、
+      // モーダル内のタップで復元を中止しない。中止するとキーボード終了時の
+      // パン残留が残ったまま次のフォーカスが始まり、表示位置が経路でずれる。
+      // （中止はモーダルを閉じた後にユーザーが自分でスクロールした場合の保護）
+      if (document.body.classList.contains('ts-kb-lock')) return;
+      cancelTsScrollRestore();
+    }
     function onTsScrollKey(e) {
       // スクロール系キー操作もユーザー意思とみなす
       if (['ArrowUp','ArrowDown','PageUp','PageDown','Home','End',' ','Spacebar'].includes(e.key)) cancelTsScrollRestore();
@@ -2078,13 +2085,16 @@ function setupModals() {
     // テキストエリアの高さを内容に合わせる（最大6行相当）。
     // scrollHeight参照は強制リフローを起こすため、rAFで1フレーム1回に間引いて軽量化。
     let autosizeRafId = 0;
+    const applyTsAutosize = () => {
+      const { input } = tsEls();
+      input.style.height = 'auto';
+      input.style.height = Math.min(input.scrollHeight, 152) + 'px';
+    };
     const autosizeTsInput = () => {
       if (autosizeRafId) return;
       autosizeRafId = requestAnimationFrame(() => {
         autosizeRafId = 0;
-        const { input } = tsEls();
-        input.style.height = 'auto';
-        input.style.height = Math.min(input.scrollHeight, 152) + 'px';
+        applyTsAutosize();
       });
     };
 
@@ -2287,6 +2297,10 @@ function setupModals() {
     });
     document.getElementById('tsEditAllBtn').addEventListener('click', () => {
       setEditingMode(true);
+      // 高さ調整はrAF待ちのため、フォーカス前に確定させる。未確定のままだと
+      // iOSがキーボード表示時に計算するスクロール量が入力欄を直接タップした
+      // 時と変わり、モーダルの表示位置が経路によってずれる。
+      applyTsAutosize();
       tsEls().input.focus();
     });
     document.getElementById('tsClearAllBtn').addEventListener('click', () => {
@@ -2333,13 +2347,32 @@ function setupModals() {
     const tsSheetEl = document.querySelector('#tsModal .ts-modal');
     const tsInputEl = document.getElementById('tsInput');
     let typingEndTimer = 0;
+    // キーボード表示直後の位置補正: iOSは入力欄が隠れていなくてもページを不定量
+    // パンすることがあり、その量はフォーカスの入り方（編集ボタン経由か、入力欄を
+    // 直接タップか）で変わる。キーボードが出きった頃に基準位置（body固定中は
+    // scrollY=0）へ戻し、どちらの経路でも同じ表示位置に揃える。
+    let tsTypingFixTimers = [];
+    const cancelTsTypingPanFix = () => {
+      tsTypingFixTimers.forEach(clearTimeout);
+      tsTypingFixTimers = [];
+    };
+    const scheduleTsTypingPanFix = () => {
+      cancelTsTypingPanFix();
+      [250, 600].forEach(ms => tsTypingFixTimers.push(setTimeout(() => {
+        if (!tsSheetEl.classList.contains('ts-typing')) return; // 既に入力終了なら何もしない
+        if (!document.body.classList.contains('ts-kb-lock')) return;
+        if (window.scrollY !== 0) instantScrollTo(0);
+      }, ms)));
+    };
     const startTypingMode = () => {
       if (!window.matchMedia('(max-width: 600px)').matches) return; // ボトムシート時のみ
       clearTimeout(typingEndTimer);
       tsSheetEl.classList.add('ts-typing');
+      scheduleTsTypingPanFix();
     };
     const endTypingMode = () => {
       clearTimeout(typingEndTimer);
+      cancelTsTypingPanFix();
       // blur直後のタップ（登録ボタン等）がレイアウト変化で外れないよう少し待ってから戻す
       typingEndTimer = setTimeout(() => tsSheetEl.classList.remove('ts-typing'), 150);
     };
@@ -2348,6 +2381,7 @@ function setupModals() {
     const endTypingModeNow = () => {
       tsInputEl.blur(); // iOSはボタンタップでblurしないため明示的に閉じる
       clearTimeout(typingEndTimer);
+      cancelTsTypingPanFix();
       tsSheetEl.classList.remove('ts-typing');
     };
     tsInputEl.addEventListener('focus', startTypingMode);
@@ -2371,6 +2405,7 @@ function setupModals() {
     const resetTsKeyboard = () => {
       tsInputEl?.blur();
       clearTimeout(typingEndTimer);
+      cancelTsTypingPanFix();
       tsSheetEl.classList.remove('ts-typing');
       unlockTsBody();
       // キーボードの閉じアニメーション後にも復元（ユーザーが自分でスクロールしたら中止）
