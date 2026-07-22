@@ -39,6 +39,12 @@ let linksData = {}; // ★追加：リンクデータの格納先
  * =================================================== */
 const TS_KEY = 'str_timestamps_v1';
 const FAV_KEY = 'str_favs_v1'; // 旧お気に入りキー（初回移行にのみ使用）
+// ブラウザに「このサイトのデータを自動削除しないで」と申告する（対応環境のみ・失敗しても無害）。
+// 容量逼迫時の自動退避（eviction）からlocalStorageのタイムスタンプを守る。
+// SafariのITP（7日間未訪問での削除）まで防げる保証はないため、あくまで補助的な保険。
+if (navigator.storage?.persist) {
+  navigator.storage.persist().catch(() => {});
+}
 let timestamps = loadTimestamps();
 let showFavoritesOnly = false;
 let isRestoringURL = false;
