@@ -2078,17 +2078,37 @@ function setupModals() {
       error.hidden = false;
       input.classList.add('ts-input-error');
       setTimeout(() => input.classList.remove('ts-input-error'), 500);
+      autosizeTsInput(); // エラーが入力欄とボタンの間に挟まり上限が縮むため再計算
     };
 
     const clearTsError = () => { const { error } = tsEls(); error.hidden = true; error.innerHTML = ''; };
 
-    // テキストエリアの高さを内容に合わせる（最大6行相当）。
+    // テキストエリアの高さを内容に合わせる。上限はスマホでは約6行（152px）、
+    // PC/iPad（601px以上）ではモーダルの空きスペース＝キャンセル/保存ボタンが
+    // モーダル下端に達するまで。上限を超えた分は内部スクロールになる。
     // scrollHeight参照は強制リフローを起こすため、rAFで1フレーム1回に間引いて軽量化。
+    const tsInputMaxHeight = () => {
+      if (!window.matchMedia('(min-width: 601px)').matches) return 152;
+      // .ts-body は flex:1 で高さが固定されているため、入力欄の高さに影響されず
+      // 「ボタン・余白を除いた空きスペース」を安定して算出できる
+      const body = document.querySelector('#tsModal .ts-body');
+      const { addArea, error } = tsEls();
+      const actions = addArea ? addArea.querySelector('.ts-actions') : null;
+      if (!body || !actions) return 152;
+      const bs = getComputedStyle(body);
+      const gap = parseFloat(getComputedStyle(addArea).rowGap) || 0;
+      let free = body.clientHeight
+        - parseFloat(bs.paddingTop) - parseFloat(bs.paddingBottom)
+        - actions.offsetHeight - gap;
+      // エラー表示は入力欄とボタンの間に挟まるため、その高さと区切りgapも差し引く
+      if (error && !error.hidden) free -= error.offsetHeight + gap;
+      return Math.max(152, free);
+    };
     let autosizeRafId = 0;
     const applyTsAutosize = () => {
       const { input } = tsEls();
       input.style.height = 'auto';
-      input.style.height = Math.min(input.scrollHeight, 152) + 'px';
+      input.style.height = Math.min(input.scrollHeight, tsInputMaxHeight()) + 'px';
     };
     const autosizeTsInput = () => {
       if (autosizeRafId) return;
@@ -2118,8 +2138,10 @@ function setupModals() {
       syncTsBodyScrollbar();
     };
 
-    // リストが長くスクロールバーが幅を取る環境（PC/iPad等）で、
-    // 右paddingを実測のバー幅ぶん詰めて、固定表示のカード/フッターと左右位置を揃える。
+    // スクロールバーが幅を取る環境（PC/iPad等）で、右paddingを実測のバー幅ぶん
+    // 詰めて、固定表示のカード/フッターと左右位置を揃える。CSS側の
+    // scrollbar-gutter: stable でバー領域は件数によらず常に確保されるため、
+    // ここの補正値も件数で変化せず、リスト行の横幅は常に一定になる。
     // オーバーレイスクロールバー環境（バー幅0）では何もしない。
     let tsSbwRafId = 0;
     const syncTsBodyScrollbar = () => {
@@ -2132,7 +2154,11 @@ function setupModals() {
         body.style.paddingRight = sbw > 0 ? Math.max(8, 20 - sbw) + 'px' : '';
       });
     };
-    window.addEventListener('resize', syncTsBodyScrollbar);
+    window.addEventListener('resize', () => {
+      syncTsBodyScrollbar();
+      // PCでは入力欄の高さ上限がモーダルの空きスペース依存のため、編集中は再計算する
+      if (tsCtx && tsCtx.editing) autosizeTsInput();
+    });
 
     // 件数が多くても軽いように、リストは変更確定時に1回だけ組み立てる
     // すべて削除の確認パネル（ブラウザ標準confirmの代替）

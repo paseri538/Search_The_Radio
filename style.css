@@ -5610,6 +5610,9 @@ body[class*="theme-"] .search-card {
 .modal-content.ts-modal {
   background: #ffffff;
   width: min(480px, 92vw);
+  /* 高さは内容量によらず固定（スマホの全画面表示と同じ感覚に統一）。
+     登録が少なくてもモーダルの縦幅が変わらず、リストが長い時は .ts-body だけがスクロールする */
+  height: 84vh;
   max-height: 84vh;
   margin-bottom: 20px;
   display: flex;
@@ -5671,6 +5674,10 @@ body[class*="theme-"] .search-card {
   gap: 12px;
   min-height: 0; /* フッター固定時にこの領域だけがスクロールするように */
   overflow-y: auto;
+  /* スクロールバー領域を常に確保し、件数の増減でバーが出たり消えたりしても
+     リスト行の横幅が変わらないようにする（オーバーレイスクロールバー環境では
+     確保幅0のまま＝影響なし）。右paddingの微調整はJS側の実測補正が行う */
+  scrollbar-gutter: stable;
   -webkit-overflow-scrolling: touch;
 }
 .ts-body::-webkit-scrollbar { width: 6px; }
@@ -6076,6 +6083,18 @@ body[class*="theme-"] .search-card {
   text-align: center;
   pointer-events: none;
   box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+}
+
+/* --- PC/iPad: 入力欄は内容に合わせて伸び、上限はモーダル下端まで ---
+   最初はスマホと同じ3行程度で表示し、入力が増えるとキャンセル/保存ボタンごと
+   下がっていき、ボタンがモーダル下部に達する高さで打ち止め（以降は内部スクロール）。
+   上限値はJS（tsInputMaxHeight）が .ts-body の空きスペースから算出する */
+@media (min-width: 601px) {
+  .ts-modal .ts-body { flex: 1 1 auto; }
+  /* 入力欄とキャンセル/保存ボタンの間隔は .ts-add-area の gap(8px) のままにして
+     スマホ版と同じ見た目に揃える */
+  /* スマホ向けの152px上限を外す（実際の上限はJSが算出） */
+  .ts-input { max-height: none; }
 }
 
 /* --- スマホ: ボトムシート化（キーボードと相性の良い下部配置） --- */

@@ -350,6 +350,9 @@
             <i class="fa-regular fa-copy"></i>
           </button>
         </div>
+        <!-- エラーは入力欄の直下（ボタンの上）に表示する: 入力内容への指摘なので
+             視線が入力欄→エラー→ボタンの順に自然に流れるようにする -->
+        <div id="tsError" class="ts-error" hidden></div>
         <div class="ts-actions">
           <button id="tsCancelBtn" class="ts-cancel-btn" hidden>キャンセル</button>
           <button id="tsAddBtn" class="ts-add-btn" aria-label="タイムスタンプを保存">
@@ -357,7 +360,6 @@
           </button>
         </div>
       </div>
-      <div id="tsError" class="ts-error" hidden></div>
       <ul id="tsList" class="ts-list" aria-label="登録済みタイムスタンプ"></ul>
     </div>
     <!-- 下部固定エリア: リストが長くてもボタンとヒントは常に見える -->
