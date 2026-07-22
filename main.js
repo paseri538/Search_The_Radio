@@ -2341,8 +2341,9 @@ function setupModals() {
     /* キーボード対応（iOS Safari/PWA・Android共通の「コンポーズモード」方式）:
      * visualViewport等のビューポート計算による位置合わせは、実機iOSのパンや
      * offsetTop残留バグ等で不安定だったため全廃した。
-     * 代わりに「入力中はシートを全画面化し、入力欄を画面上部に置く」。
-     * 入力欄が常に画面上部にあるため、キーボードがどう出ても物理的に隠れない。
+     * 代わりに「入力中はシートを全画面化し、リスト・エピソードカードを畳んで
+     * 入力欄を画面上部に置く」。入力欄と保存ボタンが常に画面上部にあるため、
+     * キーボードがどう出ても（入力欄が6行まで伸びても）物理的に隠れない。
      * （Android等のresizes-content対応環境ではdvhが縮み、同じく自然に収まる） */
     const tsSheetEl = document.querySelector('#tsModal .ts-modal');
     const tsInputEl = document.getElementById('tsInput');
