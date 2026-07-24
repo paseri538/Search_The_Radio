@@ -3343,23 +3343,41 @@ document.addEventListener('DOMContentLoaded', () => {
    間に合わないことがある。カバーは起動時に1回だけ組み立ててDOMに置いておき
    （ロゴも先に読込・デコード済みにする）、表示はstyleの切替1発だけにする。 */
 let __splashCoverEl = null;
+// 端末の物理画面高さ（縦向き基準）。バックグラウンド移行中はビューポート値が
+// 当てにならないため、カバーの寸法・ロゴ位置はこの値を基準にする。
+function __deviceScreenHeight() {
+  const isLandscape = window.matchMedia && window.matchMedia('(orientation: landscape)').matches;
+  const w = (window.screen && screen.width) || window.innerWidth || 0;
+  const h = (window.screen && screen.height) || window.innerHeight || 0;
+  return (isLandscape ? Math.min(w, h) : Math.max(w, h)) || window.innerHeight || 900;
+}
 function __buildSplashCover() {
   if (__splashCoverEl || !document.body) return;
   const d = document.createElement('div');
   d.id = 'splash-cover';
   const bg = document.documentElement.style.backgroundColor || '#f9fafe';
-  d.style.cssText = 'position:fixed;inset:0;z-index:2147483647;background:' + bg + ';display:none;align-items:center;justify-content:center;';
+  // ★重要: inset:0（ビューポート追従）にすると、バックグラウンド移行中に
+  // ビューポートが縮んだ瞬間のスナップショットで下部にbody背景が露出し、
+  // 次回起動時に「下部が一瞬チラつく」原因になる。画面より大きい固定高さにして
+  // どんなビューポート変動でも隙間ができないようにする（はみ出しは無害）。
+  d.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:2147483647;background:' + bg + ';display:none;';
   const img = new Image();
   img.src = 'logo.png'; // SWキャッシュ済み。起動時に読み込んでおけば表示は即時
   img.alt = '';
-  img.style.cssText = 'width:330px;max-width:70vw;';
+  // ロゴは「画面の中央」（カバー箱の中央ではなく）に絶対配置する
+  img.style.cssText = 'position:absolute;left:50%;top:0;transform:translate(-50%,-50%);width:330px;max-width:70vw;';
   d.appendChild(img);
   document.body.appendChild(d);
   __splashCoverEl = d;
 }
 window.__showSplashCover = function () {
   if (!__splashCoverEl) __buildSplashCover();
-  if (__splashCoverEl) __splashCoverEl.style.display = 'flex';
+  if (!__splashCoverEl) return;
+  const scrH = __deviceScreenHeight();
+  __splashCoverEl.style.height = (scrH + 300) + 'px'; // 画面+300pxで変動を吸収
+  const img = __splashCoverEl.querySelector('img');
+  if (img) img.style.top = Math.round(scrH / 2) + 'px'; // 物理画面の中央に固定
+  __splashCoverEl.style.display = 'block';
 };
 window.__hideSplashCover = function () {
   if (__splashCoverEl) __splashCoverEl.style.display = 'none';

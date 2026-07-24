@@ -6342,28 +6342,6 @@ body[class*="theme-"] .searchbox-select option {
 .pwa-bottom-nav { visibility: hidden; }
 body.app-ready .pwa-bottom-nav { visibility: visible; }
 
-/* ===================================================
-   PWA版タイムスタンプモーダル: Safari版と見た目を揃える
-   Safariではステータスバー帯がtheme-color（各テーマの濃色）で描かれるが、
-   PWAは全画面Webビューのため同じ領域がモーダルの明るい背景のままだった。
-   セーフエリア帯に同じ濃色を描いて、Safari版と同じ見た目にする。
-   （色は index.html の theme-color 切替と同じ値。変更時は両方更新すること） */
-:root { --statusbar-color: #f9fafe; }
-body.dark-mode   { --statusbar-color: #000000; }
-body.theme-pink  { --statusbar-color: #8f3a55; }
-body.theme-yellow{ --statusbar-color: #8a6900; }
-body.theme-blue  { --statusbar-color: #00477c; }
-body.theme-red   { --statusbar-color: #8c002b; }
-body.theme-green { --statusbar-color: #0b5f4e; }
-
-@media (max-width: 600px) {
-  html.is-standalone .modal-content.ts-modal::before {
-    content: "";
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: env(safe-area-inset-top, 0px);
-    background: var(--statusbar-color);
-    z-index: 5; /* モーダル背景より上・ヘッダー(z:10)より下 */
-    pointer-events: none;
-  }
-}
+/* ★撤去: ここにあったPWA版tsモーダルのステータスバー帯（濃色）は、
+   実機確認で「時計まわりが暗く見える」と不評だったため削除した。
+   セーフエリア領域はモーダル背景と同色で塗られる。 */
