@@ -1939,17 +1939,18 @@ const scheduleStartupImageUpdate = (() => {
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     // ローディング画面と「完全に同じレイアウト」で描く：
-    // ロゴはWebビュー領域（ステータスバーの下）の中央（幅330px/最大70vw）、
-    // スピナーの球はロゴ下38pxに静止状態で並べる。こうすることで
-    // スプラッシュ→ローディング画面の切り替わりでロゴが動いたり
-    // 球が突然出現したりするガタつきが起きない。（#spinner のCSSと同期すること）
+    // ロゴは中央（幅330px/最大70vw）、スピナーの球はロゴ下38pxに静止状態で並べる。
+    // ローディング画面はPWA時に高さを画面実寸へ固定している（index.html早期
+    // スクリプト参照。Webビュー上端が topOffsetPt から始まり、高さ＝画面実寸）ため、
+    // ロゴ中央のY座標は「topOffset + 画面高さ/2」になる。この座標系を合わせる
+    // ことでスプラッシュ→ローディングの切り替わりでロゴが1pxも動かなくなる。
+    // （#spinner のCSSと同期すること）
     const top = (topOffsetPt || 0) * dpr;
-    const viewH = canvas.height - top;
     if (logo && logo.complete && logo.naturalWidth > 0) {
       const lw = Math.min(330, wPt * 0.7) * dpr;
       const lh = lw * (logo.naturalHeight / logo.naturalWidth);
       const lx = (canvas.width - lw) / 2;
-      const ly = top + (viewH - lh) / 2;
+      const ly = top + (canvas.height - lh) / 2;
       ctx.drawImage(logo, lx, ly, lw, lh);
 
       // 球：直径18px・間隔12px・4個（.loading-ball / #spinner と同期）
@@ -2034,22 +2035,25 @@ const scheduleStartupImageUpdate = (() => {
     } catch (e) {}
   };
 
-  return function scheduleStartupImageUpdate() {
+  return function scheduleStartupImageUpdate(opts) {
     if (!isIOS()) return;
-    // canvas描画＋PNGエンコードはそれなりに重いため、テーマ切替の連打はまとめ、
-    // ローディング画面が消えるまで待ってからアイドル時に実行する。
+    // canvas描画＋PNGエンコードはそれなりに重いため、起動時はローディング画面が
+    // 消えるまで待ってからアイドル時に実行する。
     // （表示中に実行するとメインスレッドが数百msブロックされ、
     //   ボールのアニメーションやフェードアウトがカクつく）
+    // ユーザーのテーマ切替時(fast)は、切替直後にアプリを終了しても次回の
+    // 起動画像へ新テーマが反映されるよう、アイドル待ちをせず素早く生成する。
+    const fast = !!(opts && opts.fast);
     clearTimeout(timer);
     const waitForSplashGone = () => {
       if (document.getElementById('loading-screen')) {
         timer = setTimeout(waitForSplashGone, 600);
         return;
       }
-      if ('requestIdleCallback' in window) requestIdleCallback(generate, { timeout: 5000 });
-      else timer = setTimeout(generate, 250);
+      if (!fast && 'requestIdleCallback' in window) requestIdleCallback(generate, { timeout: 5000 });
+      else timer = setTimeout(generate, fast ? 0 : 250);
     };
-    timer = setTimeout(waitForSplashGone, 1200);
+    timer = setTimeout(waitForSplashGone, fast ? 300 : 1200);
   };
 })();
 
@@ -2124,8 +2128,9 @@ function setupThemeSwitcher() {
     document.documentElement.style.backgroundColor = bodyBg || '#f9fafe';
 
     // iOS PWAの起動画像（スプラッシュ）を新しいテーマ色で作り直す
-    // （初期適用時にも呼ばれるため、起動のたびに最新のテーマ色へ同期される）
-    scheduleStartupImageUpdate();
+    // （初期適用時にも呼ばれるため、起動のたびに最新のテーマ色へ同期される。
+    //   ユーザー操作による切替はfast=trueで即時生成し、直後の終了にも間に合わせる）
+    scheduleStartupImageUpdate({ fast: !!opts.fromUser });
   };
 
   toggleBtn.addEventListener('click', e => { e.stopPropagation(); panel.classList.toggle('show'); });

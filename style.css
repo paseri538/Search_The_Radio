@@ -672,10 +672,13 @@ body.dark-mode #aboutModalContent a {
   transform: translateZ(0); 
 }
 
-.ball1 { background-color: #ff6496; animation-delay: 0s;   }
-.ball2 { background-color: #fabe00; animation-delay: 0.15s;}
-.ball3 { background-color: #006ebe; animation-delay: 0.3s; }
-.ball4 { background-color: #e60046; animation-delay: 0.45s;}
+/* 遅延は全体を+0.4sしてある: PWA起動時、OSのスプラッシュ（静止した球が
+   描かれている）からページへのクロスフェード中に球が跳ね始めると二重に
+   ブレて見えるため、切り替わりが終わる頃まで静止させておく */
+.ball1 { background-color: #ff6496; animation-delay: 0.4s; }
+.ball2 { background-color: #fabe00; animation-delay: 0.55s;}
+.ball3 { background-color: #006ebe; animation-delay: 0.7s; }
+.ball4 { background-color: #e60046; animation-delay: 0.85s;}
 
 @keyframes bounce {
   0%, 80%, 100% {

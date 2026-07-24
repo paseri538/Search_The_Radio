@@ -86,6 +86,21 @@
           #spinner { opacity: 1 !important; visibility: visible !important; }
         `;
 
+        /* PWA(スタンドアロン)起動直後、iOSはビューポート高さを一瞬だけ
+           ステータスバー分小さく誤報告し、数フレーム後に補正する。その補正で
+           ローディング画面の中央配置が縦に約30ptガタッと動くため、高さを
+           画面実寸(screen)に固定し、誤報告の影響を受けないようにする。
+           （起動画像もmain.jsのdraw()が同じ座標系＝画面実寸基準で生成しており、
+             スプラッシュ→ローディングでロゴ位置が最初から完全に一致する） */
+        if (window.navigator.standalone) {
+          var pinH = (window.matchMedia && window.matchMedia('(orientation: landscape)').matches)
+            ? Math.min(screen.width, screen.height)
+            : Math.max(screen.width, screen.height);
+          if (pinH > 0) {
+            styleContent += '#loading-screen { top: 0 !important; bottom: auto !important; height: ' + pinH + 'px !important; min-height: 0 !important; }';
+          }
+        }
+
         if (styleContent) {
           document.write('<style id="early-theme-style">' + styleContent + '</style>');
         }
@@ -142,7 +157,7 @@
 
 <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
 <!-- code.jquery.com / i.ytimg.com へのpreconnectは削除: jQueryは未使用、サムネイルはローカル配信のため -->
-  <link href="style.css?v=20260724e" rel="stylesheet" />
+  <link href="style.css?v=20260724f" rel="stylesheet" />
 
 
 </head>
@@ -429,7 +444,7 @@
     h=d.documentElement,t=setTimeout(function(){h.className=h.className.replace(/\bwf-loading\b/g,"")+" wf-inactive";},config.scriptTimeout),tk=d.createElement("script"),f=false,s=d.getElementsByTagName("script")[0],a;h.className+=" wf-loading";tk.src='https://use.typekit.net/'+config.kitId+'.js';tk.async=true;tk.onload=tk.onreadystatechange=function(){a=this.readyState;if(f||a&&a!="complete"&&a!="loaded")return;f=true;clearTimeout(t);try{Typekit.load(config)}catch(e){}};s.parentNode.insertBefore(tk,s)
   })(document);
 </script>
-  <script src="main.js?v=20260724e" defer></script>
+  <script src="main.js?v=20260724f" defer></script>
 
   <script>
   // ---- Service Worker register (network-first) ----
@@ -450,7 +465,7 @@
     });
 
     window.addEventListener('load', function () {
-      navigator.serviceWorker.register('/sw.js?20260724e').then(function(reg) {
+      navigator.serviceWorker.register('/sw.js?20260724f').then(function(reg) {
         return navigator.serviceWorker.ready;
       }).then(function(reg) {
         if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
