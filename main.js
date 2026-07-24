@@ -1958,7 +1958,10 @@ const scheduleStartupImageUpdate = (() => {
           const longPt = Math.max(screen.width, screen.height);
           if (!shortPt || !longPt) return;
           setLink('(orientation: portrait)', draw(shortPt, longPt, dpr, bg, logo));
-          setLink('(orientation: landscape)', draw(longPt, shortPt, dpr, bg, logo));
+          // 2枚目は別タスクに分け、1回あたりのメインスレッド占有時間を半分にする
+          setTimeout(() => {
+            try { setLink('(orientation: landscape)', draw(longPt, shortPt, dpr, bg, logo)); } catch (e) {}
+          }, 300);
         } catch (e) {}
       };
       logo.onload = build;
@@ -1970,12 +1973,19 @@ const scheduleStartupImageUpdate = (() => {
   return function scheduleStartupImageUpdate() {
     if (!isIOS()) return;
     // canvas描画＋PNGエンコードはそれなりに重いため、テーマ切替の連打はまとめ、
-    // 初期表示のレンダリングとも競合しないよう少し遅らせてアイドル時に実行する
+    // ローディング画面が消えるまで待ってからアイドル時に実行する。
+    // （表示中に実行するとメインスレッドが数百msブロックされ、
+    //   ボールのアニメーションやフェードアウトがカクつく）
     clearTimeout(timer);
-    timer = setTimeout(() => {
-      if ('requestIdleCallback' in window) requestIdleCallback(generate, { timeout: 3000 });
-      else generate();
-    }, 1200);
+    const waitForSplashGone = () => {
+      if (document.getElementById('loading-screen')) {
+        timer = setTimeout(waitForSplashGone, 600);
+        return;
+      }
+      if ('requestIdleCallback' in window) requestIdleCallback(generate, { timeout: 5000 });
+      else timer = setTimeout(generate, 250);
+    };
+    timer = setTimeout(waitForSplashGone, 1200);
   };
 })();
 
@@ -2910,7 +2920,16 @@ window.applyDidYouMean = function(word) {
             // 「フォントの全文字読み込み完了」を満たしたら消す。フォントまで待つことで、
             // どの文字も最初からAdobeフォントで表示され、一瞬だけフォールバックになるFOUTを防ぐ。
             // 低速回線で永遠に待たないよう FONT_CAP を上限にする。
-            const MIN_SHOW = 1500;   // タイトル最低表示時間
+            // SW更新によるcontrollerchange自動リロードの直後は、直前にも同じ
+            // ローディング画面を見せているため最低表示時間を設けず即座に消す。
+            // （演出が最初からやり直しになり、PWA起動がガタついて見えるのを防ぐ）
+            let MIN_SHOW = 1500;     // タイトル最低表示時間
+            try {
+              if (sessionStorage.getItem('sw_reloaded_v1')) {
+                sessionStorage.removeItem('sw_reloaded_v1');
+                MIN_SHOW = 0;
+              }
+            } catch (e) {}
             const FONT_CAP = 8000;   // フォントを待つ上限（超えたら諦めて表示）
             const tryHide = () => {
                 const t = performance.now();

@@ -1633,10 +1633,8 @@ html, body {
   min-height: calc(var(--vh, 1vh) * 100);
 }
 
-/* ローディング全面背景をdvhベースに */
-#loading-screen {
-  min-height: calc(var(--vh, 1vh) * 100);
-}
+/* ローディング画面のサイズ指定はファイル末尾の #loading-screen に集約
+   （複数箇所でvh/--vh指定が競合し、PWA起動直後にガタつく原因だったため削除） */
 
 /* 置き換え：前回の .ios-standalone .sticky-search-area を削除して、これを入れる */
 
@@ -2928,11 +2926,8 @@ body.dark-mode #createPlaylistBtn {
   bottom: calc(18px + var(--safe-bottom));
 }
 
-/* --- 100vh問題対策 --- */
-/* JSで設定した --vh 変数を使ってローディング画面の高さを設定 */
-#loading-screen {
-  height: calc(var(--vh, 1vh) * 100);
-}
+/* ローディング画面のサイズ指定はファイル末尾の #loading-screen に集約
+   （複数箇所でvh/--vh指定が競合し、PWA起動直後にガタつく原因だったため削除） */
 
 /* style.cssの一番下に追加 */
 
@@ -3712,15 +3707,16 @@ html.is-standalone .site-footer {
   margin-top: auto; /* これにより、上の空きスペースを埋めて下に配置されます */
 }
 
-/* --- 100vh問題対策 & ロード画面修正 --- */
+/* --- ロード画面のサイズ・重なり順（サイズ指定はここに集約） --- */
 #loading-screen {
-  /* ★修正2: ロード画面の重なり順を最強にして、ナビバーが透けるのを防ぐ */
-  z-index: 2147483647 !important; 
-  
-  /* 高さの計算をより厳密に */
-  height: 100vh;      /* フォールバック */
-  height: 100dvh;     /* アドレスバー等を考慮した動的な高さ */
-  min-height: 100%;
+  /* ロード画面の重なり順を最強にして、ナビバーが透けるのを防ぐ */
+  z-index: 2147483647 !important;
+
+  /* 高さはインラインの position:fixed + inset:0 に任せて常にビューポート実寸に一致させる。
+     100vh/100dvh/--vh は PWA 起動直後にOSが報告するビューポート高さとズレることがあり、
+     数フレーム後の補正で中央のロゴ・スピナーが縦にガタッと動く原因になっていた。 */
+  height: auto;
+  min-height: 0;
 }
 
 /* --- PWA専用 下部ナビゲーション --- */
