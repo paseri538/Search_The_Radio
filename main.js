@@ -18,6 +18,9 @@ window.addEventListener('pageshow', resetScrollTop); // BFキャッシュ復帰�
 let data = [];
 let CUSTOM_READINGS = {};
 let READING_TO_LABEL = {}; // 読み仮名から正規表記へのマップ
+// ★性能: 検索のたびに全キーへ normalize() をかけ直さないよう、読み仮名辞書の
+// 正規化済みインデックスを起動時に1回だけ構築してキャッシュする（低速端末対策）
+let READINGS_INDEX = [];
 let selectedGuests = [];
 let selectedCorners = [];
 let selectedOthers = [];
@@ -257,14 +260,21 @@ function kanaToRomaji(str) {
 }
 
 // 4. Jaro-Winkler距離
+// ★性能: 一致フラグ配列を呼び出しごとに生成せず使い回す（結果は完全に同一）
+let _jwM1 = new Uint8Array(0);
+let _jwM2 = new Uint8Array(0);
 function jaroWinkler(s1, s2) {
   let m = 0;
   if (s1.length === 0 || s2.length === 0) return 0;
   if (s1 === s2) return 1;
 
   const matchWindow = Math.floor(Math.max(s1.length, s2.length) / 2) - 1;
-  const s1Matches = new Array(s1.length).fill(false);
-  const s2Matches = new Array(s2.length).fill(false);
+  if (_jwM1.length < s1.length) _jwM1 = new Uint8Array(s1.length);
+  if (_jwM2.length < s2.length) _jwM2 = new Uint8Array(s2.length);
+  _jwM1.fill(0, 0, s1.length);
+  _jwM2.fill(0, 0, s2.length);
+  const s1Matches = _jwM1;
+  const s2Matches = _jwM2;
 
   for (let i = 0; i < s1.length; i++) {
     const start = Math.max(0, i - matchWindow);
@@ -272,8 +282,8 @@ function jaroWinkler(s1, s2) {
     for (let j = start; j < end; j++) {
       if (s2Matches[j]) continue;
       if (s1[i] !== s2[j]) continue;
-      s1Matches[i] = true;
-      s2Matches[j] = true;
+      s1Matches[i] = 1;
+      s2Matches[j] = 1;
       m++;
       break;
     }
@@ -301,35 +311,46 @@ function jaroWinkler(s1, s2) {
 }
 
 // 5. Damerau-Levenshtein距離
+// ★性能: 旧実装は呼び出しごとに2次元配列＋文字位置マップを生成しており、
+// 「もしかして」計算（1検索で全コーパス語×最大2回呼ばれる）のGC負荷が
+// 低速端末で支配的だった。使い回しのフラットInt32Arrayに変更。
+// 漸化式・返り値は旧実装と完全に同一。
+let _dlBuf = new Int32Array(0);
+const _dlSd = new Map();
 function damerauLevenshtein(source, target) {
   if (!source) return target ? target.length : 0;
   if (!target) return source.length;
-  const sourceLength = source.length;
-  const targetLength = target.length;
-  const score = Array(sourceLength + 2).fill(0).map(() => Array(targetLength + 2).fill(0));
-  const INF = sourceLength + targetLength;
-  score[0][0] = INF;
-  for (let i = 0; i <= sourceLength; i++) { score[i + 1][1] = i; score[i + 1][0] = INF; }
-  for (let j = 0; j <= targetLength; j++) { score[1][j + 1] = j; score[0][j + 1] = INF; }
-  const sd = {};
-  const combinedStr = source + target;
-  for (let i = 0; i < combinedStr.length; i++) sd[combinedStr[i]] = 0;
-  for (let i = 1; i <= sourceLength; i++) {
+  const n = source.length;
+  const m = target.length;
+  const C = m + 2; // 列数（フラット配列の行ストライド）
+  if (_dlBuf.length < (n + 2) * C) _dlBuf = new Int32Array((n + 2) * C);
+  const score = _dlBuf;
+  const INF = n + m;
+  score[0] = INF;
+  for (let i = 0; i <= n; i++) { score[(i + 1) * C + 1] = i; score[(i + 1) * C] = INF; }
+  for (let j = 0; j <= m; j++) { score[C + j + 1] = j; score[j + 1] = INF; }
+  _dlSd.clear();
+  for (let i = 0; i < n; i++) _dlSd.set(source[i], 0);
+  for (let j = 0; j < m; j++) if (!_dlSd.has(target[j])) _dlSd.set(target[j], 0);
+  for (let i = 1; i <= n; i++) {
     let DB = 0;
-    for (let j = 1; j <= targetLength; j++) {
-      const i1 = sd[target[j - 1]];
+    for (let j = 1; j <= m; j++) {
+      const i1 = _dlSd.get(target[j - 1]);
       const j1 = DB;
+      let v;
       if (source[i - 1] === target[j - 1]) {
-        score[i + 1][j + 1] = score[i][j];
+        v = score[i * C + j];
         DB = j;
       } else {
-        score[i + 1][j + 1] = Math.min(score[i][j], Math.min(score[i + 1][j], score[i][j + 1])) + 1;
+        const a = score[i * C + j], b = score[(i + 1) * C + j], c = score[i * C + j + 1];
+        v = (a < b ? (a < c ? a : c) : (b < c ? b : c)) + 1;
       }
-      score[i + 1][j + 1] = Math.min(score[i + 1][j + 1], score[i1][j1] + (i - i1 - 1) + 1 + (j - j1 - 1));
+      const trans = score[i1 * C + j1] + (i - i1 - 1) + 1 + (j - j1 - 1);
+      score[(i + 1) * C + (j + 1)] = v < trans ? v : trans;
     }
-    sd[source[i - 1]] = i;
+    _dlSd.set(source[i - 1], i);
   }
-  return score[sourceLength + 1][targetLength + 1];
+  return score[(n + 1) * C + (m + 1)];
 }
 
 // 6. ダイス係数 & ユニグラム
@@ -380,37 +401,62 @@ function findDidYouMean(query) {
   const isRomajiInput = (romanQuery.length === normalize(query).length) && (romanQuery.length > 2);
   const baseQuery = baseCharNormalize(normQuery);
 
-  if (!window.searchCorpus) return [];
+  if (!window.corpusIndex) return [];
 
   const candidatesMap = new Map();
 
-  for (const word of window.searchCorpus) {
-    const normTarget = superNormalize(word);
-    const baseTarget = baseCharNormalize(normTarget);
+  // クエリ側の文字集合は1回だけ作る（unigramSimilarityと同一の計算に使用）
+  const qUniSet = new Set(normQuery.split(''));
+
+  // ★性能: 単語ごとの superNormalize / baseCharNormalize は起動時に計算済みの
+  // corpusIndex を参照する（毎回の検索で数千回の正規化処理が消える。結果は同一）
+  for (const entry of window.corpusIndex) {
+    const word = entry.w;
+    const normTarget = entry.norm;
+    const baseTarget = entry.base;
 
     let finalScore = 0;
 
     const jwScore = jaroWinkler(normQuery, normTarget) * 100;
-    const dist = damerauLevenshtein(normQuery, normTarget);
     const len = Math.max(normQuery.length, normTarget.length);
-    const dlScore = Math.max(0, (1 - dist / len) * 100);
     const subScore = getSubsequenceScore(normQuery, normTarget);
-    const uniScore = unigramSimilarity(normQuery, normTarget) * 100;
+    // unigramSimilarity と同一の計算（(2×共通文字数)/(集合サイズ和)）を、
+    // 事前計算済みの文字集合で行う（毎回2つのSetを生成しない）
+    let uniInter = 0;
+    qUniSet.forEach(ch => { if (entry.uniSet.has(ch)) uniInter++; });
+    const uniScore = ((2 * uniInter) / (qUniSet.size + entry.uniSet.size)) * 100;
+    let best = Math.max(jwScore, subScore, uniScore);
+
+    // ★性能: 編集距離は「長さの差」以上になることが保証されるため、
+    // その上限スコア (1-|Δ長|/len)*100 が既に他のスコア以下なら計算しても
+    // 最終スコア(max)は変わらない → 計算自体を省略できる（結果は完全に同一）
+    let dlScore = 0;
+    const dlUb = (1 - Math.abs(normQuery.length - normTarget.length) / len) * 100;
+    if (dlUb > best) {
+      const dist = damerauLevenshtein(normQuery, normTarget);
+      dlScore = Math.max(0, (1 - dist / len) * 100);
+      if (dlScore > best) best = dlScore;
+    }
 
     let baseScore = 0;
     if (baseQuery === baseTarget && baseQuery.length > 1) {
         baseScore = 95;
     } else {
-        const baseDist = damerauLevenshtein(baseQuery, baseTarget);
-        baseScore = Math.max(0, (1 - baseDist / len) * 100);
+        // 上と同じ理屈で、上限が既存スコア以下なら省略（maxの結果は不変）
+        const baseUb = (1 - Math.abs(baseQuery.length - baseTarget.length) / len) * 100;
+        if (baseUb > best) {
+          const baseDist = damerauLevenshtein(baseQuery, baseTarget);
+          baseScore = Math.max(0, (1 - baseDist / len) * 100);
+        }
     }
 
-    finalScore = Math.max(jwScore, dlScore, subScore, uniScore, baseScore);
+    finalScore = Math.max(best, baseScore);
 
     if (isRomajiInput) {
-       const romanTarget = kanaToRomaji(normTarget);
-       const romanJw = jaroWinkler(romanQuery, romanTarget) * 100;
-       if (romanJw > 85) finalScore = Math.max(finalScore, romanJw); 
+       // ローマ字変換は必要になった時だけ行い、エントリにキャッシュする
+       if (entry.roman == null) entry.roman = kanaToRomaji(normTarget);
+       const romanJw = jaroWinkler(romanQuery, entry.roman) * 100;
+       if (romanJw > 85) finalScore = Math.max(finalScore, romanJw);
     }
 
     const isSubstring = (normQuery.length >= 2 && normTarget.includes(normQuery)) || (normTarget.length >= 2 && normQuery.includes(normTarget));
@@ -483,6 +529,11 @@ async function loadExternalData() {
       const guestText = Array.isArray(ep.guest) ? ep.guest.join(" ") : ep.guest;
       const combined = [ep.title, guestText, keywordsWithoutTimestamp.join(" ")].join(" ");
       ep.searchText = normalize(combined);
+      // ★性能: 検索・お気に入り判定のたびに正規表現でIDを取り直さないよう1回だけ抽出
+      ep.videoId = getVideoId(ep.link);
+      // ★性能: 「キーワード@時刻」の解析と正規化も起動時に済ませる（findHitTime用）
+      ep.kwTimes = (ep.keywords || []).map(parseKeywordTime).filter(Boolean)
+        .map(p => ({ base: p.base, label: p.label, seconds: p.seconds, baseN: normalize(p.base) }));
       return ep;
     });
 
@@ -495,6 +546,13 @@ async function loadExternalData() {
         READING_TO_LABEL[normalize(r)] = kanji;
       });
     }
+
+    // ★性能: getFilteredData が検索のたびに全キー・全読みへ normalize() をかけていたのを、
+    // ここで1回だけ正規化してインデックス化する（結果は完全に同一）
+    READINGS_INDEX = Object.entries(CUSTOM_READINGS).map(([key, readings]) => ({
+      normKey: normalize(key),
+      normReadings: (readings || []).map(r => normalize(r))
+    }));
 
     window.searchCorpus = new Set();
     window.canonicalMap = {}; 
@@ -540,6 +598,15 @@ async function loadExternalData() {
           addToCorpus(cleanK, cleanK);
         });
       }
+    });
+
+    // ★性能: findDidYouMean（もしかして候補）が検索のたびに全コーパス語へ
+    // superNormalize / baseCharNormalize をかけ直していたのを、ここで1回だけ
+    // 計算してキャッシュする。ローマ字形は初回必要時に遅延計算（roman: null）。
+    window.corpusIndex = Array.from(window.searchCorpus, w => {
+      const norm = superNormalize(w);
+      // uniSet: ユニグラム類似度用の文字集合（毎検索でSetを作り直さないための事前計算）
+      return { w, norm, base: baseCharNormalize(norm), roman: null, uniSet: new Set(norm.split('')) };
     });
 
     const allChars = new Set();
@@ -660,10 +727,11 @@ function getFilteredData(query) {
   } else if (raw.length > 0) {
     const normalizedQuery = normalize(raw);
     const searchTerms = new Set([normalizedQuery]);
-    for (const key in CUSTOM_READINGS) {
-        if (normalize(key).includes(normalizedQuery) || CUSTOM_READINGS[key].some(r => normalize(r).includes(normalizedQuery))) {
-            searchTerms.add(normalize(key));
-            CUSTOM_READINGS[key].forEach(r => searchTerms.add(normalize(r)));
+    // ★性能: 起動時に正規化済みの READINGS_INDEX を使う（挙動は従来と同一）
+    for (const entry of READINGS_INDEX) {
+        if (entry.normKey.includes(normalizedQuery) || entry.normReadings.some(r => r.includes(normalizedQuery))) {
+            searchTerms.add(entry.normKey);
+            entry.normReadings.forEach(r => searchTerms.add(r));
         }
     }
     const searchWords = [...searchTerms].filter(Boolean);
@@ -691,7 +759,7 @@ function getFilteredData(query) {
   if (selectedCorners.length) res = res.filter(it => selectedCorners.some(c => it.searchText.includes(normalize(c))));
   if (selectedOthers.length) res = res.filter(it => selectedOthers.some(o => it.searchText.includes(normalize(o))));
   if (selectedYears.length) res = res.filter(it => selectedYears.includes(String(it.date).slice(0, 4)));
-  if (showFavoritesOnly) res = res.filter(it => isFavorite(getVideoId(it.link)));
+  if (showFavoritesOnly) res = res.filter(it => isFavorite(it.videoId));
 
   return res;
 }
@@ -988,7 +1056,7 @@ function renderResults(arr, page = 1, originalQuery = null, suggestions = []) {
   const fragment = document.createDocumentFragment();
 
   arr.slice(startIdx, endIdx).forEach((it, index) => {
-    const videoId = getVideoId(it.link);
+    const videoId = it.videoId;
     const episodeFilename = it.episode;
     const thumbBaseUrl = `thumbnails/${episodeFilename}`;
     const thumbUrlJpg = `${thumbBaseUrl}.jpg`;
@@ -1259,9 +1327,10 @@ function fitGuestLines() {
   }
 
   // 保険: 万一の再試行も上限を設け、無限ループを構造的に不可能にする
+  // （上限到達で諦めた場合もカウンタを戻す。戻さないと以後の呼び出しで再試行が永久に無効になる）
   if (needsRetry && (fitGuestLines._retries = (fitGuestLines._retries || 0) + 1) <= 30) {
     setTimeout(fitGuestLines, 100);
-  } else if (!needsRetry) {
+  } else {
     fitGuestLines._retries = 0;
   }
 }
@@ -1444,7 +1513,7 @@ function createPlaylist() {
         alert('再生リストを作成するには、表示結果が1件以上必要です。');
         return;
     }
-    const videoIds = lastResults.map(item => getVideoId(item.link)).filter(Boolean);
+    const videoIds = lastResults.map(item => item.videoId).filter(Boolean);
     if (videoIds.length === 0) {
         alert('有効な動画IDが見つかりませんでした。');
         return;
@@ -1589,12 +1658,26 @@ function setupEventListeners() {
   const drawer = document.getElementById('filterDrawer');
   const backdrop = document.getElementById('drawerBackdrop');
 
+  let drawerCloseTimer = 0;
   const toggleFilterDrawer = (forceOpen) => {
     const style = window.getComputedStyle(drawer);
-    const isVisible = style.display !== 'none';
+    // フェードアウト中(.closing)は「閉じている」扱いにする（連打時の判定ずれ防止）
+    const isVisible = style.display !== 'none' && !drawer.classList.contains('closing');
     const isOpening = forceOpen === true || (forceOpen !== false && !isVisible);
 
-    drawer.style.display = isOpening ? 'block' : 'none';
+    if (isOpening) {
+      // フェードアウト途中で開き直された場合は closing を解除して即表示
+      clearTimeout(drawerCloseTimer);
+      drawer.classList.remove('closing');
+      drawer.style.display = 'block';
+    } else if (style.display !== 'none' && !drawer.classList.contains('closing')) {
+      // 閉じる: 即 display:none にせず、フェードアウト(.closing)完了後に非表示へ
+      drawer.classList.add('closing');
+      drawerCloseTimer = setTimeout(() => {
+        drawer.classList.remove('closing');
+        drawer.style.display = 'none';
+      }, 180); // CSSの fade-only-out 0.17s より少しだけ長く
+    }
     backdrop.classList.toggle('show', isOpening);
     filterToggleBtn.setAttribute('aria-expanded', String(isOpening));
     filterToggleBtn.setAttribute('aria-pressed', String(isOpening));
@@ -1897,166 +1980,6 @@ function setupEventListeners() {
   };
 })();
 
-/* ===================================================
- * iOS PWA用スプラッシュ（起動画像）の動的生成
- * ===================================================
- * ホーム画面起動(standalone)のiOSは、起動直後にOSが「起動画像」を表示する。
- * 未指定だと白一色のため、カラーテーマ利用時に起動の一瞬だけ白くチラつく。
- * iOSは「前回の実行中にページ内へ注入されていた apple-touch-startup-image」を
- * 次回起動用に保存する仕様のため、実行時にcanvasで現在のテーマ背景色＋ロゴの
- * 画像を生成し、data URLのlinkタグとして注入しておく。
- * （インストール直後の初回起動だけは生成前なので白いまま。2回目以降の起動から
- *   テーマ色のスプラッシュになり、テーマを変えれば次回起動から追従する） */
-const scheduleStartupImageUpdate = (() => {
-  let timer = 0;
-  // index.html冒頭の早期テーマスクリプト・applyTheme と同じ配色（変更時は3箇所同期すること）
-  const THEME_BG = { dark: '#000000', pink: '#ff6496', yellow: '#fabe00', blue: '#006ebe', red: '#e60046', green: '#13a286' };
-
-  const isIOS = () =>
-    /iPad|iPhone|iPod/.test(navigator.userAgent) ||
-    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1); // iPadOSの「デスクトップ用サイト」表示対策
-
-  // ブラウザ実行時に「default」ステータスバー時のWebビュー上端オフセットを推定する。
-  // （black-translucentではWebビューが全画面＝オフセット0だが、defaultでは
-  //   ステータスバーの下からページが始まり、ロゴの中央位置がその分下がる）
-  const measureSafeTop = () => {
-    try {
-      const probe = document.createElement('div');
-      probe.style.cssText = 'position:fixed;top:0;left:0;width:1px;height:env(safe-area-inset-top,0px);visibility:hidden;pointer-events:none;';
-      document.body.appendChild(probe);
-      const h = probe.offsetHeight;
-      probe.remove();
-      return h;
-    } catch (e) { return 0; }
-  };
-
-  const draw = (wPt, hPt, dpr, bg, logo, topOffsetPt, ballColors) => {
-    const canvas = document.createElement('canvas');
-    canvas.width = Math.round(wPt * dpr);
-    canvas.height = Math.round(hPt * dpr);
-    const ctx = canvas.getContext('2d');
-    ctx.fillStyle = bg;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    // ローディング画面と「完全に同じレイアウト」で描く：
-    // ロゴは中央（幅330px/最大70vw）、スピナーの球はロゴ下38pxに静止状態で並べる。
-    // ローディング画面はPWA時に高さを画面実寸へ固定している（index.html早期
-    // スクリプト参照。Webビュー上端が topOffsetPt から始まり、高さ＝画面実寸）ため、
-    // ロゴ中央のY座標は「topOffset + 画面高さ/2」になる。この座標系を合わせる
-    // ことでスプラッシュ→ローディングの切り替わりでロゴが1pxも動かなくなる。
-    // （#spinner のCSSと同期すること）
-    const top = (topOffsetPt || 0) * dpr;
-    if (logo && logo.complete && logo.naturalWidth > 0) {
-      const lw = Math.min(330, wPt * 0.7) * dpr;
-      const lh = lw * (logo.naturalHeight / logo.naturalWidth);
-      const lx = (canvas.width - lw) / 2;
-      const ly = top + (canvas.height - lh) / 2;
-      ctx.drawImage(logo, lx, ly, lw, lh);
-
-      // 球：直径18px・間隔12px・4個（.loading-ball / #spinner と同期）
-      const d = 18 * dpr;
-      const gap = 12 * dpr;
-      let bx = (canvas.width - (d * 4 + gap * 3)) / 2 + d / 2;
-      const by = ly + lh + 38 * dpr + d / 2;
-      ballColors.forEach((c) => {
-        ctx.fillStyle = c;
-        ctx.beginPath();
-        ctx.arc(bx, by, d / 2, 0, Math.PI * 2);
-        ctx.fill();
-        bx += d + gap;
-      });
-    }
-    return canvas.toDataURL('image/png');
-  };
-
-  const setLink = (media, href) => {
-    let link = document.head.querySelector(`link[rel="apple-touch-startup-image"][media="${media}"]`);
-    if (!link) {
-      link = document.createElement('link');
-      link.rel = 'apple-touch-startup-image';
-      link.media = media;
-      document.head.appendChild(link);
-    }
-    link.href = href;
-  };
-
-  const generate = () => {
-    try {
-      const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
-
-      // 起動画像は「ホーム画面に追加した瞬間のページ」から保存される。
-      // SafariとホームアプリはlocalStorageが別のため、インストール後の初回起動は
-      // 必ずデフォルト（ライト）テーマで始まる。そこでブラウザ実行時はSafariの
-      // 現在テーマではなく、初回起動時に実際に表示されるライト配色で生成する。
-      // （Safariがダークテーマのまま追加→初回起動で黒→白と切り替わり
-      //   ガタつく問題の対策。スタンドアロン実行時は現在テーマに追従させる）
-      let theme = 'light';
-      if (isStandalone) {
-        try { theme = localStorage.getItem('site_theme_v1') || 'light'; } catch (e) {}
-      }
-      const bg = THEME_BG[theme] || '#f9fafe';
-
-      // 球の色：カラーテーマは白（--btn-main）、ライト/ダークは既定の4色
-      // （index.html早期スクリプト・style.cssの.loading-ballと同期すること）
-      const ballColors = (theme === 'light' || theme === 'dark')
-        ? ['#ff6496', '#fabe00', '#006ebe', '#e60046']
-        : ['#ffffff', '#ffffff', '#ffffff', '#ffffff'];
-
-      // ステータスバー分のWebビュー上端オフセット。
-      // スタンドアロン実行中は実測（black-translucentなら0になる）、
-      // ブラウザではstatus-bar-styleメタがdefaultになる場合のみ推定値を使う。
-      let topOffset = 0;
-      if (isStandalone) {
-        topOffset = Math.max(0, screen.height - window.innerHeight);
-        if (topOffset > 80) topOffset = 0; // 横向き等で実測が信用できない時は全画面扱い
-      } else {
-        const statusBar = document.getElementById('status-bar-style');
-        if (!statusBar || statusBar.content !== 'black-translucent') topOffset = measureSafeTop();
-      }
-
-      const logo = new Image();
-      const build = () => {
-        try {
-          const dpr = Math.min(window.devicePixelRatio || 1, 3);
-          // screen.width/height の向き依存を吸収し、縦横それぞれの画像を用意する
-          const shortPt = Math.min(screen.width, screen.height);
-          const longPt = Math.max(screen.width, screen.height);
-          if (!shortPt || !longPt) return;
-          setLink('(orientation: portrait)', draw(shortPt, longPt, dpr, bg, logo, topOffset, ballColors));
-          // 2枚目は別タスクに分け、1回あたりのメインスレッド占有時間を半分にする
-          setTimeout(() => {
-            try { setLink('(orientation: landscape)', draw(longPt, shortPt, dpr, bg, logo, topOffset, ballColors)); } catch (e) {}
-          }, 300);
-        } catch (e) {}
-      };
-      logo.onload = build;
-      logo.onerror = build; // ロゴが読めなくても背景色のみで生成する
-      logo.src = 'logo.png';
-    } catch (e) {}
-  };
-
-  return function scheduleStartupImageUpdate(opts) {
-    if (!isIOS()) return;
-    // canvas描画＋PNGエンコードはそれなりに重いため、起動時はローディング画面が
-    // 消えるまで待ってからアイドル時に実行する。
-    // （表示中に実行するとメインスレッドが数百msブロックされ、
-    //   ボールのアニメーションやフェードアウトがカクつく）
-    // ユーザーのテーマ切替時(fast)は、切替直後にアプリを終了しても次回の
-    // 起動画像へ新テーマが反映されるよう、アイドル待ちをせず素早く生成する。
-    const fast = !!(opts && opts.fast);
-    clearTimeout(timer);
-    const waitForSplashGone = () => {
-      if (document.getElementById('loading-screen')) {
-        timer = setTimeout(waitForSplashGone, 600);
-        return;
-      }
-      if (!fast && 'requestIdleCallback' in window) requestIdleCallback(generate, { timeout: 5000 });
-      else timer = setTimeout(generate, fast ? 0 : 250);
-    };
-    timer = setTimeout(waitForSplashGone, fast ? 300 : 1200);
-  };
-})();
-
 function setupThemeSwitcher() {
   const toggleBtn = document.getElementById('theme-toggle-btn');
   const panel = document.getElementById('floating-theme-panel');
@@ -2126,11 +2049,6 @@ function setupThemeSwitcher() {
     // html要素のインライン背景（初回チラつき防止用）もテーマ切替に追従させ、
     // カラーテーマ→ライトへ戻したときに古い色が残らないようにする。
     document.documentElement.style.backgroundColor = bodyBg || '#f9fafe';
-
-    // iOS PWAの起動画像（スプラッシュ）を新しいテーマ色で作り直す
-    // （初期適用時にも呼ばれるため、起動のたびに最新のテーマ色へ同期される。
-    //   ユーザー操作による切替はfast=trueで即時生成し、直後の終了にも間に合わせる）
-    scheduleStartupImageUpdate({ fast: !!opts.fromUser });
   };
 
   toggleBtn.addEventListener('click', e => { e.stopPropagation(); panel.classList.toggle('show'); });
@@ -2448,12 +2366,14 @@ function setupModals() {
         list.innerHTML = '<li class="ts-empty"><span class="ts-empty-main"><i class="fa-regular fa-clock"></i> まだ登録がありません</span><span class="ts-empty-sub">「編集」からタイムスタンプやメモを登録できます</span></li>';
         return;
       }
+      // ★性能: 件数が多い時に new URL() を1件ごとに作らないよう、リンク生成を高速化
+      const linkFor = makeTimeLinkBuilder(tsCtx.link);
       list.innerHTML = items.map((item, i) => {
         const noTime = item.t == null;
         const timeHtml = `<span class="ts-time"><i class="fa-solid fa-play"></i><span class="impact-number">${noTime ? '??:??' : formatTs(item.t)}</span></span>`;
         return `
         <li class="ts-item">
-          <a class="ts-play" href="${withTimeParam(tsCtx.link, item.t)}" target="_blank" rel="noopener" aria-label="${noTime ? '動画を最初から再生' : `${formatTs(item.t)} から再生`}">
+          <a class="ts-play" href="${linkFor(item.t)}" target="_blank" rel="noopener" aria-label="${noTime ? '動画を最初から再生' : `${formatTs(item.t)} から再生`}">
             ${timeHtml}
             <span class="ts-label">${item.label ? escapeHtml(item.label) : '<span class="ts-label-none">（メモなし）</span>'}</span>
           </a>
@@ -2485,7 +2405,7 @@ function setupModals() {
       //   ★ボタン/リンクボタン等の操作系だけ除外）
       const epCard = document.getElementById('tsEpisodeCard');
       if (epCard) {
-        const epItem = data.find(it => getVideoId(it.link) === videoId);
+        const epItem = data.find(it => it.videoId === videoId);
         if (epItem) {
           const hashOnly = getHashNumber(epItem.title);
           const guestText = getEpisodeGuestText(epItem);
@@ -2815,7 +2735,7 @@ function tsNormLabel(e) {
 
 // ユーザー登録タイムスタンプのメモが検索語のいずれかに部分一致するか
 function matchesUserMemo(item, words) {
-  const entries = getTimestamps(getVideoId(item.link));
+  const entries = getTimestamps(item.videoId);
   if (!entries.length) return false;
   return entries.some(e => {
     const ln = tsNormLabel(e);
@@ -2827,16 +2747,14 @@ function findHitTime(item, rawQuery) {
   if (!rawQuery) return null;
   const qn = normalize(rawQuery);
   if (!qn) return null;
-  for (const kw of (item.keywords || [])) {
-    const p = parseKeywordTime(kw);
-    if (!p) continue;
-    const baseN = normalize(p.base);
-    if (baseN.includes(qn) || qn.includes(baseN)) {
+  // ★性能: キーワードの時刻解析と正規化は起動時計算済みの kwTimes を使う（結果は同一）
+  for (const p of (item.kwTimes || [])) {
+    if (p.baseN.includes(qn) || qn.includes(p.baseN)) {
       return p;
     }
   }
   // ユーザー登録タイムスタンプのメモにも一致すれば、その場面へジャンプできるようにする
-  for (const e of getTimestamps(getVideoId(item.link))) {
+  for (const e of getTimestamps(item.videoId)) {
     if (e.t == null) continue; // 時間なしメモはジャンプ先がないため対象外
     const ln = tsNormLabel(e);
     if (ln && (ln.includes(qn) || qn.includes(ln))) {
@@ -2844,6 +2762,30 @@ function findHitTime(item, rawQuery) {
     }
   }
   return null;
+}
+
+// ★性能: 同一動画URLへ t=秒 を差し替えたリンクを大量生成する時（タイムスタンプ一覧の
+// 描画など）用の高速ビルダー。withTimeParam を2回だけ呼んで「秒数の前後の固定文字列」を
+// 特定し、以後は文字列連結だけで同一の出力を作る。組み立て結果が withTimeParam と
+// 一致するか自己検証し、万一一致しなければ従来の withTimeParam をそのまま使う。
+function makeTimeLinkBuilder(url) {
+  try {
+    const a = withTimeParam(url, 1234567891);
+    const b = withTimeParam(url, 9876543219);
+    if (a.length === b.length) {
+      let s = 0; while (s < a.length && a[s] === b[s]) s++;
+      let e = 0; while (e < a.length - s && a[a.length - 1 - e] === b[b.length - 1 - e]) e++;
+      const pre = a.slice(0, s), suf = e ? a.slice(a.length - e) : '';
+      if (pre + '1234567891' + suf === a) {
+        const fast = (sec) => {
+          if (!sec && sec !== 0) return url; // withTimeParam と同じ「時間なしは元URL」の挙動
+          return pre + (sec === 0 ? 1 : sec) + suf; // t=0→1 の変換も withTimeParam と同一
+        };
+        if (fast(42) === withTimeParam(url, 42) && fast(0) === withTimeParam(url, 0)) return fast;
+      }
+    }
+  } catch (_) {}
+  return (sec) => withTimeParam(url, sec);
 }
 
 function withTimeParam(url, seconds) {
@@ -2989,16 +2931,7 @@ window.applyDidYouMean = function(word) {
             // 「フォントの全文字読み込み完了」を満たしたら消す。フォントまで待つことで、
             // どの文字も最初からAdobeフォントで表示され、一瞬だけフォールバックになるFOUTを防ぐ。
             // 低速回線で永遠に待たないよう FONT_CAP を上限にする。
-            // SW更新によるcontrollerchange自動リロードの直後は、直前にも同じ
-            // ローディング画面を見せているため最低表示時間を設けず即座に消す。
-            // （演出が最初からやり直しになり、PWA起動がガタついて見えるのを防ぐ）
-            let MIN_SHOW = 1500;     // タイトル最低表示時間
-            try {
-              if (sessionStorage.getItem('sw_reloaded_v1')) {
-                sessionStorage.removeItem('sw_reloaded_v1');
-                MIN_SHOW = 0;
-              }
-            } catch (e) {}
+            const MIN_SHOW = 1500;   // タイトル最低表示時間
             const FONT_CAP = 8000;   // フォントを待つ上限（超えたら諦めて表示）
             const tryHide = () => {
                 const t = performance.now();

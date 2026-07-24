@@ -39,8 +39,6 @@
   --active-filter-text: #fff;
   --sticky-z: 2050;
   --search-z: 2060;
-
-  --header-offset: 186px; /* フォールバック値 */
 }
 
 /* htmlタグからは overflow-x: hidden を削除します */
@@ -224,35 +222,30 @@ body {
 }
 .drawer-backdrop.show { display: block; opacity: 1; }
 #filterDrawer { /* centered without transform */
-  margin: 0 auto;
-  display: none;
-  width: 100vw; max-width: 1400px; /* iPad(〜1366px)まで画面いっぱい。超ワイドPCのみ抑制 */
+  display: none; max-width: 1400px; /* iPad(〜1366px)まで画面いっぱい。超ワイドPCのみ抑制 */
   background: var(--bg-color, #f9fafe) !important;
   border-radius: 0 0 14px 14px;
   border: 1px solid #e7e7ef;
   box-shadow: 0 10px 32px -8px rgba(80,80,160,0.13);
   padding: var(--drawer-pt) var(--drawer-px) calc(var(--drawer-pt) - 2px) var(--drawer-px);
-  margin: 0 auto 0 auto;
-  max-height: 340px; overflow-y: auto; overflow-x: hidden;
-  position: fixed !important;
-  left: 0 !important;
-  transform: none !important;
-  right: 0 !important;
-  top: 110px;
   z-index: 2050 !important;
-  animation: fadein-drawer 0.17s;
   border-top: none;
   transition: opacity .17s;
 }
 @keyframes fadein-drawer { from { opacity: 0; transform: translateY(-8px);} to { opacity: 1; transform: translateY(0);} }
+/* フィルタードロワー専用: 移動なしのフェードのみ（開閉時に「ちょっと動く」見え方を無くす）。
+   fadein-drawer は「もしかして」やお気に入り見出しが使い続けるため残している。 */
+@keyframes fade-only-in  { from { opacity: 0; } to { opacity: 1; } }
+@keyframes fade-only-out { from { opacity: 1; } to { opacity: 0; } }
+/* 閉じる時: main.jsが .closing を付与→フェードアウト完了後に display:none にする */
+#filterDrawer.closing { animation: fade-only-out 0.17s ease-in forwards; }
 .filter-section { margin-bottom: 13px; padding-left: 1.2rem; padding-right: 1.2rem; }
 @media (min-width: 780px){
   .filter-section { padding-left: 0; padding-right: 0; }
 }
 
 @media (max-width: 600px) {
-  #filterDrawer { /* centered without transform */
-  margin: 0 auto; max-width: 100vw; }
+  #filterDrawer { /* centered without transform */ max-width: 100vw; }
   .filter-section { padding-left: 0.5rem; padding-right: 0.5rem; }
 }
 .filter-title {
@@ -354,9 +347,8 @@ body {
 @media (max-width: 779px) {
   #results { grid-template-columns: 1fr; gap: 9px 0; }
 }
-.episode-item {
-  display: flex; gap: 13px; padding: 12px; border-radius: 11px; background: var(--card-bg);
-  margin-bottom: 0; align-items: center; text-decoration: none; color: inherit;
+.episode-item { border-radius: 11px; background: var(--card-bg);
+  margin-bottom: 0; text-decoration: none; color: inherit;
   border: 1px solid #e5e7ef; cursor: pointer; min-width: 0;
   transform: translateZ(0);
 }
@@ -371,7 +363,6 @@ body {
 
 .thumbnail {
   width: 120px; flex-shrink: 0; border-radius: 9px; object-fit: cover; aspect-ratio: 16/9;
-  background: #f6f6ff;
   opacity: 1;
   transition: none;
 }
@@ -382,9 +373,7 @@ body {
 
 .no-results {
   color: #888; font-size: 1.1em;
-  background: #fcfcff; padding: 14px; border-radius: 10px; box-shadow: 0 1px 8px -5px #aaa3;
-  display: flex; align-items: center; justify-content: center; min-height: 100px;
-  text-align: center; width: 100%;
+  background: #fcfcff; border-radius: 10px; box-shadow: 0 1px 8px -5px #aaa3; min-height: 100px; width: 100%;
 }
 .pagination-area {
   margin: 19px 0 10px 0; text-align: center;
@@ -440,26 +429,21 @@ footer { text-align: center; margin: 60px 0 20px; font-size: 0.8rem; color: var(
 /* === ベース背景・テキスト === */
 body.dark-mode {
   background: #22272e;
-  color: #e5ecec;
 }
 
 /* 固定ヘッダー */
 body.dark-mode .sticky-search-area {
   background: #252c35 !important;
-  box-shadow: 0 2px 16px -10px #15182088 !important;
   border-bottom: 1.5px solid #2e3640 !important;
 }
 body.dark-mode .search-card {
   background: #2d333b !important;
   color: #f1f3f7 !important;
-  box-shadow: 0 8px 32px -12px #14151a36 !important;
 }
 
 /* 入力欄・セレクト */
 body.dark-mode .searchbox-input,
 body.dark-mode .form-select.searchbox-select {
-  background-color: #2d333b !important;
-  color: #e6f0f3 !important;
   border-color: #394150 !important;
   padding-right: 2.5em !important;
   /* ★ 矢印の background-image 指定をここから削除します */
@@ -471,7 +455,6 @@ body.dark-mode .form-select.searchbox-select {
 }
 body.dark-mode .searchbox-input:focus {
   background: #262e36 !important;
-  border-color: #73b3e7 !important;
 }
 /* 検索結果件数バー */
 body.dark-mode .results-count-under-bar {
@@ -489,8 +472,6 @@ body.dark-mode .filters-bar {
 body.dark-mode #filterDrawer { /* centered without transform */
   margin: 0 auto;
   background: #2b323b !important;
-  border: 1px solid #425360 !important;
-  box-shadow: 0 10px 32px -8px #000d !important;
 }
 
 body.dark-mode .filter-title {
@@ -510,9 +491,6 @@ body.dark-mode .btn-corner.active,
 body.dark-mode .btn-year[aria-pressed="true"],
 body.dark-mode .btn-year.active {
   background: #364a55 !important;
-  color: #adebca !important;
-  border-color: #96e5c4 !important;
-  box-shadow: 0 0 0 2px #86e4e466 !important;
 }
 
 /* ダークモードのホバーエフェクトも同様に制限します */
@@ -541,10 +519,6 @@ body.dark-mode .page-btn {
   border: 1px solid transparent !important;
   border-radius: 16px;
   box-shadow: 0 2px 8px -6px #121a2160;
-}
-body.dark-mode .page-btn.active {
-  background: #8de0ee !important;
-  color: #27363f !important;
 }
 body.dark-mode .page-btn:disabled {
   background: #323a47 !important;
@@ -595,7 +569,6 @@ body.dark-mode .searchbox-input::placeholder {
 }
 
 .episode-meta {
-  font-size: 0.98rem;
   color: var(--muted);
   margin: 3px 0 0 0;
   line-height: 1.4;
@@ -610,8 +583,8 @@ body.dark-mode .searchbox-input::placeholder {
   /* 位置とレイヤー */
   position: fixed;
   right: 18px;
-  bottom: 18px;
-  z-index: 3010 !important; /* ← z-indexをサイト内で最大級に引き上げ */
+  /* ★整理: ここにあった z-index: 3010 !important は削除。後方の #theme-toggle-btn
+     { z-index: 10 !important } に常に負けていて実効値は10だった（実挙動は変更なし） */
 
   /* アイコンの中央揃え */
   display: flex;
@@ -642,18 +615,11 @@ body.dark-mode .searchbox-input::placeholder {
   }
 
   #loading-screen {
-  /* ライトテーマのページ背景・iOS起動画像と同色にする（#fffだと
-     スプラッシュ→ローディングの切り替わりで背景色が一瞬変わる） */
-  background: #f9fafe;
+  background: #fff;
   transition: background 0.3s;
-}
-body.dark-mode #loading-screen {
-  background: #22272f;
 }
 
 body.dark-mode #aboutModalContent {
-  background: #23242d !important;
-  color: #e5ecec !important;
   box-shadow: 0 8px 30px -6px #23244080;
 }
 body.dark-mode #aboutModalContent a {
@@ -666,20 +632,16 @@ body.dark-mode #aboutModalContent a {
   height: 18px;
   border-radius: 50%;
   animation: bounce 0.6s infinite ease-in-out;
-  /* will-change/translateZ(0)による事前レイヤー昇格は廃止:
-     PWA起動直後のiOSビューポート補正で昇格済みレイヤーだけが一瞬ズレて
-     合成される問題があるため。bounceのtransformアニメーションは実行時に
-     WebKitが自動でコンポジタ処理するので滑らかさは変わらない */
+  
+  /* ★追加: スマホでのカクつきを防ぐため、GPU処理を強制する */
+  will-change: transform;
+  transform: translateZ(0); 
 }
 
-/* 遅延は全体を+0.6sしてある: PWA起動時、OSのスプラッシュ（静止した球が
-   描かれている）からページへのクロスフェードと、iOSのビューポート補正
-   （起動後約0.5秒まで）が終わるまで球を静止させ、二重ブレとレイヤー
-   昇格タイミングの衝突を避ける */
-.ball1 { background-color: #ff6496; animation-delay: 0.6s; }
-.ball2 { background-color: #fabe00; animation-delay: 0.75s;}
-.ball3 { background-color: #006ebe; animation-delay: 0.9s; }
-.ball4 { background-color: #e60046; animation-delay: 1.05s;}
+.ball1 { background-color: #ff6496; animation-delay: 0s;   }
+.ball2 { background-color: #fabe00; animation-delay: 0.15s;}
+.ball3 { background-color: #006ebe; animation-delay: 0.3s; }
+.ball4 { background-color: #e60046; animation-delay: 0.45s;}
 
 @keyframes bounce {
   0%, 80%, 100% {
@@ -753,11 +715,10 @@ body.dark-mode #loading-screen {
 body.dark-mode {
   --filter-btn-active: rgba(200, 200, 255, 0.15);
   --btn-main: #4d6272;
-  --btn-hover: #a6e1fa;
 }
 
 /* ダークモード調整 */
-body.dark-mode .fav-btn{ background:#2d333b;border-color:#394150; }
+body.dark-mode .fav-btn{border-color:#394150; }
 
 /* ===== Favorite button (dark mode) ===== */
 body.dark-mode .fav-btn{
@@ -801,14 +762,14 @@ body.dark-mode .no-results{
 /* ===== 端末でのダブルタップ拡大を抑止 ===== */
 button, a, select, input, label { touch-action: manipulation; }
 /* サムネ + タイムスタンプ表示 */
-.thumb-col { width:120px; flex-shrink:0; display:flex; flex-direction:column; }
-.ts-buttons { margin-top:6px; display:flex; flex-wrap:wrap; gap:6px; }
+.thumb-col { width:120px; flex-direction:column; }
+.ts-buttons { display:flex; flex-wrap:wrap; gap:6px; }
 .ts-btn {
-  display:inline-block; padding:3px 8px; border-radius:999px; font-size:.85em;
-  background:#ebeafd; color:#463d94; border:1px solid #dad4ff; line-height:1.2;
+  display:inline-block;
+  background:#ebeafd; line-height:1.2;
 }
 /* ダークモード */
-body.dark-mode .ts-btn { background:#25323c; color:#a6e1fa; border-color:#415766; }
+body.dark-mode .ts-btn { background:#25323c; }
 
 /* --- Autocomplete (検索候補) -------------------- */
 .search-row-keyword { position: relative; }
@@ -836,8 +797,7 @@ body.dark-mode .ts-btn { background:#25323c; color:#a6e1fa; border-color:#415766
 }
 .autocomplete-item:hover,
 .autocomplete-item[aria-selected="true"] { background: #f4f6ff; }
-.autocomplete-item .type {
-  font-size: 12px; line-height: 1; padding: 2px 6px;
+.autocomplete-item .type { line-height: 1;
   border: 1px solid #e3e3ec; border-radius: 999px; color: #7c8798;
 }
 .autocomplete-item .match { font-weight: 700; }
@@ -848,7 +808,6 @@ body.dark-mode .autocomplete {
 }
 body.dark-mode .autocomplete-item:hover,
 body.dark-mode .autocomplete-item[aria-selected="true"] { background: #2b3a46; }
-body.dark-mode .autocomplete-item .type { border-color: #415766; color: #96e5c4; }
 
 /* =================================================== */
 /* ★★★ Adobe Fonts 読み込み対策 (FOUC防止) ★★★ */
@@ -872,13 +831,6 @@ html.wf-active #autocomplete {
 }
 
 /* --- iOS PWA の安全域対応（ノッチ・ステータスバーを回避） --- */
-:root{
-  /* 念のため左右/下も変数化 */
-  --safe-top: env(safe-area-inset-top, 0px);
-  --safe-left: env(safe-area-inset-left, 0px);
-  --safe-right: env(safe-area-inset-right, 0px);
-  --safe-bottom: env(safe-area-inset-bottom, 0px);
-}
 
 /* 既存の .sticky-search-area に追記 */
 .sticky-search-area{
@@ -926,7 +878,7 @@ html.wf-active #autocomplete {
 }
 .history-toggle{
   -webkit-tap-highlight-color: transparent;
-  width: 100%; display:flex; align-items:center; gap:12px;
+  width: 100%;
   padding: 16px 18px; border-radius: 14px; border: 1px solid var(--history-card-bd);
   background: var(--history-card-bg); color: inherit; cursor: pointer;
   font-weight: 750; letter-spacing: .01em;
@@ -934,7 +886,7 @@ html.wf-active #autocomplete {
 }
 .history-toggle .icon{ font-size: 1.15em; }
 .history-toggle .title{ font-size: 1.06em; }
-.history-toggle .sub{ margin-left:auto; color: var(--history-muted); font-weight:650; }
+/* ★整理: .history-toggle .sub は削除（該当クラスの要素がHTML/JSのどこにも存在しない） */
 .history-toggle:focus-visible{ outline: 3px solid rgba(99,102,241,.45); outline-offset: 2px; }
 
 .history-body{ position: relative; padding: 14px 2px 2px; }
@@ -947,7 +899,7 @@ html.wf-active #autocomplete {
   position: relative; margin: 8px 0 0 28px; padding-left: 24px;
 }
 .history-timeline::before{
-  content:""; position:absolute; left: 4px; top: 0; bottom: 0;
+  content:""; position:absolute; top: 0; bottom: 0;
   width: 2px; background: linear-gradient(var(--history-line), transparent 60%), var(--history-line);
   border-radius: 2px;
 }
@@ -982,7 +934,7 @@ html.wf-active #autocomplete {
 }
 
 .history-item::before{
-  content:""; position:absolute; left: -27px; top: 18px;
+  content:""; position:absolute; top: 18px;
   width: 14px; height: 14px; border-radius: 50%;
   background: var(--history-dot);
   box-shadow:
@@ -995,9 +947,9 @@ html.wf-active #autocomplete {
   }
 }
 
-.history-item .date{ font-weight:800; margin-bottom:4px; color: color-mix(in oklab, var(--history-year), #ffffff); font-size: 13.5px; }
+.history-item .date{ margin-bottom:4px; color: color-mix(in oklab, var(--history-year), #ffffff); }
 .history-item .label{ font-weight:800; line-height: 1.5; }
-.history-item .desc{ color: var(--history-muted); margin-top: 2px; line-height: 1.7; }
+.history-item .desc{ color: var(--history-muted); margin-top: 2px; }
 .history-item a{ color: inherit; text-decoration: underline; text-underline-offset: 3px; }
 
 /* 小さめ画面最適化 */
@@ -1025,13 +977,9 @@ body.dark-mode .history-toggle{
   background:#2d333b !important; border-color:#3b4552 !important;
   color:#e9f2f6 !important;
 }
-body.dark-mode .history-timeline::before{ background:#3a4452 !important; }
 body.dark-mode .history-year{ color:#9ad9de !important; }
 body.dark-mode .history-item{
   background:#2d333b !important; border-color:#3b4552 !important;
-}
-body.dark-mode .history-item::before{
-  background:#90c9ce !important; box-shadow:0 0 0 4px rgba(144,201,206,.18) !important;
 }
 body.dark-mode .history-item .date{ color:#9ad9de !important; }
 body.dark-mode .history-sticky-year{
@@ -1052,11 +1000,6 @@ body.dark-mode .history-sticky-year{
 /* Connectors */
 
 /* Mobile: タイムラインの丸位置を微修正（18px padding, 線は4px → 左端 -21px） */
-@media (max-width: 640px){
-  .history-timeline .history-item::before{
-    left: -21px; /* ずれ解消 */
-  }
-}
 
 .history-timeline::before { left: -7px; }
 .history-item::before      { left: -38px; }
@@ -1076,12 +1019,11 @@ body.dark-mode .history-sticky-year{
 /* === Modal 基本 === */
 .modal-overlay{
   display: none;
-  position: fixed; inset: 0; z-index: 2055;
+  position: fixed; inset: 0;
   /* 背景を少し濃くして、ぼかしがなくても見やすくします */
   background: rgba(0, 0, 0, 0.6) !important;
   align-items: center; justify-content: center;
 }
-.modal-overlay.show{ display: flex; }
 
 /* ダークモード時はオーバーレイ濃いめ */
 body.dark-mode .modal-overlay,
@@ -1124,7 +1066,6 @@ body.theme-red .modal-overlay {
   position: sticky; top: 0; z-index: 10;
   background: var(--history-card-bg);
   border-bottom: 1px solid var(--history-card-bd);
-  padding: 10px 16px;
 }
 .history-modal .modal-title{
   margin: 0 auto; font-size: 1.15rem; font-weight: 800;
@@ -1189,41 +1130,24 @@ body.dark-mode .history-modal .modal-close{
 .history-modal .modal-header{ padding:14px 56px 12px; } /* 右=56pxで×が食い込まない */
 .history-modal .history-body{  padding:16px 22px 22px 16px; } /* ←右側にゆとり */
 
-/* 閉じる時：フェードアウト＋少し沈む。
+/* 閉じる時：フェードアウト。
    display:flex を明示しないと show を外した瞬間に base の display:none になり、
-   アニメーションが見えないまま消えてしまう（＝フェードアウトが無効になる）ので必ず指定する。 */
-.modal-overlay.closing{ display: flex; animation: modalFadeOut .20s ease-in forwards; }
+   アニメーションが見えないまま消えてしまう（＝フェードアウトが無効になる）ので必ず指定する。
+   ★整理: 同一セレクタで modalFadeOut 版→modalHide 版と二重定義されていたため後勝ちの
+   modalHide 版のみ残した。modalFadeOut のkeyframes自体は #aboutModal.closing が使うので残す。
+   未使用だった modalPopOut（2定義）は削除。 */
+.modal-overlay.closing{ display: flex; animation: modalHide .18s ease-in both; }
 /* 閉じる時は動かさず、開いた位置に留めたままフェードアウトのみ（オーバーレイのopacityが下げる） */
 .modal-overlay.closing .history-modal{ animation: none; transform: translateY(0) scale(1); }
 
 @keyframes modalFadeOut { from{opacity:1} to{opacity:0} }
-@keyframes modalPopOut  { from{transform: translateY(0) scale(1); opacity:1}
-                          to  {transform: translateY(6px) scale(.98); opacity:.96} }
-
-/* フェードアウト（closing） */
-.modal-overlay.closing{ display: flex; animation: modalHide .18s ease-in both; }
-.modal-overlay.closing .history-modal{ animation: none; transform: translateY(0) scale(1); }
-
 @keyframes modalHide { from{opacity:1} to{opacity:0} }
-@keyframes modalPopOut { from{transform:translateY(0) scale(1)} to{transform:translateY(8px) scale(.98)} }
 
 body.fav-only #radio-history { display: none !important; }
 
-.close {
-    position: absolute !important;
-    top: 10px !important;
-    right: 30px !important; /* 数値を大きくして右寄せ */
-    font-size: 30px;
-    font-weight: bold;
-    color: #aaa;
-    cursor: pointer;
-    z-index: 9999; /* モーダルの上にくるように */
-}
+/* ★整理: .close ルールは削除（class="close" の要素はどこにも存在しない） */
 
 /* === Radio History modal: CLOSE button (single source of truth) === */
-#historyModal .modal-header {          /* ×と干渉しないだけ右側に余白を確保 */
-  padding: 14px 48px 12px 16px;        /* ← 右側=48px（ボタン幅+余白ぶん） */
-}
 
 #historyModal .modal-close {
   position: absolute;
@@ -1415,7 +1339,6 @@ body.dark-mode .share-btn:focus-visible {
 
 @media (max-width: 640px){
   .episode-meta{
-    font-size: clamp(0.8rem, 3.3vw, 0.98rem);
     line-height: 1.35;
   }
 
@@ -1469,8 +1392,7 @@ body.dark-mode .share-btn:focus-visible {
     height: 100%; /* 高さをグリッド行に合わせる */
     min-height: 42px; /* 最小高さを保証 */
     justify-content: center;
-    padding: 0 6px !important;
-    align-items: center; /* 垂直中央揃え */
+    padding: 0 6px !important; /* 垂直中央揃え */
     min-width: 0;
     /* font-size, gap, white-space, overflow, text-overflow は不要になったため削除 */
   }
@@ -1502,15 +1424,10 @@ body.dark-mode .share-btn:focus-visible {
   .search-row-controls #filterToggleBtn,
   .search-row-controls #favOnlyToggleBtn,
   .search-row-controls #randomBtn,
-  .search-row-controls .reset-btn{
-    --ctl-fs: 15px;                 /* ← JS がここを書き換えます */
-    font-size: var(--ctl-fs);
+  .search-row-controls .reset-btn{                 /* ← JS がここを書き換えます */
     white-space: nowrap;            /* ぜったい改行しない */
     overflow: hidden;
-    text-overflow: ellipsis;
-    gap: .45em;
-    height: 37px;                   /* 高さは固定 → 形崩れしない */
-    line-height: 1;                 /* アイコンと文字のベース */
+    text-overflow: ellipsis;                   /* 高さは固定 → 形崩れしない */                 /* アイコンと文字のベース */
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -1520,11 +1437,8 @@ body.dark-mode .share-btn:focus-visible {
   /* アイコンの大きさも文字と一緒に縮む */
 
   /* フィルタのラベルは ::after で付与しているので、サイズ連動 */
-  #filterToggleBtn::after{
-    content: attr(data-label);      /* JSで data-label="フィルタ" を付けます */
+  #filterToggleBtn::after{      /* JSで data-label="フィルタ" を付けます */
     font-size: var(--ctl-fs);
-    font-weight: 600;
-    margin-left: .35em;
   }
 
   /* リセットにも記号を追加して左右バランスを統一（FontAwesome不要） */
@@ -1539,7 +1453,6 @@ body.dark-mode .share-btn:focus-visible {
   .search-row-controls #randomBtn,
   .search-row-controls .reset-btn{
     --ctl-fs: 15px;                 /* JSがここを上書き */
-    font-size: var(--ctl-fs);
     line-height: 1;
     height: 37px;                   /* 高さ固定で形崩れ防止 */
   }
@@ -1556,8 +1469,7 @@ body.dark-mode .share-btn:focus-visible {
 
 }
 
-/* ===== SP: 4ボタンの太さと余白を完全統一 ===== */
-:root { --ctl-gap: .38em; }  /* アイコンと文字の統一間隔 */
+/* ===== SP: 4ボタンの太さと余白を完全統一 ===== */  /* アイコンと文字の統一間隔 */
 
 @media (max-width: 779px){
   /* 4ボタンの太さはすべて同じ（500）に統一。余白は margin で管理 */
@@ -1571,8 +1483,7 @@ body.dark-mode .share-btn:focus-visible {
 
   /* フィルタのラベル（::after）は太さ/間隔を統一 */
   #filterToggleBtn::after{
-    margin-left: var(--ctl-gap) !important;
-    font-weight: 500 !important;      /* ←600になっていたのを上書き */
+    margin-left: var(--ctl-gap) !important;      /* ←600になっていたのを上書き */
   }
 
   /* 既存 <span> ラベルは左マージンで統一（先頭スペース除去はJS側で） */
@@ -1594,10 +1505,6 @@ body.dark-mode .share-btn:focus-visible {
 }
 
 /* ===== PC: 4ボタンは等幅／余りは並び替えが吸収 ===== */
-:root{
-  /* 4ボタンの共通幅（画面に応じて少しだけ伸縮） */
-  --pc-btn-w: clamp(124px, 12vw, 144px);
-}
 
 /* ===== Controls (Unified) — SP/PC 共通の見た目・間隔・幅 ===== */
 :root{
@@ -1626,21 +1533,13 @@ body.fav-only #results .episode-item:not(.is-fav) {
 /* Fix for long selected filter tags being cut off */
 
 /* ===== iOSスタンドアロン最適化 ===== */
-:root {
-  /* セーフエリアをCSS変数化 */
-  --safe-top: env(safe-area-inset-top, 0px);
-  --safe-right: env(safe-area-inset-right, 0px);
-  --safe-bottom: env(safe-area-inset-bottom, 0px);
-  --safe-left: env(safe-area-inset-left, 0px);
-}
 
 /* 100vh問題対策（--vh は JS で更新） */
 html, body {
   min-height: calc(var(--vh, 1vh) * 100);
 }
 
-/* ローディング画面のサイズ指定はファイル末尾の #loading-screen に集約
-   （複数箇所でvh/--vh指定が競合し、PWA起動直後にガタつく原因だったため削除） */
+/* ローディング全面背景をdvhベースに */
 
 /* 置き換え：前回の .ios-standalone .sticky-search-area を削除して、これを入れる */
 
@@ -1666,13 +1565,10 @@ html, body {
 .thumbnail { background: #2b323b; }
 body.dark-mode .thumbnail { background: #1f262d; }
 
-/* プレースホルダーに軽いスタイル */
-.thumb-fallback { opacity: .85; }
+/* ★整理: .thumb-fallback は削除（フォールバックはmain.jsのsrc差し替えで行われ、このクラスは付与されない） */
 
 /* sticky stability */
 #filterDrawer{
-  overflow-y: auto;
-  will-change: scroll-position;
   contain: layout;
 }
 
@@ -1700,9 +1596,8 @@ body.dark-mode .thumbnail { background: #1f262d; }
   z-index: 3;
   backdrop-filter: saturate(120%) blur(4px);
 }
-body.dark-mode #filterDrawer .drawer-footer,
-.dark #filterDrawer .drawer-footer,
-html[data-theme="dark"] #filterDrawer .drawer-footer{
+/* ★整理: .dark / html[data-theme="dark"] のセレクタは削除（サイトはbody.dark-modeのみ使用） */
+body.dark-mode #filterDrawer .drawer-footer{
   background: rgba(22,28,34,.88);
   border-top: 1px solid rgba(255,255,255,.08);
   box-shadow: 0 -4px 12px -10px rgba(0,0,0,.6);
@@ -1753,7 +1648,7 @@ html[data-theme="dark"] #filterDrawer .drawer-footer{
   overflow-y: auto !important;
   overflow-x: hidden !important;
   transform: none !important;
-  animation: fadein-drawer 0.17s ease-out;
+  animation: fade-only-in 0.17s ease-out; /* 移動なしのフェードインのみ */
   border-top-left-radius: 0 !important;
   border-top-right-radius: 0 !important;
   will-change: transform, opacity;
@@ -1776,14 +1671,7 @@ html[data-theme="dark"] #filterDrawer .drawer-footer{
 
 /* ===== これより下を全て差し替えてください ===== */
 
-/* --- テーマスイッチャーのスタイル --- */
-.theme-switcher {
-  display: flex;
-  justify-content: center;
-  gap: 10px;
-  margin: 40px auto 20px;
-  padding: 0 1rem;
-}
+/* ★整理: .theme-switcher ルールは削除（実際のパネルは .floating-panel。該当クラスは未使用） */
 .theme-btn {
   width: 32px;
   height: 32px;
@@ -1996,7 +1884,6 @@ body[class*="theme-"] .results-count-under-bar { color: var(--btn-hover) !import
 body[class*="theme-"] #filterDrawer { background: var(--bg-color) !important; border-color: var(--bg-color) !important; }
 body[class*="theme-"] .filter-title { color: var(--btn-hover) !important; }
 body[class*="theme-"] .guest-button, body[class*="theme-"] .btn-corner, body[class*="theme-"] .btn-year { background: var(--btn-bg) !important; border-color: var(--history-card-bd) !important; color: var(--text-color) !important; }
-body[class*="theme-"] .guest-button.active, body[class*="theme-"] .btn-corner.active, body[class*="theme-"] .btn-year.active { border-color: var(--btn-main) !important; background: var(--filter-btn-active) !important; box-shadow: 0 0 0 2.5px var(--input-focus-shadow) !important; }
 
 /* テーマカラーのホバーエフェクトも同様に制限します */
 @media (hover: hover) {
@@ -2054,7 +1941,8 @@ body[class*="theme-"] #historyCloseBtn {
   color: var(--text-color) !important;
 }
 @media (hover: hover) {
-  body[class*="theme-"] #aboutCloseBtn:hover,#historyCloseBtn:hover { background: var(--filter-btn-active) !important; }
+  /* 2つ目のセレクタにテーマスコープが欠けていて、ライトモードの閉じるボタンhover色まで上書きしていたのを修正 */
+  body[class*="theme-"] #aboutCloseBtn:hover, body[class*="theme-"] #historyCloseBtn:hover { background: var(--filter-btn-active) !important; }
 }
 body[class*="theme-"] #aboutModalContent b, body[class*="theme-"] #aboutModalContent a, body[class*="theme-"] #aboutCloseBtn, body[class*="theme-"] .about-title { color: var(--muted) !important; }
 body[class*="theme-"] .autocomplete { background: var(--btn-bg) !important; border-color: var(--history-card-bd) !important; }
@@ -2104,13 +1992,16 @@ body[class*="theme-"] .site-footer a { color: var(--muted) !important; }
   pointer-events: auto;
 }
 
-body[class*="theme-"]  {
+/* ★意図的な指定（削除しないこと）:
+   カラーテーマのページ背景は、テーマ定義の --bg-color ではなく一段明るい --btn-bg を使う。
+   歴史的にはセレクタ書き漏れ由来だが、明るい背景の方が視認性が良いためこの色を正とする。
+   ヘッダー(.sticky-search-area)やローディング画面は --bg-color のままで、ページ本体との
+   色差はデザインとして許容。フィルタドロワー（スマホ）・タイムスタンプ/関連リンク
+   モーダルの背景もこの「実効背景 --btn-bg」に合わせている（変更時は3箇所も連動させる）。 */
+body[class*="theme-"] {
   background: var(--btn-bg) !important;
   color: var(--btn-main) !important;
-  border-color: var(--history-card-bd) !important;
 }
-
-/* style.css の該当部分を、このコードに丸ごと置き換えてください */
 
 /* ===== 「このサイトについて」モーダル (競合解決版) ===== */
 
@@ -2215,7 +2106,6 @@ body.dark-mode .searchbox-select {
 
 /* 2. 検索ボックス選択時の青い枠線を白に変更 */
 body.dark-mode .searchbox-input:focus {
-  border-color: #ffffff !important;
   box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.25) !important;
 }
 
@@ -2233,19 +2123,12 @@ body.dark-mode .btn-year.active {
 
 /* 4. ページ番号ボタンのアクティブ時の水色の背景を白に変更 */
 body.dark-mode .page-btn.active {
-  background: #ffffff !important;
-  color: #27363f !important; /* 背景が白になるため、文字はダークカラーにします */
+  background: #ffffff !important; /* 背景が白になるため、文字はダークカラーにします */
 }
 
 /* === ダークモードの水色を白に完全統一する最終修正（追記） === */
 
 /* フィルターDrawer内のボタン (アクティブ時) */
-body:not(.dark-mode):not([class*="theme-"]) .guest-button[aria-pressed="true"],
-body:not(.dark-mode):not([class*="theme-"]) .btn-corner[aria-pressed="true"],
-body:not(.dark-mode):not([class*="theme-"]) .btn-year[aria-pressed="true"] {
-  border-color: #000000 !important;
-  box-shadow: 0 0 0 2.5px rgba(0, 0, 0, 0.1) !important;
-}
 
 /* フィルターDrawer内のボタン (ホバー時) */
 @media (hover: hover) {
@@ -2550,56 +2433,29 @@ body.dark-mode .history-item .label {
 
 /* --- 2. デバイスごとのレイアウトとスタイル --- */
 
-/* ★★★★★ ここから新しく追加 ★★★★★ */
-/* スマホ (779px以下) */
+/* スマホ (779px以下)
+   ★整理: このブロックに大量にあった「(V2.1)を打ち消す」宣言群
+   （flex-direction: row / height: 42px / アイコン1em / ↺アイコン等）は削除した。
+   打ち消し対象のV2.1ブロック（後方の @media (max-width:1069px)、縦並び60px・
+   アイコン22px・ラベル11px）の方がファイル上で後にあり同一詳細度・同一!importantの
+   ため常に勝っていて、これらの宣言は一度も効いたことがない（現在の見た目=V2.1の縦並び）。
+   実際に効いている宣言（visibility/opacityの初期非表示、フォント初期サイズ、
+   ラベルのline-height、フィルタ文言、再生リストボタン）だけを残している。 */
 @media (max-width: 779px) {
-  /* (V2.1) の flex-direction: column を打ち消す */
   .search-row-controls #filterToggleBtn,
   .search-row-controls #favOnlyToggleBtn,
   .search-row-controls #randomBtn,
   .search-row-controls .reset-btn {
-    flex-direction: row !important; /* 縦並び -> 横並びに強制 */
-    height: 42px !important;        /* (V2.1) の height: auto を上書き */
-    min-height: 42px;               /* (V2.1) の min-height: 60px を上書き */
-    padding: 0 6px !important;      /* (V2.1) の padding: 8px 4px を上書き */
-    gap: 0.35em !important;         /* (V2.1) の gap: 4px を上書き */
     visibility: hidden; /* ★計算完了まで完全に非表示 */
     opacity: 0;
-  }
-  
-  /* (V2.1) のアイコンスタイルを上書き */
-  #filterToggleBtn i,
-  #favOnlyToggleBtn i,
-  #randomBtn i,
-  .reset-btn::before {
-    font-size: 1em !important;      /* (V2.1) の 22px を上書き */
-    font-weight: 700 !important;    /* (V2.1) の 900 を上書き */
-    top: 0 !important;              /* (V2.1) の位置調整をリセット */
-    width: 1.1em !important;        /* (V28) の共通スタイルに合わせる */
-    text-align: center !important;
-  }
-  
-  /* (V2.1) のテキストスタイルを上書き */
-  #filterToggleBtn::after,
-  #favOnlyToggleBtn span,
-  #randomBtn span,
-  .reset-btn {
-    font-size: 1em !important;      /* (V2.1) の 11px を上書き (JSが調整する) */
-    line-height: 1 !important;      /* (V2.1) の 1.2 を上書き */
-  }
-  
-  /* JSが調整するフォントサイズのベースを定義 */
-  .search-row-controls #filterToggleBtn,
-  .search-row-controls #favOnlyToggleBtn,
-  .search-row-controls #randomBtn,
-  .search-row-controls .reset-btn {
-     font-size: 14px !important; /* JSが調整するまでの安全な初期サイズ */
+    font-size: 14px !important; /* JSが調整するまでの安全な初期サイズ */
   }
 
-  /* (V2.1) のリセットアイコン (fa-rotate-left) を (V28) の ↺ に戻す */
-  .reset-btn::before {
-      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif !important;
-      content: "↺" !important;
+  /* ラベルの行高（V2.1はここのline-heightを設定しないため、この指定が実際に効く） */
+  #filterToggleBtn::after,
+  #favOnlyToggleBtn span,
+  #randomBtn span {
+    line-height: 1 !important;
   }
 
   /* 下段のボタン */
@@ -2625,14 +2481,13 @@ body.dark-mode .history-item .label {
   }
 }
 
-/* スマホ (1069px以下) */
+/* タブレット (780〜1069px)
+   ★整理: height/padding/gap の各宣言は削除。後方のV2.1ブロック
+   （.search-row-controls #〜 の縦並び定義）の方が詳細度が高く常に負けていた。 */
 @media (min-width: 780px) and (max-width: 1069px) {
 
   #filterToggleBtn, #favOnlyToggleBtn, #randomBtn, .reset-btn {
-    height: 42px !important;
     font-size: 14px !important;     /* JSが調整するまでの安全な初期サイズ */
-    padding: 0 6px !important;
-    gap: 0.35em !important;
     visibility: hidden; /* ★計算完了まで完全に非表示 */
     opacity: 0;
   }
@@ -2658,10 +2513,8 @@ body.dark-mode .history-item .label {
       font-weight: 700 !important;
     }
 
-  /* ★★★ ↓↓ この3行を追加してください ↓↓ ★★★ */
-    .reset-btn::before {
-      content: "↺" !important;
-    }
+  /* ★整理: ここにあった .reset-btn::before { content:"↺" } は削除。
+     後方のV2.1ブロックの content:"\f2ea"(Font Awesome) に常に負けていた。 */
 }
 /* PC (1070px以上) */
 @media (min-width: 1070px) {
@@ -2697,16 +2550,11 @@ body.dark-mode .history-item .label {
 
   /* --- PWAモード (PC) の場合のレイアウト上書き (V4・カード2枚幅) --- */
     /* (左4ボタン非表示に伴い、残り2ボタンを均等幅にする) */
-    html.is-standalone .search-row-controls .reset-btn + .sort-wrapper {
-      margin-left: 0 !important; /* autoマージンを解除 */
-    }
 
     /* ズレ修正: .sort-wrapper と #createPlaylistBtn をグループ化 */
     html.is-standalone .search-row-controls .sort-wrapper,
     html.is-standalone #createPlaylistBtn {
-      /* ▼▼▼ flex の3番目の値（flex-basis）をカード1枚幅の計算値に変更 ▼▼▼ */
-      flex: 1 1 calc(50% - 5px) !important; /* 修正前: 1 1 0 !important; */
-      width: auto !important; 
+      /* ▼▼▼ flex の3番目の値（flex-basis）をカード1枚幅の計算値に変更 ▼▼▼ */ /* 修正前: 1 1 0 !important; */ 
       box-sizing: border-box !important;
     }
     
@@ -2778,32 +2626,8 @@ body.dark-mode #createPlaylistBtn { /* ← ここに追加 */
   background-color: #2d333b !important; color: #e5ecec !important; border-color: #394150 !important;
 }
 
-body.dark-mode #createPlaylistBtn {
-  /* 背景を明るい赤から、他のボタンと同じ暗いグレーに変更 */
-  background-color: #2d333b !important;
-  /* 文字色を「パステルレッド」にして、YouTubeっぽさを残しつつ目に優しく */
-  color: #e52d27 !important;
-  /* 枠線も馴染むグレーに変更 */
-  border-color: #394150 !important;
-}
-
 body.dark-mode #filterToggleBtn[aria-expanded="true"], body.dark-mode #favOnlyToggleBtn[aria-pressed="true"] {
   background-color: #e5ecec !important; color: #22272e !important; border-color: #e5ecec !important;
-}
-@media (hover: hover) {
-  /* テーマと同じ「控えめな背景変化＋枠線強調・文字色不変」パターンに統一 */
-  body.dark-mode #filterToggleBtn:not([aria-expanded="true"]):hover,
-  body.dark-mode #favOnlyToggleBtn:not([aria-pressed="true"]):hover,
-  body.dark-mode #randomBtn:hover,
-  body.dark-mode .reset-btn:hover {
-    background-color: #16181c !important; color: #e7e9ea !important; border-color: #536471 !important;
-  }
-  /* ★★★ ↓↓ このブロックを新しく追加 ↓↓ ★★★ */
-  body.dark-mode #createPlaylistBtn:hover {
-    background-color: #e52d27 !important; /* 標準の赤 */
-    border-color: #e52d27 !important;
-    color: #ffffff !important;
-  }
 }
 
 /* --- 3. カラーテーマ共通 --- */
@@ -2887,14 +2711,6 @@ body[class*="theme-"] #favOnlyToggleBtn[aria-pressed="true"] {
 }
 
 /* ダークモード時の調整 */
-body.dark-mode #createPlaylistBtn {
-  background-color: #ff4742;
-}
-@media (hover: hover) {
-  body.dark-mode #createPlaylistBtn:hover {
-    background-color: #e52d27;
-  }
-}
 
 /* ===== オーバーレイ上でのタッチ操作によるスクロールを防止 ===== */
 #drawerBackdrop,
@@ -2932,8 +2748,8 @@ body.dark-mode #createPlaylistBtn {
   bottom: calc(18px + var(--safe-bottom));
 }
 
-/* ローディング画面のサイズ指定はファイル末尾の #loading-screen に集約
-   （複数箇所でvh/--vh指定が競合し、PWA起動直後にガタつく原因だったため削除） */
+/* --- 100vh問題対策 --- */
+/* JSで設定した --vh 変数を使ってローディング画面の高さを設定 */
 
 /* style.cssの一番下に追加 */
 
@@ -3010,13 +2826,6 @@ html {
    */
 
   /* テキスト部分のスタイルを調整 (フィルタ、お気に入り、ランダム) */
-  #filterToggleBtn::after,
-  #favOnlyToggleBtn span,
-  #randomBtn span {
-    font-family: fot-udkakugoc80-pro, 'Segoe UI', system-ui, -apple-system, sans-serif !important;
-    font-size: 11px !important;
-    font-weight: 700 !important;
-  }
 
   /* リセットボタン本体のテキストスタイルを調整 */
   #mainResetBtn {
@@ -3332,11 +3141,6 @@ html {
 }
 
 /* 4. ダークモードでも同じスタイルを適用します */
-body.dark-mode .ts-btn {
-  background-color: rgba(0, 0, 0, 0.75) !important;
-  color: white !important;
-  border-color: transparent !important;
-}
 
 /* --- デバイスごとの幅調整 --- */
 
@@ -3414,35 +3218,9 @@ body.ts-kb-lock {
 .search-input-wrapper .searchbox-input {
   width: 100%;
   /* 右側のpaddingを増やしてボタンと文字が被らないようにします */
-  padding-right: 38px !important;
 }
 
 /* クリアボタンのスタイル */
-.clear-search-btn {
-  position: absolute;
-  top: 50%;
-  right: 8px;
-  transform: translateY(-50%);
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  width: 26px;
-  height: 26px;
-  padding: 0;
-
-  background-color: #d1d5db; /* 少し濃いめのグレー */
-  color: #4b5563;
-  border: none;
-  border-radius: 50%;
-  cursor: pointer;
-
-  /* 初期状態は非表示 */
-  opacity: 0;
-  visibility: hidden;
-  transition: opacity 0.15s, visibility 0.15s, background-color 0.15s;
-}
 
 /* JavaScriptによってhidden属性が外されたら表示する */
 .clear-search-btn:not([hidden]) {
@@ -3458,16 +3236,6 @@ body.ts-kb-lock {
 }
 
 /* --- ダークモード対応 --- */
-body.dark-mode .clear-search-btn {
-  background-color: #4b5563;
-  color: #e5ecec;
-}
-
-@media (hover: hover) {
-  body.dark-mode .clear-search-btn:hover {
-    background-color: #6b7280;
-  }
-}
 
 /* --- カラーテーマ対応 --- */
 body[class*="theme-"] .clear-search-btn {
@@ -3644,32 +3412,10 @@ h1, h2, h3, h4, h5, b, strong, .filter-title, .guest-button, .btn-corner, .btn-y
   padding-bottom: 80px; /* ナビゲーションバーの高さ + α */
 }
 
-/* --- 各テーマカラーへの対応 --- */
-
-/* ダークモード */
-.is-standalone.dark-mode .pwa-bottom-nav {
-  background-color: #252c35;
-  border-top-color: #394150;
-  box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.2);
-}
-.is-standalone.dark-mode .pwa-bottom-nav-btn {
-  color: #8ca2b3;
-}
-.is-standalone.dark-mode .pwa-bottom-nav-btn.is-active {
-  color: #ffffff;
-}
-
-/* その他のカラーテーマ */
-.is-standalone[class*="theme-"] .pwa-bottom-nav {
-  background-color: var(--card-bg);
-  border-top-color: var(--history-card-bd);
-}
-.is-standalone[class*="theme-"] .pwa-bottom-nav-btn {
-  color: var(--muted);
-}
-.is-standalone[class*="theme-"] .pwa-bottom-nav-btn.is-active {
-  color: var(--btn-main);
-}
+/* ★整理: ここにあった .is-standalone.dark-mode / .is-standalone[class*="theme-"] の
+   各ルールは削除。is-standaloneはhtml要素、dark-mode/theme-*はbody要素に付与されるため
+   同一要素の複合セレクタは絶対にマッチしなかった。正しい記述
+   （html.is-standalone body.dark-mode ... 等）が後方に存在し、そちらが機能している。 */
 
 /* =================================================== */
 /* ★★★ PWA/モバイル対応強化スタイル (修正版V2) ★★★ */
@@ -3713,16 +3459,15 @@ html.is-standalone .site-footer {
   margin-top: auto; /* これにより、上の空きスペースを埋めて下に配置されます */
 }
 
-/* --- ロード画面のサイズ・重なり順（サイズ指定はここに集約） --- */
+/* --- 100vh問題対策 & ロード画面修正 --- */
 #loading-screen {
-  /* ロード画面の重なり順を最強にして、ナビバーが透けるのを防ぐ */
-  z-index: 2147483647 !important;
-
-  /* 高さはインラインの position:fixed + inset:0 に任せて常にビューポート実寸に一致させる。
-     100vh/100dvh/--vh は PWA 起動直後にOSが報告するビューポート高さとズレることがあり、
-     数フレーム後の補正で中央のロゴ・スピナーが縦にガタッと動く原因になっていた。 */
-  height: auto;
-  min-height: 0;
+  /* ★修正2: ロード画面の重なり順を最強にして、ナビバーが透けるのを防ぐ */
+  z-index: 2147483647 !important; 
+  
+  /* 高さの計算をより厳密に */
+  height: 100vh;      /* フォールバック */
+  height: 100dvh;     /* アドレスバー等を考慮した動的な高さ */
+  min-height: 100%;
 }
 
 /* --- PWA専用 下部ナビゲーション --- */
@@ -3753,7 +3498,6 @@ html.is-standalone.scroll-locked .pwa-bottom-nav {
 }
 
 html.is-standalone .pwa-bottom-nav-btn {
-  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -3784,15 +3528,8 @@ html.is-standalone .search-row-controls #mainResetBtn {
 /* --- テーマカラー対応 --- */
 
 /* 位置調整 */
-html.is-standalone #filterDrawer {
-  bottom: 0 !important;
-}
 
 /* ナビアイコン位置の微調整 */
-html.is-standalone #pwa-filterToggleBtn i { font-size: 21px; top: -0.08em; left: 0; }
-
-html.is-standalone #pwa-filterToggleBtn { left: 8px; }
-html.is-standalone #pwa-mainResetBtn { right: 8px; }
 
 /* --- テーマカラー対応 (前回同様) --- */
 /* ダークモード */
@@ -3801,8 +3538,6 @@ html.is-standalone body.dark-mode .pwa-bottom-nav {
   border-top-color: #394150;
   box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.2);
 }
-html.is-standalone body.dark-mode .pwa-bottom-nav-btn { color: #8ca2b3; }
-html.is-standalone body.dark-mode .pwa-bottom-nav-btn.is-active { color: #ffffff; }
 
 /* その他カラーテーマ */
 html.is-standalone body[class*="theme-"] .pwa-bottom-nav {
@@ -3819,9 +3554,6 @@ html.is-standalone #theme-toggle-btn {
   bottom: calc(60px + 18px + var(--safe-bottom)) !important;
 }
 /* テーマパネルも同様に上にずらす */
-html.is-standalone .floating-panel {
-  bottom: calc(60px + 80px + var(--safe-bottom)) !important;
-}
 
 /* ★修正: フィルタードロワーがナビゲーションバーと被らないよう、ナビバーの高さ分だけ下を空ける */
 html.is-standalone #filterDrawer {
@@ -4021,21 +3753,6 @@ html.is-standalone #pwa-theme-toggle-btn.is-active i {
 /* --- テーマ別の中央ボタン調整 --- */
 
 /* ダークモード */
-html.is-standalone body.dark-mode #pwa-theme-toggle-btn {
-  background-color: #252c35;
-  border-color: #394150;
-  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.2);
-}
-html.is-standalone body.dark-mode #pwa-theme-toggle-btn i {
-  color: #8ca2b3;
-}
-html.is-standalone body.dark-mode #pwa-theme-toggle-btn.is-active {
-  background-color: #ffffff;
-  border-color: #252c35;
-}
-html.is-standalone body.dark-mode #pwa-theme-toggle-btn.is-active i {
-  color: #252c35; /* アクティブ時は黒 */
-}
 
 /* カラーテーマ */
 html.is-standalone body[class*="theme-"] #pwa-theme-toggle-btn {
@@ -4063,7 +3780,6 @@ html.is-standalone .floating-panel {
   /* 左右中央に配置 */
   left: 50% !important;
   right: auto !important; /* right指定を解除 */
-  transform: translateX(-50%) !important;
   
   /* パネルの形状を横並びのピルケースに変更 */
   flex-direction: row !important;
@@ -4105,7 +3821,6 @@ html.is-standalone .floating-panel.show {
 /* --- ダークモード (非アクティブ時) --- */
 body.dark-mode #theme-toggle-btn {
   background-color: #252c35;
-  border-color: #394150;
   color: #8ca2b3; /* アイコン色 */
   box-shadow: 0 2px 8px rgba(0,0,0,0.2);
 }
@@ -4118,10 +3833,8 @@ body.dark-mode #theme-toggle-btn.is-active {
 }
 
 /* --- カラーテーマ (非アクティブ時) --- */
-body[class*="theme-"] #theme-toggle-btn {
-  background-color: var(--card-bg);   /* カード背景色（例: 濃いピンク） */
-  border-color: var(--bg-color);     /* メイン背景色（例: ピンク） */
-  color: var(--btn-main);            /* アイコン色（例: 白） */
+body[class*="theme-"] #theme-toggle-btn {   /* カード背景色（例: 濃いピンク） */
+  border-color: var(--bg-color);     /* メイン背景色（例: ピンク） */            /* アイコン色（例: 白） */
 }
 
 /* --- カラーテーマ (アクティブ時) --- */
@@ -4472,17 +4185,7 @@ body[class*="theme-"] .fav-home-btn {
 /* =================================================== */
 
 body.dark-mode #filterDrawer .drawer-close-btn {
-  background-color: #2d333b !important;
-  color: #e5ecec !important;
   border-color: #394150 !important;
-}
-
-@media (hover: hover) {
-  body.dark-mode #filterDrawer .drawer-close-btn:hover,
-  body.dark-mode #filterDrawer .drawer-close-btn:focus {
-    background-color: #364152 !important;
-    border-color: #4a5967 !important;
-  }
 }
 
 /* ======================================================================== */
@@ -4565,9 +4268,6 @@ body.dark-mode #filterDrawer .drawer-close-btn {
   }
 
   /* --- 5. フィルター内ボタンの隙間を少し広げて見栄え良く --- */
-  #filterDrawer .filter-grid {
-    gap: 12px !important;
-  }
 
   /* --- 6. メインコンテンツの配置をサイドバー拡張に合わせて調整 --- */
   .main-content {
@@ -5114,15 +4814,10 @@ body.dark-mode .sticky-search-area {
   border-width: 0 0 1.5px 0 !important;
   box-shadow: none !important;
 }
-body.dark-mode .search-card {
-  border: none !important;
-  box-shadow: 0 0 0 1px #2f3336 !important; /* 枠線の代わりにシャドウを使用 */
-}
 body.dark-mode #filterDrawer {
   border-color: #2f3336 !important;
   border-style: solid !important;
   border-width: 0 1px 1px 1px !important;
-  box-shadow: none !important;
 }
 body.dark-mode .modal-header {
   border-color: #2f3336 !important;
@@ -5148,8 +4843,7 @@ body.dark-mode .form-select.searchbox-select {
   color: #e7e9ea !important;
 }
 body.dark-mode .searchbox-input:focus {
-  background-color: #000000 !important;
-  border-color: #1d9bf0 !important; /* Xの青色アクセント */
+  background-color: #000000 !important; /* Xの青色アクセント */
 }
 
 /* --- 4. テキスト・アイコンカラーの調整 --- */
@@ -5274,10 +4968,6 @@ body.dark-mode #results .episode-item .fav-btn.active i {
 
 body.dark-mode .history-timeline::before {
   background: #2f3336 !important;
-}
-body.dark-mode .history-item::before {
-  background: #1d9bf0 !important; /* タイムラインの点をXブルーに */
-  box-shadow: 0 0 0 4px rgba(29, 155, 240, 0.2) !important;
 }
 
 body.dark-mode .clear-search-btn {
@@ -6246,10 +5936,6 @@ body[class*="theme-"] .ts-clear-all-btn {
   border-color: transparent; /* フィルタボタンと同様に枠線なし */
   color: #dc2626;
 }
-@media (hover: hover) {
-  body[class*="theme-"] .ts-delete:hover,
-  body[class*="theme-"] .ts-clear-all-btn:hover { background: #fee2e2; border-color: transparent; }
-}
 body[class*="theme-"] .fav-count { background: var(--active-filter); color: var(--active-filter-text); }
 body[class*="theme-"] .ts-cancel-btn { background: var(--card-bg); border-color: transparent; color: var(--text-color); }
 /* コピーはカード色の入力欄の上に載るため、ひとつ明るい色で浮かせる */
@@ -6618,30 +6304,18 @@ body[class*="theme-"] .favorites-header-layout .ts-clear-confirm { border-color:
  * will-change: フェードアウト(opacity遷移)も含めて事前にコンポジタ層へ昇格し、
  * 消える瞬間のガタつきを防ぐ。 */
 #loading-screen {
-  /* paint封じ込めとwill-changeによる常時レイヤー昇格はやめる:
-     PWA起動直後のiOSビューポート補正時、昇格済みレイヤーだけが1〜2フレーム
-     誤った位置・倍率で合成され、ロゴが一瞬ズレて見える原因になっていた。
-     フェードアウト時のみ .fadeout 側で昇格させる（下記） */
-  contain: layout style;
+  contain: layout style paint;
+  will-change: opacity;
 }
-#loading-screen.fadeout {
-  will-change: opacity; /* 消える瞬間だけコンポジタ層へ昇格しフェードを滑らかに */
-}
+/* 球のコンテナごと独立レイヤー化し、親のリフローの影響を受けにくくする */
 #spinner {
-  /* translateZ(0)+will-changeの常時昇格は#loading-screenと同じ理由で廃止。
-     球自体のbounceアニメーション(transform)は実行時にWebKitが自動で
-     コンポジタ処理するため、事前昇格なしでも滑らかさは保たれる */
+  transform: translateZ(0);
+  will-change: transform;
+}
 
-  /* スピナーを絶対配置にしてロゴの中央配置に影響させない。
-     これでロゴは常にビューポートの正確な中央に来て、iOS起動画像
-     （main.jsが同じレイアウトで生成）とロゴ位置がぴったり一致し、
-     スプラッシュ→ローディングの切り替わりでガタつかなくなる。
-     0.5355 = ロゴ縦横比(1025/957)の半分。38pxはロゴとの間隔
-     （インラインのmargin-topと同値。main.jsのdraw()と同期すること） */
-  position: absolute;
-  left: 0;
-  right: 0;
-  justify-content: center;
-  top: min(calc(50% + min(330px, 70vw) * 0.5355 + 38px), calc(100% - 40px));
-  margin-top: 0 !important;
+/* カラーテーマ時、selectを開いた際のoption（UA描画）が「白背景に白文字」になり
+   読めなくなる環境（Windows Chrome等）への保険。optionは常に黒文字×白背景で描画する */
+body[class*="theme-"] .searchbox-select option {
+  color: #22272e;
+  background: #ffffff;
 }

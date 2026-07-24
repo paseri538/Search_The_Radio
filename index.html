@@ -9,8 +9,10 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://use.typekit.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://use.typekit.net https://p.typekit.net; font-src 'self' data: https://use.typekit.net https://p.typekit.net https://cdnjs.cloudflare.com; img-src 'self' data: https://i.ytimg.com https://p.typekit.net https://performance.typekit.net; connect-src 'self' https://use.typekit.net https://p.typekit.net https://performance.typekit.net; object-src 'none'; base-uri 'self'; form-action 'self'">
   <!-- interactive-widget=resizes-content: キーボード表示時にレイアウトビューポートが縮み、
        下部固定のタイムスタンプモーダルがブラウザネイティブでキーボード上に配置される。
-       背景ページはモーダル表示中 body固定(ts-kb-lock)しているため動かない。 -->
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content" />
+       背景ページはモーダル表示中 body固定(ts-kb-lock)しているため動かない。
+       maximum-scale=1 / user-scalable=no は削除: ピンチズームを禁止するとアクセシビリティ上問題があるため。
+       入力欄のフォントは全て16px以上なので、iOSのフォーカス時自動ズームはズーム許可でも発生しない。 -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content" />
 
   <script>
     (function() {
@@ -89,31 +91,6 @@
         if (styleContent) {
           document.write('<style id="early-theme-style">' + styleContent + '</style>');
         }
-
-        /* PWA(スタンドアロン)起動直後、iOSはビューポート高さを一瞬だけ
-           ステータスバー分小さく誤報告し、数フレーム後に補正する。その補正で
-           ローディング画面の中央配置が縦に約30ptガタッと動くため、高さを
-           画面実寸(screen)に固定し、誤報告の影響を受けないようにする。
-           （起動画像もmain.jsのdraw()が同じ座標系＝画面実寸基準で生成しており、
-             スプラッシュ→ローディングでロゴ位置が最初から完全に一致する）
-           ★注意: applyTheme(main.js)は early-theme-style の中身を書き換えるため、
-           このピン留めルールは消されないよう必ず「別の」style要素に書き出すこと */
-        if (window.navigator.standalone) {
-          var pinH = (window.matchMedia && window.matchMedia('(orientation: landscape)').matches)
-            ? Math.min(screen.width, screen.height)
-            : Math.max(screen.width, screen.height);
-          if (pinH > 0) {
-            var pinCss = '#loading-screen { top: 0 !important; bottom: auto !important; height: ' + pinH + 'px !important; min-height: 0 !important; }';
-            /* タイムスタンプモーダル（スマホは全画面ボトムシート）も同じく画面実寸に固定。
-               iOS PWAではレイアウトビューポートの高さがキーボード分縮んだまま
-               戻らないことがあり、inset:0だけに任せるとモーダルが画面の6割程度で
-               途切れて下に空白が出る（実機で発生を確認）。
-               入力中(.ts-typing)は入力欄がモーダル上部に来る設計のため、
-               下側がキーボードに隠れても操作に支障はない */
-            pinCss += '@media (max-width: 600px) { .modal-content.ts-modal { top: 0 !important; bottom: auto !important; height: ' + pinH + 'px !important; max-height: ' + pinH + 'px !important; } }';
-            document.write('<style id="early-pin-style">' + pinCss + '</style>');
-          }
-        }
       } catch (e) {
         console.error("Early theme application failed:", e);
       }
@@ -153,7 +130,7 @@
 <meta name="apple-mobile-web-app-title" content="さーち・ざ・らじお！">
 
 
-<link rel="manifest" href="./site.webmanifest?v=20260721a">
+<link rel="manifest" href="./site.webmanifest?v=20260724h">
 
   
   <!-- SRI(integrity): CDN側でファイルが改ざんされた場合にブラウザが読込を拒否する -->
@@ -166,8 +143,11 @@
       integrity="sha384-PPIZEGYM1v8zp5Py7UjFb79S58UeqCL9pYVnVPURKEqvioPROaVAJKKLzvH2rDnI" crossorigin="anonymous"></noscript>
 
 <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+<!-- Typekit: スクリプト読込(use.typekit.net)とフォント配信への接続を先に張り、Webフォント表示を速める -->
+<link rel="preconnect" href="https://use.typekit.net" crossorigin>
+<link rel="preconnect" href="https://p.typekit.net" crossorigin>
 <!-- code.jquery.com / i.ytimg.com へのpreconnectは削除: jQueryは未使用、サムネイルはローカル配信のため -->
-  <link href="style.css?v=20260724g" rel="stylesheet" />
+  <link href="style.css?v=20260724h" rel="stylesheet" />
 
 
 </head>
@@ -226,7 +206,8 @@
 </button>
 
 
-        <button class="reset-btn" id="mainResetBtn" onclick="resetSearch()" title="すべてリセット" tabindex="0">リセット</button>
+        <!-- onclick属性は削除: main.js側のaddEventListenerと二重になり、1クリックでリセット処理が2回実行されて履歴も2件積まれていた -->
+        <button class="reset-btn" id="mainResetBtn" title="すべてリセット" tabindex="0">リセット</button>
         <span class="sort-wrapper">
           <select id="sortSelect" class="form-select searchbox-select" aria-label="並び替え" title="並び替え">
             <option value="newest">公開日時が新しい順</option>
@@ -299,8 +280,8 @@
     </div>
   
     <div class="drawer-footer" role="group" aria-label="フィルター操作">
-      <button id="drawerCloseBtn" type="button" class="drawer-close-btn" title="フィルターを閉じる"
-        onclick="if(window.toggleFilterDrawer){window.toggleFilterDrawer(false);} else if(window.closeDrawer){window.closeDrawer();}">
+      <!-- onclick属性は削除: main.js側のaddEventListenerと二重実行になっていた -->
+      <button id="drawerCloseBtn" type="button" class="drawer-close-btn" title="フィルターを閉じる">
         <i class="fa fa-xmark"></i><span> 閉じる</span>
       </button>
     </div>
@@ -454,7 +435,7 @@
     h=d.documentElement,t=setTimeout(function(){h.className=h.className.replace(/\bwf-loading\b/g,"")+" wf-inactive";},config.scriptTimeout),tk=d.createElement("script"),f=false,s=d.getElementsByTagName("script")[0],a;h.className+=" wf-loading";tk.src='https://use.typekit.net/'+config.kitId+'.js';tk.async=true;tk.onload=tk.onreadystatechange=function(){a=this.readyState;if(f||a&&a!="complete"&&a!="loaded")return;f=true;clearTimeout(t);try{Typekit.load(config)}catch(e){}};s.parentNode.insertBefore(tk,s)
   })(document);
 </script>
-  <script src="main.js?v=20260724g" defer></script>
+  <script src="main.js?v=20260724h" defer></script>
 
   <script>
   // ---- Service Worker register (network-first) ----
@@ -468,14 +449,11 @@
       if (refreshing) return;
       if (!hadController) { hadController = true; return; }
       refreshing = true;
-      // リロード後のページに「SW更新による再読込」であることを伝え、
-      // ローディング画面の最低表示時間をスキップさせる（main.js側で参照）
-      try { sessionStorage.setItem('sw_reloaded_v1', '1'); } catch (e) {}
       window.location.reload();
     });
 
     window.addEventListener('load', function () {
-      navigator.serviceWorker.register('/sw.js?20260724g').then(function(reg) {
+      navigator.serviceWorker.register('/sw.js?20260724h').then(function(reg) {
         return navigator.serviceWorker.ready;
       }).then(function(reg) {
         if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
