@@ -3247,12 +3247,49 @@ document.addEventListener('DOMContentLoaded', () => {
   new MutationObserver(updateHeaderOffset).observe(document.querySelector('.sticky-search-area'), { childList: true, subtree: true, attributes: true });
 });
 
+/* ===================================================
+ * スプラッシュカバー（起動画面と同じ見た目の全面オーバーレイ）
+ * 用途1: PWAがバックグラウンドへ移る瞬間に被せる。iOSはその瞬間の画面を
+ *   スナップショットとして保存し次回起動時に一瞬表示するため、これを
+ *   起動画面と同じ見た目にしておくと「前回のUI（下部ボタン等）が
+ *   一瞬ちらついて見える」現象がなくなり、起動が常にスプラッシュから始まる。
+ * 用途2: SW更新の自動リロード直前に被せ、リロードの明滅を隠して
+ *   スプラッシュ→スプラッシュの連続に見せる。
+ * =================================================== */
+window.__showSplashCover = function () {
+  if (document.getElementById('splash-cover') || !document.body) return;
+  const d = document.createElement('div');
+  d.id = 'splash-cover';
+  const bg = document.documentElement.style.backgroundColor || '#f9fafe';
+  d.style.cssText = 'position:fixed;inset:0;z-index:2147483647;background:' + bg + ';display:flex;align-items:center;justify-content:center;';
+  const img = new Image();
+  img.src = 'logo.png'; // SWで事前キャッシュ済み。バックグラウンド直前でも即描画される
+  img.alt = '';
+  img.style.cssText = 'width:330px;max-width:70vw;';
+  d.appendChild(img);
+  document.body.appendChild(d);
+};
+window.__hideSplashCover = function () {
+  const d = document.getElementById('splash-cover');
+  if (d) d.remove();
+};
+
 (function enhanceMobileExperience() {
   const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
 
   if (isStandalone) {
     document.documentElement.classList.add('is-standalone');
     document.addEventListener('DOMContentLoaded', setupPwaBottomNav);
+
+    // バックグラウンド移行時はスプラッシュカバーを被せてスナップショットを整える。
+    // 復帰時（visible/pageshow）は即座に外す。復帰はイベントが描画より先に処理される
+    // ため、ユーザーにはOSの復帰アニメーション（=スプラッシュ見た目）→そのままUIが見える。
+    // ブラウザ表示では行わない（タブ切替のプレビューが起動画面になってしまうため）。
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') window.__showSplashCover();
+      else window.__hideSplashCover();
+    });
+    window.addEventListener('pageshow', window.__hideSplashCover);
   }
 
   const setVh = () => {
