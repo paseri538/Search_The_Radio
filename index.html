@@ -15,7 +15,9 @@
   <script>
     (function() {
       try {
-        const theme = localStorage.getItem("site_theme_v1") || 'light';
+        let theme = localStorage.getItem("site_theme_v1") || 'light';
+        // localStorageが壊れていても安全なように既知のテーマ名のみ許可
+        if (!['light','dark','pink','yellow','blue','red','green'].includes(theme)) theme = 'light';
         let color = '#f9fafe';
         let statusBarStyle = 'default';
         let bodyBg = '';
@@ -65,6 +67,23 @@
 
         document.write('<meta name="theme-color" id="theme-color-meta" content="' + color + '">');
         document.write('<meta name="apple-mobile-web-app-status-bar-style" id="status-bar-style" content="' + statusBarStyle + '">');
+
+        /* ★PWA起動画面の白チラつき対策（本丸）:
+           iOS(15.4以降)はホーム画面アプリの起動画面を「マニフェストのbackground_color＋アイコン」
+           から生成し、その内容は"ホーム画面に追加した時点"のマニフェストで固定される。
+           そのためテーマ別に用意したマニフェストを、テーマ確定済みのこの時点で
+           文書内の最初の<link rel="manifest">として書き込む。
+           （rel=manifestは文書内で最初のlinkだけが有効になる仕様のため、
+             後続の静的リンク(site.webmanifest=ライト用)より確実に優先される） */
+        if (theme !== 'light') {
+          document.write('<link rel="manifest" href="./manifest-' + theme + '.webmanifest?v=20260724d">');
+        }
+
+        // ダークテーマ時はブラウザ既定の描画色(フォーム・キャンバス既定背景)も
+        // 最初からダークにし、スタイル適用前の一瞬の白を減らす
+        if (theme === 'dark') {
+          document.documentElement.style.colorScheme = 'dark';
+        }
 
         // 最初の1フレームから正しい色で塗るため、html要素の背景を即座にインライン指定する。
         // document.write によるstyle注入やstyle.css適用より確実に早く効くので、
@@ -128,7 +147,7 @@
 <meta name="apple-mobile-web-app-title" content="さーち・ざ・らじお！">
 
 
-<link rel="manifest" href="./site.webmanifest?v=20260721a">
+<link rel="manifest" href="./site.webmanifest?v=20260724d">
 
   
   <!-- SRI(integrity): CDN側でファイルが改ざんされた場合にブラウザが読込を拒否する -->
@@ -429,7 +448,7 @@
     h=d.documentElement,t=setTimeout(function(){h.className=h.className.replace(/\bwf-loading\b/g,"")+" wf-inactive";},config.scriptTimeout),tk=d.createElement("script"),f=false,s=d.getElementsByTagName("script")[0],a;h.className+=" wf-loading";tk.src='https://use.typekit.net/'+config.kitId+'.js';tk.async=true;tk.onload=tk.onreadystatechange=function(){a=this.readyState;if(f||a&&a!="complete"&&a!="loaded")return;f=true;clearTimeout(t);try{Typekit.load(config)}catch(e){}};s.parentNode.insertBefore(tk,s)
   })(document);
 </script>
-  <script src="main.js?v=20260724c" defer></script>
+  <script src="main.js?v=20260724d" defer></script>
 
   <script>
   // ---- Service Worker register (network-first) ----
@@ -447,7 +466,7 @@
     });
 
     window.addEventListener('load', function () {
-      navigator.serviceWorker.register('/sw.js?20260724c').then(function(reg) {
+      navigator.serviceWorker.register('/sw.js?20260724d').then(function(reg) {
         return navigator.serviceWorker.ready;
       }).then(function(reg) {
         if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });

@@ -3,8 +3,8 @@
   "short_name": "SearchTheRadio",
   "start_url": "/",
   "display": "standalone",
-  "theme_color": "#f9fafe",
-  "background_color": "#f9fafe",
+  "theme_color": "#8c002b",
+  "background_color": "#e60046",
   "description": "『ぼっち・ざ・らじお！』のエピソード検索サイト。",
   "icons": [
     {

@@ -1970,12 +1970,13 @@ const scheduleStartupImageUpdate = (() => {
   return function scheduleStartupImageUpdate() {
     if (!isIOS()) return;
     // canvas描画＋PNGエンコードはそれなりに重いため、テーマ切替の連打はまとめ、
-    // 初期表示のレンダリングとも競合しないよう少し遅らせてアイドル時に実行する
+    // 初期表示のレンダリングとも競合しないよう少し遅らせてアイドル時に実行する。
+    // （「ホーム画面に追加」した瞬間のDOMからも拾われるよう、遅らせすぎない）
     clearTimeout(timer);
     timer = setTimeout(() => {
-      if ('requestIdleCallback' in window) requestIdleCallback(generate, { timeout: 3000 });
+      if ('requestIdleCallback' in window) requestIdleCallback(generate, { timeout: 2000 });
       else generate();
-    }, 1200);
+    }, 500);
   };
 })();
 
@@ -2048,6 +2049,22 @@ function setupThemeSwitcher() {
     // html要素のインライン背景（初回チラつき防止用）もテーマ切替に追従させ、
     // カラーテーマ→ライトへ戻したときに古い色が残らないようにする。
     document.documentElement.style.backgroundColor = bodyBg || '#f9fafe';
+
+    // ダークテーマではブラウザ既定の描画色もダークにする（早期スクリプトと同期）
+    document.documentElement.style.colorScheme = (themeName === 'dark') ? 'dark' : '';
+
+    // マニフェストもテーマに合わせて切り替える。
+    // iOSのPWA起動画面はマニフェストのbackground_colorから生成されるため、
+    // これで「ホーム画面に追加」した時点のテーマ色が起動画面になる。
+    // （既にインストール済みのアプリはiOSがインストール時点の内容を保持するため、
+    //   一度ホーム画面から削除して再追加するまで反映されない点に注意）
+    const validThemes = ['dark', 'pink', 'yellow', 'blue', 'red', 'green'];
+    const manifestLink = document.querySelector('link[rel="manifest"]');
+    if (manifestLink) {
+      const file = validThemes.includes(themeName) ? `manifest-${themeName}.webmanifest` : 'site.webmanifest';
+      const desired = `./${file}?v=20260724d`;
+      if (manifestLink.getAttribute('href') !== desired) manifestLink.setAttribute('href', desired);
+    }
 
     // iOS PWAの起動画像（スプラッシュ）を新しいテーマ色で作り直す
     // （初期適用時にも呼ばれるため、起動のたびに最新のテーマ色へ同期される）
