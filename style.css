@@ -666,19 +666,20 @@ body.dark-mode #aboutModalContent a {
   height: 18px;
   border-radius: 50%;
   animation: bounce 0.6s infinite ease-in-out;
-  
-  /* ★追加: スマホでのカクつきを防ぐため、GPU処理を強制する */
-  will-change: transform;
-  transform: translateZ(0); 
+  /* will-change/translateZ(0)による事前レイヤー昇格は廃止:
+     PWA起動直後のiOSビューポート補正で昇格済みレイヤーだけが一瞬ズレて
+     合成される問題があるため。bounceのtransformアニメーションは実行時に
+     WebKitが自動でコンポジタ処理するので滑らかさは変わらない */
 }
 
-/* 遅延は全体を+0.4sしてある: PWA起動時、OSのスプラッシュ（静止した球が
-   描かれている）からページへのクロスフェード中に球が跳ね始めると二重に
-   ブレて見えるため、切り替わりが終わる頃まで静止させておく */
-.ball1 { background-color: #ff6496; animation-delay: 0.4s; }
-.ball2 { background-color: #fabe00; animation-delay: 0.55s;}
-.ball3 { background-color: #006ebe; animation-delay: 0.7s; }
-.ball4 { background-color: #e60046; animation-delay: 0.85s;}
+/* 遅延は全体を+0.6sしてある: PWA起動時、OSのスプラッシュ（静止した球が
+   描かれている）からページへのクロスフェードと、iOSのビューポート補正
+   （起動後約0.5秒まで）が終わるまで球を静止させ、二重ブレとレイヤー
+   昇格タイミングの衝突を避ける */
+.ball1 { background-color: #ff6496; animation-delay: 0.6s; }
+.ball2 { background-color: #fabe00; animation-delay: 0.75s;}
+.ball3 { background-color: #006ebe; animation-delay: 0.9s; }
+.ball4 { background-color: #e60046; animation-delay: 1.05s;}
 
 @keyframes bounce {
   0%, 80%, 100% {
@@ -6617,13 +6618,19 @@ body[class*="theme-"] .favorites-header-layout .ts-clear-confirm { border-color:
  * will-change: フェードアウト(opacity遷移)も含めて事前にコンポジタ層へ昇格し、
  * 消える瞬間のガタつきを防ぐ。 */
 #loading-screen {
-  contain: layout style paint;
-  will-change: opacity;
+  /* paint封じ込めとwill-changeによる常時レイヤー昇格はやめる:
+     PWA起動直後のiOSビューポート補正時、昇格済みレイヤーだけが1〜2フレーム
+     誤った位置・倍率で合成され、ロゴが一瞬ズレて見える原因になっていた。
+     フェードアウト時のみ .fadeout 側で昇格させる（下記） */
+  contain: layout style;
 }
-/* 球のコンテナごと独立レイヤー化し、親のリフローの影響を受けにくくする */
+#loading-screen.fadeout {
+  will-change: opacity; /* 消える瞬間だけコンポジタ層へ昇格しフェードを滑らかに */
+}
 #spinner {
-  transform: translateZ(0);
-  will-change: transform;
+  /* translateZ(0)+will-changeの常時昇格は#loading-screenと同じ理由で廃止。
+     球自体のbounceアニメーション(transform)は実行時にWebKitが自動で
+     コンポジタ処理するため、事前昇格なしでも滑らかさは保たれる */
 
   /* スピナーを絶対配置にしてロゴの中央配置に影響させない。
      これでロゴは常にビューポートの正確な中央に来て、iOS起動画像
