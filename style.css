@@ -3449,9 +3449,13 @@ html.is-standalone .main-content {
 
   /* 画面の高さを最低でも100%確保し、Flexboxで縦並びにする */
   min-height: calc(var(--vh, 1vh) * 100);
+  /* ★修正: iOSのPWA起動直後はJS計測の--vhが実際より小さい値のまま残ることがあり、
+     お気に入りが少ない時にフッターが浮いて画面がずれて見えた。対応環境では
+     ブラウザが自動追従するdvhを優先する（非対応環境は上の--vh計算のまま） */
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
-  box-sizing: border-box; 
+  box-sizing: border-box;
 }
 
 /* フッターを強制的に最下部に配置 */
@@ -5807,9 +5811,11 @@ body[class*="theme-"] .search-card {
     border-radius: 0;
     border-bottom: none;
     padding-bottom: env(safe-area-inset-bottom);
-  }
-  .ts-modal .modal-header {
-    padding-top: max(8px, env(safe-area-inset-top)); /* ステータスバーと重ならないように */
+    /* ★修正: 以前はヘッダーのpadding-topでステータスバーを避けていたが、
+       ヘッダー基準で absolute 配置の×ボタン(top:14px)だけが上に取り残されて
+       ステータスバーに隠れ、タイトル行とずれて見えた。セーフエリア分の余白は
+       モーダル本体に持たせ、ヘッダー・タイトル・×ボタンが常に一体で下がるようにする */
+    padding-top: env(safe-area-inset-top, 0px);
   }
 
   /* 入力中（コンポーズモード）: リスト・下部固定エリア・エピソードカードを畳み、

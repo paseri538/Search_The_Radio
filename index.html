@@ -91,6 +91,22 @@
         if (styleContent) {
           document.write('<style id="early-theme-style">' + styleContent + '</style>');
         }
+
+        /* ★ローディングロゴの中央固定（iOSホーム画面アプリのみ）:
+           PWA起動直後はビューポート高さが一瞬小さく報告され（例: 780px→844px）、
+           flex中央配置のロゴが数フレーム後に下へジャンプして見えていた。
+           端末の画面高さ(screen.height)は起動前から確定している値なので、
+           ローディング画面の高さをこれに固定すれば最初のフレームから最終位置に置ける。
+           このstyleはテーマ切替で書き換えられるearly-theme-styleとは別タグにする。 */
+        if (navigator.standalone === true && window.screen && screen.height) {
+          var isLandscape = window.matchMedia && window.matchMedia('(orientation: landscape)').matches;
+          var scrH = isLandscape
+            ? Math.min(screen.width, screen.height)
+            : Math.max(screen.width, screen.height);
+          if (scrH > 0) {
+            document.write('<style id="loading-center-fix">#loading-screen { height: ' + scrH + 'px !important; min-height: 0 !important; }</style>');
+          }
+        }
       } catch (e) {
         console.error("Early theme application failed:", e);
       }
@@ -130,7 +146,7 @@
 <meta name="apple-mobile-web-app-title" content="さーち・ざ・らじお！">
 
 
-<link rel="manifest" href="./site.webmanifest?v=20260724h">
+<link rel="manifest" href="./site.webmanifest?v=20260724i">
 
   
   <!-- SRI(integrity): CDN側でファイルが改ざんされた場合にブラウザが読込を拒否する -->
@@ -147,7 +163,7 @@
 <link rel="preconnect" href="https://use.typekit.net" crossorigin>
 <link rel="preconnect" href="https://p.typekit.net" crossorigin>
 <!-- code.jquery.com / i.ytimg.com へのpreconnectは削除: jQueryは未使用、サムネイルはローカル配信のため -->
-  <link href="style.css?v=20260724h" rel="stylesheet" />
+  <link href="style.css?v=20260724i" rel="stylesheet" />
 
 
 </head>
@@ -435,7 +451,7 @@
     h=d.documentElement,t=setTimeout(function(){h.className=h.className.replace(/\bwf-loading\b/g,"")+" wf-inactive";},config.scriptTimeout),tk=d.createElement("script"),f=false,s=d.getElementsByTagName("script")[0],a;h.className+=" wf-loading";tk.src='https://use.typekit.net/'+config.kitId+'.js';tk.async=true;tk.onload=tk.onreadystatechange=function(){a=this.readyState;if(f||a&&a!="complete"&&a!="loaded")return;f=true;clearTimeout(t);try{Typekit.load(config)}catch(e){}};s.parentNode.insertBefore(tk,s)
   })(document);
 </script>
-  <script src="main.js?v=20260724h" defer></script>
+  <script src="main.js?v=20260724i" defer></script>
 
   <script>
   // ---- Service Worker register (network-first) ----
@@ -453,7 +469,7 @@
     });
 
     window.addEventListener('load', function () {
-      navigator.serviceWorker.register('/sw.js?20260724h').then(function(reg) {
+      navigator.serviceWorker.register('/sw.js?20260724i').then(function(reg) {
         return navigator.serviceWorker.ready;
       }).then(function(reg) {
         if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });

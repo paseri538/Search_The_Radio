@@ -3262,6 +3262,12 @@ document.addEventListener('DOMContentLoaded', () => {
   setVh();
   window.addEventListener('resize', setVh, { passive: true });
   window.addEventListener('orientationchange', setVh, { passive: true });
+  // ★修正: iOSのPWA起動直後はビューポート確定時にwindowのresizeが発火しないことがあり、
+  // --vhが起動時の小さい値のまま残っていた（お気に入りが少ない時にフッターが浮く原因）。
+  // visualViewportの変化でも再計測して確実に追従させる。
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', setVh, { passive: true });
+  }
 
   document.addEventListener('DOMContentLoaded', () => {
     const searchInput = document.getElementById('searchBox');
