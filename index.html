@@ -466,7 +466,11 @@
     });
 
     window.addEventListener('load', function () {
-      navigator.serviceWorker.register('/sw.js?20260724d').then(function(reg) {
+      // ★修正: 登録URLは固定にする（クエリでバージョンを付けない）。
+      // ブラウザはSW更新チェック時にHTTPキャッシュを迂回するためクエリは不要で、
+      // 逆にクエリを毎回変えると「内容更新＋URL変更」で二重インストールになり、
+      // デプロイのたびにPWAが2回連続で自動リロードする奇妙な挙動になっていた。
+      navigator.serviceWorker.register('/sw.js').then(function(reg) {
         return navigator.serviceWorker.ready;
       }).then(function(reg) {
         if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
@@ -478,6 +482,13 @@
             }
           });
         });
+
+        // 起動のたびに明示的にSWの更新を確認する。PWAはプロセスが生き残って
+        // ブラウザの自動更新チェックが走らないことがあり、その場合サイト更新が
+        // いつまでも届かないため。（初回描画と競合しないよう少し遅らせる）
+        setTimeout(function () {
+          reg.update().catch(function () {});
+        }, 3000);
 
         // サムネイルの事前キャッシュ（オフライン用・約8MB）は、初回描画と
         // 帯域を奪い合ってローディングがカクつかないよう、描画が落ち着いた
