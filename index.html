@@ -15,9 +15,7 @@
   <script>
     (function() {
       try {
-        let theme = localStorage.getItem("site_theme_v1") || 'light';
-        // localStorageが壊れていても安全なように既知のテーマ名のみ許可
-        if (!['light','dark','pink','yellow','blue','red','green'].includes(theme)) theme = 'light';
+        const theme = localStorage.getItem("site_theme_v1") || 'light';
         let color = '#f9fafe';
         let statusBarStyle = 'default';
         let bodyBg = '';
@@ -130,7 +128,7 @@
 <meta name="apple-mobile-web-app-title" content="さーち・ざ・らじお！">
 
 
-<link rel="manifest" href="./site.webmanifest?v=20260724f">
+<link rel="manifest" href="./site.webmanifest?v=20260721a">
 
   
   <!-- SRI(integrity): CDN側でファイルが改ざんされた場合にブラウザが読込を拒否する -->
@@ -144,7 +142,7 @@
 
 <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
 <!-- code.jquery.com / i.ytimg.com へのpreconnectは削除: jQueryは未使用、サムネイルはローカル配信のため -->
-  <link href="style.css?v=20260724f" rel="stylesheet" />
+  <link href="style.css?v=20260724b" rel="stylesheet" />
 
 
 </head>
@@ -431,7 +429,7 @@
     h=d.documentElement,t=setTimeout(function(){h.className=h.className.replace(/\bwf-loading\b/g,"")+" wf-inactive";},config.scriptTimeout),tk=d.createElement("script"),f=false,s=d.getElementsByTagName("script")[0],a;h.className+=" wf-loading";tk.src='https://use.typekit.net/'+config.kitId+'.js';tk.async=true;tk.onload=tk.onreadystatechange=function(){a=this.readyState;if(f||a&&a!="complete"&&a!="loaded")return;f=true;clearTimeout(t);try{Typekit.load(config)}catch(e){}};s.parentNode.insertBefore(tk,s)
   })(document);
 </script>
-  <script src="main.js?v=20260724f" defer></script>
+  <script src="main.js?v=20260724c" defer></script>
 
   <script>
   // ---- Service Worker register (network-first) ----
@@ -449,11 +447,7 @@
     });
 
     window.addEventListener('load', function () {
-      // ★修正: 登録URLは固定にする（クエリでバージョンを付けない）。
-      // ブラウザはSW更新チェック時にHTTPキャッシュを迂回するためクエリは不要で、
-      // 逆にクエリを毎回変えると「内容更新＋URL変更」で二重インストールになり、
-      // デプロイのたびにPWAが2回連続で自動リロードする奇妙な挙動になっていた。
-      navigator.serviceWorker.register('/sw.js').then(function(reg) {
+      navigator.serviceWorker.register('/sw.js?20260724c').then(function(reg) {
         return navigator.serviceWorker.ready;
       }).then(function(reg) {
         if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
@@ -465,13 +459,6 @@
             }
           });
         });
-
-        // 起動のたびに明示的にSWの更新を確認する。PWAはプロセスが生き残って
-        // ブラウザの自動更新チェックが走らないことがあり、その場合サイト更新が
-        // いつまでも届かないため。（初回描画と競合しないよう少し遅らせる）
-        setTimeout(function () {
-          reg.update().catch(function () {});
-        }, 3000);
 
         // サムネイルの事前キャッシュ（オフライン用・約8MB）は、初回描画と
         // 帯域を奪い合ってローディングがカクつかないよう、描画が落ち着いた

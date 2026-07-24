@@ -1,5 +1,5 @@
 // キャッシュの名前を定義。バージョンを更新すると古いキャッシュは自動的に削除。
-const SW_VERSION = '20260724f';
+const SW_VERSION = '20260724c';
 const CACHE_NAME = `radio-cache-${SW_VERSION}`;
 
 
@@ -43,11 +43,6 @@ async function getThumbnailAssets() {
   }
 }
 
-// アプリの動作に必須のファイル。これらのキャッシュに失敗したらインストール自体を失敗させる。
-// （それ以外のCORE_ASSETSはベストエフォート: 1件の404やCDN障害で
-//   SW更新が永久に失敗し、アプリが古いまま固まるのを防ぐ）
-const CRITICAL_ASSETS = ['/', 'index.html', 'style.css', 'main.js', 'episodes.json'];
-
 // 1. Service Workerのインストール処理
 self.addEventListener('install', (event) => {
   console.log('[SW] Install event');
@@ -55,11 +50,7 @@ self.addEventListener('install', (event) => {
   event.waitUntil((async () => {
     const cache = await caches.open(CACHE_NAME);
     console.log('[SW] Caching core assets');
-    await cache.addAll(CRITICAL_ASSETS);
-    const optional = CORE_ASSETS.filter(u => !CRITICAL_ASSETS.includes(u));
-    const optResults = await Promise.allSettled(optional.map(u => cache.add(u)));
-    const optFailed = optResults.filter(r => r.status === 'rejected').length;
-    if (optFailed > 0) console.warn(`[SW] ${optFailed} optional asset(s) failed to cache (continuing)`);
+    await cache.addAll(CORE_ASSETS);
 
     const thumbs = await getThumbnailAssets();
 
@@ -154,12 +145,8 @@ self.addEventListener('fetch', (event) => {
   // キャッシュから即座に返すことでテーマ色を塗る早期スクリプトが最速で実行される。
   // （HTMLの更新は裏で取得してキャッシュに反映し、SW更新時はページ側の
   //   controllerchangeで自動リロードされるため、更新が届かなくなることはない）
-  // ★修正: アプリシェルを返すのはトップページへのナビゲーションだけに限定する。
-  // （以前は画像などへの直接ナビゲーションまでトップページHTMLを返していた）
   if (request.mode === 'navigate') {
-    const isAppPage = url.origin === self.location.origin
-      && (url.pathname === '/' || url.pathname === '/index.html');
-    event.respondWith(isAppPage ? appShellStrategy(request) : networkFirstStrategy(request));
+    event.respondWith(appShellStrategy(request));
     return;
   }
   
