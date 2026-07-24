@@ -6359,3 +6359,13 @@ body.app-ready .pwa-bottom-nav { visibility: visible; }
 /* ★撤去: ここにあったPWA版tsモーダルのステータスバー帯（濃色）は、
    実機確認で「時計まわりが暗く見える」と不評だったため削除した。
    セーフエリア領域はモーダル背景と同色で塗られる。 */
+
+/* ★起動時の帯チラつき最終対策:
+   起動中（app-ready付与前=ローディング表示中）はbody背景をスプラッシュと同じ
+   --bg-color に揃える。起動中は html / body / ローディング画面 / カバーの全レイヤーが
+   完全に同一色になり、iOSの起動処理でどのレイヤーが一瞬露出しても色差が無いため
+   チラつきとして視認できない。app-ready（フェード開始）と同時に本来の --btn-bg へ戻る。
+   （ダーク/ライトは元々スプラッシュとbodyが同色なので影響なし） */
+body[class*="theme-"]:not(.app-ready) {
+  background: var(--bg-color) !important;
+}
