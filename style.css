@@ -642,7 +642,9 @@ body.dark-mode .searchbox-input::placeholder {
   }
 
   #loading-screen {
-  background: #fff;
+  /* ライトテーマのページ背景・iOS起動画像と同色にする（#fffだと
+     スプラッシュ→ローディングの切り替わりで背景色が一瞬変わる） */
+  background: #f9fafe;
   transition: background 0.3s;
 }
 body.dark-mode #loading-screen {
@@ -6619,4 +6621,17 @@ body[class*="theme-"] .favorites-header-layout .ts-clear-confirm { border-color:
 #spinner {
   transform: translateZ(0);
   will-change: transform;
+
+  /* スピナーを絶対配置にしてロゴの中央配置に影響させない。
+     これでロゴは常にビューポートの正確な中央に来て、iOS起動画像
+     （main.jsが同じレイアウトで生成）とロゴ位置がぴったり一致し、
+     スプラッシュ→ローディングの切り替わりでガタつかなくなる。
+     0.5355 = ロゴ縦横比(1025/957)の半分。38pxはロゴとの間隔
+     （インラインのmargin-topと同値。main.jsのdraw()と同期すること） */
+  position: absolute;
+  left: 0;
+  right: 0;
+  justify-content: center;
+  top: min(calc(50% + min(330px, 70vw) * 0.5355 + 38px), calc(100% - 40px));
+  margin-top: 0 !important;
 }

@@ -1916,19 +1916,54 @@ const scheduleStartupImageUpdate = (() => {
     /iPad|iPhone|iPod/.test(navigator.userAgent) ||
     (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1); // iPadOSの「デスクトップ用サイト」表示対策
 
-  const draw = (wPt, hPt, dpr, bg, logo) => {
+  // ブラウザ実行時に「default」ステータスバー時のWebビュー上端オフセットを推定する。
+  // （black-translucentではWebビューが全画面＝オフセット0だが、defaultでは
+  //   ステータスバーの下からページが始まり、ロゴの中央位置がその分下がる）
+  const measureSafeTop = () => {
+    try {
+      const probe = document.createElement('div');
+      probe.style.cssText = 'position:fixed;top:0;left:0;width:1px;height:env(safe-area-inset-top,0px);visibility:hidden;pointer-events:none;';
+      document.body.appendChild(probe);
+      const h = probe.offsetHeight;
+      probe.remove();
+      return h;
+    } catch (e) { return 0; }
+  };
+
+  const draw = (wPt, hPt, dpr, bg, logo, topOffsetPt, ballColors) => {
     const canvas = document.createElement('canvas');
     canvas.width = Math.round(wPt * dpr);
     canvas.height = Math.round(hPt * dpr);
     const ctx = canvas.getContext('2d');
     ctx.fillStyle = bg;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // ローディング画面と「完全に同じレイアウト」で描く：
+    // ロゴはWebビュー領域（ステータスバーの下）の中央（幅330px/最大70vw）、
+    // スピナーの球はロゴ下38pxに静止状態で並べる。こうすることで
+    // スプラッシュ→ローディング画面の切り替わりでロゴが動いたり
+    // 球が突然出現したりするガタつきが起きない。（#spinner のCSSと同期すること）
+    const top = (topOffsetPt || 0) * dpr;
+    const viewH = canvas.height - top;
     if (logo && logo.complete && logo.naturalWidth > 0) {
-      // ローディング画面と同じ見た目（中央ロゴ・幅330px/最大70vw相当）に合わせ、
-      // スプラッシュ→ローディング画面の切り替わりが自然につながるようにする
       const lw = Math.min(330, wPt * 0.7) * dpr;
       const lh = lw * (logo.naturalHeight / logo.naturalWidth);
-      ctx.drawImage(logo, (canvas.width - lw) / 2, (canvas.height - lh) / 2, lw, lh);
+      const lx = (canvas.width - lw) / 2;
+      const ly = top + (viewH - lh) / 2;
+      ctx.drawImage(logo, lx, ly, lw, lh);
+
+      // 球：直径18px・間隔12px・4個（.loading-ball / #spinner と同期）
+      const d = 18 * dpr;
+      const gap = 12 * dpr;
+      let bx = (canvas.width - (d * 4 + gap * 3)) / 2 + d / 2;
+      const by = ly + lh + 38 * dpr + d / 2;
+      ballColors.forEach((c) => {
+        ctx.fillStyle = c;
+        ctx.beginPath();
+        ctx.arc(bx, by, d / 2, 0, Math.PI * 2);
+        ctx.fill();
+        bx += d + gap;
+      });
     }
     return canvas.toDataURL('image/png');
   };
@@ -1946,9 +1981,38 @@ const scheduleStartupImageUpdate = (() => {
 
   const generate = () => {
     try {
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+
+      // 起動画像は「ホーム画面に追加した瞬間のページ」から保存される。
+      // SafariとホームアプリはlocalStorageが別のため、インストール後の初回起動は
+      // 必ずデフォルト（ライト）テーマで始まる。そこでブラウザ実行時はSafariの
+      // 現在テーマではなく、初回起動時に実際に表示されるライト配色で生成する。
+      // （Safariがダークテーマのまま追加→初回起動で黒→白と切り替わり
+      //   ガタつく問題の対策。スタンドアロン実行時は現在テーマに追従させる）
       let theme = 'light';
-      try { theme = localStorage.getItem('site_theme_v1') || 'light'; } catch (e) {}
+      if (isStandalone) {
+        try { theme = localStorage.getItem('site_theme_v1') || 'light'; } catch (e) {}
+      }
       const bg = THEME_BG[theme] || '#f9fafe';
+
+      // 球の色：カラーテーマは白（--btn-main）、ライト/ダークは既定の4色
+      // （index.html早期スクリプト・style.cssの.loading-ballと同期すること）
+      const ballColors = (theme === 'light' || theme === 'dark')
+        ? ['#ff6496', '#fabe00', '#006ebe', '#e60046']
+        : ['#ffffff', '#ffffff', '#ffffff', '#ffffff'];
+
+      // ステータスバー分のWebビュー上端オフセット。
+      // スタンドアロン実行中は実測（black-translucentなら0になる）、
+      // ブラウザではstatus-bar-styleメタがdefaultになる場合のみ推定値を使う。
+      let topOffset = 0;
+      if (isStandalone) {
+        topOffset = Math.max(0, screen.height - window.innerHeight);
+        if (topOffset > 80) topOffset = 0; // 横向き等で実測が信用できない時は全画面扱い
+      } else {
+        const statusBar = document.getElementById('status-bar-style');
+        if (!statusBar || statusBar.content !== 'black-translucent') topOffset = measureSafeTop();
+      }
+
       const logo = new Image();
       const build = () => {
         try {
@@ -1957,10 +2021,10 @@ const scheduleStartupImageUpdate = (() => {
           const shortPt = Math.min(screen.width, screen.height);
           const longPt = Math.max(screen.width, screen.height);
           if (!shortPt || !longPt) return;
-          setLink('(orientation: portrait)', draw(shortPt, longPt, dpr, bg, logo));
+          setLink('(orientation: portrait)', draw(shortPt, longPt, dpr, bg, logo, topOffset, ballColors));
           // 2枚目は別タスクに分け、1回あたりのメインスレッド占有時間を半分にする
           setTimeout(() => {
-            try { setLink('(orientation: landscape)', draw(longPt, shortPt, dpr, bg, logo)); } catch (e) {}
+            try { setLink('(orientation: landscape)', draw(longPt, shortPt, dpr, bg, logo, topOffset, ballColors)); } catch (e) {}
           }, 300);
         } catch (e) {}
       };
