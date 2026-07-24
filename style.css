@@ -3466,12 +3466,26 @@ html.is-standalone .site-footer {
 /* --- 100vh問題対策 & ロード画面修正 --- */
 #loading-screen {
   /* ★修正2: ロード画面の重なり順を最強にして、ナビバーが透けるのを防ぐ */
-  z-index: 2147483647 !important; 
-  
+  z-index: 2147483647 !important;
+
   /* 高さの計算をより厳密に */
   height: 100vh;      /* フォールバック */
   height: 100dvh;     /* アドレスバー等を考慮した動的な高さ */
   min-height: 100%;
+}
+/* ★起動時の帯チラつき対策（根本対策）:
+   iOSのPWA起動の最初の描画では dvh が一瞬実際より短く（例: 852px中799px）、
+   ローディング画面の下から body 背景（テーマの明るい色）が1フレームだけ見えて
+   「下部がチラつく」原因になっていた。同色の延長領域を下に400pxぶら下げておき、
+   高さ計算がどう転んでも隙間が絶対にできないようにする（はみ出しは画面外で無害）。 */
+#loading-screen::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  height: 400px;
+  background: inherit;
 }
 
 /* --- PWA専用 下部ナビゲーション --- */
