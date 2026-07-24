@@ -684,6 +684,9 @@ async function initializeApp() {
   initializeAutocomplete();
   setupThemeSwitcher();
   setupModals();
+  // 「このサイトについて」にバージョンを表示（PWAの更新反映確認用）
+  const verEl = document.getElementById('appVersionLabel');
+  if (verEl && window.__APP_VERSION) verEl.textContent = 'ver.' + window.__APP_VERSION;
   setupShareButtons();
   setupRightClickModal();
   formatYearButtons();
@@ -3292,22 +3295,31 @@ document.addEventListener('DOMContentLoaded', () => {
  * 用途2: SW更新の自動リロード直前に被せ、リロードの明滅を隠して
  *   スプラッシュ→スプラッシュの連続に見せる。
  * =================================================== */
-window.__showSplashCover = function () {
-  if (document.getElementById('splash-cover') || !document.body) return;
+/* ★強化: iOSはバックグラウンド移行後すぐ描画を停止するため、visibilitychange内で
+   要素生成や画像読込をしていると、スナップショット撮影までにカバーの描画が
+   間に合わないことがある。カバーは起動時に1回だけ組み立ててDOMに置いておき
+   （ロゴも先に読込・デコード済みにする）、表示はstyleの切替1発だけにする。 */
+let __splashCoverEl = null;
+function __buildSplashCover() {
+  if (__splashCoverEl || !document.body) return;
   const d = document.createElement('div');
   d.id = 'splash-cover';
   const bg = document.documentElement.style.backgroundColor || '#f9fafe';
-  d.style.cssText = 'position:fixed;inset:0;z-index:2147483647;background:' + bg + ';display:flex;align-items:center;justify-content:center;';
+  d.style.cssText = 'position:fixed;inset:0;z-index:2147483647;background:' + bg + ';display:none;align-items:center;justify-content:center;';
   const img = new Image();
-  img.src = 'logo.png'; // SWで事前キャッシュ済み。バックグラウンド直前でも即描画される
+  img.src = 'logo.png'; // SWキャッシュ済み。起動時に読み込んでおけば表示は即時
   img.alt = '';
   img.style.cssText = 'width:330px;max-width:70vw;';
   d.appendChild(img);
   document.body.appendChild(d);
+  __splashCoverEl = d;
+}
+window.__showSplashCover = function () {
+  if (!__splashCoverEl) __buildSplashCover();
+  if (__splashCoverEl) __splashCoverEl.style.display = 'flex';
 };
 window.__hideSplashCover = function () {
-  const d = document.getElementById('splash-cover');
-  if (d) d.remove();
+  if (__splashCoverEl) __splashCoverEl.style.display = 'none';
 };
 
 (function enhanceMobileExperience() {
@@ -3315,16 +3327,22 @@ window.__hideSplashCover = function () {
 
   if (isStandalone) {
     document.documentElement.classList.add('is-standalone');
-    document.addEventListener('DOMContentLoaded', setupPwaBottomNav);
+    document.addEventListener('DOMContentLoaded', () => {
+      setupPwaBottomNav();
+      // カバーを事前構築（ロゴの読込・デコードを済ませ、以後の表示をstyle切替1発にする）
+      __buildSplashCover();
+    });
 
     // バックグラウンド移行時はスプラッシュカバーを被せてスナップショットを整える。
     // 復帰時（visible/pageshow）は即座に外す。復帰はイベントが描画より先に処理される
     // ため、ユーザーにはOSの復帰アニメーション（=スプラッシュ見た目）→そのままUIが見える。
     // ブラウザ表示では行わない（タブ切替のプレビューが起動画面になってしまうため）。
+    // pagehide でも被せる（iOSが visibilitychange を挟まず退避するケースの保険）。
     document.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'hidden') window.__showSplashCover();
       else window.__hideSplashCover();
     });
+    window.addEventListener('pagehide', window.__showSplashCover);
     window.addEventListener('pageshow', window.__hideSplashCover);
   }
 

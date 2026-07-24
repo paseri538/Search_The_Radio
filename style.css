@@ -6325,3 +6325,12 @@ body[class*="theme-"] .searchbox-select option {
   color: #22272e;
   background: #ffffff;
 }
+
+/* 「このサイトについて」内のバージョン表示（更新反映の確認用・控えめに） */
+.about-version {
+  margin-top: 12px;
+  font-size: 11px;
+  opacity: 0.55;
+  text-align: center;
+  letter-spacing: 0.05em;
+}
