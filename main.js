@@ -2931,16 +2931,36 @@ window.applyDidYouMean = function(word) {
             const hideLoadingScreen = () => {
                 if (hidden) return;
                 hidden = true;
-                // ★修正: iOSはリロード時にスクロール位置を遅れて復元することがあり、
-                // 起動直後なのにページが途中までスクロールされた状態で表示される
-                // ことがあった。ローディング画面を外す瞬間（＝レイアウト確定後）に
-                // 必ず先頭へ戻す。少し遅れて復元された場合に備えた再リセットも行うが、
-                // ユーザーが自分で操作を始めたら中止して邪魔しない。
-                try { window.scrollTo(0, 0); } catch (e) {}
-                const lateReset = setTimeout(() => { try { window.scrollTo(0, 0); } catch (e) {} }, 350);
-                const cancelLate = () => { clearTimeout(lateReset); window.removeEventListener('touchstart', cancelLate); window.removeEventListener('wheel', cancelLate); };
-                window.addEventListener('touchstart', cancelLate, { passive: true });
-                window.addEventListener('wheel', cancelLate, { passive: true });
+                // ★下部ナビの表示解禁（起動中はCSSでvisibility:hiddenにしている）。
+                // フェード開始と同時に解禁すれば、他のUIと一緒に自然に現れる。
+                document.body.classList.add('app-ready');
+                // ★修正: iOSはリロードや再起動時にスクロール位置を「遅れて」復元することが
+                // あり（数百ms〜1秒後）、起動直後なのにページが途中までスクロールされた
+                // 状態になることがあった。単発のリセットでは取りこぼすため、スプラッシュ
+                // 解除後2秒間は監視し、ユーザーが操作していないのに位置がずれたら即座に
+                // 先頭へ戻す。ユーザーが触れたら監視を止めて操作を尊重する。
+                const instantTop = () => {
+                    const html = document.documentElement;
+                    const prev = html.style.scrollBehavior;
+                    html.style.scrollBehavior = 'auto';
+                    try { window.scrollTo(0, 0); } catch (e) {}
+                    html.style.scrollBehavior = prev;
+                };
+                instantTop();
+                let watchdogTimer = 0;
+                const stopWatch = () => {
+                    clearInterval(watchdogTimer);
+                    window.removeEventListener('touchstart', stopWatch);
+                    window.removeEventListener('wheel', stopWatch);
+                    window.removeEventListener('keydown', stopWatch);
+                };
+                window.addEventListener('touchstart', stopWatch, { passive: true });
+                window.addEventListener('wheel', stopWatch, { passive: true });
+                window.addEventListener('keydown', stopWatch);
+                watchdogTimer = setInterval(() => {
+                    if (window.scrollY !== 0) instantTop();
+                }, 100);
+                setTimeout(stopWatch, 2000);
                 loadingScreen.classList.add("fadeout");
                 loadingScreen.addEventListener('transitionend', () => loadingScreen.remove(), { once: true });
                 setTimeout(() => loadingScreen.remove(), 700); // フェード(0.45s)完了後に確実に除去する保険

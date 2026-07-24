@@ -6334,3 +6334,10 @@ body[class*="theme-"] .searchbox-select option {
   text-align: center;
   letter-spacing: 0.05em;
 }
+
+/* ★PWA起動時ちらつき対策: iOSは起動中のビューポート確定時にfixed要素の合成タイミングが
+   ずれ、最前面のローディング画面より先に下部ナビが一瞬描画されることがある。
+   ローディングが終わる（main.jsがbodyにapp-readyを付与する）までナビ自体を不可視にして、
+   合成順に関係なく絶対に見えないようにする。 */
+.pwa-bottom-nav { visibility: hidden; }
+body.app-ready .pwa-bottom-nav { visibility: visible; }
