@@ -3376,19 +3376,43 @@ window.__hideSplashCover = function () {
       __buildSplashCover();
     });
 
+    // 復帰時のカバー解除:
+    // カラーテーマ（ステータスバーがblack-translucent＝全画面Webビュー）では、
+    // 復帰直後にiOSがビューポート高さを再計算し、その最中はfixed配置の下部ナビが
+    // 一瞬ずれて合成されて「ちらつき」に見える。そこで black-translucent の時だけ、
+    // ビューポートが安定する（高さが約100ms変化しない）まで最大0.5秒カバーを保持する。
+    // スナップショット（=スプラッシュ）→カバー（=スプラッシュ）→UI と連続して見える。
+    // ホワイトテーマは固定レイアウトで再計算が起きないため、従来どおり即解除。
+    const releaseSplashCover = () => {
+      if (!__splashCoverEl || __splashCoverEl.style.display === 'none') return;
+      const statusBar = document.getElementById('status-bar-style');
+      if (!statusBar || statusBar.content !== 'black-translucent') {
+        window.__hideSplashCover();
+        return;
+      }
+      let lastH = window.innerHeight;
+      let stable = 0;
+      const t0 = performance.now();
+      const tick = () => {
+        if (!__splashCoverEl || __splashCoverEl.style.display === 'none') return; // 既に解除済み
+        if (window.innerHeight === lastH) stable++;
+        else { stable = 0; lastH = window.innerHeight; }
+        if (stable >= 6 || performance.now() - t0 > 500) { window.__hideSplashCover(); return; }
+        requestAnimationFrame(tick);
+      };
+      requestAnimationFrame(tick);
+    };
+
     // バックグラウンド移行時はスプラッシュカバーを被せてスナップショットを整える。
-    // 復帰時（visible/pageshow）は即座に外す。復帰はイベントが描画より先に処理される
-    // ため、ユーザーにはOSの復帰アニメーション（=スプラッシュ見た目）→そのままUIが見える。
     // ブラウザ表示では行わない（タブ切替のプレビューが起動画面になってしまうため）。
     // pagehide でも被せる（iOSが visibilitychange を挟まず退避するケースの保険）。
     document.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'hidden') window.__showSplashCover();
-      else window.__hideSplashCover();
+      else releaseSplashCover();
     });
     window.addEventListener('pagehide', window.__showSplashCover);
-    window.addEventListener('pageshow', window.__hideSplashCover);
-    // 保険: 復帰イベントの取りこぼしでカバーが残った場合も、フォーカスや操作で必ず外れる
-    window.addEventListener('focus', window.__hideSplashCover);
+    window.addEventListener('pageshow', releaseSplashCover);
+    // 保険: 復帰イベントの取りこぼしでカバーが残った場合も、操作で必ず外れる
     window.addEventListener('touchstart', window.__hideSplashCover, { passive: true });
   }
 
