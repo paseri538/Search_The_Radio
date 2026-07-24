@@ -1897,89 +1897,6 @@ function setupEventListeners() {
   };
 })();
 
-/* ===================================================
- * iOS PWA用スプラッシュ（起動画像）の動的生成
- * ===================================================
- * ホーム画面起動(standalone)のiOSは、起動直後にOSが「起動画像」を表示する。
- * 未指定だと白一色のため、カラーテーマ利用時に起動の一瞬だけ白くチラつく。
- * iOSは「前回の実行中にページ内へ注入されていた apple-touch-startup-image」を
- * 次回起動用に保存する仕様のため、実行時にcanvasで現在のテーマ背景色＋ロゴの
- * 画像を生成し、data URLのlinkタグとして注入しておく。
- * （インストール直後の初回起動だけは生成前なので白いまま。2回目以降の起動から
- *   テーマ色のスプラッシュになり、テーマを変えれば次回起動から追従する） */
-const scheduleStartupImageUpdate = (() => {
-  let timer = 0;
-  // index.html冒頭の早期テーマスクリプト・applyTheme と同じ配色（変更時は3箇所同期すること）
-  const THEME_BG = { dark: '#000000', pink: '#ff6496', yellow: '#fabe00', blue: '#006ebe', red: '#e60046', green: '#13a286' };
-
-  const isIOS = () =>
-    /iPad|iPhone|iPod/.test(navigator.userAgent) ||
-    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1); // iPadOSの「デスクトップ用サイト」表示対策
-
-  const draw = (wPt, hPt, dpr, bg, logo) => {
-    const canvas = document.createElement('canvas');
-    canvas.width = Math.round(wPt * dpr);
-    canvas.height = Math.round(hPt * dpr);
-    const ctx = canvas.getContext('2d');
-    ctx.fillStyle = bg;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    if (logo && logo.complete && logo.naturalWidth > 0) {
-      // ローディング画面と同じ見た目（中央ロゴ・幅330px/最大70vw相当）に合わせ、
-      // スプラッシュ→ローディング画面の切り替わりが自然につながるようにする
-      const lw = Math.min(330, wPt * 0.7) * dpr;
-      const lh = lw * (logo.naturalHeight / logo.naturalWidth);
-      ctx.drawImage(logo, (canvas.width - lw) / 2, (canvas.height - lh) / 2, lw, lh);
-    }
-    return canvas.toDataURL('image/png');
-  };
-
-  const setLink = (media, href) => {
-    let link = document.head.querySelector(`link[rel="apple-touch-startup-image"][media="${media}"]`);
-    if (!link) {
-      link = document.createElement('link');
-      link.rel = 'apple-touch-startup-image';
-      link.media = media;
-      document.head.appendChild(link);
-    }
-    link.href = href;
-  };
-
-  const generate = () => {
-    try {
-      let theme = 'light';
-      try { theme = localStorage.getItem('site_theme_v1') || 'light'; } catch (e) {}
-      const bg = THEME_BG[theme] || '#f9fafe';
-      const logo = new Image();
-      const build = () => {
-        try {
-          const dpr = Math.min(window.devicePixelRatio || 1, 3);
-          // screen.width/height の向き依存を吸収し、縦横それぞれの画像を用意する
-          const shortPt = Math.min(screen.width, screen.height);
-          const longPt = Math.max(screen.width, screen.height);
-          if (!shortPt || !longPt) return;
-          setLink('(orientation: portrait)', draw(shortPt, longPt, dpr, bg, logo));
-          setLink('(orientation: landscape)', draw(longPt, shortPt, dpr, bg, logo));
-        } catch (e) {}
-      };
-      logo.onload = build;
-      logo.onerror = build; // ロゴが読めなくても背景色のみで生成する
-      logo.src = 'logo.png';
-    } catch (e) {}
-  };
-
-  return function scheduleStartupImageUpdate() {
-    if (!isIOS()) return;
-    // canvas描画＋PNGエンコードはそれなりに重いため、テーマ切替の連打はまとめ、
-    // 初期表示のレンダリングとも競合しないよう少し遅らせてアイドル時に実行する。
-    // （「ホーム画面に追加」した瞬間のDOMからも拾われるよう、遅らせすぎない）
-    clearTimeout(timer);
-    timer = setTimeout(() => {
-      if ('requestIdleCallback' in window) requestIdleCallback(generate, { timeout: 2000 });
-      else generate();
-    }, 500);
-  };
-})();
-
 function setupThemeSwitcher() {
   const toggleBtn = document.getElementById('theme-toggle-btn');
   const panel = document.getElementById('floating-theme-panel');
@@ -2049,26 +1966,6 @@ function setupThemeSwitcher() {
     // html要素のインライン背景（初回チラつき防止用）もテーマ切替に追従させ、
     // カラーテーマ→ライトへ戻したときに古い色が残らないようにする。
     document.documentElement.style.backgroundColor = bodyBg || '#f9fafe';
-
-    // ダークテーマではブラウザ既定の描画色もダークにする（早期スクリプトと同期）
-    document.documentElement.style.colorScheme = (themeName === 'dark') ? 'dark' : '';
-
-    // マニフェストもテーマに合わせて切り替える。
-    // iOSのPWA起動画面はマニフェストのbackground_colorから生成されるため、
-    // これで「ホーム画面に追加」した時点のテーマ色が起動画面になる。
-    // （既にインストール済みのアプリはiOSがインストール時点の内容を保持するため、
-    //   一度ホーム画面から削除して再追加するまで反映されない点に注意）
-    const validThemes = ['dark', 'pink', 'yellow', 'blue', 'red', 'green'];
-    const manifestLink = document.querySelector('link[rel="manifest"]');
-    if (manifestLink) {
-      const file = validThemes.includes(themeName) ? `manifest-${themeName}.webmanifest` : 'site.webmanifest';
-      const desired = `./${file}?v=20260724d`;
-      if (manifestLink.getAttribute('href') !== desired) manifestLink.setAttribute('href', desired);
-    }
-
-    // iOS PWAの起動画像（スプラッシュ）を新しいテーマ色で作り直す
-    // （初期適用時にも呼ばれるため、起動のたびに最新のテーマ色へ同期される）
-    scheduleStartupImageUpdate();
   };
 
   toggleBtn.addEventListener('click', e => { e.stopPropagation(); panel.classList.toggle('show'); });

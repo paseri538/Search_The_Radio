@@ -1,5 +1,5 @@
 // キャッシュの名前を定義。バージョンを更新すると古いキャッシュは自動的に削除。
-const SW_VERSION = '20260724e';
+const SW_VERSION = '20260724f';
 const CACHE_NAME = `radio-cache-${SW_VERSION}`;
 
 
@@ -23,12 +23,6 @@ const CORE_ASSETS = [
   'favicon.ico',
   'apple-touch-icon.png',
   'site.webmanifest',
-  'manifest-dark.webmanifest',
-  'manifest-pink.webmanifest',
-  'manifest-yellow.webmanifest',
-  'manifest-blue.webmanifest',
-  'manifest-red.webmanifest',
-  'manifest-green.webmanifest',
   'https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css',
   'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css'
 ];

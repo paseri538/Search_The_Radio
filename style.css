@@ -6606,21 +6606,3 @@ body[class*="theme-"] .favorites-header-layout .ts-clear-confirm { border-color:
   .fav-clear-btn:hover { background: #fee2e2; border-color: rgba(220, 38, 38, 0.45); }
   body.dark-mode .fav-clear-btn:hover { background: rgba(239,68,68,0.15); }
 }
-
-/* ===================================================
- * ローディング画面のカクつき対策（主にスマホ）
- * ===================================================
- * contain: ローディング画面内部のレイアウト・描画を文書本体から分離する。
- * 裏で進む検索結果の描画・フォント適用・スタイル再計算がローディング画面の
- * レイアウトへ波及しなくなり、跳ねる球のアニメーションが乱れにくくなる。
- * will-change: フェードアウト(opacity遷移)も含めて事前にコンポジタ層へ昇格し、
- * 消える瞬間のガタつきを防ぐ。 */
-#loading-screen {
-  contain: layout style paint;
-  will-change: opacity;
-}
-/* 球のコンテナごと独立レイヤー化し、親のリフローの影響を受けにくくする */
-#spinner {
-  transform: translateZ(0);
-  will-change: transform;
-}
