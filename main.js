@@ -868,9 +868,27 @@ function resetSearch() {
     navigator.serviceWorker.getRegistration().then(reg => {
       if (reg) {
         // 更新があればダウンロードを開始し、完了次第 index.html 側でリロードされる
-        reg.update(); 
+        reg.update();
       }
     });
+
+    // ★強制反映: reg.update() は CDN（GitHub Pagesは約10分キャッシュ）から
+    // 古い sw.js を掴んで「更新なし」と誤判定することがあり、PWAでは更新が
+    // なかなか反映されなかった。毎回ユニークなクエリでCDNキャッシュを確実に
+    // 回避して最新の sw.js を取得し、バージョンが現在と異なる時だけ
+    // そのバージョン名のURLで再登録する（新しいURL＝確実に新SWとして
+    // インストールされ、controllerchange経由でスプラッシュ付き自動リロードされる。
+    // 再登録URLは新しいindex.htmlが登録するURLと同じ形式なので以後も一本化される）。
+    fetch('/sw.js?nocache=' + Date.now(), { cache: 'no-store' })
+      .then(res => res.ok ? res.text() : null)
+      .then(txt => {
+        if (!txt || !window.__APP_VERSION) return;
+        const m = txt.match(/SW_VERSION\s*=\s*'([^']+)'/);
+        if (m && m[1] && m[1] !== window.__APP_VERSION) {
+          navigator.serviceWorker.register('/sw.js?' + m[1]);
+        }
+      })
+      .catch(() => {}); // オフライン等は無視（通常のリセット動作は既に完了している）
   }
 }
 
@@ -2910,6 +2928,16 @@ window.applyDidYouMean = function(word) {
             const hideLoadingScreen = () => {
                 if (hidden) return;
                 hidden = true;
+                // ★修正: iOSはリロード時にスクロール位置を遅れて復元することがあり、
+                // 起動直後なのにページが途中までスクロールされた状態で表示される
+                // ことがあった。ローディング画面を外す瞬間（＝レイアウト確定後）に
+                // 必ず先頭へ戻す。少し遅れて復元された場合に備えた再リセットも行うが、
+                // ユーザーが自分で操作を始めたら中止して邪魔しない。
+                try { window.scrollTo(0, 0); } catch (e) {}
+                const lateReset = setTimeout(() => { try { window.scrollTo(0, 0); } catch (e) {} }, 350);
+                const cancelLate = () => { clearTimeout(lateReset); window.removeEventListener('touchstart', cancelLate); window.removeEventListener('wheel', cancelLate); };
+                window.addEventListener('touchstart', cancelLate, { passive: true });
+                window.addEventListener('wheel', cancelLate, { passive: true });
                 loadingScreen.classList.add("fadeout");
                 loadingScreen.addEventListener('transitionend', () => loadingScreen.remove(), { once: true });
                 setTimeout(() => loadingScreen.remove(), 700); // フェード(0.45s)完了後に確実に除去する保険
@@ -2927,16 +2955,24 @@ window.applyDidYouMean = function(word) {
             };
             hookFonts();
 
+            // ★起動時ちらつき対策: SWの更新チェック決着（index.html側で生成）も待つ。
+            // 更新がある場合はローディング画面の下でリロードが行われ、UIが一瞬
+            // 見えてから再読込される「ちらつき」が起きない。Promise自体に4秒の
+            // 上限があるためオフラインでも起動は止まらない（下のSW_CAPは二重の保険）。
+            let swDone = !window.__swUpdateSettled;
+            if (window.__swUpdateSettled) window.__swUpdateSettled.then(() => { swDone = true; });
+
             // タイトル画面は「ほどよい表示時間(MIN_SHOW)」「データ(カード)描画完了」
             // 「フォントの全文字読み込み完了」を満たしたら消す。フォントまで待つことで、
             // どの文字も最初からAdobeフォントで表示され、一瞬だけフォールバックになるFOUTを防ぐ。
             // 低速回線で永遠に待たないよう FONT_CAP を上限にする。
             const MIN_SHOW = 1500;   // タイトル最低表示時間
             const FONT_CAP = 8000;   // フォントを待つ上限（超えたら諦めて表示）
+            const SW_CAP = 4500;     // SW更新チェックを待つ上限（Promise側の4秒上限の保険）
             const tryHide = () => {
                 const t = performance.now();
                 if (!fontsDone) hookFonts();
-                if (cardsReady() && t >= MIN_SHOW && (fontsDone || t >= FONT_CAP)) { hideLoadingScreen(); return; }
+                if (cardsReady() && t >= MIN_SHOW && (fontsDone || t >= FONT_CAP) && (swDone || t >= SW_CAP)) { hideLoadingScreen(); return; }
                 requestAnimationFrame(tryHide);
             };
             tryHide();

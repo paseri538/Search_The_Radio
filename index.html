@@ -151,7 +151,7 @@
 <meta name="apple-mobile-web-app-title" content="さーち・ざ・らじお！">
 
 
-<link rel="manifest" href="./site.webmanifest?v=20260724j">
+<link rel="manifest" href="./site.webmanifest?v=20260724k">
 
   
   <!-- SRI(integrity): CDN側でファイルが改ざんされた場合にブラウザが読込を拒否する -->
@@ -168,7 +168,7 @@
 <link rel="preconnect" href="https://use.typekit.net" crossorigin>
 <link rel="preconnect" href="https://p.typekit.net" crossorigin>
 <!-- code.jquery.com / i.ytimg.com へのpreconnectは削除: jQueryは未使用、サムネイルはローカル配信のため -->
-  <link href="style.css?v=20260724j" rel="stylesheet" />
+  <link href="style.css?v=20260724k" rel="stylesheet" />
 
 
 </head>
@@ -456,10 +456,21 @@
     h=d.documentElement,t=setTimeout(function(){h.className=h.className.replace(/\bwf-loading\b/g,"")+" wf-inactive";},config.scriptTimeout),tk=d.createElement("script"),f=false,s=d.getElementsByTagName("script")[0],a;h.className+=" wf-loading";tk.src='https://use.typekit.net/'+config.kitId+'.js';tk.async=true;tk.onload=tk.onreadystatechange=function(){a=this.readyState;if(f||a&&a!="complete"&&a!="loaded")return;f=true;clearTimeout(t);try{Typekit.load(config)}catch(e){}};s.parentNode.insertBefore(tk,s)
   })(document);
 </script>
-  <script src="main.js?v=20260724j" defer></script>
+  <script src="main.js?v=20260724k" defer></script>
 
   <script>
   // ---- Service Worker register (network-first) ----
+  // このページ自身のバージョン（デプロイごとに他の "20260724x" 表記と一括で更新される）。
+  // リセットボタンの強制更新チェック（main.js）が最新SWとの差分判定に使う。
+  window.__APP_VERSION = '20260724k';
+
+  // ★起動時ちらつき対策: 「ローディング→UIが一瞬見える→更新リロード→再ローディング」の
+  // UI露出をなくすため、SWの更新チェックが決着するまでローディング画面を保持する
+  // （main.js側がこのPromiseを待つ。オフラインや低速回線で起動が止まらないよう上限あり）。
+  var __swSettle;
+  window.__swUpdateSettled = new Promise(function (res) { __swSettle = res; });
+  setTimeout(__swSettle, 4000); // 絶対上限: 更新確認が遅くても起動を止めない
+
   if ('serviceWorker' in navigator) {
     // ★追加: 新しいキャッシュへの切り替えが完了したら自動でリロードする
     let refreshing = false;
@@ -471,14 +482,13 @@
       if (!hadController) { hadController = true; return; }
       refreshing = true;
       // ★リロードの明滅対策: 先にスプラッシュカバー（main.js定義）を被せてからリロードする。
-      // 画面は「スプラッシュ→（リロード）→スプラッシュ」と連続して見え、
-      // 一瞬だけUIやボタンがちらつく現象を防ぐ。
+      // 起動時の更新はローディング画面が出ている間に行われるため画面は連続して見える。
       if (window.__showSplashCover) { try { window.__showSplashCover(); } catch (e) {} }
       window.location.reload();
     });
 
     window.addEventListener('load', function () {
-      navigator.serviceWorker.register('/sw.js?20260724j').then(function(reg) {
+      navigator.serviceWorker.register('/sw.js?20260724k').then(function(reg) {
         return navigator.serviceWorker.ready;
       }).then(function(reg) {
         if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
@@ -491,14 +501,31 @@
           });
         });
 
+        // 更新チェックの決着を明示的に待つ:
+        //  - 初回訪問（controllerなし）は更新リロードが起きないため即決着
+        //  - 更新なし → 即決着（ローディングは通常どおり終了）
+        //  - 更新あり → installed→SKIP_WAITING→controllerchangeでリロードされるので
+        //    ここでは決着させず、ローディング画面のまま新バージョンで再起動する
+        //    （リロードが来ない異常時は上の4秒上限が保険）
+        if (!hadController) { __swSettle(); }
+        reg.update().catch(function () {}).then(function () {
+          var w = reg.installing || reg.waiting;
+          if (!w) { __swSettle(); return; }
+          w.addEventListener('statechange', function () {
+            if (w.state === 'redundant') __swSettle(); // 更新失敗時は通常起動
+          });
+        });
+
         // サムネイルの事前キャッシュ（オフライン用・約8MB）は、初回描画と
         // 帯域を奪い合ってローディングがカクつかないよう、描画が落ち着いた
         // 頃合いにSWへ依頼する（既にキャッシュ済みなら何もしない）。
         setTimeout(function () {
           if (reg.active) reg.active.postMessage({ type: 'PRECACHE_THUMBS' });
         }, 6000);
-      }).catch(console.error);
+      }).catch(function (e) { __swSettle(); console.error(e); });
     });
+  } else {
+    __swSettle();
   }
   </script>
 
