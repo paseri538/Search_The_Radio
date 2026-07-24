@@ -2724,10 +2724,31 @@ function updateHeaderOffset() {
   const sticky = document.querySelector('.sticky-search-area');
   if (!sticky) return;
   const h = sticky.offsetHeight;
+  // ★iOS対策: PWAの起動・復帰の一瞬、env(safe-area-inset-top)が異常値（0や過大値）を
+  // 返すことがあり、そのタイミングで計測すると誤った余白が残り続けて
+  // 「コンテンツがヘッダーに食い込む」「ヘッダー下に大きな空白ができる」原因になっていた。
+  // 明らかに異常な値（画面の45%超）はその場では採用せず、少し後に再計測する。
+  const cap = Math.max(240, window.innerHeight * 0.45);
+  if (h > cap) {
+    clearTimeout(updateHeaderOffset._retry);
+    updateHeaderOffset._retry = setTimeout(updateHeaderOffset, 250);
+    return; // 直前の正常値を維持したまま再計測を待つ
+  }
   root.style.setProperty('--header-height', h + 'px');
   root.style.setProperty('--header-offset', (h + 10) + 'px');
 }
 window.__updateHeaderOffset = updateHeaderOffset;
+
+// ★iOS対策: セーフエリア値が起動直後・バックグラウンド復帰直後に遅れて確定するため、
+// その前後で複数回計測し直して正しい値に収束させる（計測は軽量なので負荷は無視できる）。
+function settleHeaderOffset() {
+  updateHeaderOffset();
+  [300, 1000, 2500].forEach(ms => setTimeout(updateHeaderOffset, ms));
+}
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') settleHeaderOffset();
+});
+window.addEventListener('pageshow', settleHeaderOffset);
 
 function parseKeywordTime(kw) {
   if (typeof kw !== "string") return null;
@@ -2959,6 +2980,8 @@ window.applyDidYouMean = function(word) {
                 window.addEventListener('keydown', stopWatch);
                 watchdogTimer = setInterval(() => {
                     if (window.scrollY !== 0) instantTop();
+                    // 起動直後はセーフエリア値の確定が遅れることがあるため、ヘッダー余白も監視して追従させる
+                    if (window.__updateHeaderOffset) window.__updateHeaderOffset();
                 }, 100);
                 setTimeout(stopWatch, 2000);
                 loadingScreen.classList.add("fadeout");
@@ -3364,6 +3387,9 @@ window.__hideSplashCover = function () {
     });
     window.addEventListener('pagehide', window.__showSplashCover);
     window.addEventListener('pageshow', window.__hideSplashCover);
+    // 保険: 復帰イベントの取りこぼしでカバーが残った場合も、フォーカスや操作で必ず外れる
+    window.addEventListener('focus', window.__hideSplashCover);
+    window.addEventListener('touchstart', window.__hideSplashCover, { passive: true });
   }
 
   const setVh = () => {
