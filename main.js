@@ -70,15 +70,37 @@ const getThumbnailUrl = (link) => {
     return videoId ? `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg` : "";
 };
 
+// localStorageのデータは手動編集や拡張機能・過去バージョンの不具合で壊れている可能性が
+// あるため、読み込み時に形を検証して正常なエントリだけを残す。
+// （不正な1件のせいで一覧描画や検索がクラッシュするのを防ぐ）
+function sanitizeTimestamps(raw) {
+  const out = {};
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return out;
+  for (const [id, arr] of Object.entries(raw)) {
+    if (!Array.isArray(arr)) continue;
+    const clean = arr
+      .filter(e => e && typeof e === 'object')
+      .map(e => ({
+        t: (typeof e.t === 'number' && isFinite(e.t) && e.t >= 0) ? Math.floor(e.t) : null,
+        label: typeof e.label === 'string' ? e.label.slice(0, 500) : ''
+      }))
+      .filter(e => e.t != null || e.label);
+    if (clean.length) out[id] = clean;
+  }
+  return out;
+}
+
 function loadTimestamps() {
   try {
     const stored = localStorage.getItem(TS_KEY);
-    if (stored) return JSON.parse(stored);
+    if (stored) return sanitizeTimestamps(JSON.parse(stored));
     // 初回のみ: 旧お気に入りを「0:00 お気に入り」として引き継ぐ
     const oldFavs = JSON.parse(localStorage.getItem(FAV_KEY) || '[]');
     const migrated = {};
-    oldFavs.forEach(id => { migrated[id] = [{ t: 0, label: 'お気に入り' }]; });
-    if (oldFavs.length) localStorage.setItem(TS_KEY, JSON.stringify(migrated));
+    if (Array.isArray(oldFavs)) {
+      oldFavs.filter(id => typeof id === 'string').forEach(id => { migrated[id] = [{ t: 0, label: 'お気に入り' }]; });
+    }
+    if (Object.keys(migrated).length) localStorage.setItem(TS_KEY, JSON.stringify(migrated));
     return migrated;
   } catch { return {}; }
 }
@@ -183,7 +205,7 @@ function kanaToRomaji(str) {
     'か':'ka','き':'ki','く':'ku','け':'ke','こ':'ko',
     'さ':'sa','し':'shi','す':'su','せ':'se','そ':'so',
     'た':'ta','ち':'chi','つ':'tsu','て':'te','と':'to',
-    'な':'na','ni':'ni','ぬ':'nu','ね':'ne','の':'no',
+    'な':'na','に':'ni','ぬ':'nu','ね':'ne','の':'no',
     'は':'ha','ひ':'hi','ふ':'fu','へ':'he','ほ':'ho',
     'ま':'ma','み':'mi','む':'mu','め':'me','も':'mo',
     'や':'ya','ゆ':'yu','よ':'yo',
@@ -434,26 +456,27 @@ function findDidYouMean(query) {
  */
 async function loadExternalData() {
   try {
-    // ★追加: links.jsonの読み込みを追加 (無ければ空オブジェクト)
-    const [episodesRes, readingsRes, keywordsRes, luckyButtonRes, historyRes, kwRes, linksRes] = await Promise.all([
+    // 補助データ（読み仮名・キーワード・履歴など）は1つ欠けてもサイト全体を壊さず、
+    // フォールバック値で続行する。episodes.json だけは必須なので失敗したらエラー表示。
+    const safeFetchJson = (url, fallback) =>
+      fetch(url).then(res => res.ok ? res.json() : fallback).catch(() => fallback);
+
+    const [episodesRes, readingsData, keywordsData, luckyData, histData, kwData, lData] = await Promise.all([
       fetch('episodes.json'),
-      fetch('readings.json'),
-      fetch('keywords.json'),
-      fetch('lucky-button.json'),
-      fetch('history.json'),
-      fetch('kessokuband_watasi.json'),
-      // ★修正：ファイルがない場合（404エラーなど）でもサイト全体が壊れないように安全処理を追加
-      fetch('links.json')
-        .then(res => res.ok ? res : { json: () => ({}) })
-        .catch(() => ({ json: () => ({}) }))
+      safeFetchJson('readings.json', {}),
+      safeFetchJson('keywords.json', {}),
+      safeFetchJson('lucky-button.json', {}),
+      safeFetchJson('history.json', []),
+      safeFetchJson('kessokuband_watasi.json', {}),
+      safeFetchJson('links.json', {})
     ]);
+    if (!episodesRes.ok) throw new Error(`episodes.json: HTTP ${episodesRes.status}`);
     const episodesData = await episodesRes.json();
-    const readingsData = await readingsRes.json();
-    const keywordsData = await keywordsRes.json();
-    luckyButtonData = await luckyButtonRes.json();
-    historyData = await historyRes.json();
-    kessokuWatasiData = await kwRes.json();
-    linksData = await linksRes.json(); // ★変更
+    if (!Array.isArray(episodesData)) throw new Error('episodes.json: 配列ではありません');
+    luckyButtonData = (luckyData && typeof luckyData === 'object') ? luckyData : {};
+    historyData = Array.isArray(histData) ? histData : [];
+    kessokuWatasiData = (kwData && typeof kwData === 'object') ? kwData : {};
+    linksData = (lData && typeof lData === 'object') ? lData : {};
 
     data = episodesData.map(ep => {
       const keywordsWithoutTimestamp = (ep.keywords || []).map(stripTimeSuffix);
@@ -463,7 +486,10 @@ async function loadExternalData() {
       return ep;
     });
 
-    CUSTOM_READINGS = { ...readingsData, ...keywordsData };
+    CUSTOM_READINGS = {
+      ...((readingsData && typeof readingsData === 'object') ? readingsData : {}),
+      ...((keywordsData && typeof keywordsData === 'object') ? keywordsData : {})
+    };
     for (const kanji in CUSTOM_READINGS) {
       (CUSTOM_READINGS[kanji] || []).forEach(r => {
         READING_TO_LABEL[normalize(r)] = kanji;
@@ -621,10 +647,6 @@ function getFilteredData(query) {
     res = res.filter(it => getEpisodeNumber(it.episode) >= -1);
   }
 
-  if (normalize(raw).includes('いいね')) {
-    rainGoodMarks();
-  }
-
   const rangeMatch = raw.match(/^(\d+)\s+(\d+)$/);
   if (rangeMatch) {
     let num1 = parseInt(rangeMatch[1], 10);
@@ -685,6 +707,12 @@ function search(opts = {}) {
   const rawQuery = searchBox ? searchBox.value.trim() : "";
   const sort = sortSelect ? sortSelect.value : "newest";
 
+  // イースターエッグ: getFilteredData内に置くと候補検証などで1回の検索中に
+  // 何度も呼ばれ多重発火するため、検索の起点であるここで1回だけ判定する
+  if (normalize(rawQuery).includes('いいね')) {
+    rainGoodMarks();
+  }
+
   let res = getFilteredData(rawQuery);
   let suggestionWords = [];
 
@@ -718,7 +746,10 @@ function search(opts = {}) {
   const countEl = document.getElementById('fixedResultsCount');
   countEl.innerHTML = `表示数：<span class="impact-number">${res.length}</span>件`;
 
-  currentPage = opts.gotoPage || 1;
+  // ページ番号は必ず結果の総ページ数の範囲内に収める
+  // （URLの ?p= に過大な値が入っていても空ページにならない）
+  const totalPage = Math.max(1, Math.ceil(res.length / pageSize));
+  currentPage = Math.min(Math.max(1, opts.gotoPage || 1), totalPage);
   if (!isRestoringURL) buildURLFromState({ method: 'push' });
 
   renderResults(res, currentPage, rawQuery, suggestionWords);
@@ -739,8 +770,10 @@ function resetFilters() {
 function resetSearch() {
   const searchBox = document.getElementById('searchBox');
   const sortSelect = document.getElementById('sortSelect');
-  if (searchBox) searchBox.value = "";
-  searchBox.dispatchEvent(new Event('input'));
+  if (searchBox) {
+    searchBox.value = "";
+    searchBox.dispatchEvent(new Event('input'));
+  }
   if (sortSelect) sortSelect.value = "newest";
 
   if (showFavoritesOnly) {
@@ -892,9 +925,11 @@ function renderResults(arr, page = 1, originalQuery = null, suggestions = []) {
 
     // ボタン生成用ヘルパー
     // ★修正: 初期状態を opacity: 0 (透明) に設定して、調整前のガタつきを隠す
+    // ★セキュリティ修正: インラインonclickへの文字列連結をやめ、data属性＋イベント委譲に変更
+    //   （検索語に引用符やHTML特殊文字が含まれても壊れず、スクリプト注入もできない）
     const createBtn = (word) => `
-      <button class="dym-word-btn" style="margin: 4px; opacity: 0;" onclick="document.getElementById('searchBox').value='${word}'; search(); scrollToResultsTop();">
-        ${word}
+      <button class="dym-word-btn" data-word="${escapeHtml(word)}" style="margin: 4px; opacity: 0;">
+        ${escapeHtml(word)}
       </button>
     `;
 
@@ -905,7 +940,7 @@ function renderResults(arr, page = 1, originalQuery = null, suggestions = []) {
     if (!showAll) {
       // 「もっと見る」ボタン自体は調整不要なので opacity: 1 でOK（またはクラス指定に従う）
       buttonsHtml += `
-        <button id="dymShowMoreBtn" class="dym-word-btn" style="margin: 4px; background: transparent; border: 1px dashed currentColor; opacity: 0.8;" onclick="document.getElementById('dymHiddenArea').style.display='inline'; this.style.display='none'; fitDymButtons();">
+        <button id="dymShowMoreBtn" class="dym-word-btn" style="margin: 4px; background: transparent; border: 1px dashed currentColor; opacity: 0.8;">
           <i class="fa-solid fa-plus"></i> 他${hiddenBatch.length}件
         </button>
         <span id="dymHiddenArea" style="display:none;">
@@ -1078,22 +1113,23 @@ function updateActiveFilters() {
   const area = document.getElementById("filtersBar");
   const searchBox = document.getElementById("searchBox");
   let html = '';
+  // 検索キーワードやフィルター値はURLパラメータ(?q= 等)経由でも入るため、必ずエスケープする
   if (searchBox.value.trim()) {
     html += `<button class="filter-tag" tabindex="0" aria-label="キーワード解除" data-type="keyword">
-               <i class="fa fa-search"></i> "${searchBox.value.trim()}" <i class="fa fa-xmark"></i>
+               <i class="fa fa-search"></i> "${escapeHtml(searchBox.value.trim())}" <i class="fa fa-xmark"></i>
              </button>`;
   }
   selectedGuests.forEach(g => {
     const style = g === "結束バンド"
       ? `style="background:linear-gradient(90deg, #fa01fa 0 25%, #fdfe0f 25% 50%, #15f4f3 50% 75%, #f93e07 75% 100%);color:#222;border:none;"`
       : (guestColorMap[g] ? `style="background:${guestColorMap[g]};color:#222;"` : '');
-    html += `<button class="filter-tag" tabindex="0" aria-label="出演者フィルタ解除 ${g}" data-type="guest" data-value="${g}" ${style}>
-               <i class="fa fa-user"></i> ${g} <i class="fa fa-xmark"></i>
+    html += `<button class="filter-tag" tabindex="0" aria-label="出演者フィルタ解除 ${escapeHtml(g)}" data-type="guest" data-value="${escapeHtml(g)}" ${style}>
+               <i class="fa fa-user"></i> ${escapeHtml(g)} <i class="fa fa-xmark"></i>
              </button>`;
   });
-  selectedCorners.forEach(c => html += `<button class="filter-tag" tabindex="0" aria-label="コーナーフィルタ解除 ${c}" data-type="corner" data-value="${c}"><i class="fa fa-cubes"></i> ${c} <i class="fa fa-xmark"></i></button>`);
-  selectedOthers.forEach(o => html += `<button class="filter-tag" tabindex="0" aria-label="その他フィルタ解除 ${o}" data-type="other" data-value="${o}"><i class="fa fa-star"></i> ${o} <i class="fa fa-xmark"></i></button>`);
-  selectedYears.forEach(y => html += `<button class="filter-tag" tabindex="0" aria-label="年フィルタ解除 ${y}" data-type="year" data-value="${y}"><i class="fa fa-calendar"></i> <span class="impact-number">${y}</span> <i class="fa fa-xmark"></i></button>`);
+  selectedCorners.forEach(c => html += `<button class="filter-tag" tabindex="0" aria-label="コーナーフィルタ解除 ${escapeHtml(c)}" data-type="corner" data-value="${escapeHtml(c)}"><i class="fa fa-cubes"></i> ${escapeHtml(c)} <i class="fa fa-xmark"></i></button>`);
+  selectedOthers.forEach(o => html += `<button class="filter-tag" tabindex="0" aria-label="その他フィルタ解除 ${escapeHtml(o)}" data-type="other" data-value="${escapeHtml(o)}"><i class="fa fa-star"></i> ${escapeHtml(o)} <i class="fa fa-xmark"></i></button>`);
+  selectedYears.forEach(y => html += `<button class="filter-tag" tabindex="0" aria-label="年フィルタ解除 ${escapeHtml(y)}" data-type="year" data-value="${escapeHtml(y)}"><i class="fa fa-calendar"></i> <span class="impact-number">${escapeHtml(y)}</span> <i class="fa fa-xmark"></i></button>`);
   area.innerHTML = html;
 }
 
@@ -1122,20 +1158,36 @@ function updateFilterButtonStyles() {
 
 function fitGuestLines() {
   let needsRetry = false;
+  const MIN_FONT_SIZE = 8.5;
 
-  // --- 1. テキスト幅を計測して最適なサイズを計算する共通関数 ---
-  const calculateSize = (line) => {
+  // ★性能改善: 以前は1行ごとに「スタイル変更→幅計測」を繰り返していたため、
+  // 20カード×3行の描画で100回超の強制リフローが発生し、ローディング中の
+  // アニメーション（跳ねる球）が低速端末でカクつく主因になっていた。
+  // 「全行リセット→全行計測→全行適用」の読み書き分離バッチに変更し、
+  // 強制リフローを全体で数回に抑える。
+
+  const guestLines = Array.from(document.querySelectorAll('.guest-one-line'));
+  const metaContainers = Array.from(document.querySelectorAll('.episode-meta'));
+  const metaGroups = metaContainers
+    .map(c => Array.from(c.querySelectorAll('.meta-one-line')))
+    .filter(lines => lines.length > 0);
+  const allLines = guestLines.concat(metaGroups.flat());
+  if (allLines.length === 0) return;
+
+  // --- フェーズ1: 全行のスタイルを一括リセット（書き込みのみ） ---
+  for (const line of allLines) {
     line.style.fontSize = '';
-    line.style.whiteSpace = 'normal';
-    
+    line.style.whiteSpace = 'nowrap';
+  }
+
+  // --- フェーズ2: 全行まとめて計測（読み取りのみ＝強制リフローは実質1回） ---
+  const measure = (line) => {
     const parent = line.parentElement;
     if (!parent) return null;
-
     const compStyle = window.getComputedStyle(parent);
-    const paddingLeft = parseFloat(compStyle.paddingLeft) || 0;
-    const paddingRight = parseFloat(compStyle.paddingRight) || 0;
-    const parentWidth = parent.clientWidth - paddingLeft - paddingRight;
-
+    const parentWidth = parent.clientWidth
+      - (parseFloat(compStyle.paddingLeft) || 0)
+      - (parseFloat(compStyle.paddingRight) || 0);
     if (parentWidth <= 10) {
       // display:none で隠れている行（閉じたタイムスタンプモーダル内のエピソードカード等）は
       // 幅が永遠に0のままなので再試行対象にしない。これを再試行し続けると
@@ -1143,77 +1195,68 @@ function fitGuestLines() {
       if (line.offsetParent !== null) needsRetry = true;
       return null;
     }
-
-    line.style.whiteSpace = 'nowrap';
     const currentWidth = line.scrollWidth;
-    const MIN_FONT_SIZE = 8.5;
-
     let finalSize = parseFloat(window.getComputedStyle(line).fontSize) || 12;
     if (currentWidth > parentWidth) {
-      const originalSize = finalSize;
-      let newSize = (parentWidth / currentWidth) * originalSize;
-      finalSize = Math.max(newSize, MIN_FONT_SIZE);
+      finalSize = Math.max((parentWidth / currentWidth) * finalSize, MIN_FONT_SIZE);
     }
-    return { finalSize, parentWidth, currentWidth, MIN_FONT_SIZE };
+    return { finalSize, parentWidth };
   };
+  const guestResults = guestLines.map(measure);
+  const metaResults = metaGroups.map(lines => lines.map(measure));
 
-  // --- 2. ゲスト名の処理（従来通り1行ごとに独立して計算・適用） ---
-  const guestLines = document.querySelectorAll('.guest-one-line');
-  guestLines.forEach(line => {
-    const res = calculateSize(line);
+  // --- フェーズ3: 計測結果を一括適用（書き込みのみ） ---
+  // 適用サイズが最小値の行は、適用後のはみ出し確認（フェーズ4）の対象として記録する
+  const ellipsisChecks = [];
+
+  guestLines.forEach((line, i) => {
+    const res = guestResults[i];
     if (!res) {
+      line.style.whiteSpace = 'normal';
       line.style.visibility = 'visible';
       return;
     }
-    
     line.style.fontSize = res.finalSize + 'px';
-
-    // ★微調整: 小数点以下の計算誤差を吸収するために +1 を追加
-    if (res.finalSize === res.MIN_FONT_SIZE && line.scrollWidth > res.parentWidth + 1) {
-      line.classList.add('needs-ellipsis');
+    if (res.finalSize === MIN_FONT_SIZE) {
+      ellipsisChecks.push({ line, parentWidth: res.parentWidth });
     } else {
       line.classList.remove('needs-ellipsis');
+      line.style.visibility = 'visible';
     }
-    line.style.visibility = 'visible';
   });
 
-  // --- 3. メタ情報（公開日時・動画時間）の処理（2行のサイズを比較して小さい方に統一する） ---
-  const metaContainers = document.querySelectorAll('.episode-meta');
-  metaContainers.forEach(container => {
-    const lines = container.querySelectorAll('.meta-one-line');
-    if (lines.length === 0) return;
-
+  metaGroups.forEach((lines, gi) => {
+    const results = metaResults[gi];
+    // 同じ親要素内の行は「一番小さいサイズ」に揃えて適用
     let minSize = 999;
-    const results = [];
-
-    // まず親要素内のすべての行の理想サイズを計算
-    lines.forEach(line => {
-      const res = calculateSize(line);
-      if (res) {
-        results.push({ line, res });
-        if (res.finalSize < minSize) {
-          minSize = res.finalSize; // 一番小さいフォントサイズを記録
-        }
+    results.forEach(res => { if (res && res.finalSize < minSize) minSize = res.finalSize; });
+    lines.forEach((line, li) => {
+      const res = results[li];
+      if (!res || minSize === 999) {
+        if (!res) line.style.whiteSpace = 'normal';
+        line.style.visibility = 'visible';
+        return;
+      }
+      line.style.fontSize = minSize + 'px';
+      if (minSize === MIN_FONT_SIZE) {
+        ellipsisChecks.push({ line, parentWidth: res.parentWidth });
       } else {
+        line.classList.remove('needs-ellipsis');
         line.style.visibility = 'visible';
       }
     });
+  });
 
-    if (minSize === 999) return; // 計算できなかった場合はスキップ
-
-    // 計算結果をもとに、同じ親要素内の2行を「一番小さいサイズ」に揃えて適用
-    results.forEach(({ line, res }) => {
-      line.style.fontSize = minSize + 'px';
-      
-      // ★微調整: 統一サイズ適用後、限界まで小さくしてもはみ出す場合は「...」を付与 (+1で誤差吸収)
-      if (minSize === res.MIN_FONT_SIZE && line.scrollWidth > res.parentWidth + 1) {
-        line.classList.add('needs-ellipsis');
-      } else {
-        line.classList.remove('needs-ellipsis');
-      }
+  // --- フェーズ4: 最小サイズ適用行のみ、はみ出しを再計測して「…」を付与 ---
+  // （読み取り→書き込みの順にまとめ、リフローを1回に抑える）
+  if (ellipsisChecks.length > 0) {
+    const widths = ellipsisChecks.map(({ line }) => line.scrollWidth); // 読み取りのみ
+    ellipsisChecks.forEach(({ line, parentWidth }, i) => {
+      // ★微調整: 小数点以下の計算誤差を吸収するために +1 を追加
+      line.classList.toggle('needs-ellipsis', widths[i] > parentWidth + 1);
       line.style.visibility = 'visible';
     });
-  });
+  }
 
   // 保険: 万一の再試行も上限を設け、無限ループを構造的に不可能にする
   if (needsRetry && (fitGuestLines._retries = (fitGuestLines._retries || 0) + 1) <= 30) {
@@ -1348,12 +1391,15 @@ function fitDymButtons() {
     // もし「もっと見る」ボタンなど、すでに表示済みのものや特殊なボタンならスキップ
     if (btn.id === 'dymShowMoreBtn') return;
 
-    // 1. スタイルをリセットして計測準備
+    // 1. スタイルをリセットして計測準備（改行モードで付与した分も含めて全て戻す）
     btn.style.fontSize = '';
     btn.style.whiteSpace = 'nowrap';
     btn.style.lineHeight = '';
     btn.style.wordBreak = '';
-    btn.style.borderRadius = '99px'; 
+    btn.style.overflowWrap = '';
+    btn.style.padding = '';
+    btn.style.textAlign = '';
+    btn.style.borderRadius = '99px';
 
     // 2. 計測: 中身(scrollWidth)が枠(clientWidth)より大きいか？
     if (btn.scrollWidth > btn.clientWidth) {
@@ -1470,12 +1516,41 @@ function buildURLFromState({ method = 'push' } = {}) {
   } catch {}
 }
 
+// 「戻る/進む」でパラメータ無しのURLに戻った時に、画面も初期状態へ同期させる。
+// （以前はapplyStateFromURLが何もせずfalseを返すだけで、直前の検索結果が残ったままだった）
+function applyDefaultStateForPopstate() {
+  isRestoringURL = true;
+  const searchBox = document.getElementById('searchBox');
+  if (searchBox) {
+    searchBox.value = '';
+    searchBox.dispatchEvent(new Event('input')); // クリアボタン表示も同期
+  }
+  const sortSelect = document.getElementById('sortSelect');
+  if (sortSelect) sortSelect.value = 'newest';
+  selectedGuests = [];
+  selectedCorners = [];
+  selectedOthers = [];
+  selectedYears = [];
+  showFavoritesOnly = false;
+  const favBtn = document.getElementById('favOnlyToggleBtn');
+  if (favBtn) {
+    favBtn.classList.remove('active');
+    favBtn.setAttribute('aria-pressed', 'false');
+  }
+  document.body.classList.remove('fav-only');
+  updateFilterButtonStyles();
+  search({ gotoPage: 1 });
+  isRestoringURL = false;
+}
+
 function applyStateFromURL({ replace = false } = {}) {
   const params = new URLSearchParams(location.search);
   if (![...params.keys()].length) return false;
   isRestoringURL = true;
 
-  const readMulti = (key) => params.getAll(key).flatMap(v => v.includes(',') ? v.split(',') : v).map(decodeURIComponent).filter(Boolean);
+  // URLSearchParamsが既にデコード済みの値を返すため、decodeURIComponentの二重適用はしない
+  // （「100%」のような%を含む値でURIErrorになり復元全体が壊れるバグの修正）
+  const readMulti = (key) => params.getAll(key).flatMap(v => v.includes(',') ? v.split(',') : v).map(v => v.trim()).filter(Boolean);
   document.getElementById('searchBox').value = params.get('q') || '';
   selectedGuests = readMulti('g');
   selectedCorners = readMulti('c');
@@ -1488,7 +1563,7 @@ function applyStateFromURL({ replace = false } = {}) {
   favBtn.setAttribute('aria-pressed', showFavoritesOnly);
   document.body.classList.toggle('fav-only', showFavoritesOnly);
   updateFilterButtonStyles();
-  currentPage = parseInt(params.get('p') || '1', 10) || 1;
+  currentPage = Math.max(1, parseInt(params.get('p') || '1', 10) || 1);
 
   search({ gotoPage: currentPage });
   isRestoringURL = false;
@@ -1568,7 +1643,8 @@ function setupEventListeners() {
   });
 
   document.getElementById('mainResetBtn').addEventListener('click', resetSearch);
-  document.getElementById('sortSelect').addEventListener('change', () => search());
+  // sortSelectのchangeリスナーは後方（scrollToResultsTop付き）の1箇所に集約
+  // （以前はここでも登録していて1回の変更で検索が2回実行されていた）
 
   const handleFilterClick = (e, collection, type) => {
       const btn = e.target.closest(`[data-${type}]`);
@@ -1606,18 +1682,33 @@ function setupEventListeners() {
     const tag = e.target.closest('.filter-tag');
     if (!tag) return;
     const { type, value } = tag.dataset;
-    if (type === 'keyword') document.getElementById('searchBox').value = '';
+    const searchBoxEl = document.getElementById('searchBox');
+    if (type === 'keyword' && searchBoxEl) searchBoxEl.value = '';
     else if (type === 'guest') selectedGuests = selectedGuests.filter(g => g !== value);
     else if (type === 'corner') selectedCorners = selectedCorners.filter(c => c !== value);
     else if (type === 'other') selectedOthers = selectedOthers.filter(o => o !== value);
     else if (type === 'year') selectedYears = selectedYears.filter(y => y !== String(value));
-    searchBox.dispatchEvent(new Event('input'));
+    if (searchBoxEl) searchBoxEl.dispatchEvent(new Event('input'));
     updateFilterButtonStyles();
     search();
     scrollToResultsTop();
   });
 
   document.getElementById('results').addEventListener('click', e => {
+
+    // 「もしかして」候補ボタン（インラインonclickの代替。data-word経由で安全に検索実行）
+    const dymBtn = e.target.closest('.dym-word-btn');
+    if (dymBtn) {
+      if (dymBtn.id === 'dymShowMoreBtn') {
+        const hiddenArea = document.getElementById('dymHiddenArea');
+        if (hiddenArea) hiddenArea.style.display = 'inline';
+        dymBtn.style.display = 'none';
+        fitDymButtons();
+      } else if (dymBtn.dataset.word) {
+        window.applyDidYouMean(dymBtn.dataset.word);
+      }
+      return;
+    }
 
     const homeBtn = e.target.closest('#favGoHomeBtn');
   if (homeBtn) {
@@ -1681,7 +1772,9 @@ function setupEventListeners() {
   });
 
   document.getElementById('createPlaylistBtn').addEventListener('click', createPlaylist);
-  window.addEventListener('popstate', () => applyStateFromURL({ replace: false }));
+  window.addEventListener('popstate', () => {
+    if (!applyStateFromURL({ replace: false })) applyDefaultStateForPopstate();
+  });
   window.addEventListener('orientationchange', () => setTimeout(fitGuestLines, 120), { passive: true });
 
   // ★修正: Webフォント確定後に文字幅を再計測する。
@@ -1820,7 +1913,7 @@ function setupThemeSwitcher() {
   
   toggleBtn.classList.toggle('is-active', panel.classList.contains('show'));
 
-  applyTheme = (themeName, opts = {}) => {
+  const applyTheme = (themeName, opts = {}) => {
     document.body.classList.remove(...allThemeClasses);
     if (themeName === 'dark') document.body.classList.add('dark-mode');
     else if (themeName && themeName !== 'light') document.body.classList.add(`theme-${themeName}`);
@@ -2715,7 +2808,9 @@ window.applyDidYouMean = function(word) {
                 setTimeout(() => loadingScreen.remove(), 700); // フェード(0.45s)完了後に確実に除去する保険
             };
 
-            const cardsReady = () => !!document.querySelector('#results .fav-btn') || !!document.querySelector('#results .episode-item');
+            // エラーメッセージ(.no-results)が出た場合も「描画完了」とみなし、
+            // データ読込失敗時にローディング画面が9秒間残り続けるのを防ぐ
+            const cardsReady = () => !!document.querySelector('#results .fav-btn, #results .episode-item, #results .no-results');
 
             // フォントの全文字読み込み完了フラグ（__fontsReady はデータ読込後に生成される）
             let fontsDone = false;
@@ -2869,10 +2964,11 @@ function initializeAutocomplete() {
       el.className = 'autocomplete-item';
       el.setAttribute('role', 'option');
       el.setAttribute('aria-selected', idx === cursor);
+      // 候補ラベルにはユーザー登録メモ（自由入力）も含まれるため、必ずエスケープして挿入する
       const i = item.label.toLowerCase().indexOf(qRaw);
       const html = (i >= 0)
-        ? `${item.label.slice(0, i)}<span class="match">${item.label.slice(i, i + qRaw.length)}</span>${item.label.slice(i + qRaw.length)}`
-        : item.label;
+        ? `${escapeHtml(item.label.slice(0, i))}<span class="match">${escapeHtml(item.label.slice(i, i + qRaw.length))}</span>${escapeHtml(item.label.slice(i + qRaw.length))}`
+        : escapeHtml(item.label);
       const icon = item.type === '出演者' ? '<i class="fa-solid fa-user"></i>'
         : item.type === 'メモ' ? '<i class="fa-solid fa-star memo-star"></i>'
         : '<i class="fa-solid fa-magnifying-glass"></i>';

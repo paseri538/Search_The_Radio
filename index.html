@@ -2,6 +2,11 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
+  <!-- Content Security Policy: 想定外のドメインからのスクリプト読込・データ送信をブラウザ側で遮断する。
+       GitHub PagesはHTTPヘッダーを設定できないため<meta>で指定。
+       インラインスクリプト/スタイルを使用しているため 'unsafe-inline' は許可（外部起点の注入は引き続き遮断される）。
+       新しいCDNや外部サービスを追加する時は、ここに該当ドメインを追記すること。 -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://use.typekit.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://use.typekit.net https://p.typekit.net; font-src 'self' data: https://use.typekit.net https://p.typekit.net https://cdnjs.cloudflare.com; img-src 'self' data: https://i.ytimg.com https://p.typekit.net https://performance.typekit.net; connect-src 'self' https://use.typekit.net https://p.typekit.net https://performance.typekit.net; object-src 'none'; base-uri 'self'; form-action 'self'">
   <!-- interactive-widget=resizes-content: キーボード表示時にレイアウトビューポートが縮み、
        下部固定のタイムスタンプモーダルがブラウザネイティブでキーボード上に配置される。
        背景ページはモーダル表示中 body固定(ts-kb-lock)しているため動かない。 -->
@@ -126,14 +131,18 @@
 <link rel="manifest" href="./site.webmanifest?v=20260721a">
 
   
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
-<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="preload" as="style" onload="this.onload=null;this.rel='stylesheet'" />
-<noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"></noscript>
+  <!-- SRI(integrity): CDN側でファイルが改ざんされた場合にブラウザが読込を拒否する -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM" crossorigin="anonymous" />
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="preload" as="style"
+      integrity="sha384-PPIZEGYM1v8zp5Py7UjFb79S58UeqCL9pYVnVPURKEqvioPROaVAJKKLzvH2rDnI" crossorigin="anonymous"
+      onload="this.onload=null;this.rel='stylesheet'" />
+<noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+      integrity="sha384-PPIZEGYM1v8zp5Py7UjFb79S58UeqCL9pYVnVPURKEqvioPROaVAJKKLzvH2rDnI" crossorigin="anonymous"></noscript>
 
 <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
-<link rel="preconnect" href="https://code.jquery.com" crossorigin>
-<link rel="preconnect" href="https://i.ytimg.com" crossorigin>
-  <link href="style.css?v=20260723c" rel="stylesheet" />
+<!-- code.jquery.com / i.ytimg.com へのpreconnectは削除: jQueryは未使用、サムネイルはローカル配信のため -->
+  <link href="style.css?v=20260724b" rel="stylesheet" />
 
 
 </head>
@@ -420,7 +429,7 @@
     h=d.documentElement,t=setTimeout(function(){h.className=h.className.replace(/\bwf-loading\b/g,"")+" wf-inactive";},config.scriptTimeout),tk=d.createElement("script"),f=false,s=d.getElementsByTagName("script")[0],a;h.className+=" wf-loading";tk.src='https://use.typekit.net/'+config.kitId+'.js';tk.async=true;tk.onload=tk.onreadystatechange=function(){a=this.readyState;if(f||a&&a!="complete"&&a!="loaded")return;f=true;clearTimeout(t);try{Typekit.load(config)}catch(e){}};s.parentNode.insertBefore(tk,s)
   })(document);
 </script>
-  <script src="main.js?v=20260723c" defer></script>
+  <script src="main.js?v=20260724b" defer></script>
 
   <script>
   // ---- Service Worker register (network-first) ----
@@ -438,7 +447,7 @@
     });
 
     window.addEventListener('load', function () {
-      navigator.serviceWorker.register('/sw.js?20260721a').then(function(reg) {
+      navigator.serviceWorker.register('/sw.js?20260724b').then(function(reg) {
         return navigator.serviceWorker.ready;
       }).then(function(reg) {
         if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
@@ -450,6 +459,13 @@
             }
           });
         });
+
+        // サムネイルの事前キャッシュ（オフライン用・約8MB）は、初回描画と
+        // 帯域を奪い合ってローディングがカクつかないよう、描画が落ち着いた
+        // 頃合いにSWへ依頼する（既にキャッシュ済みなら何もしない）。
+        setTimeout(function () {
+          if (reg.active) reg.active.postMessage({ type: 'PRECACHE_THUMBS' });
+        }, 6000);
       }).catch(console.error);
     });
   }

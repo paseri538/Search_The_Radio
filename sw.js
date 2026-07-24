@@ -1,5 +1,5 @@
 // キャッシュの名前を定義。バージョンを更新すると古いキャッシュは自動的に削除。
-const SW_VERSION = '20260723c';
+const SW_VERSION = '20260724b';
 const CACHE_NAME = `radio-cache-${SW_VERSION}`;
 
 
@@ -14,7 +14,12 @@ const CORE_ASSETS = [
   'keywords.json',
   'lucky-button.json',
   'history.json',
+  'kessokuband_watasi.json',
+  'links.json',
   'logo.png',
+  'logo.webp',
+  'thumb-fallback.svg',
+  'Impact.ttf',
   'favicon.ico',
   'apple-touch-icon.png',
   'site.webmanifest',
@@ -61,18 +66,38 @@ self.addEventListener('install', (event) => {
       }
     }
 
-    // 足りない分だけネットワークから個別に追加する。
-    // （addAllは1件の404で全体が失敗しSWのインストール自体が壊れるため、
-    //   画像が未配置の回があっても他のキャッシュは続行する）
+    // ★変更: 不足分のネットワーク取得はインストール時には行わない。
+    // 初回訪問時に約100枚を一斉ダウンロードすると、ページ本体の描画と
+    // 帯域・CPUを奪い合ってローディングアニメーションがカクつくため、
+    // ページ側が描画完了後に送る 'PRECACHE_THUMBS' メッセージで実行する。
+    console.log('[SW] Install done (thumbnail fetch deferred until page settles)');
+  })());
+});
+
+// 不足しているサムネイルをネットワークから取得してキャッシュする。
+// ページ描画が落ち着いた頃（index.htmlが遅延送信するメッセージ）に呼ばれる。
+async function precacheMissingThumbnails() {
+  try {
+    const cache = await caches.open(CACHE_NAME);
+    const thumbs = await getThumbnailAssets();
     const missing = [];
     for (const url of thumbs) {
       if (!(await cache.match(url))) missing.push(url);
     }
-    const results = await Promise.allSettled(missing.map(url => cache.add(url)));
-    const failed = results.filter(r => r.status === 'rejected').length;
-    console.log(`[SW] Thumbnails: ${thumbs.length - missing.length} reused, ${missing.length - failed} fetched, ${failed} failed`);
-  })());
-});
+    if (missing.length === 0) return;
+    // 帯域を占有しないよう4件ずつ順番に取得する。
+    // （1件の404で全体を止めないため cache.add の失敗は無視して続行）
+    let failed = 0;
+    for (let i = 0; i < missing.length; i += 4) {
+      const batch = missing.slice(i, i + 4).map(url => cache.add(url));
+      const results = await Promise.allSettled(batch);
+      failed += results.filter(r => r.status === 'rejected').length;
+    }
+    console.log(`[SW] Thumbnails: ${missing.length - failed} fetched, ${failed} failed`);
+  } catch (e) {
+    console.warn('[SW] Thumbnail precache failed:', e);
+  }
+}
 
 // 2. Service Workerの有効化処理
 self.addEventListener('activate', (event) => {
@@ -92,6 +117,13 @@ self.addEventListener('activate', (event) => {
 // 3. ネットワークリクエストへの介入処理
 self.addEventListener('fetch', (event) => {
   const { request } = event;
+
+  // GET以外（POST等）はキャッシュ対象外なので介入しない
+  if (request.method !== 'GET') return;
+
+  // http(s)以外（chrome-extension: 等）も介入しない
+  if (!request.url.startsWith('http')) return;
+
   const url = new URL(request.url);
 
   // JSONデータファイルは「Network First」
@@ -107,9 +139,14 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // ページのナビゲーションリクエスト (HTML) は「Network First」
+  // ページのナビゲーションリクエスト (HTML) は「キャッシュ即時表示＋裏で更新」。
+  // ★変更: 以前のNetwork Firstではネットワーク応答を待つ間ブラウザ既定の白画面が
+  // 表示され、カラーテーマ設定時に「一瞬白くチラつく」原因になっていた。
+  // キャッシュから即座に返すことでテーマ色を塗る早期スクリプトが最速で実行される。
+  // （HTMLの更新は裏で取得してキャッシュに反映し、SW更新時はページ側の
+  //   controllerchangeで自動リロードされるため、更新が届かなくなることはない）
   if (request.mode === 'navigate') {
-    event.respondWith(networkFirstStrategy(request));
+    event.respondWith(appShellStrategy(request));
     return;
   }
   
@@ -133,13 +170,40 @@ async function staleWhileRevalidateStrategy(request) {
     }
     return networkResponse;
   }).catch(err => {
-    // ネットワークエラーが発生した場合のフォールバック
+    // ネットワークエラー時: キャッシュも無い場合に undefined を respondWith に渡すと
+    // TypeError になるため、必ず有効な Response を返す
     console.warn(`[SW] Fetch failed for ${request.url}; relying on cache.`, err);
+    return new Response('', { status: 504, statusText: 'Gateway Timeout' });
   });
 
   // キャッシュがあればそれを返し、裏でネットワークリクエストを実行
   // キャッシュがなければネットワークリクエストの結果を待つ
   return cachedResponse || fetchPromise;
+}
+
+// アプリシェル戦略（ナビゲーション用）:
+// キャッシュ済みのトップページを即座に返して白画面をなくし、裏で最新版を取得して
+// キャッシュを更新する。キャッシュが無い（初回訪問など）場合のみネットワークを待つ。
+async function appShellStrategy(request) {
+  const cache = await caches.open(CACHE_NAME);
+  // ?q=... などクエリ付きURLでも同じアプリシェル(トップページ)を返す
+  const cached = await cache.match('/') || await cache.match('index.html');
+
+  const fetchPromise = fetch(request).then(networkResponse => {
+    if (networkResponse.ok) {
+      cache.put('/', networkResponse.clone());
+    }
+    return networkResponse;
+  }).catch(() => null);
+
+  if (cached) return cached;
+
+  const networkResponse = await fetchPromise;
+  return networkResponse || new Response('オフラインのため読み込めませんでした。', {
+    status: 503,
+    statusText: 'Service Unavailable',
+    headers: { 'Content-Type': 'text/plain; charset=utf-8' }
+  });
 }
 
 // Network First 戦略 (変更なし)
@@ -154,15 +218,26 @@ async function networkFirstStrategy(request) {
   } catch (error) {
     console.log('[SW] Network failed, falling back to cache for:', request.url);
     const cachedResponse = await caches.match(request);
-    // ページ自体(navigate)のリクエストが失敗した場合、トップページを返す
-    return cachedResponse || await caches.match('/');
+    // ページ自体(navigate)のリクエストが失敗した場合、トップページを返す。
+    // それも無い場合は undefined ではなく必ず有効な Response を返す（respondWithのTypeError防止）
+    return cachedResponse
+      || await caches.match('/')
+      || new Response('オフラインのため読み込めませんでした。', {
+           status: 503,
+           statusText: 'Service Unavailable',
+           headers: { 'Content-Type': 'text/plain; charset=utf-8' }
+         });
   }
 }
 
 
-// SKIP_WAITINGメッセージを受け取った際の処理
+// ページからのメッセージ処理
 self.addEventListener('message', (event) => {
-  if (event.data && event.data.type === 'SKIP_WAITING') {
+  if (!event.data) return;
+  if (event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
+  } else if (event.data.type === 'PRECACHE_THUMBS') {
+    // ページ描画が落ち着いた頃に呼ばれる、サムネイルの事前キャッシュ依頼
+    event.waitUntil(precacheMissingThumbnails());
   }
 });
