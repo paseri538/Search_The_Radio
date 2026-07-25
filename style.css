@@ -6398,8 +6398,12 @@ html.snap-hide-nav body::after {
   position: fixed;
   left: 0;
   right: 0;
-  bottom: 0;
-  height: calc(70px + env(safe-area-inset-bottom, 0px));
+  /* ★重要: bottom:0のみだと、バックグラウンド移行中にビューポートが縮んだ瞬間
+     （852→780px等）の写真で「縮んだビューポートの下端」までしか覆えず、
+     実画面の最下部にbodyの明るい色が写り込んで帯が残る。下へ300px延長して
+     ビューポートの変動に関係なく実画面の下端まで必ず覆う（はみ出しは無害） */
+  bottom: -300px;
+  height: calc(370px + env(safe-area-inset-bottom, 0px));
   background: var(--bg-color, #f9fafe);
   z-index: 3001;
   pointer-events: none;
