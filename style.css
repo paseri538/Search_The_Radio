@@ -1955,7 +1955,7 @@ body[class*="theme-"] .autocomplete { background: var(--btn-bg) !important; bord
 body[class*="theme-"] .autocomplete-item .match { color: var(--btn-main) !important; }
 body[class*="theme-"] .ts-btn { background-color: var(--active-filter) !important; color: var(--active-filter-text) !important; border-color: var(--active-filter) !important; }
 body[class*="theme-"] .loading-ball { background-color: var(--btn-main) !important; }
-body[class*="theme-"] #loading-screen { background: var(--bg-color) !important; }
+body[class*="theme-"] #loading-screen { background: var(--btn-bg) !important; } /* ページ実効背景と同色（起動時の帯防止） */
 body[class*="theme-"] .floating-panel { background: color-mix(in srgb, var(--bg-color), transparent 20%) !important; border-color: var(--history-card-bd) !important; }
 body[class*="theme-"] #theme-toggle-btn { background-color: var(--card-bg) !important; color: var(--text-color) !important; border: 1px solid var(--history-card-bd) !important; }
 body[class*="theme-"] .site-footer { color: var(--muted) !important; }
@@ -6362,9 +6362,9 @@ body.app-ready .pwa-bottom-nav { visibility: visible; }
    完全に同一色になり、iOSの起動処理でどのレイヤーが一瞬露出しても色差が無いため
    チラつきとして視認できない。app-ready（フェード開始）と同時に本来の --btn-bg へ戻る。
    （ダーク/ライトは元々スプラッシュとbodyが同色なので影響なし） */
-body[class*="theme-"]:not(.app-ready) {
-  background: var(--bg-color) !important;
-}
+/* ★撤去: 起動中のbodyを--bg-colorへ寄せるルールは削除。
+   現在は起動画面側（html/ローディング/スナップショット）をページ実効背景の--btn-bgに
+   統一したため、bodyは常に--btn-bgのままで全段階が同色になる */
 
 /* ★ボタン連打対応: ピンチズーム許可(アクセシビリティ対応)の副作用で、iOSが素早い
    2回目のタップを「ダブルタップズーム」と解釈してボタンのクリックを食べてしまい、
