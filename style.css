@@ -6424,3 +6424,14 @@ html.theme-switching *::before,
 html.theme-switching *::after {
   transition: none !important;
 }
+
+/* ★起動中の色統一（版ズレ耐性版）:
+   ローディング画面が表示されている間だけ、bodyをスプラッシュと同じ --bg-color にする。
+   JSが付与するクラスではなく「#loading-screen がbody直下に存在するか」を :has() で
+   直接条件にしているため、キャッシュの版ズレで古いJSと組み合わさっても
+   （ローディング画面の除去は全バージョン共通のため）暗色のまま固定される事故が起きない。
+   フェードアウト開始(.fadeout)と同時に通常色へ戻り、UIの出現と色が連続する。
+   :has() 非対応の古い環境ではこのルールが無視されるだけで、他の帯対策が引き続き働く。 */
+body[class*="theme-"]:has(> #loading-screen:not(.fadeout)) {
+  background: var(--bg-color) !important;
+}

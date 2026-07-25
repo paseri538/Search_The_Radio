@@ -1,5 +1,5 @@
 // キャッシュの名前を定義。バージョンを更新すると古いキャッシュは自動的に削除。
-const SW_VERSION = '20260726h';
+const SW_VERSION = '20260726j';
 const CACHE_NAME = `radio-cache-${SW_VERSION}`;
 
 
@@ -132,26 +132,18 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // CSS, JS, manifestなどは「Stale-While-Revalidate」
-  const swrExtensions = ['.css', '.js', '.webmanifest'];
-  if (swrExtensions.some(ext => url.pathname.endsWith(ext))) {
-    event.respondWith(staleWhileRevalidateStrategy(request));
-    return;
-  }
-
-  // ページのナビゲーションリクエスト (HTML) は「キャッシュ即時表示＋裏で更新」。
-  // ★変更: 以前のNetwork Firstではネットワーク応答を待つ間ブラウザ既定の白画面が
-  // 表示され、カラーテーマ設定時に「一瞬白くチラつく」原因になっていた。
-  // キャッシュから即座に返すことでテーマ色を塗る早期スクリプトが最速で実行される。
-  // （HTMLの更新は裏で取得してキャッシュに反映し、SW更新時はページ側の
-  //   controllerchangeで自動リロードされるため、更新が届かなくなることはない）
+  // ★アトミック配信: CSS/JS/manifest/フォント/画像は「キャッシュ優先・裏更新なし」。
+  // 以前のStale-While-Revalidateは、GitHub PagesがURLの?v=クエリを無視して常に
+  // 最新の中身を返すため、古いURLのキャッシュ項目を個別に新しい中身へ上書きしてしまい、
+  // HTML・CSS・JSの版がバラバラに混ざったキャッシュができる事故が起きていた
+  // （Chromeで「カラーが壊れて強制リロードでも直らない」原因）。
+  // このSWバージョンのキャッシュはインストール時に一括取得した組で固定し、
+  // 更新は「新SWのインストール→自動リロード」の一本に統一する。
   if (request.mode === 'navigate') {
     event.respondWith(appShellStrategy(request));
     return;
   }
-  
-  // 上記以外のアセット（フォント、ローカル画像など）は Stale-While-Revalidate を使う
-  event.respondWith(staleWhileRevalidateStrategy(request));
+  event.respondWith(cacheFirstStrategy(request));
 });
 
 
@@ -159,51 +151,47 @@ self.addEventListener('fetch', (event) => {
 // ★★★ キャッシュ戦略の関数群 ★★★
 // ===================================================
 
-// Stale-While-Revalidate 戦略 (Cache First戦略は不要になったので削除してOKです)
-async function staleWhileRevalidateStrategy(request) {
+// キャッシュ優先戦略（静的アセット用）:
+// このSWバージョンのインストール時に一括取得したものだけを返す（裏での個別上書きはしない）。
+// キャッシュに無いもの（新サムネイル等）はネットワークから取得してキャッシュに追加する。
+async function cacheFirstStrategy(request) {
   const cache = await caches.open(CACHE_NAME);
   const cachedResponse = await cache.match(request);
-  
-  const fetchPromise = fetch(request).then(networkResponse => {
+  if (cachedResponse) return cachedResponse;
+  try {
+    const networkResponse = await fetch(request);
     if (networkResponse.ok) {
       cache.put(request, networkResponse.clone());
     }
     return networkResponse;
-  }).catch(err => {
-    // ネットワークエラー時: キャッシュも無い場合に undefined を respondWith に渡すと
-    // TypeError になるため、必ず有効な Response を返す
-    console.warn(`[SW] Fetch failed for ${request.url}; relying on cache.`, err);
+  } catch (err) {
+    // respondWith に undefined を渡すと TypeError になるため必ず Response を返す
+    console.warn(`[SW] Fetch failed for ${request.url}`, err);
     return new Response('', { status: 504, statusText: 'Gateway Timeout' });
-  });
-
-  // キャッシュがあればそれを返し、裏でネットワークリクエストを実行
-  // キャッシュがなければネットワークリクエストの結果を待つ
-  return cachedResponse || fetchPromise;
+  }
 }
 
 // アプリシェル戦略（ナビゲーション用）:
-// キャッシュ済みのトップページを即座に返して白画面をなくし、裏で最新版を取得して
-// キャッシュを更新する。キャッシュが無い（初回訪問など）場合のみネットワークを待つ。
+// キャッシュ済みのトップページを即座に返して白画面をなくす。
+// ★変更: 以前あった「裏で最新版を取得してキャッシュ上書き」は廃止した。
+// HTMLだけが先に新しくなると、同キャッシュ内のCSS/JSと版がズレて配色崩れ等を起こすため。
+// 更新は「新SWのインストール（新キャッシュへ一括取得）→自動リロード」で行われる。
 async function appShellStrategy(request) {
   const cache = await caches.open(CACHE_NAME);
   // ?q=... などクエリ付きURLでも同じアプリシェル(トップページ)を返す
   const cached = await cache.match('/') || await cache.match('index.html');
-
-  const fetchPromise = fetch(request).then(networkResponse => {
-    if (networkResponse.ok) {
-      cache.put('/', networkResponse.clone());
-    }
-    return networkResponse;
-  }).catch(() => null);
-
   if (cached) return cached;
 
-  const networkResponse = await fetchPromise;
-  return networkResponse || new Response('オフラインのため読み込めませんでした。', {
-    status: 503,
-    statusText: 'Service Unavailable',
-    headers: { 'Content-Type': 'text/plain; charset=utf-8' }
-  });
+  try {
+    const networkResponse = await fetch(request);
+    return networkResponse;
+  } catch (e) {
+    return new Response('オフラインのため読み込めませんでした。', {
+      status: 503,
+      statusText: 'Service Unavailable',
+      headers: { 'Content-Type': 'text/plain; charset=utf-8' }
+    });
+  }
 }
 
 // Network First 戦略 (変更なし)

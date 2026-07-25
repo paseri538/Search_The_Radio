@@ -888,7 +888,22 @@ function resetSearch() {
         if (!txt || !window.__APP_VERSION) return;
         const m = txt.match(/SW_VERSION\s*=\s*'([^']+)'/);
         if (m && m[1] && m[1] !== window.__APP_VERSION) {
-          navigator.serviceWorker.register('/sw.js?' + m[1]);
+          // ★強制反映の保険付き: 通常は新SWのactivate→controllerchangeで自動リロード
+          // されるが、万一そのイベントが来ない環境でも、新SWが有効化されたのを
+          // 見届けてから必ずリロードして更新を反映する（二重リロードは
+          // controllerchange側が先に走れば本タイマーはページごと破棄されるため起きない）
+          navigator.serviceWorker.register('/sw.js?' + m[1]).then(reg => {
+            const w = reg.installing || reg.waiting;
+            if (!w) return;
+            w.addEventListener('statechange', () => {
+              if (w.state === 'activated') {
+                setTimeout(() => {
+                  if (window.__showSplashCover) { try { window.__showSplashCover(); } catch (e) {} }
+                  window.location.reload();
+                }, 400);
+              }
+            });
+          }).catch(() => {});
         }
       })
       .catch(() => {}); // オフライン等は無視（通常のリセット動作は既に完了している）
