@@ -946,7 +946,8 @@ function updateFavStar(li) {
   icon.classList.toggle('fa-regular', !active);
   const badge = favBtn.querySelector('.fav-count');
   if (badge) {
-    badge.textContent = count;
+    // 100件以上は「99+」表示にして、バッジが★ボタンを覆い尽くすのを防ぐ
+    badge.textContent = count > 99 ? '99+' : count;
     badge.hidden = !active;
   }
 }
@@ -966,12 +967,8 @@ function getEpisodeGuestText(it) {
 
 function renderResults(arr, page = 1, originalQuery = null, suggestions = []) {
   const ul = document.getElementById("results");
-  // ★カード出現アニメーション（rise）は初回描画のみ再生する。
-  // 以前は再描画のたびに全カードが最大0.6秒ゴースト状態（特にダークテーマではほぼ
-  // 真っ黒）になり、「連打が制限される」「画面下がチラつく」「動作が不安定」と
-  // 感じられる主因になっていた。2回目以降は即時表示。
-  if (!renderResults._animatedOnce) renderResults._animatedOnce = true;
-  else ul.classList.add('no-entrance');
+  // カード出現アニメーションは毎回再生する（タップした手応えとして必要、という要望）。
+  // 空白時間が長くならないよう、段差ディレイの上限はCSS側で制限している。
   ul.innerHTML = "";
 
   if (showFavoritesOnly) {

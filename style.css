@@ -708,7 +708,10 @@ body.dark-mode #loading-screen {
 @keyframes rise{ from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:translateY(0)} }
 #results .episode-item{
   animation:rise .24s ease both;
-  animation-delay: calc(var(--i) * 20ms);
+  /* 段差ディレイは最初の8枚まで（最大160ms）。以前は20枚分（最大380ms）待たされ、
+     連打時に画面全体が長くゴースト状態になり「押せていない」ように見えた。
+     見た目の段差感は維持しつつ、全カードが約0.4秒で出揃う */
+  animation-delay: calc(min(var(--i), 8) * 20ms);
 }
 
 /* === Dark mode variable overrides for hover colors === */
@@ -5578,16 +5581,9 @@ body[class*="theme-"] .search-card {
   display: flex;
   align-items: stretch;
   gap: 8px;
-  /* 登録数が多いとき、画面外の行のレイアウト・描画を省略して軽くする
-     （非対応環境では単に無視される。66pxは1行分の実測高さ） */
-  content-visibility: auto;
-  contain-intrinsic-size: auto 66px;
-}
-@media (hover: hover) {
-  /* content-visibility:auto は paint 収納を伴い、ホバー時の浮き上がり影を
-     項目の枠で切ってしまう。ホバー中だけ収納を解除して影を全周表示する
-     （画面外項目のスキップ最適化はホバーしていない行で維持される）。 */
-  .ts-item:hover { content-visibility: visible; }
+  /* ★撤去: ここにあった content-visibility: auto（画面外行の描画省略）は、
+     iOSで高速スクロール時に行の描画が間に合わず「途切れるように表示される」
+     原因になっていたため削除した。行は軽量なので省略なしでも十分速い。 */
 }
 .ts-play {
   flex: 1;
@@ -6381,9 +6377,8 @@ body { touch-action: manipulation; }
    「下部ボタンちらつき」と復帰時のロゴ表示を同時に防ぐ */
 html.snap-hide-nav .pwa-bottom-nav { visibility: hidden !important; }
 
-/* ★カード出現アニメーションは初回描画のみ（main.jsが2回目以降 no-entrance を付与）。
-   再描画のたびの全カードゴースト状態が「チラつき・連打制限・不安定」の体感原因だった */
-#results.no-entrance .episode-item { animation: none !important; }
+/* ★方針変更: 出現アニメーションは毎回再生する（タップの手応えとして必要という要望）。
+   代わりに段差ディレイへ上限を設けて空白時間を短縮した（#results .episode-item 参照） */
 
 /* ★タイムスタンプ一覧のスクロール安定化: リスト端でのスクロールが背景ページへ
    連鎖してラバーバンドが二重にかかり、動きが不安定に見えるのを防ぐ */
