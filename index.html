@@ -71,6 +71,16 @@
         document.write('<meta name="theme-color" id="theme-color-meta" content="' + color + '">');
         document.write('<meta name="apple-mobile-web-app-status-bar-style" id="status-bar-style" content="' + statusBarStyle + '">');
 
+        /* ★ダークテーマの起動時白フラッシュ対策:
+           ページが最初の描画をする前の「エンジン既定のキャンバス色」は color-scheme と
+           OSの外観設定で決まり、端末がライトモードだと白になる。ダークテーマ利用時は
+           color-scheme を dark に固定してキャンバス自体を黒にし、起動の一瞬の白を消す。
+           （従来の静的 <meta name="color-scheme" content="dark light"> はここで動的生成に置換） */
+        document.write('<meta name="color-scheme" id="color-scheme-meta" content="' + (theme === 'dark' ? 'dark' : 'light') + '">');
+        if (theme === 'dark') {
+          document.documentElement.style.colorScheme = 'dark';
+        }
+
         // 最初の1フレームから正しい色で塗るため、html要素の背景を即座にインライン指定する。
         // document.write によるstyle注入やstyle.css適用より確実に早く効くので、
         // テーマがホワイト以外のとき初回描画で一瞬白くなるチラつきを防ぐ。
@@ -127,7 +137,7 @@
 
   <title>さーち・ざ・らじお！ - 「ぼっち・ざ・らじお！」非公式検索エンジン</title>
   
-  <meta name="color-scheme" content="dark light">
+  <!-- color-scheme はテーマに応じて先頭のスクリプトが動的に出力する（ダーク起動時の白フラッシュ対策） -->
 
 <meta property="og:title" content="さーち・ざ・らじお！ - 「ぼっち・ざ・らじお！」非公式検索エンジン" />
 <meta property="og:description" content="『ぼっち・ざ・らじお！』のエピソードを出演者・コーナー・年でサクッと検索。お気に入り機能も対応。" />
@@ -156,7 +166,7 @@
 <meta name="apple-mobile-web-app-title" content="さーち・ざ・らじお！">
 
 
-<link rel="manifest" href="./site.webmanifest?v=20260725e">
+<link rel="manifest" href="./site.webmanifest?v=20260725f">
 
   
   <!-- SRI(integrity): CDN側でファイルが改ざんされた場合にブラウザが読込を拒否する -->
@@ -173,7 +183,7 @@
 <link rel="preconnect" href="https://use.typekit.net" crossorigin>
 <link rel="preconnect" href="https://p.typekit.net" crossorigin>
 <!-- code.jquery.com / i.ytimg.com へのpreconnectは削除: jQueryは未使用、サムネイルはローカル配信のため -->
-  <link href="style.css?v=20260725e" rel="stylesheet" />
+  <link href="style.css?v=20260725f" rel="stylesheet" />
 
 
 </head>
@@ -463,13 +473,13 @@
     h=d.documentElement,t=setTimeout(function(){h.className=h.className.replace(/\bwf-loading\b/g,"")+" wf-inactive";},config.scriptTimeout),tk=d.createElement("script"),f=false,s=d.getElementsByTagName("script")[0],a;h.className+=" wf-loading";tk.src='https://use.typekit.net/'+config.kitId+'.js';tk.async=true;tk.onload=tk.onreadystatechange=function(){a=this.readyState;if(f||a&&a!="complete"&&a!="loaded")return;f=true;clearTimeout(t);try{Typekit.load(config)}catch(e){}};s.parentNode.insertBefore(tk,s)
   })(document);
 </script>
-  <script src="main.js?v=20260725e" defer></script>
+  <script src="main.js?v=20260725f" defer></script>
 
   <script>
   // ---- Service Worker register (network-first) ----
   // このページ自身のバージョン（デプロイごとに他の "20260724x" 表記と一括で更新される）。
   // リセットボタンの強制更新チェック（main.js）が最新SWとの差分判定に使う。
-  window.__APP_VERSION = '20260725e';
+  window.__APP_VERSION = '20260725f';
 
   // ★起動時ちらつき対策: 「ローディング→UIが一瞬見える→更新リロード→再ローディング」の
   // UI露出をなくすため、SWの更新チェックが決着するまでローディング画面を保持する
@@ -495,7 +505,7 @@
     });
 
     window.addEventListener('load', function () {
-      navigator.serviceWorker.register('/sw.js?20260725e').then(function(reg) {
+      navigator.serviceWorker.register('/sw.js?20260725f').then(function(reg) {
         return navigator.serviceWorker.ready;
       }).then(function(reg) {
         if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });

@@ -2073,6 +2073,12 @@ function setupThemeSwitcher() {
     // html要素のインライン背景（初回チラつき防止用）もテーマ切替に追従させ、
     // カラーテーマ→ライトへ戻したときに古い色が残らないようにする。
     document.documentElement.style.backgroundColor = bodyBg || '#f9fafe';
+
+    // color-scheme もテーマに追従（ダーク時はエンジン既定色を黒にして
+    // 次回起動時の一瞬の白を防ぐ。index.html冒頭の動的メタと同期）
+    const csMeta = document.getElementById('color-scheme-meta');
+    if (csMeta) csMeta.content = themeName === 'dark' ? 'dark' : 'light';
+    document.documentElement.style.colorScheme = themeName === 'dark' ? 'dark' : 'light';
   };
 
   toggleBtn.addEventListener('click', e => { e.stopPropagation(); panel.classList.toggle('show'); });
