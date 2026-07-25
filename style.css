@@ -1955,7 +1955,7 @@ body[class*="theme-"] .autocomplete { background: var(--btn-bg) !important; bord
 body[class*="theme-"] .autocomplete-item .match { color: var(--btn-main) !important; }
 body[class*="theme-"] .ts-btn { background-color: var(--active-filter) !important; color: var(--active-filter-text) !important; border-color: var(--active-filter) !important; }
 body[class*="theme-"] .loading-ball { background-color: var(--btn-main) !important; }
-body[class*="theme-"] #loading-screen { background: var(--btn-bg) !important; } /* ページ実効背景と同色（起動時の帯防止） */
+body[class*="theme-"] #loading-screen { background: var(--bg-color) !important; }
 body[class*="theme-"] .floating-panel { background: color-mix(in srgb, var(--bg-color), transparent 20%) !important; border-color: var(--history-card-bd) !important; }
 body[class*="theme-"] #theme-toggle-btn { background-color: var(--card-bg) !important; color: var(--text-color) !important; border: 1px solid var(--history-card-bd) !important; }
 body[class*="theme-"] .site-footer { color: var(--muted) !important; }
@@ -6362,9 +6362,9 @@ body.app-ready .pwa-bottom-nav { visibility: visible; }
    完全に同一色になり、iOSの起動処理でどのレイヤーが一瞬露出しても色差が無いため
    チラつきとして視認できない。app-ready（フェード開始）と同時に本来の --btn-bg へ戻る。
    （ダーク/ライトは元々スプラッシュとbodyが同色なので影響なし） */
-/* ★撤去: 起動中のbodyを--bg-colorへ寄せるルールは削除。
-   現在は起動画面側（html/ローディング/スナップショット）をページ実効背景の--btn-bgに
-   統一したため、bodyは常に--btn-bgのままで全段階が同色になる */
+body[class*="theme-"]:not(.app-ready) {
+  background: var(--bg-color) !important;
+}
 
 /* ★ボタン連打対応: ピンチズーム許可(アクセシビリティ対応)の副作用で、iOSが素早い
    2回目のタップを「ダブルタップズーム」と解釈してボタンのクリックを食べてしまい、
@@ -6386,3 +6386,23 @@ html.snap-hide-nav .pwa-bottom-nav { visibility: hidden !important; }
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
 }
+
+
+/* ★スナップショット用の下部ストリップ:
+   バックグラウンド移行時（html.snap-hide-nav中）に、隠したナビの位置へ
+   ローディング画面と同色（--bg-color）の帯を重ねてからOSに写真を撮らせる。
+   コールド起動時の「写真の下部（bodyの明るい色）→ローディング（暗い色）」の
+   色差の帯が構造的に発生しなくなる。復帰時はクラスが外れて即消える。 */
+html.snap-hide-nav body::after {
+  content: "";
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: calc(70px + env(safe-area-inset-bottom, 0px));
+  background: var(--bg-color, #f9fafe);
+  z-index: 3001;
+  pointer-events: none;
+}
+/* ダークモードは--bg-colorを定義していないため明示指定（ローディング画面と同じ黒） */
+html.snap-hide-nav body.dark-mode::after { background: #000000; }

@@ -29,8 +29,7 @@
         /* theme-color(=color)はiOSがステータスバーの背景色に使い、その明るさで
            時計の文字色(黒/白)を自動決定する。明るいテーマ色をそのまま渡すと黒文字に
            なってしまうため、ステータスバーには白文字判定になる濃色を渡す。
-           bodyBgはページの実効背景色（--btn-bg）。ローディング画面・起動スナップショット・
-           本体背景を同色に揃え、起動時に下部へ色差の帯が見えるのを防ぐ。main.js側と同期すること。 */
+           ページ背景(bodyBg)は従来どおり明るいテーマ色のまま。main.js側と同期すること。 */
         switch (theme) {
           case 'dark':
             color = '#000000';
@@ -40,31 +39,31 @@
           case 'pink':
             color = '#8f3a55';
             statusBarStyle = 'black-translucent';
-            bodyBg = '#ff85ab';
+            bodyBg = '#ff6496';
             ballColor = '#ffffff';
             break;
           case 'yellow':
             color = '#8a6900';
             statusBarStyle = 'black-translucent';
-            bodyBg = '#ffca2a';
+            bodyBg = '#fabe00';
             ballColor = '#ffffff';
             break;
           case 'blue':
             color = '#00477c';
             statusBarStyle = 'black-translucent';
-            bodyBg = '#1982d2';
+            bodyBg = '#006ebe';
             ballColor = '#ffffff';
             break;
           case 'red':
             color = '#8c002b';
             statusBarStyle = 'black-translucent';
-            bodyBg = '#f32263';
+            bodyBg = '#e60046';
             ballColor = '#ffffff';
             break;
           case 'green':
             color = '#0b5f4e';
             statusBarStyle = 'black-translucent';
-            bodyBg = '#16b896';
+            bodyBg = '#13a286';
             ballColor = '#ffffff';
             break;
         }
@@ -173,7 +172,7 @@
      ※iOSはホーム画面追加時にこの設定を焼き込むため、反映にはアプリの再追加が必要 -->
 
 
-<link rel="manifest" href="./site.webmanifest?v=20260726b">
+<link rel="manifest" href="./site.webmanifest?v=20260726c">
 
   
   <!-- SRI(integrity): CDN側でファイルが改ざんされた場合にブラウザが読込を拒否する -->
@@ -190,7 +189,7 @@
 <link rel="preconnect" href="https://use.typekit.net" crossorigin>
 <link rel="preconnect" href="https://p.typekit.net" crossorigin>
 <!-- code.jquery.com / i.ytimg.com へのpreconnectは削除: jQueryは未使用、サムネイルはローカル配信のため -->
-  <link href="style.css?v=20260726b" rel="stylesheet" />
+  <link href="style.css?v=20260726c" rel="stylesheet" />
 
 
 </head>
@@ -480,13 +479,13 @@
     h=d.documentElement,t=setTimeout(function(){h.className=h.className.replace(/\bwf-loading\b/g,"")+" wf-inactive";},config.scriptTimeout),tk=d.createElement("script"),f=false,s=d.getElementsByTagName("script")[0],a;h.className+=" wf-loading";tk.src='https://use.typekit.net/'+config.kitId+'.js';tk.async=true;tk.onload=tk.onreadystatechange=function(){a=this.readyState;if(f||a&&a!="complete"&&a!="loaded")return;f=true;clearTimeout(t);try{Typekit.load(config)}catch(e){}};s.parentNode.insertBefore(tk,s)
   })(document);
 </script>
-  <script src="main.js?v=20260726b" defer></script>
+  <script src="main.js?v=20260726c" defer></script>
 
   <script>
   // ---- Service Worker register (network-first) ----
   // このページ自身のバージョン（デプロイごとに他の "20260724x" 表記と一括で更新される）。
   // リセットボタンの強制更新チェック（main.js）が最新SWとの差分判定に使う。
-  window.__APP_VERSION = '20260726b';
+  window.__APP_VERSION = '20260726c';
 
   // ★起動時ちらつき対策: 「ローディング→UIが一瞬見える→更新リロード→再ローディング」の
   // UI露出をなくすため、SWの更新チェックが決着するまでローディング画面を保持する
@@ -512,7 +511,7 @@
     });
 
     window.addEventListener('load', function () {
-      navigator.serviceWorker.register('/sw.js?20260726b').then(function(reg) {
+      navigator.serviceWorker.register('/sw.js?20260726c').then(function(reg) {
         return navigator.serviceWorker.ready;
       }).then(function(reg) {
         if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });

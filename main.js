@@ -2057,11 +2057,11 @@ function setupThemeSwitcher() {
     let bodyBg = '';
     switch (themeName) {
       case 'dark':   bodyBg = '#000000'; break;
-      case 'pink':   bodyBg = '#ff85ab'; break;
-      case 'yellow': bodyBg = '#ffca2a'; break;
-      case 'blue':   bodyBg = '#1982d2'; break;
-      case 'red':    bodyBg = '#f32263'; break;
-      case 'green':  bodyBg = '#16b896'; break;
+      case 'pink':   bodyBg = '#ff6496'; break;
+      case 'yellow': bodyBg = '#fabe00'; break;
+      case 'blue':   bodyBg = '#006ebe'; break;
+      case 'red':    bodyBg = '#e60046'; break;
+      case 'green':  bodyBg = '#13a286'; break;
     }
 
     const earlyStyle = document.getElementById('early-theme-style');
