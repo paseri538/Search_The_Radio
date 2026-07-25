@@ -6380,3 +6380,14 @@ body { touch-action: manipulation; }
    OSが保存する画面写真から下部ナビを消し、コールド起動時の
    「下部ボタンちらつき」と復帰時のロゴ表示を同時に防ぐ */
 html.snap-hide-nav .pwa-bottom-nav { visibility: hidden !important; }
+
+/* ★カード出現アニメーションは初回描画のみ（main.jsが2回目以降 no-entrance を付与）。
+   再描画のたびの全カードゴースト状態が「チラつき・連打制限・不安定」の体感原因だった */
+#results.no-entrance .episode-item { animation: none !important; }
+
+/* ★タイムスタンプ一覧のスクロール安定化: リスト端でのスクロールが背景ページへ
+   連鎖してラバーバンドが二重にかかり、動きが不安定に見えるのを防ぐ */
+.ts-body {
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}

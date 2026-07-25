@@ -966,6 +966,12 @@ function getEpisodeGuestText(it) {
 
 function renderResults(arr, page = 1, originalQuery = null, suggestions = []) {
   const ul = document.getElementById("results");
+  // ★カード出現アニメーション（rise）は初回描画のみ再生する。
+  // 以前は再描画のたびに全カードが最大0.6秒ゴースト状態（特にダークテーマではほぼ
+  // 真っ黒）になり、「連打が制限される」「画面下がチラつく」「動作が不安定」と
+  // 感じられる主因になっていた。2回目以降は即時表示。
+  if (!renderResults._animatedOnce) renderResults._animatedOnce = true;
+  else ul.classList.add('no-entrance');
   ul.innerHTML = "";
 
   if (showFavoritesOnly) {
