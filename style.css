@@ -6416,3 +6416,11 @@ html.snap-hide-nav body::after {
 }
 /* ダークモードは--bg-colorを定義していないため明示指定（ローディング画面と同じ黒） */
 html.snap-hide-nav body.dark-mode::after { background: #000000; }
+
+/* ★テーマ切替中はトランジションを無効化（main.jsのapplyThemeが付与）。
+   要素ごとに違う速度で色が変わって一瞬混在配色に見えるのを防ぎ、一斉に切り替える */
+html.theme-switching *,
+html.theme-switching *::before,
+html.theme-switching *::after {
+  transition: none !important;
+}

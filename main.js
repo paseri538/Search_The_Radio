@@ -2021,6 +2021,13 @@ function setupThemeSwitcher() {
   toggleBtn.classList.toggle('is-active', panel.classList.contains('show'));
 
   const applyTheme = (themeName, opts = {}) => {
+    // ★切替時の混色防止: 各要素の色トランジションが個別に走ると、切替の一瞬
+    // 「旧テーマと新テーマが混ざった配色」に見える。切替中だけ全トランジションを
+    // 止めて、全要素を同一フレームで一斉に切り替える。
+    const root = document.documentElement;
+    root.classList.add('theme-switching');
+    requestAnimationFrame(() => requestAnimationFrame(() => root.classList.remove('theme-switching')));
+
     document.body.classList.remove(...allThemeClasses);
     if (themeName === 'dark') document.body.classList.add('dark-mode');
     else if (themeName && themeName !== 'light') document.body.classList.add(`theme-${themeName}`);

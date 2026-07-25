@@ -179,7 +179,7 @@
      チラつき要因はすべて対策済み） -->
 
 
-<link rel="manifest" href="./site.webmanifest?v=20260726g">
+<link rel="manifest" href="./site.webmanifest?v=20260726h">
 
   
   <!-- SRI(integrity): CDN側でファイルが改ざんされた場合にブラウザが読込を拒否する -->
@@ -196,11 +196,25 @@
 <link rel="preconnect" href="https://use.typekit.net" crossorigin>
 <link rel="preconnect" href="https://p.typekit.net" crossorigin>
 <!-- code.jquery.com / i.ytimg.com へのpreconnectは削除: jQueryは未使用、サムネイルはローカル配信のため -->
-  <link href="style.css?v=20260726g" rel="stylesheet" />
+  <link href="style.css?v=20260726h" rel="stylesheet" />
 
 
 </head>
 <body>
+  <script>
+    /* ★テーマクラスの即時付与:
+       従来はデータ読込後のsetupThemeSwitcherで初めてbodyへテーマクラスが付くため、
+       それまで「背景だけテーマ色・要素は無テーマ（OSダーク時は混在配色）」の窓があり、
+       PC等で一瞬カラーが混ざって見えることがあった。body生成直後にここで付与し、
+       最初の描画からテーマ配色を確定させる（後続のapplyThemeは同じクラスを再適用するだけ） */
+    (function () {
+      try {
+        var t = localStorage.getItem('site_theme_v1') || 'light';
+        if (t === 'dark') document.body.classList.add('dark-mode');
+        else if (t !== 'light') document.body.classList.add('theme-' + t);
+      } catch (e) {}
+    })();
+  </script>
   <div id="rcModal" style="display:none; position:fixed; z-index:3000; left:0; top:0; width:100vw; height:100vh; background:rgba(0,0,0,0.22); backdrop-filter:blur(2px); align-items:center; justify-content:center;">
     <div style="background:#f09110; color:#222; border-radius:15px; box-shadow:0 6px 22px -6px #3335; max-width:88vw; width:320px; padding:30px 18px 22px 18px; margin:auto; text-align:center; position:relative;">
       <div style="font-size:1.1em; margin-top:10px;">お前の事、ちゃんと見てるからな。</div>
@@ -486,13 +500,13 @@
     h=d.documentElement,t=setTimeout(function(){h.className=h.className.replace(/\bwf-loading\b/g,"")+" wf-inactive";},config.scriptTimeout),tk=d.createElement("script"),f=false,s=d.getElementsByTagName("script")[0],a;h.className+=" wf-loading";tk.src='https://use.typekit.net/'+config.kitId+'.js';tk.async=true;tk.onload=tk.onreadystatechange=function(){a=this.readyState;if(f||a&&a!="complete"&&a!="loaded")return;f=true;clearTimeout(t);try{Typekit.load(config)}catch(e){}};s.parentNode.insertBefore(tk,s)
   })(document);
 </script>
-  <script src="main.js?v=20260726g" defer></script>
+  <script src="main.js?v=20260726h" defer></script>
 
   <script>
   // ---- Service Worker register (network-first) ----
   // このページ自身のバージョン（デプロイごとに他の "20260724x" 表記と一括で更新される）。
   // リセットボタンの強制更新チェック（main.js）が最新SWとの差分判定に使う。
-  window.__APP_VERSION = '20260726g';
+  window.__APP_VERSION = '20260726h';
 
   // ★起動時ちらつき対策: 「ローディング→UIが一瞬見える→更新リロード→再ローディング」の
   // UI露出をなくすため、SWの更新チェックが決着するまでローディング画面を保持する
@@ -518,7 +532,7 @@
     });
 
     window.addEventListener('load', function () {
-      navigator.serviceWorker.register('/sw.js?20260726g').then(function(reg) {
+      navigator.serviceWorker.register('/sw.js?20260726h').then(function(reg) {
         return navigator.serviceWorker.ready;
       }).then(function(reg) {
         if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
