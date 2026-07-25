@@ -6369,3 +6369,9 @@ body.app-ready .pwa-bottom-nav { visibility: visible; }
 body[class*="theme-"]:not(.app-ready) {
   background: var(--bg-color) !important;
 }
+
+/* ★ボタン連打対応: ピンチズーム許可(アクセシビリティ対応)の副作用で、iOSが素早い
+   2回目のタップを「ダブルタップズーム」と解釈してボタンのクリックを食べてしまい、
+   お気に入り・リセット等が連打できなくなっていた。manipulation はダブルタップズーム
+   だけを無効化し、ピンチズームとスクロールはそのまま使える。 */
+body { touch-action: manipulation; }

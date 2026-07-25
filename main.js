@@ -3394,31 +3394,14 @@ window.__hideSplashCover = function () {
       __buildSplashCover();
     });
 
-    // 復帰時のカバー解除:
-    // カラーテーマ（ステータスバーがblack-translucent＝全画面Webビュー）では、
-    // 復帰直後にiOSがビューポート高さを再計算し、その最中はfixed配置の下部ナビが
-    // 一瞬ずれて合成されて「ちらつき」に見える。そこで black-translucent の時だけ、
-    // ビューポートが安定する（高さが約100ms変化しない）まで最大0.5秒カバーを保持する。
-    // スナップショット（=スプラッシュ）→カバー（=スプラッシュ）→UI と連続して見える。
-    // ホワイトテーマは固定レイアウトで再計算が起きないため、従来どおり即解除。
+    // 復帰時のカバー解除: 即時に外す。
+    // ★変更: 以前はカラーテーマで最大0.5秒カバーを保持していたが、
+    // 「復帰のたびに一瞬ロゴが表示される」という指摘を受けて即時解除に戻した。
+    // （復帰アニメーション中にOSが表示するスナップショット由来の一瞬のロゴは、
+    //   起動時ちらつき防止とのトレードオフで残る。帯や色ズレはver.rの
+    //   起動中レイヤー同色化で防いでいるため、保持は不要になった）
     const releaseSplashCover = () => {
-      if (!__splashCoverEl || __splashCoverEl.style.display === 'none') return;
-      const statusBar = document.getElementById('status-bar-style');
-      if (!statusBar || statusBar.content !== 'black-translucent') {
-        window.__hideSplashCover();
-        return;
-      }
-      let lastH = window.innerHeight;
-      let stable = 0;
-      const t0 = performance.now();
-      const tick = () => {
-        if (!__splashCoverEl || __splashCoverEl.style.display === 'none') return; // 既に解除済み
-        if (window.innerHeight === lastH) stable++;
-        else { stable = 0; lastH = window.innerHeight; }
-        if (stable >= 6 || performance.now() - t0 > 500) { window.__hideSplashCover(); return; }
-        requestAnimationFrame(tick);
-      };
-      requestAnimationFrame(tick);
+      window.__hideSplashCover();
     };
 
     // バックグラウンド移行時はスプラッシュカバーを被せてスナップショットを整える。
