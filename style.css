@@ -6424,6 +6424,19 @@ html.theme-switching *::before,
 html.theme-switching *::after {
   transition: none !important;
 }
+/* 上のユニバーサル指定はIDセレクタの transition !important（コントロールボタンの
+   共通ルール）に詳細度で負けるため、該当ボタンはID級で明示的に上書きする。
+   これがないと、お気に入り・ランダム・再生リスト作成等のボタンだけ
+   テーマ切替時に0.1〜0.2秒遅れて色が変わる */
+html.theme-switching #filterToggleBtn,
+html.theme-switching #favOnlyToggleBtn,
+html.theme-switching #randomBtn,
+html.theme-switching #createPlaylistBtn,
+html.theme-switching #mainResetBtn,
+html.theme-switching #sortSelect,
+html.theme-switching .reset-btn {
+  transition: none !important;
+}
 
 /* ★起動中の色統一（版ズレ耐性版）:
    ローディング画面が表示されている間だけ、bodyをスプラッシュと同じ --bg-color にする。
