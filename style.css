@@ -6349,8 +6349,13 @@ body[class*="theme-"] .searchbox-select option {
    ずれ、最前面のローディング画面より先に下部ナビが一瞬描画されることがある。
    ローディングが終わる（main.jsがbodyにapp-readyを付与する）までナビ自体を不可視にして、
    合成順に関係なく絶対に見えないようにする。 */
-.pwa-bottom-nav { visibility: hidden; }
-body.app-ready .pwa-bottom-nav { visibility: visible; }
+.pwa-bottom-nav {
+  visibility: hidden;
+  /* フェイルセーフ: 版ズレ等で app-ready が永久に付かなくても4秒後に必ず表示する */
+  animation: navAutoReveal 0s 4s forwards;
+}
+@keyframes navAutoReveal { to { visibility: visible; } }
+body.app-ready .pwa-bottom-nav { visibility: visible; animation: none; }
 
 /* ★撤去: ここにあったPWA版tsモーダルのステータスバー帯（濃色）は、
    実機確認で「時計まわりが暗く見える」と不評だったため削除した。
@@ -6362,9 +6367,10 @@ body.app-ready .pwa-bottom-nav { visibility: visible; }
    完全に同一色になり、iOSの起動処理でどのレイヤーが一瞬露出しても色差が無いため
    チラつきとして視認できない。app-ready（フェード開始）と同時に本来の --btn-bg へ戻る。
    （ダーク/ライトは元々スプラッシュとbodyが同色なので影響なし） */
-body[class*="theme-"]:not(.app-ready) {
-  background: var(--bg-color) !important;
-}
+/* ★撤去: 「起動中はbodyを--bg-colorへ寄せる」ルールは削除した。
+   キャッシュの版ズレで古いmain.js（app-readyを付けない）と新しいCSSが混在すると、
+   このルールが永久に効き続けて全テーマの背景色が壊れる事故が起きたため。
+   起動中の帯対策はローディング画面の下方延長・高さ固定・写真ストリップで足りている */
 
 /* ★ボタン連打対応: ピンチズーム許可(アクセシビリティ対応)の副作用で、iOSが素早い
    2回目のタップを「ダブルタップズーム」と解釈してボタンのクリックを食べてしまい、
