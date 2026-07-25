@@ -10,9 +10,12 @@
   <!-- interactive-widget=resizes-content: キーボード表示時にレイアウトビューポートが縮み、
        下部固定のタイムスタンプモーダルがブラウザネイティブでキーボード上に配置される。
        背景ページはモーダル表示中 body固定(ts-kb-lock)しているため動かない。
-       maximum-scale=1 / user-scalable=no は削除: ピンチズームを禁止するとアクセシビリティ上問題があるため。
-       入力欄のフォントは全て16px以上なので、iOSのフォーカス時自動ズームはズーム許可でも発生しない。 -->
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content" />
+       ★maximum-scale=1 / user-scalable=no を復活: 一度アクセシビリティ目的で外したところ、
+       iOSがボタンの素早い2回目タップを「ダブルタップズーム」と解釈してクリックを食べ、
+       お気に入り・リセット等が連打できなくなる退行が発生した（touch-action: manipulation
+       ではホーム画面アプリで抑止できないことを実機で確認）。iOSはこの指定があっても
+       ピンチズーム自体はOS側で許可し続けるため、実質的な操作制限は最小限。 -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content" />
 
   <script>
     (function() {
@@ -153,7 +156,7 @@
 <meta name="apple-mobile-web-app-title" content="さーち・ざ・らじお！">
 
 
-<link rel="manifest" href="./site.webmanifest?v=20260725a">
+<link rel="manifest" href="./site.webmanifest?v=20260725b">
 
   
   <!-- SRI(integrity): CDN側でファイルが改ざんされた場合にブラウザが読込を拒否する -->
@@ -170,7 +173,7 @@
 <link rel="preconnect" href="https://use.typekit.net" crossorigin>
 <link rel="preconnect" href="https://p.typekit.net" crossorigin>
 <!-- code.jquery.com / i.ytimg.com へのpreconnectは削除: jQueryは未使用、サムネイルはローカル配信のため -->
-  <link href="style.css?v=20260725a" rel="stylesheet" />
+  <link href="style.css?v=20260725b" rel="stylesheet" />
 
 
 </head>
@@ -460,13 +463,13 @@
     h=d.documentElement,t=setTimeout(function(){h.className=h.className.replace(/\bwf-loading\b/g,"")+" wf-inactive";},config.scriptTimeout),tk=d.createElement("script"),f=false,s=d.getElementsByTagName("script")[0],a;h.className+=" wf-loading";tk.src='https://use.typekit.net/'+config.kitId+'.js';tk.async=true;tk.onload=tk.onreadystatechange=function(){a=this.readyState;if(f||a&&a!="complete"&&a!="loaded")return;f=true;clearTimeout(t);try{Typekit.load(config)}catch(e){}};s.parentNode.insertBefore(tk,s)
   })(document);
 </script>
-  <script src="main.js?v=20260725a" defer></script>
+  <script src="main.js?v=20260725b" defer></script>
 
   <script>
   // ---- Service Worker register (network-first) ----
   // このページ自身のバージョン（デプロイごとに他の "20260724x" 表記と一括で更新される）。
   // リセットボタンの強制更新チェック（main.js）が最新SWとの差分判定に使う。
-  window.__APP_VERSION = '20260725a';
+  window.__APP_VERSION = '20260725b';
 
   // ★起動時ちらつき対策: 「ローディング→UIが一瞬見える→更新リロード→再ローディング」の
   // UI露出をなくすため、SWの更新チェックが決着するまでローディング画面を保持する
@@ -492,7 +495,7 @@
     });
 
     window.addEventListener('load', function () {
-      navigator.serviceWorker.register('/sw.js?20260725a').then(function(reg) {
+      navigator.serviceWorker.register('/sw.js?20260725b').then(function(reg) {
         return navigator.serviceWorker.ready;
       }).then(function(reg) {
         if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });

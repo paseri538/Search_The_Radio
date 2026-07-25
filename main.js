@@ -3394,27 +3394,26 @@ window.__hideSplashCover = function () {
       __buildSplashCover();
     });
 
-    // 復帰時のカバー解除: 即時に外す。
-    // ★変更: 以前はカラーテーマで最大0.5秒カバーを保持していたが、
-    // 「復帰のたびに一瞬ロゴが表示される」という指摘を受けて即時解除に戻した。
-    // （復帰アニメーション中にOSが表示するスナップショット由来の一瞬のロゴは、
-    //   起動時ちらつき防止とのトレードオフで残る。帯や色ズレはver.rの
-    //   起動中レイヤー同色化で防いでいるため、保持は不要になった）
-    const releaseSplashCover = () => {
-      window.__hideSplashCover();
-    };
-
-    // バックグラウンド移行時はスプラッシュカバーを被せてスナップショットを整える。
-    // ブラウザ表示では行わない（タブ切替のプレビューが起動画面になってしまうため）。
-    // pagehide でも被せる（iOSが visibilitychange を挟まず退避するケースの保険）。
+    // ★スナップショット戦略の変更:
+    // 以前は「バックグラウンド時にスプラッシュカバーを被せ、OSの保存する画面写真を
+    // 起動画面にする」方式だったが、復帰のたびにOSの復帰アニメーションでロゴが
+    // 一瞬表示されるのが不評だった。方式を変え、バックグラウンド時は
+    // 「下部ナビだけを隠す」ことにする:
+    //  - 復帰時: 写真は実画面とほぼ同じ（ナビ無しのUI）→ ロゴは一切表示されない
+    //  - コールド起動時: 写真にナビが写っていないので、ローディング画面への切替で
+    //    「下部ボタンがちらつく」ことが構造的に起きない（下部は背景色→背景色で滑らか）
+    // スプラッシュカバー自体は、更新時の自動リロード（controllerchange）の
+    // 明滅隠しとして引き続き使う。
+    const hideNavForSnapshot = () => document.documentElement.classList.add('snap-hide-nav');
+    const restoreNavAfterResume = () => document.documentElement.classList.remove('snap-hide-nav');
     document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'hidden') window.__showSplashCover();
-      else releaseSplashCover();
+      if (document.visibilityState === 'hidden') hideNavForSnapshot();
+      else restoreNavAfterResume();
     });
-    window.addEventListener('pagehide', window.__showSplashCover);
-    window.addEventListener('pageshow', releaseSplashCover);
-    // 保険: 復帰イベントの取りこぼしでカバーが残った場合も、操作で必ず外れる
-    window.addEventListener('touchstart', window.__hideSplashCover, { passive: true });
+    window.addEventListener('pagehide', hideNavForSnapshot);
+    window.addEventListener('pageshow', restoreNavAfterResume);
+    // 保険: 復帰イベントの取りこぼし時も、操作すればナビ・カバーは必ず戻る
+    window.addEventListener('touchstart', () => { restoreNavAfterResume(); window.__hideSplashCover(); }, { passive: true });
   }
 
   const setVh = () => {

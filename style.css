@@ -6375,3 +6375,8 @@ body[class*="theme-"]:not(.app-ready) {
    お気に入り・リセット等が連打できなくなっていた。manipulation はダブルタップズーム
    だけを無効化し、ピンチズームとスクロールはそのまま使える。 */
 body { touch-action: manipulation; }
+
+/* ★スナップショット用: バックグラウンド移行時にmain.jsがhtmlへ付与。
+   OSが保存する画面写真から下部ナビを消し、コールド起動時の
+   「下部ボタンちらつき」と復帰時のロゴ表示を同時に防ぐ */
+html.snap-hide-nav .pwa-bottom-nav { visibility: hidden !important; }
