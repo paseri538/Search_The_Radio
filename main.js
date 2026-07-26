@@ -2341,12 +2341,13 @@ function setupModals() {
         - actions.offsetHeight - gap;
       // エラー表示は入力欄とボタンの間に挟まるため、その高さと区切りgapも差し引く
       if (error && !error.hidden) free -= error.offsetHeight + gap;
-      // ★スマホの上限: 260px（約10行 = 従来の6行分＋非表示にしたエピソードカード分）。
-      // 45%や空間フル活用は「広すぎる」というフィードバックにより、控えめな固定値に統一。
-      // キーボード表示中は free 自体が縮むため、常に画面に収まる（min側が効く）。
+      // ★スマホの上限: 200px（約8行）。
+      // ヘッダー＋入力欄＋ボタンの合計がキーボード表示後の画面にも最初から収まる高さで、
+      // キーボードが出た瞬間にiOSが画面をずらす（一瞬動いて見える）動機をなくす。
+      // キーボード表示中は free 自体が縮むため、さらに小さい画面でも収まる（min側が効く）。
       // PCは従来どおりモーダルの空きスペースまで。
       if (!window.matchMedia('(min-width: 601px)').matches) {
-        free = Math.min(free, 260);
+        free = Math.min(free, 200);
       }
       return Math.max(152, free);
     };
@@ -2506,8 +2507,6 @@ function setupModals() {
     </a>
   </li>`;
           epCard.hidden = false;
-          // モーダル表示後に文字幅を計測（トップ画面と同じ縮小フィットを適用する）
-          requestAnimationFrame(() => requestAnimationFrame(fitGuestLines));
         } else {
           epCard.hidden = true;
         }
@@ -2515,6 +2514,12 @@ function setupModals() {
       setEditingMode(false);
       renderTsList();
       openTs();
+      // ★点滅対策: openTs()の時点でモーダルは display:flex + opacity:0 になっており
+      // 幅が計測可能。ここで「同期的に」文字フィットを確定させることで、
+      // モーダルが見え始める最初のフレームから完成した状態で表示される。
+      // （従来はrAF×2の遅延フィットだったため、遅い端末ではモーダルが見えた後に
+      //   公開日時・動画時間の文字が現れて点滅のように見えていた）
+      fitGuestLines();
     };
 
     const submitTs = () => {
