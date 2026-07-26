@@ -2341,13 +2341,14 @@ function setupModals() {
         - actions.offsetHeight - gap;
       // エラー表示は入力欄とボタンの間に挟まるため、その高さと区切りgapも差し引く
       if (error && !error.hidden) free -= error.offsetHeight + gap;
-      // ★スマホの上限: 200px（約8行）。
-      // ヘッダー＋入力欄＋ボタンの合計がキーボード表示後の画面にも最初から収まる高さで、
-      // キーボードが出た瞬間にiOSが画面をずらす（一瞬動いて見える）動機をなくす。
-      // キーボード表示中は free 自体が縮むため、さらに小さい画面でも収まる（min側が効く）。
+      // ★スマホの上限: 152px（約6行・従来サイズ）。
+      // 260px→200px→152pxと段階的に調整した結果、従来サイズが最も好評だったため戻した。
+      // 編集中のエピソードカード非表示は維持（この数値だけで再調整可能）。
+      // ヘッダー＋入力欄＋ボタンが常にキーボード表示後の画面にも収まり、
+      // キーボード表示でレイアウトが動く余地もない。
       // PCは従来どおりモーダルの空きスペースまで。
       if (!window.matchMedia('(min-width: 601px)').matches) {
-        free = Math.min(free, 200);
+        return 152;
       }
       return Math.max(152, free);
     };
@@ -2633,21 +2634,24 @@ function setupModals() {
     const tsInputEl = document.getElementById('tsInput');
     let typingEndTimer = 0;
     // キーボード表示直後の位置補正: iOSは入力欄が隠れていなくてもページを不定量
-    // パンすることがあり、その量はフォーカスの入り方（編集ボタン経由か、入力欄を
-    // 直接タップか）で変わる。キーボードが出きった頃に基準位置（body固定中は
-    // scrollY=0）へ戻し、どちらの経路でも同じ表示位置に揃える。
-    let tsTypingFixTimers = [];
-    const cancelTsTypingPanFix = () => {
-      tsTypingFixTimers.forEach(clearTimeout);
-      tsTypingFixTimers = [];
-    };
+    // パンすることがある。
+    // ★改善: 以前は250ms/600msの2回だけ戻していたため「ずれてから戻る」動きが
+    // 見えていた。キーボードが出きるまでの約900ms、毎フレーム(16ms間隔)監視して
+    // ずれた瞬間に打ち消すことで、動き自体が視認できないようにする。
+    let tsTypingFixToken = 0;
+    const cancelTsTypingPanFix = () => { tsTypingFixToken++; };
     const scheduleTsTypingPanFix = () => {
-      cancelTsTypingPanFix();
-      [250, 600].forEach(ms => tsTypingFixTimers.push(setTimeout(() => {
-        if (!tsSheetEl.classList.contains('ts-typing')) return; // 既に入力終了なら何もしない
-        if (!document.body.classList.contains('ts-kb-lock')) return;
-        if (window.scrollY !== 0) instantScrollTo(0);
-      }, ms)));
+      const token = ++tsTypingFixToken;
+      const t0 = performance.now();
+      const tick = () => {
+        if (token !== tsTypingFixToken) return; // キャンセル済み
+        if (!tsSheetEl.classList.contains('ts-typing')) return; // 入力終了
+        if (document.body.classList.contains('ts-kb-lock') && window.scrollY !== 0) {
+          instantScrollTo(0);
+        }
+        if (performance.now() - t0 < 900) requestAnimationFrame(tick);
+      };
+      requestAnimationFrame(tick);
     };
     const startTypingMode = () => {
       if (!window.matchMedia('(max-width: 600px)').matches) return; // ボトムシート時のみ
