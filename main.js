@@ -2322,7 +2322,12 @@ function setupModals() {
     // モーダル下端に達するまで。上限を超えた分は内部スクロールになる。
     // scrollHeight参照は強制リフローを起こすため、rAFで1フレーム1回に間引いて軽量化。
     const tsInputMaxHeight = () => {
-      if (!window.matchMedia('(min-width: 601px)').matches) return 152;
+      // ★変更: スマホでも「モーダルの空きスペース」まで入力欄を広げる。
+      // 編集モード中はエピソードカード（.ts-editing）とリスト・フッターが
+      // 非表示になり .ts-body が flex:1 で広がるため、空いた分がそのまま
+      // 入力欄の上限に反映される（従来のスマホは152px固定だった）。
+      // キーボード表示時は interactive-widget=resizes-content でシートが縮み、
+      // clientHeight 経由で上限も自動的に追従する。
       // .ts-body は flex:1 で高さが固定されているため、入力欄の高さに影響されず
       // 「ボタン・余白を除いた空きスペース」を安定して算出できる
       const body = document.querySelector('#tsModal .ts-body');
@@ -2336,6 +2341,13 @@ function setupModals() {
         - actions.offsetHeight - gap;
       // エラー表示は入力欄とボタンの間に挟まるため、その高さと区切りgapも差し引く
       if (error && !error.hidden) free -= error.offsetHeight + gap;
+      // ★スマホの上限: 260px（約10行 = 従来の6行分＋非表示にしたエピソードカード分）。
+      // 45%や空間フル活用は「広すぎる」というフィードバックにより、控えめな固定値に統一。
+      // キーボード表示中は free 自体が縮むため、常に画面に収まる（min側が効く）。
+      // PCは従来どおりモーダルの空きスペースまで。
+      if (!window.matchMedia('(min-width: 601px)').matches) {
+        free = Math.min(free, 260);
+      }
       return Math.max(152, free);
     };
     let autosizeRafId = 0;
@@ -2355,6 +2367,11 @@ function setupModals() {
     const setEditingMode = (on) => {
       const { input, addArea, cancelBtn, copyBtn, listActions, list, footer } = tsEls();
       tsCtx.editing = on;
+      // ★スマホ版: 編集モードの間（編集タップ〜保存/キャンセルまで）は
+      // エピソードカードを非表示にして、その分入力欄を広く使う（CSS側で
+      // .ts-editing を600px以下のみ非表示条件にしている。PCは従来どおり表示）
+      const sheet = document.querySelector('#tsModal .ts-modal');
+      if (sheet) sheet.classList.toggle('ts-editing', on);
       // 入力欄と保存ボタンは「編集」をタップした時だけ表示する。
       // 通常時は一覧だけを見せて、登録・変更はすべて編集モード経由に一本化。
       addArea.hidden = !on;
@@ -2632,12 +2649,16 @@ function setupModals() {
       clearTimeout(typingEndTimer);
       tsSheetEl.classList.add('ts-typing');
       scheduleTsTypingPanFix();
+      autosizeTsInput(); // キーボード表示中は上限が変わる（フルに使う）ため再計算
     };
     const endTypingMode = () => {
       clearTimeout(typingEndTimer);
       cancelTsTypingPanFix();
       // blur直後のタップ（登録ボタン等）がレイアウト変化で外れないよう少し待ってから戻す
-      typingEndTimer = setTimeout(() => tsSheetEl.classList.remove('ts-typing'), 150);
+      typingEndTimer = setTimeout(() => {
+        tsSheetEl.classList.remove('ts-typing');
+        autosizeTsInput(); // キーボードが閉じたら45%上限に戻して再計算
+      }, 150);
     };
     // 登録・キャンセルの確定時用: 150msの猶予を待たずに即座に通常表示へ戻す。
     // （猶予中は入力欄もリストも全部隠れた状態になり、画面が一瞬白く見えるため）

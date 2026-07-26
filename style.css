@@ -5443,7 +5443,10 @@ body[class*="theme-"] .search-card {
   outline: none;
   resize: none;           /* 高さはJSで内容に合わせて自動調整 */
   overflow-y: auto;
-  max-height: 152px;      /* 約6行まで。それ以上は内部スクロール */
+  /* ★変更: max-height の152px固定上限は撤去。実際の上限はJS(tsInputMaxHeight)が
+     モーダルの空きスペースから算出する（スマホの編集モードではエピソードカードを
+     非表示にした分だけ広く使える）。CSS側は保険として画面高の80%までに制限 */
+  max-height: 80dvh;
   transition: border-color 0.2s, background 0.2s;
 }
 .ts-input:focus {
@@ -6447,4 +6450,19 @@ html.theme-switching .reset-btn {
    :has() 非対応の古い環境ではこのルールが無視されるだけで、他の帯対策が引き続き働く。 */
 body[class*="theme-"]:has(> #loading-screen:not(.fadeout)) {
   background: var(--bg-color) !important;
+}
+
+/* ★スマホ版タイムスタンプモーダル: 編集モード中（編集タップ〜保存/キャンセル）は
+   エピソードカードを非表示にし、その分入力欄を広く使う（main.jsが .ts-editing を付与。
+   従来は入力欄フォーカス中(.ts-typing)のみ非表示だった。PCでは従来どおり表示） */
+@media (max-width: 600px) {
+  .modal-content.ts-modal.ts-editing .ts-episode-card {
+    display: none !important;
+  }
+  /* 編集モード中は .ts-body をシートの残り空間いっぱいまで伸ばす。
+     （flex:1..の指定はPC用メディアクエリ内にしかなく、スマホでは
+     コンテンツ高のままだったため、入力欄の上限計算が広がらなかった） */
+  .modal-content.ts-modal.ts-editing .ts-body {
+    flex: 1 1 auto;
+  }
 }
