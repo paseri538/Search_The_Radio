@@ -798,8 +798,13 @@ body.dark-mode .ts-btn { background:#25323c; }
   display: flex; align-items: center; gap: 8px;
   padding: 10px 12px; cursor: pointer; font-size: 0.98em;
 }
-.autocomplete-item:hover,
+/* ★:hoverはマウス環境限定にする。iOSはタッチした要素に:hoverを適用するため、
+   無条件だと候補リストをスクロールする指の接触のたびに背景が点いて消え、
+   「点滅」して見えていた（キーボード選択のaria-selectedは全環境で有効のまま） */
 .autocomplete-item[aria-selected="true"] { background: #f4f6ff; }
+@media (hover: hover) {
+  .autocomplete-item:hover { background: #f4f6ff; }
+}
 .autocomplete-item .type { line-height: 1;
   border: 1px solid #e3e3ec; border-radius: 999px; color: #7c8798;
 }
@@ -809,8 +814,10 @@ body.dark-mode .ts-btn { background:#25323c; }
 body.dark-mode .autocomplete {
   background: #2d333b; border-color: #394150; box-shadow: 0 14px 34px -12px #000a;
 }
-body.dark-mode .autocomplete-item:hover,
 body.dark-mode .autocomplete-item[aria-selected="true"] { background: #2b3a46; }
+@media (hover: hover) {
+  body.dark-mode .autocomplete-item:hover { background: #2b3a46; }
+}
 
 /* =================================================== */
 /* ★★★ Adobe Fonts 読み込み対策 (FOUC防止) ★★★ */

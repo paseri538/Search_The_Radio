@@ -3381,8 +3381,13 @@ const onInput = () => {
   // ★キーボードを閉じたら候補も閉じる: フォーカスが外れたタイミングで候補を消す。
   // 候補のタップは mousedown（blurより先に発火）+ preventDefault で処理されるため、
   // 少しの遅延を挟めば選択操作を妨げない。
+  // ただし候補リストを触っている最中（スクロール等）にiOSがキーボードを閉じても、
+  // リストは消さずに閲覧を続けられるようにする（選択・外側タップで閉じる）。
+  let acListTouching = false;
+  boxEl.addEventListener('touchstart', () => { acListTouching = true; }, { passive: true });
+  boxEl.addEventListener('touchend', () => { setTimeout(() => { acListTouching = false; }, 300); }, { passive: true });
   inputEl.addEventListener('blur', () => {
-    setTimeout(clear, 120);
+    setTimeout(() => { if (!acListTouching) clear(); }, 120);
   });
 }
 
