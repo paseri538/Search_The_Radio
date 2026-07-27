@@ -3378,6 +3378,12 @@ const onInput = () => {
   document.addEventListener('click', (e) => {
     if (e.target !== inputEl && !boxEl.contains(e.target)) clear();
   });
+  // ★キーボードを閉じたら候補も閉じる: フォーカスが外れたタイミングで候補を消す。
+  // 候補のタップは mousedown（blurより先に発火）+ preventDefault で処理されるため、
+  // 少しの遅延を挟めば選択操作を妨げない。
+  inputEl.addEventListener('blur', () => {
+    setTimeout(clear, 120);
+  });
 }
 
 document.addEventListener('DOMContentLoaded', () => {

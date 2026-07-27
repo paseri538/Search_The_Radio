@@ -6466,3 +6466,11 @@ body[class*="theme-"]:has(> #loading-screen:not(.fadeout)) {
     flex: 1 1 auto;
   }
 }
+
+/* ★検索候補のスクロール時点滅対策: iOSはタッチした要素に既定のハイライトを
+   一瞬表示するため、候補リストをスクロールしようと指を置くたびに触れた項目が
+   点滅して見えていた。タップの視覚フィードバックは:hover/選択状態で別途あるため
+   既定ハイライトは無効化する */
+.autocomplete-item {
+  -webkit-tap-highlight-color: transparent;
+}
