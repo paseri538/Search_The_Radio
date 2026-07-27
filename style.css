@@ -201,11 +201,19 @@ body {
   cursor: pointer; border: none; box-shadow: 0 2px 7px -6px #7c3aed20;
   transition: background 0.13s;
   outline: none;
-  max-width: none;
+  max-width: 100%;
   overflow: visible; text-overflow: clip; white-space: normal;
-  flex-wrap: wrap;
+  /* ★折り返しはラベル文字の中だけで行う（nowrap＋.tag-label内で改行）。
+     wrapにするとアイコンごと折り返して✕が2行目に落ち、崩れて見える */
+  flex-wrap: nowrap;
   word-break: break-word;
   line-height: 1.25;
+}
+.filter-tag > i { flex: 0 0 auto; }
+.filter-tag .tag-label {
+  min-width: 0;
+  text-align: left;
+  overflow-wrap: anywhere;
 }
 
 .filter-tag:focus, .filter-tag:hover {
@@ -808,7 +816,7 @@ body.dark-mode .ts-btn { background:#25323c; }
 .autocomplete-item .type { line-height: 1;
   border: 1px solid #e3e3ec; border-radius: 999px; color: #7c8798;
 }
-.autocomplete-item .match { font-weight: 700; }
+.autocomplete-item .label { flex: 1 1 auto; min-width: 0; }
 
 /* Dark mode */
 body.dark-mode .autocomplete {
@@ -1959,7 +1967,6 @@ body[class*="theme-"] .autocomplete { background: var(--btn-bg) !important; bord
 @media (hover: hover) {
   body[class*="theme-"] .autocomplete-item:hover, body[class*="theme-"] .autocomplete-item[aria-selected="true"] { background: var(--filter-btn-active) !important; }
 }
-body[class*="theme-"] .autocomplete-item .match { color: var(--btn-main) !important; }
 body[class*="theme-"] .ts-btn { background-color: var(--active-filter) !important; color: var(--active-filter-text) !important; border-color: var(--active-filter) !important; }
 body[class*="theme-"] .loading-ball { background-color: var(--btn-main) !important; }
 body[class*="theme-"] #loading-screen { background: var(--bg-color) !important; }
@@ -5032,9 +5039,11 @@ body[class*="theme-"] .form-select.searchbox-select {
 }
 
 /* 3. 検索キーワード入力欄もホワイトカラーと統一 */
+/* ★右paddingは72pxを維持すること。1emにすると長いキーワードの文字が
+   ✕ボタン・虫眼鏡ボタンの下に潜り込んで崩れて見える（ライトは別途72px指定済み） */
 body.dark-mode .searchbox-input,
 body[class*="theme-"] .searchbox-input {
-  padding: 0.32em 1em !important; 
+  padding: 0.32em 72px 0.32em 1em !important;
   height: 2.3em !important;
   line-height: normal !important;
 }
@@ -5850,9 +5859,10 @@ body[class*="theme-"] .search-card {
 }
 
 /* --- ダークモード（サイト共通の純黒パレットに統一） --- */
+/* 枠線なし: スマホでは全画面シートになるため、枠線があると画面の外周に線が見えてしまう */
 body.dark-mode .modal-content.ts-modal {
   background: #000000 !important;
-  border: 1px solid #2f3336 !important;
+  border: none !important;
   box-shadow: none !important;
 }
 body.dark-mode .ts-modal .modal-title { color: #e7e9ea; }
@@ -6344,15 +6354,6 @@ body[class*="theme-"] .favorites-header-layout .ts-clear-confirm { border-color:
 body[class*="theme-"] .searchbox-select option {
   color: #22272e;
   background: #ffffff;
-}
-
-/* 「このサイトについて」内のバージョン表示（更新反映の確認用・控えめに） */
-.about-version {
-  margin-top: 12px;
-  font-size: 11px;
-  opacity: 0.55;
-  text-align: center;
-  letter-spacing: 0.05em;
 }
 
 /* ★PWA起動時ちらつき対策: iOSは起動中のビューポート確定時にfixed要素の合成タイミングが

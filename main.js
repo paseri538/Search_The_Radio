@@ -26,7 +26,7 @@ let selectedCorners = [];
 let selectedOthers = [];
 let selectedYears = [];
 let currentPage = 1;
-const pageSize = 20;
+const pageSize = 50;
 let lastResults = [];
 let clearAutocompleteSuggestions = () => {};
 let isSearchTriggered = false;
@@ -684,9 +684,6 @@ async function initializeApp() {
   initializeAutocomplete();
   setupThemeSwitcher();
   setupModals();
-  // 「このサイトについて」にバージョンを表示（PWAの更新反映確認用）
-  const verEl = document.getElementById('appVersionLabel');
-  if (verEl && window.__APP_VERSION) verEl.textContent = 'ver.' + window.__APP_VERSION;
   setupShareButtons();
   setupRightClickModal();
   formatYearButtons();
@@ -1223,7 +1220,7 @@ function updateActiveFilters() {
   // 検索キーワードやフィルター値はURLパラメータ(?q= 等)経由でも入るため、必ずエスケープする
   if (searchBox.value.trim()) {
     html += `<button class="filter-tag" tabindex="0" aria-label="キーワード解除" data-type="keyword">
-               <i class="fa fa-search"></i> "${escapeHtml(searchBox.value.trim())}" <i class="fa fa-xmark"></i>
+               <i class="fa fa-search"></i> <span class="tag-label">"${escapeHtml(searchBox.value.trim())}"</span> <i class="fa fa-xmark"></i>
              </button>`;
   }
   selectedGuests.forEach(g => {
@@ -1231,12 +1228,12 @@ function updateActiveFilters() {
       ? `style="background:linear-gradient(90deg, #fa01fa 0 25%, #fdfe0f 25% 50%, #15f4f3 50% 75%, #f93e07 75% 100%);color:#222;border:none;"`
       : (guestColorMap[g] ? `style="background:${guestColorMap[g]};color:#222;"` : '');
     html += `<button class="filter-tag" tabindex="0" aria-label="出演者フィルタ解除 ${escapeHtml(g)}" data-type="guest" data-value="${escapeHtml(g)}" ${style}>
-               <i class="fa fa-user"></i> ${escapeHtml(g)} <i class="fa fa-xmark"></i>
+               <i class="fa fa-user"></i> <span class="tag-label">${escapeHtml(g)}</span> <i class="fa fa-xmark"></i>
              </button>`;
   });
-  selectedCorners.forEach(c => html += `<button class="filter-tag" tabindex="0" aria-label="コーナーフィルタ解除 ${escapeHtml(c)}" data-type="corner" data-value="${escapeHtml(c)}"><i class="fa fa-cubes"></i> ${escapeHtml(c)} <i class="fa fa-xmark"></i></button>`);
-  selectedOthers.forEach(o => html += `<button class="filter-tag" tabindex="0" aria-label="その他フィルタ解除 ${escapeHtml(o)}" data-type="other" data-value="${escapeHtml(o)}"><i class="fa fa-star"></i> ${escapeHtml(o)} <i class="fa fa-xmark"></i></button>`);
-  selectedYears.forEach(y => html += `<button class="filter-tag" tabindex="0" aria-label="年フィルタ解除 ${escapeHtml(y)}" data-type="year" data-value="${escapeHtml(y)}"><i class="fa fa-calendar"></i> <span class="impact-number">${escapeHtml(y)}</span> <i class="fa fa-xmark"></i></button>`);
+  selectedCorners.forEach(c => html += `<button class="filter-tag" tabindex="0" aria-label="コーナーフィルタ解除 ${escapeHtml(c)}" data-type="corner" data-value="${escapeHtml(c)}"><i class="fa fa-cubes"></i> <span class="tag-label">${escapeHtml(c)}</span> <i class="fa fa-xmark"></i></button>`);
+  selectedOthers.forEach(o => html += `<button class="filter-tag" tabindex="0" aria-label="その他フィルタ解除 ${escapeHtml(o)}" data-type="other" data-value="${escapeHtml(o)}"><i class="fa fa-star"></i> <span class="tag-label">${escapeHtml(o)}</span> <i class="fa fa-xmark"></i></button>`);
+  selectedYears.forEach(y => html += `<button class="filter-tag" tabindex="0" aria-label="年フィルタ解除 ${escapeHtml(y)}" data-type="year" data-value="${escapeHtml(y)}"><i class="fa fa-calendar"></i> <span class="impact-number tag-label">${escapeHtml(y)}</span> <i class="fa fa-xmark"></i></button>`);
   area.innerHTML = html;
 }
 
@@ -3207,22 +3204,17 @@ function initializeAutocomplete() {
     boxEl.innerHTML = '';
     
     // ★修正: 先にDOMを追加してから表示を切り替える
-    const qRaw = inputEl.value.trim().toLowerCase();
     const fragment = document.createDocumentFragment();
     items.forEach((item, idx) => {
       const el = document.createElement('div');
       el.className = 'autocomplete-item';
       el.setAttribute('role', 'option');
       el.setAttribute('aria-selected', idx === cursor);
-      // 候補ラベルにはユーザー登録メモ（自由入力）も含まれるため、必ずエスケープして挿入する
-      const i = item.label.toLowerCase().indexOf(qRaw);
-      const html = (i >= 0)
-        ? `${escapeHtml(item.label.slice(0, i))}<span class="match">${escapeHtml(item.label.slice(i, i + qRaw.length))}</span>${escapeHtml(item.label.slice(i + qRaw.length))}`
-        : escapeHtml(item.label);
       const icon = item.type === '出演者' ? '<i class="fa-solid fa-user"></i>'
         : item.type === 'メモ' ? '<i class="fa-solid fa-star memo-star"></i>'
         : '<i class="fa-solid fa-magnifying-glass"></i>';
-      el.innerHTML = `<span class="type">${icon}</span><span class="label">${html}</span>`;
+      // 候補ラベルにはユーザー登録メモ（自由入力）も含まれるため、必ずエスケープして挿入する
+      el.innerHTML = `<span class="type">${icon}</span><span class="label">${escapeHtml(item.label)}</span>`;
       el.addEventListener('mousedown', (e) => { e.preventDefault(); pick(idx); });
       fragment.appendChild(el);
     });
