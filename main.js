@@ -636,6 +636,13 @@ async function loadExternalData() {
     try {
       corpus += JSON.stringify(data) + JSON.stringify(historyData || '') + JSON.stringify(linksData || '');
       if (document.body) corpus += (document.body.textContent || '');
+      // ユーザーが登録したタイムスタンプのメモの文字も先読みする。
+      // ここに含めないと、メモに使われた文字（☆や①など、かな漢字と別の
+      // unicode-rangeセグメントに入る記号類）がモーダル初回表示時に
+      // 一瞬だけ別フォントで描画されてしまう
+      corpus += JSON.stringify(timestamps || {});
+      // JSで後から生成される定型文字と、メモでよく使われる記号も常に先読みしておく
+      corpus += '★☆①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳●○◎△▲▽▼□■◇◆♪♡♥※→←↑↓！？';
     } catch (e) {}
     const uniqueChars = Array.from(new Set(corpus)).join('');
 
@@ -645,11 +652,37 @@ async function loadExternalData() {
     window.__fontsReady = (async () => {
       try {
         if (document.fonts && document.fonts.load) {
-          await Promise.all([
+          // まずサイト内で実際に使う文字ぶんの読み込みを開始する
+          // （キットCSS登録前でも効き、初回表示に必要な最小セットを最速で確保）
+          const kick = Promise.all([
             document.fonts.load('400 1em fot-udkakugoc70-pro', uniqueChars),
             document.fonts.load('700 1em fot-udkakugoc80-pro', uniqueChars),
             document.fonts.load('1em "Impact Numbers"', impactChars),
           ]);
+
+          // ★フォントが持つ全文字を先読みする:
+          // Adobe Fontsはフォントをunicode-rangeで複数ファイルに分割して配信するため、
+          // 文字列指定の load() では該当文字のセグメントしか読み込まれず、
+          // 想定外の文字（新しいメモの記号等）が後から一瞬別フォントで出る余地が残る。
+          // FontFace オブジェクトを直接 load() すると分割ファイルそのものを取得できるので、
+          // 対象ファミリーの全セグメントを一括で読み込む（2回目以降はキャッシュから即時）。
+          const FAMILIES = ['fot-udkakugoc70-pro', 'fot-udkakugoc80-pro', 'Impact Numbers'];
+          const collectFaces = () => {
+            const faces = [];
+            document.fonts.forEach(f => {
+              const fam = (f.family || '').replace(/^["']|["']$/g, '');
+              if (FAMILIES.includes(fam)) faces.push(f);
+            });
+            return faces;
+          };
+          // Adobeのキットcss（use.typekit.net）が @font-face を登録するまで最大3秒待つ
+          let faces = collectFaces();
+          for (let i = 0; i < 30 && faces.length === 0; i++) {
+            await new Promise(r => setTimeout(r, 100));
+            faces = collectFaces();
+          }
+          await Promise.all(faces.map(f => f.load().catch(() => {})));
+          await kick;
           await document.fonts.ready;
         }
       } catch (e) {}
@@ -710,7 +743,10 @@ function getFilteredData(query) {
   
   const isOtherFilterActive = selectedOthers.length > 0;
   const isOtherKeywordSearch = (normalizedRaw === "そのた" || normalizedRaw === "その他");
-  if (!isOtherFilterActive && !isOtherKeywordSearch) {
+  // 特殊回（京まふ大作戦・CENTRAL STATION等、番号を持たない回）は
+  // キーワード検索時には他の回と同じく検索対象に含める。
+  // 非表示にするのはクエリなしの通常一覧のときだけ（従来どおりデフォルト非表示）。
+  if (!isOtherFilterActive && !isOtherKeywordSearch && raw.length === 0) {
     res = res.filter(it => getEpisodeNumber(it.episode) >= -1);
   }
 
@@ -3379,8 +3415,31 @@ const onInput = () => {
   boxEl.addEventListener('touchstart', () => { acListTouching = true; }, { passive: true });
   boxEl.addEventListener('touchend', () => { setTimeout(() => { acListTouching = false; }, 300); }, { passive: true });
   inputEl.addEventListener('blur', () => {
-    setTimeout(() => { if (!acListTouching) clear(); }, 120);
+    setTimeout(() => {
+      if (!acListTouching) {
+        // 保留中の入力デバウンス(150ms)をキャンセルしないと、
+        // 「1文字入力→すぐキーボードを閉じる」の時にclear後へonInputが発火して候補が再表示される
+        debouncedOnInput.cancel();
+        clear();
+      }
+    }, 120);
   });
+  // ★iOSはキーボード右下の「閉じる」ボタンではblurが発火しない（フォーカスは残る）。
+  // キーボードが閉じるとビジュアルビューポートの高さが大きく戻るので、それを検知して候補を閉じる。
+  // （URLバーの伸縮は最大100px程度・キーボードは250px以上のため、しきい値120pxで誤動作しない）
+  if (window.visualViewport && navigator.maxTouchPoints > 0) {
+    let vvMinH = window.visualViewport.height;
+    window.visualViewport.addEventListener('resize', () => {
+      const h = window.visualViewport.height;
+      if (boxEl.hidden) { vvMinH = h; return; }
+      vvMinH = Math.min(vvMinH, h);
+      if (h - vvMinH > 120 && !acListTouching) {
+        debouncedOnInput.cancel();
+        clear();
+        vvMinH = h;
+      }
+    });
+  }
 }
 
 document.addEventListener('DOMContentLoaded', () => {

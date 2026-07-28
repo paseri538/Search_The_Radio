@@ -1333,7 +1333,8 @@ body.dark-mode .share-btn:focus-visible {
 }
 
 /* Radio History modal — close button (single source of truth) */
-#historyModal .modal-header { padding:12px 60px 10px 16px; } /* 右側に×の余白 */
+/* 左右対称の余白にする（左16px/右60pxだとタイトルが中央から左へずれて見える） */
+#historyModal .modal-header { padding:12px 60px 10px; }
 #aboutCloseBtn,
 #historyCloseBtn {
   position: absolute;
