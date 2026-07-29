@@ -64,6 +64,10 @@ const guestColorMap = {
  * ===================================================
  */
 const normalize = (s) => (s || '').normalize('NFKC').replace(/[ァ-ン]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0x60)).toLowerCase().replace(/\s+/g, '');
+// 全エピソード表示ワード（正規化形）: 青山吉能さんは全回出演のため、
+// 本人名・愛称で検索された時は、通常は隠している特殊回（京まふ大作戦・
+// CENTRAL STATION等）も含めて全エピソードを表示する
+const ALL_EPISODES_TERMS = new Set(['青山吉能', 'あおやまよしの', 'よぴ', 'よしの', 'よっぴー', 'yp']);
 const stripTimeSuffix = (s) => (s || '').replace(/[＠@]\s*\d{1,2}:\d{2}(?::\d{2})?\s*$/, '');
 const getVideoId = (link) => (link || '').match(/(?:v=|be\/)([\w-]{11})/)?.[1] || null;
 const getHashNumber = (title) => title.match(/#(\d+)/)?.[0] || title;
@@ -760,6 +764,9 @@ function getFilteredData(query) {
       const epNum = getEpisodeNumber(it.episode);
       return epNum >= minNum && epNum <= maxNum;
     });
+  } else if (raw.length > 0 && ALL_EPISODES_TERMS.has(normalizedRaw)) {
+    // ★全回出演者の検索: 絞り込みを行わず、特殊回も含めた全エピソードをそのまま返す
+    // （この後の出演者・年などのフィルターは通常どおり適用される）
   } else if (raw.length > 0) {
     const normalizedQuery = normalize(raw);
     const searchTerms = new Set([normalizedQuery]);
@@ -1153,6 +1160,14 @@ function renderResults(arr, page = 1, originalQuery = null, suggestions = []) {
     }
     if (!hit && cornerTarget) {
       hit = findHitTime(it, cornerTarget);
+    }
+    // ★その他フィルター（公開録音・京まふ大作戦等）でもタイムスタンプを探す。
+    // これがないと、該当キーワードに@時刻が登録されていてもカードに時刻リンクが出ない
+    if (!hit && selectedOthers.length > 0) {
+      for (const other of selectedOthers) {
+        hit = findHitTime(it, other);
+        if (hit) break;
+      }
     }
     const finalLink = hit ? withTimeParam(it.link, hit.seconds) : it.link;
 
@@ -3185,6 +3200,12 @@ function initializeAutocomplete() {
   const hasKanji = (s) => /[\u4e00-\u9faf\u3400-\u4dbf]/.test(s || '');
   const entriesByLabel = new Map();
 
+  // ★かな折りたたみ（候補マッチング専用）: 小書き文字を並字に、長音を除去して比較する。
+  // 「けつそくばんど」(っ→つ の打ち間違い) や「うぃーうぃるびー」(長音の揺れ) でも
+  // 候補が出るようにするための吸収形。検索本体の一致判定には使わない。
+  const SMALL_KANA = { 'っ':'つ','ゃ':'や','ゅ':'ゆ','ょ':'よ','ぁ':'あ','ぃ':'い','ぅ':'う','ぇ':'え','ぉ':'お','ゎ':'わ' };
+  const foldKana = (s) => s.replace(/[っゃゅょぁぃぅぇぉゎ]/g, ch => SMALL_KANA[ch]).replace(/ー/g, '');
+
   const ensureEntry = (label, type) => {
     if (!label) return;
     const baseLabel = stripTimeSuffix(label);
@@ -3193,9 +3214,15 @@ function initializeAutocomplete() {
       entry = { label: baseLabel, type: type || 'キーワード', norms: new Set() };
       entriesByLabel.set(baseLabel, entry);
     }
-    entry.norms.add(normalize(baseLabel));
+    const addNorm = (s) => {
+      const n = normalize(s);
+      entry.norms.add(n);
+      const f = foldKana(n);
+      if (f !== n) entry.norms.add(f);
+    };
+    addNorm(baseLabel);
     if (CUSTOM_READINGS[baseLabel]) {
-      CUSTOM_READINGS[baseLabel].forEach(r => entry.norms.add(normalize(r)));
+      CUSTOM_READINGS[baseLabel].forEach(addNorm);
     }
   };
 
@@ -3276,14 +3303,46 @@ function initializeAutocomplete() {
         }, 0);
       };
 
-  const scoreEntry = (entry, normQ, raw) => {
-    let prefix = false, part = false;
+  // ★Google風スコアリング:
+  // 完全一致(1000) > 前方一致(800) > 部分一致(600) > 曖昧一致(400台) の階層で採点し、
+  // 曖昧一致は編集距離（打ち間違い・文字の入れ替え・抜けを許容）で判定する。
+  // 距離の許容量は入力の長さに応じて自動調整（2文字→1、4文字→2、6文字以上→3）。
+  // 長いラベルには「先頭だけとの距離」も見て、入力途中のタイプミスでも候補が出るようにする。
+  const scoreEntry = (entry, queries, raw) => {
+    let best = null;
     for (const k of entry.norms) {
-      if (k.startsWith(normQ)) { prefix = true; break; }
-      if (!part && k.includes(normQ)) part = true;
+      for (const q of queries) {
+        const qLen = q.length;
+        const maxDist = qLen >= 6 ? 3 : qLen >= 4 ? 2 : qLen >= 2 ? 1 : 0;
+        let s = null;
+        if (k === q) s = 1000;
+        else if (k.startsWith(q)) s = 800;
+        else if (k.includes(q)) s = 600;
+        else if (maxDist > 0) {
+          // 長さが違いすぎるものは距離計算せず除外（性能と精度の両方のため）
+          if (Math.abs(k.length - qLen) <= maxDist || k.length > qLen) {
+            let d = damerauLevenshtein(q, k);
+            // 前方窓との距離: 「ラベルの先頭部分にタイプミス込みで一致」を拾う
+            if (k.length > qLen + 1) {
+              const dHead = damerauLevenshtein(q, k.slice(0, qLen + 1));
+              if (dHead < d) d = dHead;
+            }
+            if (d <= maxDist) s = 400 - d * 60;
+          }
+        }
+        if (s !== null && (best === null || s > best)) best = s;
+      }
     }
-    if (!prefix && !part) return null;
-    return (prefix ? 4 : 0) + (part ? 1 : 0) + (!hasKanji(raw) && hasKanji(entry.label) ? 2 : 0) + (entry.type === '出演者' ? 1 : 0);
+    if (best === null) return null;
+    return best + (!hasKanji(raw) && hasKanji(entry.label) ? 2 : 0) + (entry.type === '出演者' ? 1 : 0);
+  };
+
+  // 候補ラベルへの変換（かな読みは漢字表記に直す）。onInputの通常経路とフォールバックで共用
+  const toItem = (e) => {
+    let label = e.label;
+    const nlabel = normalize(label);
+    if (!hasKanji(label) && READING_TO_LABEL[nlabel]) label = READING_TO_LABEL[nlabel];
+    return { label, type: e.type };
   };
 
 const onInput = () => {
@@ -3339,19 +3398,19 @@ const onInput = () => {
       }
     }
 
-    const scored = entries.map(e => ({ e, s: scoreEntry(e, normQ, raw) })).filter(item => item.s !== null);
-    scored.sort((a, b) => b.s - a.s);
+    // 通常形とかな折りたたみ形（けつ→けっ…等の揺れ吸収）の両方で採点する
+    const foldQ = foldKana(normQ);
+    const queries = foldQ === normQ ? [normQ] : [normQ, foldQ];
+    const scored = entries.map(e => ({ e, s: scoreEntry(e, queries, raw) })).filter(item => item.s !== null);
+    // 同スコアはラベルが短いもの優先（Googleと同じく簡潔な候補が上に来る）
+    scored.sort((a, b) => b.s - a.s || a.e.label.length - b.e.label.length);
 
     const seen = new Set();
     const items = scored.slice(0, 100).map(({ e }) => {
-      let label = e.label;
-      const nlabel = normalize(label);
-      if (!hasKanji(label) && READING_TO_LABEL[nlabel]) {
-        label = READING_TO_LABEL[nlabel];
-      }
-      if (seen.has(label)) return null;
-      seen.add(label);
-      return { label: label, type: e.type };
+      const item = toItem(e);
+      if (seen.has(item.label)) return null;
+      seen.add(item.label);
+      return item;
     }).filter(Boolean);
 
     // ユーザー登録タイムスタンプのメモも候補に出す（部分一致・★マークで区別）。
@@ -3362,7 +3421,8 @@ const onInput = () => {
       for (const e of (timestamps[id] || [])) {
         const label = (e.label || '').trim();
         if (!label || seenMemo.has(label)) continue;
-        if (!tsNormLabel(e).includes(normQ)) continue;
+        const nl = tsNormLabel(e);
+        if (!nl.includes(normQ) && !foldKana(nl).includes(foldQ)) continue;
         seenMemo.add(label);
         memoItems.push({ label, type: 'メモ' });
         if (memoItems.length >= 20) break;
@@ -3371,7 +3431,34 @@ const onInput = () => {
     }
 
     // 自分のメモを先頭に表示し、同名のサイト側キーワードは重複させない
-    const merged = [...memoItems, ...items.filter(i => !seenMemo.has(i.label))];
+    let merged = [...memoItems, ...items.filter(i => !seenMemo.has(i.label))];
+
+    // ★何を入力しても候補を出す（Googleの「常に何か提案する」挙動）:
+    // 通常の採点で1件も掛からなかった時は、全エントリを「距離÷長さ」の近さで
+    // 並べ、最も近いものから少数だけ出す。まったく無関係な入力（近さ0.6超）まで
+    // は出さないことで、「それっぽいものだけが出る」自然な塩梅にしている。
+    if (merged.length === 0) {
+      const near = [];
+      for (const e of entries) {
+        let bestR = Infinity;
+        for (const k of e.norms) {
+          for (const q of queries) {
+            const d = damerauLevenshtein(q, k);
+            const r = d / Math.max(q.length, k.length);
+            if (r < bestR) bestR = r;
+          }
+        }
+        if (bestR <= 0.6) near.push({ e, r: bestR });
+      }
+      near.sort((a, b) => a.r - b.r || a.e.label.length - b.e.label.length);
+      const seenNear = new Set();
+      merged = near.slice(0, 12).map(({ e }) => toItem(e)).filter(i => {
+        if (seenNear.has(i.label)) return false;
+        seenNear.add(i.label);
+        return true;
+      }).slice(0, 6);
+    }
+
     render(merged.slice(0, 100));
   };
   
