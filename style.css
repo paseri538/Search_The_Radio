@@ -6474,6 +6474,20 @@ body[class*="theme-"]:has(> #loading-screen:not(.fadeout)) {
   .modal-content.ts-modal.ts-editing .ts-body {
     flex: 1 1 auto;
   }
+  /* スマホは全画面シートになるため、左右余白をトップ画面のエピソードカード(15px)と揃える。
+     エピソードカードは .ts-body の外（ヘッダー直下固定）にあるため margin も個別に指定 */
+  .ts-modal .ts-body {
+    padding-left: 15px;
+    padding-right: 15px;
+  }
+  .ts-modal .ts-episode-card {
+    margin-left: 15px;
+    margin-right: 15px;
+  }
+  .ts-modal .ts-footer {
+    padding-left: 15px;
+    padding-right: 15px;
+  }
 }
 
 /* ★検索候補のスクロール時点滅対策: iOSはタッチした要素に既定のハイライトを
