@@ -2452,7 +2452,10 @@ function setupModals() {
         const body = document.querySelector('#tsModal .ts-body');
         if (!body) return;
         const sbw = body.offsetWidth - body.clientWidth; // 実際に占有しているバー幅
-        body.style.paddingRight = sbw > 0 ? Math.max(8, 20 - sbw) + 'px' : '';
+        // 基準の右paddingはCSSと連動させる（スマホ15px / PC20px。固定20だと
+        // スマホで左右の余白が非対称になり、トップ画面カードと揃わない）
+        const basePad = window.matchMedia && window.matchMedia('(max-width: 600px)').matches ? 15 : 20;
+        body.style.paddingRight = sbw > 0 ? Math.max(8, basePad - sbw) + 'px' : '';
       });
     };
     window.addEventListener('resize', () => {
