@@ -1,5 +1,8 @@
-// キャッシュの名前を定義。バージョンを更新すると古いキャッシュは自動的に削除。
-const SW_VERSION = '20260731b';
+// ★★★ サイト更新時はここだけ変更する（サイト全体で唯一のバージョン表記） ★★★
+// 「日付＋連番」（例: '20260801a'）で更新すると、次回アクセス時に全ファイルが
+// 新しいキャッシュへ一括で取り直され、自動リロードで新バージョンが反映される。
+// 古いキャッシュは自動的に削除される。
+const SW_VERSION = '20260731c';
 const CACHE_NAME = `radio-cache-${SW_VERSION}`;
 
 
@@ -50,7 +53,10 @@ self.addEventListener('install', (event) => {
   event.waitUntil((async () => {
     const cache = await caches.open(CACHE_NAME);
     console.log('[SW] Caching core assets');
-    await cache.addAll(CORE_ASSETS);
+    // ★cache:'reload' でブラウザのHTTPキャッシュを介さず必ずネットワークから取得する。
+    // （ページ側のURLから ?v= を廃止したため、ここで鮮度を保証しないと
+    //   古いHTTPキャッシュがそのまま新バージョンのキャッシュに入る恐れがある）
+    await cache.addAll(CORE_ASSETS.map(url => new Request(url, { cache: 'reload' })));
 
     const thumbs = await getThumbnailAssets();
 
