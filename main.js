@@ -807,6 +807,12 @@ function getFilteredData(query) {
   return res;
 }
 
+// 登録済みの検索語（キーワード・出演者・読み仮名・ローマ字形）と完全一致するか。
+// 「もしかして」バーを完全一致の検索では出さない判定に使う
+function isRegisteredSearchTerm(normQuery) {
+  return !!(window.searchCorpus && window.searchCorpus.has(normQuery));
+}
+
 // ★修正: search関数
 function search(opts = {}) {
   isSearchTriggered = true;
@@ -826,19 +832,35 @@ function search(opts = {}) {
 
   let res = getFilteredData(rawQuery);
   let suggestionWords = [];
+  // 「もしかして」バーの表示ルール:
+  //  - 検索が0件 → 表示（一番近い候補の結果を代わりに出す）
+  //  - ヒットはあるが、登録キーワード・読み仮名と完全一致しない入力（一部だけの入力）→ 表示
+  //  - 登録キーワードそのもの（完全一致）→ 非表示（邪魔になるだけ）
+  let showDidYouMean = false;
 
   if (rawQuery.length > 0) {
      const suggestions = findDidYouMean(rawQuery);
-     
-     if (suggestions.length > 0) {
-       const validSuggestions = suggestions.filter(word => getFilteredData(word).length > 0);
 
-       if (validSuggestions.length > 0) {
-         if (res.length === 0) {
+     if (suggestions.length > 0) {
+       if (res.length === 0) {
+         // ヒット0件: 一番近い候補の結果を代わりに表示し、「もしかして」で他候補も提示する
+         const validSuggestions = suggestions.filter(word => getFilteredData(word).length > 0);
+         if (validSuggestions.length > 0) {
            res = getFilteredData(validSuggestions[0]);
            suggestionWords = validSuggestions;
-         } else {
-           suggestionWords = validSuggestions;
+           showDidYouMean = true;
+         }
+       } else {
+         // 直接ヒットあり: 候補語はカードの時刻リンク解決
+         // （読み仮名入力→正式キーワードの@時刻を見つける）に使うため常に保持する
+         suggestionWords = suggestions;
+         // 完全一致でない「一部だけの入力」なら、完全なキーワードをバーで提案する
+         if (!isRegisteredSearchTerm(normalize(rawQuery))) {
+           const validSuggestions = suggestions.filter(word => getFilteredData(word).length > 0);
+           if (validSuggestions.length > 0) {
+             suggestionWords = validSuggestions;
+             showDidYouMean = true;
+           }
          }
        }
      }
@@ -863,7 +885,7 @@ function search(opts = {}) {
   currentPage = Math.min(Math.max(1, opts.gotoPage || 1), totalPage);
   if (!isRestoringURL) buildURLFromState({ method: 'push' });
 
-  renderResults(res, currentPage, rawQuery, suggestionWords);
+  renderResults(res, currentPage, rawQuery, suggestionWords, showDidYouMean);
   renderPagination(res.length);
   updateActiveFilters();
   updatePlaylistButtonVisibility();
@@ -1024,7 +1046,7 @@ function getEpisodeGuestText(it) {
   return "";
 }
 
-function renderResults(arr, page = 1, originalQuery = null, suggestions = []) {
+function renderResults(arr, page = 1, originalQuery = null, suggestions = [], showDidYouMean = false) {
   const ul = document.getElementById("results");
   // カード出現アニメーションは毎回再生する（タップした手応えとして必要、という要望）。
   // 空白時間が長くならないよう、段差ディレイの上限はCSS側で制限している。
@@ -1064,9 +1086,9 @@ function renderResults(arr, page = 1, originalQuery = null, suggestions = []) {
     ul.appendChild(liFav);
   }
 
-  if (suggestions && suggestions.length > 0 && originalQuery) {
+  if (showDidYouMean && suggestions && suggestions.length > 0 && originalQuery) {
     const li = document.createElement('li');
-    li.className = 'did-you-mean-alert'; 
+    li.className = 'did-you-mean-alert';
     li.style.gridColumn = "1 / -1"; 
 
     const limit = 5; 
