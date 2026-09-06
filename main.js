@@ -3146,6 +3146,11 @@ window.applyDidYouMean = function(word) {
             let swDone = !window.__swUpdateSettled;
             if (window.__swUpdateSettled) window.__swUpdateSettled.then(() => { swDone = true; });
 
+            // ★記念イントロ（index.htmlで期間中のみ生成）が終わるまでは通常ローディングも消さない。
+            // Promise側に9秒の絶対上限があるため、万一でも起動は止まらない
+            let annivDone = !window.__annivDone;
+            if (window.__annivDone) window.__annivDone.then(() => { annivDone = true; });
+
             // タイトル画面は「ほどよい表示時間(MIN_SHOW)」「データ(カード)描画完了」
             // 「フォントの全文字読み込み完了」を満たしたら消す。フォントまで待つことで、
             // どの文字も最初からAdobeフォントで表示され、一瞬だけフォールバックになるFOUTを防ぐ。
@@ -3153,16 +3158,17 @@ window.applyDidYouMean = function(word) {
             const MIN_SHOW = 1500;   // タイトル最低表示時間
             const FONT_CAP = 8000;   // フォントを待つ上限（超えたら諦めて表示）
             const SW_CAP = 4500;     // SW更新チェックを待つ上限（Promise側の4秒上限の保険）
+            const ANNIV_CAP = 9500;  // 記念イントロを待つ上限（Promise側の9秒上限の保険）
             const tryHide = () => {
                 const t = performance.now();
                 if (!fontsDone) hookFonts();
-                if (cardsReady() && t >= MIN_SHOW && (fontsDone || t >= FONT_CAP) && (swDone || t >= SW_CAP)) { hideLoadingScreen(); return; }
+                if (cardsReady() && t >= MIN_SHOW && (fontsDone || t >= FONT_CAP) && (swDone || t >= SW_CAP) && (annivDone || t >= ANNIV_CAP)) { hideLoadingScreen(); return; }
                 requestAnimationFrame(tryHide);
             };
             tryHide();
 
             // 最終保険（データ取得やフォントが失敗しても必ず消す）
-            setTimeout(hideLoadingScreen, 9000);
+            setTimeout(hideLoadingScreen, window.__annivDone ? 12000 : 9000);
         }
     });
 
@@ -3615,7 +3621,8 @@ window.__showSplashCover = function () {
   const scrH = __deviceScreenHeight();
   __splashCoverEl.style.height = (scrH + 300) + 'px'; // 画面+300pxで変動を吸収
   const img = __splashCoverEl.querySelector('img');
-  if (img) img.style.top = Math.round(scrH / 2) + 'px'; // 物理画面の中央に固定
+  // 物理画面の中央から28px上＝ローディング画面のロゴ中心（ロゴ＋スピナー56pxのまとまりを中央揃え）と一致させる
+  if (img) img.style.top = Math.round(scrH / 2 - 28) + 'px';
   __splashCoverEl.style.display = 'block';
 };
 window.__hideSplashCover = function () {

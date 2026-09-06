@@ -22,7 +22,9 @@ const CORE_ASSETS = [
   'kessokuband_watasi.json',
   'links.json',
   'logo.png',
-  'logo.webp',
+  'BTR_logo_4th.png',
+  'BTR_logo_4th_1.png',
+  'BTR_logo_4th_2.png',
   'thumb-fallback.svg',
   'Impact.ttf',
   'favicon.ico',
@@ -122,9 +124,17 @@ self.addEventListener('activate', (event) => {
   );
 });
 
+// ★開発用サーバー（Live Server等: localhost / 192.168.x など）ではキャッシュを一切使わず
+// 常にネットワークから取得する。SW_VERSIONが変わらないローカル確認で、古いキャッシュの
+// index.html/CSS/JSが表示され続ける事故を防ぐ（本番 searchtheradio.com には影響しない）。
+// ※ポート8899は自動テスト用（本番と同じキャッシュ動作を検証するため除外）
+const IS_DEV_ORIGIN = /^(localhost|127\.0\.0\.1|\[::1\]|192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+)$/.test(self.location.hostname)
+  && self.location.port !== '8899';
+
 // 3. ネットワークリクエストへの介入処理
 self.addEventListener('fetch', (event) => {
   const { request } = event;
+  if (IS_DEV_ORIGIN) return; // 開発時は素通し（ブラウザが直接ネットワークから取得）
 
   // GET以外（POST等）はキャッシュ対象外なので介入しない
   if (request.method !== 'GET') return;

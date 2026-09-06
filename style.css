@@ -6358,7 +6358,9 @@ body[class*="theme-"] .favorites-header-layout .ts-clear-confirm { border-color:
 }
 /* 球のコンテナごと独立レイヤー化し、親のリフローの影響を受けにくくする */
 #spinner {
-  transform: translateZ(0);
+  /* 玉の真上にある最下段「RADIO!」の黒い部分の重心（画素計測: 画像の50.7%位置）に揃える。
+     端から端の中点(54%)だと「!」に引っ張られて右に寄りすぎ、画像中心(50%)だと僅かに左に見える */
+  transform: translate3d(calc(min(330px, 70vw) * 0.007), 0, 0);
   will-change: transform;
 }
 
@@ -6508,4 +6510,167 @@ body[class*="theme-"]:has(> #loading-screen:not(.fadeout)) {
    既定ハイライトは無効化する */
 .autocomplete-item {
   -webkit-tap-highlight-color: transparent;
+}
+
+
+/* ===================================================
+   4周年記念イントロ（index.html の期間限定スクリプトが生成）
+   ローディング画面(#loading-screen)の内側に重ねる黒い舞台。
+   =================================================== */
+#anniv-intro {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #000;
+  opacity: 1;
+  transition: opacity 0.45s ease;
+  overflow: hidden;
+}
+/* ローディング画面と同じく、下に黒を400pxぶら下げてPWA起動時の高さ揺れでも隙間を出さない */
+#anniv-intro::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  height: 400px;
+  background: #000;
+}
+#anniv-intro.out { opacity: 0; pointer-events: none; }
+
+/* 金色のスポットライト（着地後に脈打つ） */
+.anniv-glow {
+  position: absolute;
+  inset: -20%;
+  background: radial-gradient(ellipse 42% 32% at 50% 47%, rgba(232, 196, 96, 0.30), rgba(0, 0, 0, 0) 70%);
+  opacity: 0.6;
+}
+#anniv-intro.play .anniv-glow { animation: anvGlow 1.6s ease-in-out 1.4s infinite alternate; }
+
+.anniv-stage {
+  position: relative;
+  /* 画像は3枚とも1000×1000。通常ローディングのロゴ(#loading-logo: 330px / 最大70vw)と
+     同じ幅・同じ位置に置くことで、フェードアウト時に4周年ロゴ→通常ロゴがその場で入れ替わる。
+     通常画面はロゴ＋スピナー(上余白38px+玉18px=56px)のまとまりを中央揃えしているので、
+     同じ56pxを下に確保してロゴの中心位置を一致させる */
+  width: 330px;
+  max-width: 70vw;
+  aspect-ratio: 1 / 1;
+  margin-bottom: 56px;
+  min-height: 1px; /* aspect-ratio非対応環境の保険 */
+}
+.anniv-logo, .anniv-gold {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  opacity: 0;
+  will-change: transform, opacity;
+}
+/* 金文字は画像の位置より少し下げて、ロゴとの間隔をとる */
+.anniv-gold, .anniv-shine { top: 9%; bottom: -9%; }
+/* タイムライン帯（#01 2022.09.07 → 2026.09.07 #111）: 金文字のさらに下に置く。
+   画像内の帯は y=87〜98% にあるため、金文字(下端≈107%)と重ならないよう23%下げる */
+.anniv-sub {
+  position: absolute;
+  left: 0; right: 0;
+  top: 23%; bottom: -23%;
+  width: 100%; height: 100%;
+  object-fit: contain;
+  opacity: 0;
+  filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.25));
+  will-change: transform, opacity;
+}
+.anniv-logo { filter: drop-shadow(0 14px 28px rgba(0, 0, 0, 0.7)); }
+.anniv-gold { filter: drop-shadow(0 0 14px rgba(255, 214, 92, 0.42)); }
+
+/* 金文字の上を走る光沢（金文字の形でマスク） */
+.anniv-shine {
+  position: absolute;
+  left: 0; right: 0;
+  opacity: 0;
+  -webkit-mask: url(BTR_logo_4th_1.png) center / contain no-repeat;
+  mask: url(BTR_logo_4th_1.png) center / contain no-repeat;
+  background: linear-gradient(112deg, rgba(255,255,255,0) 38%, rgba(255,255,255,0.95) 50%, rgba(255,255,255,0) 62%);
+  background-size: 260% 100%;
+  background-position: 160% 0;
+  pointer-events: none;
+}
+/* 着地の瞬間の光のフラッシュ（金文字の位置から広がる） */
+.anniv-flash {
+  position: absolute;
+  left: 50%; top: 90%;
+  width: 90%; aspect-ratio: 1 / 1;
+  margin-left: -45%; margin-top: -45%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 244, 200, 0.95) 0%, rgba(255, 210, 90, 0.45) 28%, rgba(255, 200, 80, 0) 65%);
+  opacity: 0;
+  transform: scale(0.2);
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+/* きらめき */
+.anniv-spark {
+  position: absolute;
+  width: var(--sz, 1.6vmin); height: var(--sz, 1.6vmin);
+  min-width: 8px; min-height: 8px;
+  transform: translate(-50%, -50%);
+  opacity: 0;
+  background: #ffe48a;
+  clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%);
+  filter: drop-shadow(0 0 6px rgba(255, 220, 110, 0.9));
+  pointer-events: none;
+}
+
+/* 再生（.play が付いたら順番に動く） */
+#anniv-intro.play .anniv-logo  { animation: anvLogoIn 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) 0.15s forwards; }
+#anniv-intro.play .anniv-gold  { animation: anvGoldIn 0.75s cubic-bezier(0.2, 0.9, 0.25, 1.15) 0.95s forwards; }
+#anniv-intro.play .anniv-flash { animation: anvFlash 0.8s ease-out 1.45s forwards; }
+#anniv-intro.play .anniv-sub   { animation: anvSubIn 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) 1.75s forwards; }
+#anniv-intro.play .anniv-shine { animation: anvShine 1.15s ease-in-out 1.9s forwards; }
+#anniv-intro.play .anniv-spark { animation: anvSpark 0.9s ease-in-out infinite alternate; }
+
+@keyframes anvLogoIn {
+  0%   { opacity: 0; transform: scale(1.22) translateY(14px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+@keyframes anvGoldIn {
+  0%   { opacity: 0; transform: translateY(30px) scale(0.92); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes anvSubIn {
+  0%   { opacity: 0; transform: translateY(14px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+@keyframes anvFlash {
+  0%   { opacity: 0.95; transform: scale(0.2); }
+  100% { opacity: 0; transform: scale(2.4); }
+}
+@keyframes anvShine {
+  0%   { opacity: 1; background-position: 160% 0; }
+  85%  { opacity: 1; background-position: -60% 0; }
+  100% { opacity: 0; background-position: -60% 0; }
+}
+@keyframes anvSpark {
+  0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.4) rotate(0deg); }
+  100% { opacity: 1; transform: translate(-50%, -50%) scale(1.2) rotate(45deg); }
+}
+@keyframes anvGlow {
+  from { opacity: 0.6; }
+  to   { opacity: 1; }
+}
+/* 動きを減らす設定の端末では、フェードだけの控えめな演出にする */
+@media (prefers-reduced-motion: reduce) {
+  #anniv-intro.play .anniv-logo  { animation: anvFadeOnly 0.6s ease 0.1s forwards; }
+  #anniv-intro.play .anniv-gold  { animation: anvFadeOnly 0.6s ease 0.8s forwards; }
+  #anniv-intro.play .anniv-sub   { animation: anvFadeOnly 0.6s ease 1.3s forwards; }
+  #anniv-intro.play .anniv-shine,
+  #anniv-intro.play .anniv-flash,
+  #anniv-intro.play .anniv-glow,
+  #anniv-intro.play .anniv-spark { animation: none; }
+  @keyframes anvFadeOnly { from { opacity: 0; } to { opacity: 1; } }
 }
