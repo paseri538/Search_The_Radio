@@ -258,8 +258,24 @@ body {
 }
 .filter-title {
   font-size: 1.02rem; font-weight: 700; margin-bottom: 8px; letter-spacing: 0.01em; color: #463d94;
-  display: flex; align-items: center; gap: 4px;
+  /* アイコンと文字はベースラインで揃える（ボックス中央揃えだとフォント内部の余白差で
+     図形が上下にズレて見える。FAアイコンと見出しフォントはベースライン基準のインク範囲が
+     ほぼ同じ(-0.88〜+0.12em / -0.86〜+0.09em)なので、同じ文字サイズならこれで高さも中心も一致する） */
+  display: flex; align-items: baseline; gap: 6px;
 }
+/* 見出しアイコン: 絵文字（OS依存の見た目）ではなくFont Awesomeで統一。幅を固定して文字位置を揃える */
+.filter-title > i {
+  /* 箱幅は図形そのもの＋一定gapにして「アイコン右端→文字」の距離を揃える。
+     文字よりほんの少し小さく(0.9em)。縮小するとインクの中心がベースライン寄りに下がるため、
+     文字のインク中心(-0.385em)に合うよう計算値ぶん(約0.045em)だけ上げる */
+  width: auto; font-size: 0.9em; line-height: 1;
+  position: relative; top: -0.03em;
+}
+/* 画素実測に基づく個別補正（4倍解像度のスクリーンショットでインク中心を文字と±0.3px以内に）。
+   カレンダー・ラジオは同サイズでも図形が僅かに低く描かれるため少し上げ、隙間の差も揃える */
+.filter-title > i.fa-user { top: -0.06em; }
+.filter-title > i.fa-calendar-days { top: -0.08em; margin-right: 0.5px; }
+.filter-title > i.fa-radio { top: -0.08em; margin-right: -0.5px; }
 .filter-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 6px; }
 .guest-button, .btn-corner, .btn-year {
   padding: 8px 0;
@@ -511,11 +527,7 @@ body.dark-mode .btn-year.active {
   }
 }
 
-/* 選択ボタンアイコン */
-body.dark-mode .filter-title .fa,
-body.dark-mode .filter-title .fa-solid {
-  color: #96e5c4 !important;
-}
+/* 見出しアイコンは文字色をそのまま継承させる（以前の薄緑指定は文字と色味がズレて見えたため廃止） */
 
 /* ページネーション */
 body.dark-mode .pagination-area {

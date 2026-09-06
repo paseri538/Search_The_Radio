@@ -295,7 +295,7 @@
   <div class="drawer-backdrop" id="drawerBackdrop"></div>
   <div id="filterDrawer" aria-modal="true" role="dialog" aria-label="詳細フィルター">
     <div class="filter-section">
-      <div class="filter-title">🎙️ 出演者検索</div>
+      <div class="filter-title"><i class="fa-solid fa-user" aria-hidden="true"></i> 出演者検索</div>
       <div class="guest-button-group filter-grid" role="group" aria-label="出演者フィルター">
         <button class="guest-button" data-guest="青山吉能" aria-pressed="false">青山吉能(ソロ回)</button>
         <button class="guest-button" data-guest="鈴代紗弓" aria-pressed="false">鈴代紗弓</button>
@@ -310,7 +310,7 @@
       </div>
     </div>
     <div class="filter-section">
-      <div class="filter-title">📅 公開年検索</div>
+      <div class="filter-title"><i class="fa-solid fa-calendar-days" aria-hidden="true"></i> 公開年検索</div>
       <div id="yearButtonGroup" class="filter-grid" role="group" aria-label="公開年フィルター">
         <button class="btn-year" data-year="2022" aria-pressed="false">2022年</button>
         <button class="btn-year" data-year="2023" aria-pressed="false">2023年</button>
@@ -320,7 +320,7 @@
       </div>
     </div>
     <div class="filter-section">
-      <div class="filter-title">📻 コーナー検索</div>
+      <div class="filter-title"><i class="fa-solid fa-radio" aria-hidden="true"></i> コーナー検索</div>
       <div id="cornerButtonGroup" class="filter-grid" role="group" aria-label="コーナーフィルター">
         <button class="btn-corner" data-corner="ぼっち共感" aria-pressed="false">ぼっち共感</button>
         <button class="btn-corner" data-corner="ウソ陽キャ辞典" aria-pressed="false">ウソ陽キャ辞典</button>
@@ -333,7 +333,7 @@
       </div>
     </div>
     <div class="filter-section">
-      <div class="filter-title">🔎 その他</div>
+      <div class="filter-title"><i class="fa-solid fa-microphone" aria-hidden="true"></i> その他</div>
       <div id="otherButtonGroup" class="filter-grid" role="group" aria-label="その他フィルター">
         <button class="btn-corner" data-other="公開録音" aria-pressed="false">公開録音</button>
         <button class="btn-corner" data-other="生配信" aria-pressed="false">生配信</button>
@@ -502,9 +502,9 @@
 
   <script>
   // ---- Service Worker register (network-first) ----
-  // ★バージョン表記はこのファイルには置かない。サイト更新時は sw.js の
-  // SW_VERSION（先頭）だけを変更すれば、全ファイルが新しいキャッシュに
-  // 一括で取り直され、自動リロードで反映される。
+  // ★バージョン表記はこのファイルには置かない。sw.js の SW_VERSION が唯一の表記で、
+  // GitHubへのアップ時に GitHub Actions が自動で書き換える（手作業不要）。
+  // 値が変わると全ファイルが新しいキャッシュに一括で取り直され、自動リロードで反映される。
 
   // ★起動時ちらつき対策: 「ローディング→UIが一瞬見える→更新リロード→再ローディング」の
   // UI露出をなくすため、SWの更新チェックが決着するまでローディング画面を保持する
