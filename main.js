@@ -1355,9 +1355,14 @@ function fitGuestLines() {
   const allLines = guestLines.concat(metaGroups.flat());
   if (allLines.length === 0) return;
 
+  // ★ゲスト名は「文字サイズ縮小」ではなく、フィルタボタンと同じ「水平圧縮(scaleX)」で収める。
+  //   圧縮率がこの値を下回るほど長い場合だけ、保険として文字サイズ縮小も併用する
+  const MIN_GUEST_SCALE = 0.6;
+
   // --- フェーズ1: 全行のスタイルを一括リセット（書き込みのみ） ---
   for (const line of allLines) {
     line.style.fontSize = '';
+    line.style.transform = '';
     line.style.whiteSpace = 'nowrap';
   }
 
@@ -1383,7 +1388,34 @@ function fitGuestLines() {
     }
     return { finalSize, parentWidth };
   };
-  const guestResults = guestLines.map(measure);
+  // ゲスト名用: 文字サイズは維持し、はみ出す分だけ水平圧縮率(scale)を求める
+  const measureGuest = (line) => {
+    const parent = line.parentElement;
+    if (!parent) return null;
+    const compStyle = window.getComputedStyle(parent);
+    const parentWidth = parent.clientWidth
+      - (parseFloat(compStyle.paddingLeft) || 0)
+      - (parseFloat(compStyle.paddingRight) || 0);
+    if (parentWidth <= 10) {
+      if (line.offsetParent !== null) needsRetry = true;
+      return null;
+    }
+    const currentWidth = line.scrollWidth;
+    const baseSize = parseFloat(window.getComputedStyle(line).fontSize) || 12;
+    let scale = 1, finalSize = baseSize;
+    if (currentWidth > parentWidth) {
+      const ratio = parentWidth / currentWidth;
+      if (ratio >= MIN_GUEST_SCALE) {
+        scale = ratio;
+      } else {
+        // 圧縮だけでは収まらない極端な長さ: 下限まで圧縮し、残りは文字サイズで吸収
+        scale = MIN_GUEST_SCALE;
+        finalSize = Math.max(baseSize * (ratio / MIN_GUEST_SCALE), MIN_FONT_SIZE);
+      }
+    }
+    return { finalSize, scale, parentWidth };
+  };
+  const guestResults = guestLines.map(measureGuest);
   const metaResults = metaGroups.map(lines => lines.map(measure));
 
   // --- フェーズ3: 計測結果を一括適用（書き込みのみ） ---
@@ -1397,9 +1429,12 @@ function fitGuestLines() {
       line.style.visibility = 'visible';
       return;
     }
-    line.style.fontSize = res.finalSize + 'px';
+    if (res.finalSize !== undefined && Math.abs(res.finalSize - (parseFloat(line.style.fontSize) || 0)) > 0.01 && res.scale === MIN_GUEST_SCALE) {
+      line.style.fontSize = res.finalSize + 'px';
+    }
+    line.style.transform = res.scale < 1 ? `scaleX(${res.scale.toFixed(3)})` : '';
     if (res.finalSize === MIN_FONT_SIZE) {
-      ellipsisChecks.push({ line, parentWidth: res.parentWidth });
+      ellipsisChecks.push({ line, parentWidth: res.parentWidth, scale: res.scale });
     } else {
       line.classList.remove('needs-ellipsis');
       line.style.visibility = 'visible';
@@ -1432,9 +1467,9 @@ function fitGuestLines() {
   // （読み取り→書き込みの順にまとめ、リフローを1回に抑える）
   if (ellipsisChecks.length > 0) {
     const widths = ellipsisChecks.map(({ line }) => line.scrollWidth); // 読み取りのみ
-    ellipsisChecks.forEach(({ line, parentWidth }, i) => {
-      // ★微調整: 小数点以下の計算誤差を吸収するために +1 を追加
-      line.classList.toggle('needs-ellipsis', widths[i] > parentWidth + 1);
+    ellipsisChecks.forEach(({ line, parentWidth, scale = 1 }, i) => {
+      // ★微調整: 小数点以下の計算誤差を吸収するために +1 を追加（水平圧縮ぶんは見た目幅に換算）
+      line.classList.toggle('needs-ellipsis', widths[i] * scale > parentWidth + 1);
       line.style.visibility = 'visible';
     });
   }
@@ -2545,8 +2580,8 @@ function setupModals() {
       tsSavedScrollY = window.scrollY;
       lockTsBody();
       tsCtx = { id: videoId, link, cardEl, durationSec: durationToSec(duration), editing: false, wasFav: isFavorite(videoId) };
-      document.getElementById('tsModalTitle').innerHTML =
-        `${title.trim().replace(/([#A-Za-z0-9:]+)/g, '<span class="impact-number">$1</span>')} タイムスタンプ`;
+      // タイトルはエピソード名なし（どの回かは直下のエピソードカードで分かる）
+      document.getElementById('tsModalTitle').textContent = 'タイムスタンプ';
 
       // どの回への登録か一目で分かるよう、トップ画面と全く同じエピソードカードを表示する。
       // （renderResultsのカードと同一のクラス・構造を使い、同じCSSを適用させる。
@@ -2791,15 +2826,9 @@ function setupModals() {
       const links = linksData[ep] || [];
       const body = document.getElementById('photoBody');
 
-      // タイムスタンプモーダルと同様に「#107 関連リンク集」の形式でタイトルを表示する
+      // タイトルはエピソード名なしの固定文言
       const titleEl = document.getElementById('photoModalTitle');
-      if (titleEl) {
-        const epItem = data.find(it => it.episode === ep);
-        const hashOnly = epItem ? getHashNumber(epItem.title) : '';
-        titleEl.innerHTML = hashOnly
-          ? `${hashOnly.trim().replace(/([#A-Za-z0-9:]+)/g, '<span class="impact-number">$1</span>')} 関連リンク集`
-          : '関連リンク集';
-      }
+      if (titleEl) titleEl.textContent = '関連リンク集';
       
       body.innerHTML = links.map(link => {
         const faIcon = link.platform === 'instagram' ? '<i class="fa-brands fa-instagram"></i>' : '<i class="fa-brands fa-x-twitter"></i>';
@@ -2839,8 +2868,6 @@ function setupShareButtons() {
   const u = encodeURIComponent(shareUrl);
   const t = encodeURIComponent(text);
   document.getElementById('shareX').href = `https://x.com/intent/tweet?url=${u}&text=${t}`;
-  document.getElementById('shareLINE').href = `https://social-plugins.line.me/lineit/share?url=${u}`;
-  document.getElementById('shareFB').href = `https://www.facebook.com/sharer/sharer.php?u=${u}`;
 }
 
 function setupRightClickModal() {
@@ -3146,11 +3173,6 @@ window.applyDidYouMean = function(word) {
             let swDone = !window.__swUpdateSettled;
             if (window.__swUpdateSettled) window.__swUpdateSettled.then(() => { swDone = true; });
 
-            // ★記念イントロ（index.htmlで期間中のみ生成）が終わるまでは通常ローディングも消さない。
-            // Promise側に9秒の絶対上限があるため、万一でも起動は止まらない
-            let annivDone = !window.__annivDone;
-            if (window.__annivDone) window.__annivDone.then(() => { annivDone = true; });
-
             // タイトル画面は「ほどよい表示時間(MIN_SHOW)」「データ(カード)描画完了」
             // 「フォントの全文字読み込み完了」を満たしたら消す。フォントまで待つことで、
             // どの文字も最初からAdobeフォントで表示され、一瞬だけフォールバックになるFOUTを防ぐ。
@@ -3158,17 +3180,16 @@ window.applyDidYouMean = function(word) {
             const MIN_SHOW = 1500;   // タイトル最低表示時間
             const FONT_CAP = 8000;   // フォントを待つ上限（超えたら諦めて表示）
             const SW_CAP = 4500;     // SW更新チェックを待つ上限（Promise側の4秒上限の保険）
-            const ANNIV_CAP = 9500;  // 記念イントロを待つ上限（Promise側の9秒上限の保険）
             const tryHide = () => {
                 const t = performance.now();
                 if (!fontsDone) hookFonts();
-                if (cardsReady() && t >= MIN_SHOW && (fontsDone || t >= FONT_CAP) && (swDone || t >= SW_CAP) && (annivDone || t >= ANNIV_CAP)) { hideLoadingScreen(); return; }
+                if (cardsReady() && t >= MIN_SHOW && (fontsDone || t >= FONT_CAP) && (swDone || t >= SW_CAP)) { hideLoadingScreen(); return; }
                 requestAnimationFrame(tryHide);
             };
             tryHide();
 
             // 最終保険（データ取得やフォントが失敗しても必ず消す）
-            setTimeout(hideLoadingScreen, window.__annivDone ? 12000 : 9000);
+            setTimeout(hideLoadingScreen, 9000);
         }
     });
 
@@ -3631,12 +3652,40 @@ window.__hideSplashCover = function () {
 
 (function enhanceMobileExperience() {
   const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+  // ★タッチ端末（iPhone/Android/iPad）のブラウザ表示でもPWA版と同じUI（下部ナビ等）にする。
+  // 判定は「主入力がタッチ(pointer: coarse)」かつ「タッチ点あり」: Macのトラックパッドや
+  // マウス主体のPCは従来のPC版UIのまま。CSSは html.is-standalone をそのまま流用する。
+  // （maxTouchPointsは環境により0を返すことがあるため、主判定は pointer: coarse のみ。
+  //   matchMedia非対応の古い環境だけタッチ点数で代替する）
+  const isTouchDevice = (window.matchMedia && typeof window.matchMedia('(pointer: coarse)').matches === 'boolean')
+    ? window.matchMedia('(pointer: coarse)').matches
+    : (navigator.maxTouchPoints || 0) > 1;
+  // ★PC版でも画面幅が狭い時はPWA版と同じUIにする（境界はPC版のサイドバー切替と同じ1070px）。
+  // 幅の変化に追従して付け外しするため、下部ナビは常に生成しておき、表示はCSS(html.is-standalone)に任せる
+  const MOBILE_UI_MAX_WIDTH = 1069;
+  const narrowMq = window.matchMedia ? window.matchMedia('(max-width: ' + MOBILE_UI_MAX_WIDTH + 'px)') : null;
+  const useMobileUI = () => isStandalone || isTouchDevice || (narrowMq ? narrowMq.matches : window.innerWidth <= MOBILE_UI_MAX_WIDTH);
+  const applyMobileUI = () => {
+    const on = useMobileUI();
+    if (document.documentElement.classList.contains('is-standalone') === on) return;
+    document.documentElement.classList.toggle('is-standalone', on);
+    // 上部ボタン行の有無でヘッダー高さが変わるため、余白計算をやり直す
+    if (window.__updateHeaderOffset) { try { window.__updateHeaderOffset(); } catch (e) {} }
+  };
+  applyMobileUI();
+  document.addEventListener('DOMContentLoaded', () => {
+    setupPwaBottomNav();
+  });
+  if (narrowMq) {
+    (narrowMq.addEventListener ? narrowMq.addEventListener('change', applyMobileUI) : narrowMq.addListener(applyMobileUI));
+  } else {
+    window.addEventListener('resize', applyMobileUI);
+  }
 
   if (isStandalone) {
-    document.documentElement.classList.add('is-standalone');
     document.addEventListener('DOMContentLoaded', () => {
-      setupPwaBottomNav();
       // カバーを事前構築（ロゴの読込・デコードを済ませ、以後の表示をstyle切替1発にする）
+      // ※ホーム画面アプリ専用（起動スナップショット／更新リロードの明滅隠し用）
       __buildSplashCover();
     });
 

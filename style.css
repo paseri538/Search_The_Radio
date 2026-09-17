@@ -703,6 +703,8 @@ body.dark-mode #loading-screen {
   max-width: 100%;
   white-space: nowrap;
   vertical-align: top;
+  /* 長い名前は main.js が scaleX で水平圧縮する。左端を基点に縮める */
+  transform-origin: left center;
 }
 
 /* 各カードに★ボタン */
@@ -779,7 +781,16 @@ body.dark-mode .no-results{
 #results .episode-item .fav-btn{
   top: auto;                 /* 右上→解除 */
   bottom: 10px;              /* 右下に固定 */
-  right: 10px;
+  right: var(--card-pad-r, 10px); /* 右端をテキスト列の右端と揃える */
+}
+#results .episode-item .photo-btn{
+  right: calc(var(--card-pad-r, 10px) + 42px); /* ★の左隣（34px＋間隔8px） */
+}
+/* スマホ幅: 画素実測で ★/リンク ボタンが「公開日時／動画時間」の文字中心より僅かに上に
+   見えていたため2px下げ、PC/iPad（文字中心の約1px下）と同じ見え方に揃える */
+@media (max-width: 600px) {
+  #results .episode-item .fav-btn,
+  #results .episode-item .photo-btn { bottom: 8px; }
 }
 
 /* ===== 端末でのダブルタップ拡大を抑止 ===== */
@@ -902,8 +913,10 @@ html.wf-active #autocomplete {
 
 .history-section{
   width: 100%;
-  max-width: 960px;
-  margin: 56px auto 28px;
+  /* 幅いっぱい(960px)の細い帯だと中の短い文字が浮いて見えるため、中身に見合う幅に絞る */
+  max-width: 640px;
+  /* ページ番号(下余白10px)との間隔が広すぎたため上余白を詰める（合計約30px） */
+  margin: 20px auto 24px;
   padding: 0 16px;
 }
 .history-toggle{
@@ -914,7 +927,6 @@ html.wf-active #autocomplete {
   font-weight: 750; letter-spacing: .01em;
   transform: translateZ(0);
 }
-.history-toggle .icon{ font-size: 1.15em; }
 .history-toggle .title{ font-size: 1.06em; }
 /* ★整理: .history-toggle .sub は削除（該当クラスの要素がHTML/JSのどこにも存在しない） */
 .history-toggle:focus-visible{ outline: 3px solid rgba(99,102,241,.45); outline-offset: 2px; }
@@ -984,7 +996,7 @@ html.wf-active #autocomplete {
 
 /* 小さめ画面最適化 */
 @media (max-width: 640px){
-  .history-section{ margin-top: 40px; }
+  .history-section{ margin-top: 16px; } /* スマホ: ページ番号との間隔 合計約26px */
   .history-timeline{ margin-left: 22px; padding-left: 18px; }
   .history-item{ padding: 12px 12px 14px 14px; }
   .history-sticky-year{ font-size: 13px; padding: 5px 10px; }
@@ -994,7 +1006,15 @@ html.wf-active #autocomplete {
 /* タイトル中央揃え（開閉ボタン） */
 .history-toggle{
   position: relative;
-  display:flex; align-items:center; gap:12px;
+  display:flex; align-items:center; justify-content:flex-end; gap:12px;
+}
+.history-toggle-chevron{
+  font-size: 0.9em;
+  opacity: 0.45;
+  transition: transform .15s, opacity .15s;
+}
+@media (hover: hover) {
+  .history-toggle:hover .history-toggle-chevron{ opacity: 0.9; transform: translateX(2px); }
 }
 .history-toggle .title{
   position:absolute; left:50%; transform:translateX(-50%);
@@ -1050,8 +1070,8 @@ body.dark-mode .history-sticky-year{
 .modal-overlay{
   display: none;
   position: fixed; inset: 0;
-  /* 背景を少し濃くして、ぼかしがなくても見やすくします */
-  background: rgba(0, 0, 0, 0.6) !important;
+  /* モーダル背後はしっかり暗くして、モーダルに視線を集める（全カラー共通） */
+  background: rgba(0, 0, 0, 0.78) !important;
   align-items: center; justify-content: center;
 }
 
@@ -1059,8 +1079,8 @@ body.dark-mode .history-sticky-year{
 body.dark-mode .modal-overlay,
 body.theme-blue .modal-overlay,
 body.theme-red .modal-overlay {
-  /* こちらも背景を少し濃く調整します */
-  background: rgba(10, 10, 20, 0.7) !important;
+  /* 暗色系テーマはさらに濃く。青みのない純黒にする（青成分が入ると背景が青っぽく見える） */
+  background: rgba(0, 0, 0, 0.85) !important;
 }
 
 .modal-content.history-modal{
@@ -1277,19 +1297,23 @@ footer {
   display:flex;
   justify-content:center;
   gap:16px;
-  margin:14px auto 0;
+  margin:12px auto 0;
 }
 
+/* ラベル付きのピル型（丸アイコン1つだけだと孤立して浮いて見えるため） */
 .share-btn{
   display:inline-flex;
   align-items:center;
   justify-content:center;
-  width:56px; height:56px;
+  gap:9px;
+  width:auto; height:44px;
+  padding:0 22px 0 18px;
   border-radius:999px;
   background:#ffffff;
   color:#374151;
   border:1px solid #e5e9f7;
-  font-size:28px;
+  font-size:15px;
+  font-weight:700;
   box-shadow:0 6px 20px -10px rgba(0,0,0,.12);
   transition:transform .15s, background .15s, box-shadow .15s;
   -webkit-tap-highlight-color: transparent; /* モバイルの青ハイライト除去 */
@@ -1324,8 +1348,10 @@ body.dark-mode .share-btn{
 /* アイコンの行高を詰めてセンタリングを安定 */
 .share-btn i {
   line-height: 1;
+  font-size: 19px;
   pointer-events: none; /* クリックを <a> に通す保険 */
 }
+.share-btn .share-label { line-height: 1; pointer-events: none; }
 
 /* キーボード操作用のフォーカスリング（下線消した代わり） */
 .share-btn:focus-visible {
@@ -1338,9 +1364,9 @@ body.dark-mode .share-btn:focus-visible {
 
 @media (max-width: 600px){
   .share-btn{
-    width:64px;          /* 指標：タップターゲット 48–64px */
-    height:64px;
-    font-size:30px;
+    height:48px;         /* 指標：タップターゲット 48px以上 */
+    padding:0 24px 0 20px;
+    font-size:15px;
   }
 }
 
@@ -1365,7 +1391,7 @@ body.dark-mode .share-btn:focus-visible {
 /* ★ボタンの分だけ右側にスペース（スマホ） */
 @media (max-width: 640px){
   #results .episode-item,
-  .ts-episode-card .episode-item{ padding-right: 16px; } /* 34px(ボタン) + 10px*2(余白) */
+  .ts-episode-card .episode-item{ --card-pad-r: 12px; padding-right: var(--card-pad-r); } /* テキスト列の右端＝ボタン右端 */
 }
 
 @media (max-width: 640px){
@@ -1643,7 +1669,7 @@ body.dark-mode #filterDrawer .drawer-footer{
   font-weight: 700;
   cursor: pointer;
   min-height: 46px;
-  width: clamp(160px, 60%, 520px);
+  width: 100%; /* フィルタボタンの並び（グリッド）と同じ全幅にする（iPadでも） */
   box-shadow: 0 2px 14px -10px rgba(0,0,0,.25);
   transition: background .15s, border .15s, transform .08s;
 }
@@ -1655,9 +1681,6 @@ body.dark-mode #filterDrawer .drawer-footer{
   }
 }
 #filterDrawer .drawer-close-btn:active{ transform: translateY(1px); }
-@media (max-width: 640px){
-  #filterDrawer .drawer-close-btn{ width: 100%; }
-}
 #filterDrawer{ padding-bottom: 0 !important; }
 #filterDrawer > :last-child{ margin-bottom: 0 !important; }
 
@@ -2936,7 +2959,10 @@ html {
 /* --- 2. カード全体の基本設定 --- */
 /* (ここは変更しないでください) */
 .episode-item {
+  /* カード内側の右余白。テキスト列の右端とボタン（★/リンク）の右端をこの位置で揃える */
+  --card-pad-r: 12px;
   padding: 12px;
+  padding-right: var(--card-pad-r);
 }
 
 /* --- 3. リンクエリアのレイアウトを再構築 (最重要) --- */
@@ -3019,8 +3045,9 @@ html {
 /* ======================================================================== */
 @media (min-width: 780px) and (max-width: 1069px) {
   .episode-item {
+    --card-pad-r: 14px;
     padding: 14px;
-    padding-right: 16px;
+    padding-right: var(--card-pad-r);
   }
   
   /* --- サムネイル (幅150px / 高さ84.375px) --- */
@@ -3074,7 +3101,9 @@ html {
 /* ======================================================================== */
 @media (min-width: 1070px) {
   .episode-item {
+    --card-pad-r: 14px;
     padding: 14px;
+    padding-right: var(--card-pad-r);
   }
   
   /* --- サムネイル (幅150px / 高さ84.375px) --- */
@@ -3372,7 +3401,7 @@ body[class*="theme-"] .main-search-btn {
 /* =================================================== */
 
 /* 見出しやボタンなど、強調したいテキストに太いフォントを適用します */
-h1, h2, h3, h4, h5, b, strong, .filter-title, .guest-button, .btn-corner, .btn-year, .page-btn, .history-toggle .title, .history-item .label, #createPlaylistBtn, .drawer-close-btn, .about-title, .results-count-under-bar, .is-standalone .pwa-bottom-nav-btn {
+h1, h2, h3, h4, h5, b, strong, .filter-title, .guest-button, .btn-corner, .btn-year, .page-btn, .history-toggle .title, .history-item .label, .share-btn .share-label, #createPlaylistBtn, .drawer-close-btn, .about-title, .results-count-under-bar, .is-standalone .pwa-bottom-nav-btn {
   font-family: fot-udkakugoc80-pro, 'Segoe UI', system-ui, -apple-system, sans-serif;
   /* 他のスタイル設定に確実に打ち勝って太字にするため、
     font-weight に !important を付けています。
@@ -4762,11 +4791,12 @@ body[class*="theme-"] .photo-body::-webkit-scrollbar-thumb {
   word-break: normal !important;
   overflow-wrap: normal !important;
   
-  /* ★修正: 右下のボタン類と被らないように【確実な】余白を確保 */
-  padding-right: 48px !important; /* お気に入りボタン(☆)のみの場合 */
+  /* ★修正: 右下のボタン類と被らないように【確実な】余白を確保
+     （カードの右paddingを10pxに詰めた分、+6pxしてボタンとの距離は従来どおり） */
+  padding-right: 44px !important; /* お気に入りボタン(☆)のみ: ボタン幅34px + 余白10px */
 }
 .episode-item .episode-meta.has-photo-btn {
-  padding-right:76px !important; 
+  padding-right: 86px !important; /* リンク+★: 34+8+34 + 余白10px */
 }
 
 /* 各行（公開日時 / 動画時間）のラッパー */
@@ -6512,165 +6542,11 @@ body[class*="theme-"]:has(> #loading-screen:not(.fadeout)) {
   -webkit-tap-highlight-color: transparent;
 }
 
-
 /* ===================================================
-   4周年記念イントロ（index.html の期間限定スクリプトが生成）
-   ローディング画面(#loading-screen)の内側に重ねる黒い舞台。
+   フィルター見出しのカテゴリ別カラー（ホワイト／ブラックカラー時のみ）
+   アイコンは文字色を継承するので同色になる。カラーテーマ時は各テーマの見出し色のまま。
    =================================================== */
-#anniv-intro {
-  position: absolute;
-  inset: 0;
-  z-index: 5;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #000;
-  opacity: 1;
-  transition: opacity 0.45s ease;
-  overflow: hidden;
-}
-/* ローディング画面と同じく、下に黒を400pxぶら下げてPWA起動時の高さ揺れでも隙間を出さない */
-#anniv-intro::after {
-  content: "";
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  height: 400px;
-  background: #000;
-}
-#anniv-intro.out { opacity: 0; pointer-events: none; }
-
-/* 金色のスポットライト（着地後に脈打つ） */
-.anniv-glow {
-  position: absolute;
-  inset: -20%;
-  background: radial-gradient(ellipse 42% 32% at 50% 47%, rgba(232, 196, 96, 0.30), rgba(0, 0, 0, 0) 70%);
-  opacity: 0.6;
-}
-#anniv-intro.play .anniv-glow { animation: anvGlow 1.6s ease-in-out 1.4s infinite alternate; }
-
-.anniv-stage {
-  position: relative;
-  /* 画像は3枚とも1000×1000。通常ローディングのロゴ(#loading-logo: 330px / 最大70vw)と
-     同じ幅・同じ位置に置くことで、フェードアウト時に4周年ロゴ→通常ロゴがその場で入れ替わる。
-     通常画面はロゴ＋スピナー(上余白38px+玉18px=56px)のまとまりを中央揃えしているので、
-     同じ56pxを下に確保してロゴの中心位置を一致させる */
-  width: 330px;
-  max-width: 70vw;
-  aspect-ratio: 1 / 1;
-  margin-bottom: 56px;
-  min-height: 1px; /* aspect-ratio非対応環境の保険 */
-}
-.anniv-logo, .anniv-gold {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  opacity: 0;
-  will-change: transform, opacity;
-}
-/* 金文字は画像の位置より少し下げて、ロゴとの間隔をとる */
-.anniv-gold, .anniv-shine { top: 9%; bottom: -9%; }
-/* タイムライン帯（#01 2022.09.07 → 2026.09.07 #111）: 金文字のさらに下に置く。
-   画像内の帯は y=87〜98% にあるため、金文字(下端≈107%)と重ならないよう23%下げる */
-.anniv-sub {
-  position: absolute;
-  left: 0; right: 0;
-  top: 23%; bottom: -23%;
-  width: 100%; height: 100%;
-  object-fit: contain;
-  opacity: 0;
-  filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.25));
-  will-change: transform, opacity;
-}
-.anniv-logo { filter: drop-shadow(0 14px 28px rgba(0, 0, 0, 0.7)); }
-.anniv-gold { filter: drop-shadow(0 0 14px rgba(255, 214, 92, 0.42)); }
-
-/* 金文字の上を走る光沢（金文字の形でマスク） */
-.anniv-shine {
-  position: absolute;
-  left: 0; right: 0;
-  opacity: 0;
-  -webkit-mask: url(BTR_logo_4th_1.png) center / contain no-repeat;
-  mask: url(BTR_logo_4th_1.png) center / contain no-repeat;
-  background: linear-gradient(112deg, rgba(255,255,255,0) 38%, rgba(255,255,255,0.95) 50%, rgba(255,255,255,0) 62%);
-  background-size: 260% 100%;
-  background-position: 160% 0;
-  pointer-events: none;
-}
-/* 着地の瞬間の光のフラッシュ（金文字の位置から広がる） */
-.anniv-flash {
-  position: absolute;
-  left: 50%; top: 90%;
-  width: 90%; aspect-ratio: 1 / 1;
-  margin-left: -45%; margin-top: -45%;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(255, 244, 200, 0.95) 0%, rgba(255, 210, 90, 0.45) 28%, rgba(255, 200, 80, 0) 65%);
-  opacity: 0;
-  transform: scale(0.2);
-  pointer-events: none;
-  will-change: transform, opacity;
-}
-/* きらめき */
-.anniv-spark {
-  position: absolute;
-  width: var(--sz, 1.6vmin); height: var(--sz, 1.6vmin);
-  min-width: 8px; min-height: 8px;
-  transform: translate(-50%, -50%);
-  opacity: 0;
-  background: #ffe48a;
-  clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%);
-  filter: drop-shadow(0 0 6px rgba(255, 220, 110, 0.9));
-  pointer-events: none;
-}
-
-/* 再生（.play が付いたら順番に動く） */
-#anniv-intro.play .anniv-logo  { animation: anvLogoIn 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) 0.15s forwards; }
-#anniv-intro.play .anniv-gold  { animation: anvGoldIn 0.75s cubic-bezier(0.2, 0.9, 0.25, 1.15) 0.95s forwards; }
-#anniv-intro.play .anniv-flash { animation: anvFlash 0.8s ease-out 1.45s forwards; }
-#anniv-intro.play .anniv-sub   { animation: anvSubIn 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) 1.75s forwards; }
-#anniv-intro.play .anniv-shine { animation: anvShine 1.15s ease-in-out 1.9s forwards; }
-#anniv-intro.play .anniv-spark { animation: anvSpark 0.9s ease-in-out infinite alternate; }
-
-@keyframes anvLogoIn {
-  0%   { opacity: 0; transform: scale(1.22) translateY(14px); }
-  100% { opacity: 1; transform: scale(1) translateY(0); }
-}
-@keyframes anvGoldIn {
-  0%   { opacity: 0; transform: translateY(30px) scale(0.92); }
-  100% { opacity: 1; transform: translateY(0) scale(1); }
-}
-@keyframes anvSubIn {
-  0%   { opacity: 0; transform: translateY(14px); }
-  100% { opacity: 1; transform: translateY(0); }
-}
-@keyframes anvFlash {
-  0%   { opacity: 0.95; transform: scale(0.2); }
-  100% { opacity: 0; transform: scale(2.4); }
-}
-@keyframes anvShine {
-  0%   { opacity: 1; background-position: 160% 0; }
-  85%  { opacity: 1; background-position: -60% 0; }
-  100% { opacity: 0; background-position: -60% 0; }
-}
-@keyframes anvSpark {
-  0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.4) rotate(0deg); }
-  100% { opacity: 1; transform: translate(-50%, -50%) scale(1.2) rotate(45deg); }
-}
-@keyframes anvGlow {
-  from { opacity: 0.6; }
-  to   { opacity: 1; }
-}
-/* 動きを減らす設定の端末では、フェードだけの控えめな演出にする */
-@media (prefers-reduced-motion: reduce) {
-  #anniv-intro.play .anniv-logo  { animation: anvFadeOnly 0.6s ease 0.1s forwards; }
-  #anniv-intro.play .anniv-gold  { animation: anvFadeOnly 0.6s ease 0.8s forwards; }
-  #anniv-intro.play .anniv-sub   { animation: anvFadeOnly 0.6s ease 1.3s forwards; }
-  #anniv-intro.play .anniv-shine,
-  #anniv-intro.play .anniv-flash,
-  #anniv-intro.play .anniv-glow,
-  #anniv-intro.play .anniv-spark { animation: none; }
-  @keyframes anvFadeOnly { from { opacity: 0; } to { opacity: 1; } }
-}
+body:not([class*="theme-"]) .filter-title.filter-title--guest  { color: #ed6e96 !important; }
+body:not([class*="theme-"]) .filter-title.filter-title--year   { color: #f1c142 !important; }
+body:not([class*="theme-"]) .filter-title.filter-title--corner { color: #2f6cb8 !important; }
+body:not([class*="theme-"]) .filter-title.filter-title--other  { color: #d32d4b !important; }
