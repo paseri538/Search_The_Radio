@@ -1314,8 +1314,8 @@ footer {
   border:1px solid #e5e9f7;
   font-size:15px;
   font-weight:700;
-  box-shadow:0 6px 20px -10px rgba(0,0,0,.12);
-  transition:transform .15s, background .15s, box-shadow .15s;
+  box-shadow:none; /* 影なし（周囲のフラットなボタンと統一） */
+  transition:transform .15s, background .15s;
   -webkit-tap-highlight-color: transparent; /* モバイルの青ハイライト除去 */
   transform: translateZ(0);
 }
