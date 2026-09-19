@@ -3401,7 +3401,7 @@ body[class*="theme-"] .main-search-btn {
 /* =================================================== */
 
 /* 見出しやボタンなど、強調したいテキストに太いフォントを適用します */
-h1, h2, h3, h4, h5, b, strong, .filter-title, .guest-button, .btn-corner, .btn-year, .page-btn, .history-toggle .title, .history-item .label, .share-btn .share-label, #createPlaylistBtn, .drawer-close-btn, .about-title, .results-count-under-bar, .is-standalone .pwa-bottom-nav-btn {
+h1, h2, h3, h4, h5, b, strong, .filter-title, .guest-button, .btn-corner, .btn-year, .page-btn, .history-toggle .title, .history-item .label, .share-btn .share-label, .filter-tag, #createPlaylistBtn, .drawer-close-btn, .about-title, .results-count-under-bar, .is-standalone .pwa-bottom-nav-btn {
   font-family: fot-udkakugoc80-pro, 'Segoe UI', system-ui, -apple-system, sans-serif;
   /* 他のスタイル設定に確実に打ち勝って太字にするため、
     font-weight に !important を付けています。
@@ -6550,3 +6550,53 @@ body:not([class*="theme-"]) .filter-title.filter-title--guest  { color: #ed6e96 
 body:not([class*="theme-"]) .filter-title.filter-title--year   { color: #f1c142 !important; }
 body:not([class*="theme-"]) .filter-title.filter-title--corner { color: #2f6cb8 !important; }
 body:not([class*="theme-"]) .filter-title.filter-title--other  { color: #d32d4b !important; }
+
+/* ===================================================
+   フィルターボタン選択時のカラー（ホワイト／ブラックカラー時のみ）
+   各セクションの見出し色と同じ色にする:
+   出演者=ピンク / 公開年=イエロー / コーナー=ブルー / その他=レッド
+   カラーテーマ時は各テーマの選択色のまま。
+   =================================================== */
+/* 出演者検索: ピンク */
+body:not([class*="theme-"]) .guest-button[data-guest][aria-pressed="true"],
+body:not([class*="theme-"]) .guest-button[data-guest].active,
+body:not([class*="theme-"]) .guest-button[data-guest][aria-pressed="true"]:hover {
+  background: #ed6e96 !important;
+  color: #ffffff !important;
+  border-color: #ed6e96 !important;
+  box-shadow: none !important;
+}
+/* 公開年検索: イエロー */
+body:not([class*="theme-"]) .btn-year[data-year][aria-pressed="true"],
+body:not([class*="theme-"]) .btn-year[data-year].active,
+body:not([class*="theme-"]) .btn-year[data-year][aria-pressed="true"]:hover {
+  background: #f1c142 !important;
+  color: #ffffff !important;
+  border-color: #f1c142 !important;
+  box-shadow: none !important;
+}
+/* コーナー検索: ブルー */
+body:not([class*="theme-"]) .btn-corner[data-corner][aria-pressed="true"],
+body:not([class*="theme-"]) .btn-corner[data-corner].active,
+body:not([class*="theme-"]) .btn-corner[data-corner][aria-pressed="true"]:hover {
+  background: #2f6cb8 !important;
+  color: #ffffff !important;
+  border-color: #2f6cb8 !important;
+  box-shadow: none !important;
+}
+/* その他: レッド */
+body:not([class*="theme-"]) .btn-corner[data-other][aria-pressed="true"],
+body:not([class*="theme-"]) .btn-corner[data-other].active,
+body:not([class*="theme-"]) .btn-corner[data-other][aria-pressed="true"]:hover {
+  background: #d32d4b !important;
+  color: #ffffff !important;
+  border-color: #d32d4b !important;
+  box-shadow: none !important;
+}
+
+/* 表示数の下に出る選択中フィルターのタグも、同じセクション色にする（ホワイト／ブラック時のみ）。
+   出演者タグはJSが出演者ごとの色をインラインで付けるため !important で上書きする */
+body:not([class*="theme-"]) .filter-tag[data-type="guest"]  { background: #ed6e96 !important; color: #ffffff !important; border: none !important; }
+body:not([class*="theme-"]) .filter-tag[data-type="year"]   { background: #f1c142 !important; color: #ffffff !important; border: none !important; }
+body:not([class*="theme-"]) .filter-tag[data-type="corner"] { background: #2f6cb8 !important; color: #ffffff !important; border: none !important; }
+body:not([class*="theme-"]) .filter-tag[data-type="other"]  { background: #d32d4b !important; color: #ffffff !important; border: none !important; }
