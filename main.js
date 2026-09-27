@@ -64,6 +64,12 @@ const guestColorMap = {
  * ===================================================
  */
 const normalize = (s) => (s || '').normalize('NFKC').replace(/[ァ-ン]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0x60)).toLowerCase().replace(/\s+/g, '');
+// 「#43」「#43 銀魂」のような回番号指定クエリを解析する（全角＃・全角数字も可）。
+// ep: 回番号 / rest: 番号の後ろのキーワード（カードの時刻リンク解決に使う）
+const parseEpisodeQuery = (s) => {
+  const m = (s || '').normalize('NFKC').trim().match(/^#\s*(\d+)(?:\s+(.+))?$/);
+  return m ? { ep: parseInt(m[1], 10), rest: (m[2] || '').trim() } : null;
+};
 // 全エピソード表示ワード（正規化形）: 青山吉能さんは全回出演のため、
 // 本人名・愛称で検索された時は、通常は隠している特殊回（京まふ大作戦・
 // CENTRAL STATION等）も含めて全エピソードを表示する
@@ -529,6 +535,14 @@ async function loadExternalData() {
     linksData = (lData && typeof lData === 'object') ? lData : {};
 
     data = episodesData.map(ep => {
+      // ★episodes.json は「Personality」（出演者: 文字列 or 配列）で書く。内部ではこれを guest として扱う
+      //   （旧形式の "guest" で書かれていてもそのまま動く）
+      if (ep.Personality !== undefined && ep.guest === undefined) ep.guest = ep.Personality;
+      // ★title は省略可。省略時は回番号と出演者から自動で作る:
+      //   {"episode":"108","Personality":"長谷川育美"} → 「#108　ゲスト：長谷川育美」
+      //   {"episode":"100","Personality":"青山吉能"}   → 「#100　」（表示は「パーソナリティ：青山吉能」）
+      //   番号のない特殊回で名前を変えたい時（CENTRAL STATION 等）だけ "title" を書く
+      if (!ep.title) ep.title = buildEpisodeTitle(ep);
       const keywordsWithoutTimestamp = (ep.keywords || []).map(stripTimeSuffix);
       const guestText = Array.isArray(ep.guest) ? ep.guest.join(" ") : ep.guest;
       const combined = [ep.title, guestText, keywordsWithoutTimestamp.join(" ")].join(" ");
@@ -754,8 +768,12 @@ function getFilteredData(query) {
     res = res.filter(it => getEpisodeNumber(it.episode) >= -1);
   }
 
-  const rangeMatch = raw.match(/^(\d+)\s+(\d+)$/);
-  if (rangeMatch) {
+  // 「#43」「#43 銀魂」はその回だけを返す（「#11」が#110〜#112まで拾う部分一致を防ぐ）
+  const epQuery = parseEpisodeQuery(raw);
+  const rangeMatch = !epQuery && raw.match(/^(\d+)\s+(\d+)$/);
+  if (epQuery) {
+    res = res.filter(it => getEpisodeNumber(it.episode) === epQuery.ep);
+  } else if (rangeMatch) {
     let num1 = parseInt(rangeMatch[1], 10);
     let num2 = parseInt(rangeMatch[2], 10);
     const minNum = Math.min(num1, num2);
@@ -838,7 +856,7 @@ function search(opts = {}) {
   //  - 登録キーワードそのもの（完全一致）→ 非表示（邪魔になるだけ）
   let showDidYouMean = false;
 
-  if (rawQuery.length > 0) {
+  if (rawQuery.length > 0 && !parseEpisodeQuery(rawQuery)) {
      const suggestions = findDidYouMean(rawQuery);
 
      if (suggestions.length > 0) {
@@ -1033,6 +1051,16 @@ function updateFavStar(li) {
   }
 }
 
+// episodes.json で title を省略した回のタイトルを、回番号と出演者から作る
+// （以前JSONに手書きしていた title と完全に同じ文字列になる）
+function buildEpisodeTitle(ep) {
+  const episode = String(ep.episode || '');
+  if (!/^\d+$/.test(episode)) return episode; // 京まふ大作戦2025 等は回名がそのままタイトル
+  const list = (Array.isArray(ep.guest) ? ep.guest : [ep.guest]).filter(Boolean);
+  const isSolo = list.length === 1 && list[0] === '青山吉能';
+  return '#' + episode + '\u3000' + (isSolo || list.length === 0 ? '' : 'ゲスト：' + list.join('、'));
+}
+
 // エピソードのゲスト/出演者テキスト（カードとタイムスタンプモーダルで共用）
 function getEpisodeGuestText(it) {
   if (it.episode.startsWith("京まふ大作戦") || it.episode === "CENTRALSTATION") {
@@ -1149,6 +1177,9 @@ function renderResults(arr, page = 1, originalQuery = null, suggestions = [], sh
   // ★修正: ユーザーの入力(userQuery)とサジェスト(suggestionQuery)を分けて取得
   const userQuery = document.getElementById('searchBox').value.trim();
   const suggestionQuery = (suggestions.length > 0) ? suggestions[0] : null;
+  // 「#43 銀魂」形式なら、時刻リンクは番号を除いたキーワード部分で探す
+  const epQueryInResults = parseEpisodeQuery(userQuery);
+  const timeQuery = epQueryInResults ? epQueryInResults.rest : userQuery;
 
   // コーナー判定などにはサジェストがあればそちらを使う（既存ロジック維持）
   const highlightQuery = suggestionQuery || userQuery;
@@ -1169,7 +1200,7 @@ function renderResults(arr, page = 1, originalQuery = null, suggestions = [], sh
     const hashOnly = getHashNumber(it.title);
 
     // ★修正: まずユーザーの入力そのものでタイムスタンプを探す
-    let hit = findHitTime(it, userQuery);
+    let hit = findHitTime(it, timeQuery);
 
     // ★修正: ヒットせず、もしサジェストがあるなら、そちらでも探す
     if (!hit && suggestionQuery) {
@@ -3267,7 +3298,7 @@ function initializeAutocomplete() {
     const baseLabel = stripTimeSuffix(label);
     let entry = entriesByLabel.get(baseLabel);
     if (!entry) {
-      entry = { label: baseLabel, type: type || 'キーワード', norms: new Set() };
+      entry = { label: baseLabel, type: type || 'キーワード', norms: new Set(), relatedNorms: new Set() };
       entriesByLabel.set(baseLabel, entry);
     }
     const addNorm = (s) => {
@@ -3304,7 +3335,9 @@ function initializeAutocomplete() {
       keywords.forEach(kw => {
         const kwEntry = entriesByLabel.get(kw);
         if (kwEntry) {
-          guestEntry.norms.forEach(norm => kwEntry.norms.add(norm));
+          // 出演者の読み（あおやまよしの・よぴ等）は「関連」として別枠に持たせる。
+          // 自分の読みと同列に扱うと、「よぴ」で熊本・幼稚園などが「よぴさゆ」より上に並んでしまう
+          guestEntry.norms.forEach(norm => { if (!kwEntry.norms.has(norm)) kwEntry.relatedNorms.add(norm); });
         }
       });
     }
@@ -3331,6 +3364,7 @@ function initializeAutocomplete() {
       el.setAttribute('aria-selected', idx === cursor);
       const icon = item.type === '出演者' ? '<i class="fa-solid fa-user"></i>'
         : item.type === 'メモ' ? '<i class="fa-solid fa-star memo-star"></i>'
+        : item.type === 'エピソード' ? '<i class="fa-solid fa-hashtag"></i>'
         : '<i class="fa-solid fa-magnifying-glass"></i>';
       // 候補ラベルにはユーザー登録メモ（自由入力）も含まれるため、必ずエスケープして挿入する
       el.innerHTML = `<span class="type">${icon}</span><span class="label">${escapeHtml(item.label)}</span>`;
@@ -3348,7 +3382,7 @@ function initializeAutocomplete() {
 
  const pick = (index) => {
         if (!viewItems[index]) return;
-        inputEl.value = viewItems[index].label;
+        inputEl.value = viewItems[index].value || viewItems[index].label;
         clear();
         setTimeout(() => {
           search();
@@ -3389,6 +3423,14 @@ function initializeAutocomplete() {
         if (s !== null && (best === null || s > best)) best = s;
       }
     }
+    // 関連する出演者の読みでの一致は、直接の一致・曖昧一致(220〜400)よりも下位(200)に置く
+    if (entry.relatedNorms && entry.relatedNorms.size && best === null) {
+      outer: for (const k of entry.relatedNorms) {
+        for (const q of queries) {
+          if (k.includes(q)) { best = 200; break outer; }
+        }
+      }
+    }
     if (best === null) return null;
     return best + (!hasKanji(raw) && hasKanji(entry.label) ? 2 : 0) + (entry.type === '出演者' ? 1 : 0);
   };
@@ -3412,7 +3454,9 @@ const onInput = () => {
       const episodeNumber = parseInt(episodeQuery, 10);
       const targetEpisode = data.find(ep => parseInt(ep.episode, 10) === episodeNumber);
 
-      if (targetEpisode && targetEpisode.keywords && targetEpisode.keywords.length > 0) {
+      if (targetEpisode) {
+        const hashTag = getHashNumber(targetEpisode.title);
+        const epTag = hashTag.startsWith('#') ? hashTag.trim() : `#${episodeNumber}`;
         const guestKeywordsToExclude = new Set();
         const mainGuests = Object.keys(guestColorMap);
         mainGuests.forEach(guestName => {
@@ -3432,13 +3476,15 @@ const onInput = () => {
             }
         });
 
-        const filteredKeywords = targetEpisode.keywords.filter(kw => {
+        const filteredKeywords = (targetEpisode.keywords || []).filter(kw => {
           const cleanKeyword = stripTimeSuffix(kw).trim();
           return !guestKeywordsToExclude.has(cleanKeyword);
         });
 
+        // 選んだら「#43 銀魂」で検索＝その回だけに絞り、銀魂の時刻から再生できるリンクになる
         const keywordsAsEntries = filteredKeywords.map(kw => ({
           label: stripTimeSuffix(kw),
+          value: `${epTag} ${stripTimeSuffix(kw)}`,
           type: `第${targetEpisode.episode}回`
         }));
         
@@ -3449,7 +3495,8 @@ const onInput = () => {
             return !duplicate;
         });
 
-        render(uniqueEntries);
+        // 先頭にその回そのもの（「#43」）を置く
+        render([{ label: epTag, value: epTag, type: 'エピソード' }, ...uniqueEntries]);
         return;
       }
     }
@@ -3539,8 +3586,20 @@ const onInput = () => {
     }
 
     if (boxEl.hidden) return;
-    if (e.key === 'ArrowDown') { e.preventDefault(); cursor = (cursor + 1) % viewItems.length; render(viewItems); } 
-    else if (e.key === 'ArrowUp') { e.preventDefault(); cursor = (cursor - 1 + viewItems.length) % viewItems.length; render(viewItems); } 
+    // 矢印キーでは作り直さず選択表示だけ切り替え、選択中の候補が見える位置までリストをスクロールする
+    // （作り直すとスクロール位置が先頭に戻り、7件目以降の選択が見えなくなっていた）
+    const moveCursor = (next) => {
+      cursor = next;
+      const rows = boxEl.children;
+      for (let i = 0; i < rows.length; i++) rows[i].setAttribute('aria-selected', String(i === cursor));
+      const sel = rows[cursor];
+      if (!sel) return;
+      const top = sel.offsetTop, bottom = top + sel.offsetHeight;
+      if (top < boxEl.scrollTop) boxEl.scrollTop = top;
+      else if (bottom > boxEl.scrollTop + boxEl.clientHeight) boxEl.scrollTop = bottom - boxEl.clientHeight;
+    };
+    if (e.key === 'ArrowDown') { e.preventDefault(); moveCursor((cursor + 1) % viewItems.length); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); moveCursor((cursor - 1 + viewItems.length) % viewItems.length); }
     else if (e.key === 'Escape') { clear(); }
   };
 
