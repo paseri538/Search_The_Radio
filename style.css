@@ -6600,3 +6600,38 @@ body:not([class*="theme-"]) .filter-tag[data-type="guest"]  { background: #ed6e9
 body:not([class*="theme-"]) .filter-tag[data-type="year"]   { background: #f1c142 !important; color: #ffffff !important; border: none !important; }
 body:not([class*="theme-"]) .filter-tag[data-type="corner"] { background: #2f6cb8 !important; color: #ffffff !important; border: none !important; }
 body:not([class*="theme-"]) .filter-tag[data-type="other"]  { background: #d32d4b !important; color: #ffffff !important; border: none !important; }
+
+/* ===================================================
+   折りたたみスマホ（iPhone Duo 等）を広げた縦持ち・小型タブレット縦（幅 600〜779px）
+   2列にするには狭いので1列のまま、カードの中身をiPadサイズ（780〜1069px と同じ値）に
+   拡大して、横に長いカードに余白だけが目立つ状態を防ぐ。畳んだ時（〜599px）は従来のスマホ表示。
+   =================================================== */
+@media (min-width: 600px) and (max-width: 779px) {
+  .episode-item {
+    --card-pad-r: 14px;
+    padding: 14px;
+    padding-right: var(--card-pad-r);
+  }
+  .episode-item .thumbnail { width: 150px; }
+  .thumb-col { width: 150px; } /* サムネイルを包む枠（時刻バッジ付き）も同じ幅に */
+  .episode-item a > div:last-of-type {
+    margin-left: 14px;
+    height: 84px;
+  }
+  #results h5.mb-1,
+  .ts-episode-card h5.mb-1 {
+    margin-top: 3px;
+    font-size: 1.4rem;
+    line-height: 1.0;
+  }
+  .guest-one-line {
+    margin-top: 2px;
+    font-size: 1.1rem;
+    line-height: 1.2;
+  }
+  .episode-meta {
+    margin-top: 3px;
+    font-size: 0.8rem;
+    line-height: 1.3;
+  }
+}
