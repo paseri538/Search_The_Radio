@@ -6635,3 +6635,250 @@ body:not([class*="theme-"]) .filter-tag[data-type="other"]  { background: #d32d4
     line-height: 1.3;
   }
 }
+
+/* ===================================================
+   スマホ横向き（高さ 500px 以下の横長画面・モバイルUI時のみ）
+   縦持ち用の2段ヘッダー(172px)＋下部ナビ(81px)だと、本文が画面の約1/3しか残らなかった。
+   ・ヘッダー: 検索欄と「並び替え／再生リスト作成」を1行に並べて高さを半分以下に
+   ・下部ナビ: アイコンと文字を横並びにして薄くし、カラーの丸ボタンも小さく
+   ・左右: ノッチ（カメラ）側の安全領域を全要素で同じように避ける
+   =================================================== */
+@media (orientation: landscape) and (max-height: 500px) {
+  /* --- ヘッダー --- */
+  /* ヘッダー内の左右端を本文カードの左右端と揃える（どちらも max(15px, 安全領域)） */
+  html.is-standalone .sticky-search-area {
+    padding-top: calc(4px + var(--safe-top));
+    padding-bottom: 8px; /* 表示数／タグの行の下にもゆとりを持たせる */
+    padding-left: 0;
+    padding-right: 0;
+  }
+  html.is-standalone .search-card,
+  html.is-standalone .results-count-under-bar,
+  html.is-standalone .filters-bar {
+    max-width: none !important;
+    padding-left: max(15px, env(safe-area-inset-left, 0px)) !important;
+    padding-right: max(15px, env(safe-area-inset-right, 0px)) !important;
+  }
+  html.is-standalone .search-card {
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+    padding-top: 4px;
+    padding-bottom: 4px;
+  }
+  /* 「表示数」とフィルタータグを同じ行に並べる（検索の行の下に1行だけ） */
+  html.is-standalone .sticky-search-area {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: flex-start; /* タグが2行になっても「表示数」は1行目のタグと並ぶ */
+  }
+  html.is-standalone .sticky-search-area > .search-card { flex: 0 0 100%; }
+  html.is-standalone .sticky-search-area > .results-count-under-bar {
+    flex: 0 0 auto;
+    width: auto !important;
+    margin: 0 !important;
+    padding-right: 0 !important; /* 右隣のタグとの間隔はタグ側の左余白(10px)だけにする */
+    white-space: nowrap;
+  }
+  html.is-standalone .sticky-search-area > .filters-bar {
+    flex: 1 1 0;
+    min-width: 0;
+    width: auto !important;
+    margin: 0 !important;
+    padding-left: 14px !important; /* 「表示数」とタグの間 */
+    padding-top: 6px !important;   /* 「表示数」の文字とタグの中心をそろえる（画素実測で合わせた値） */
+    padding-bottom: 0 !important;
+    row-gap: 8px !important;       /* タグが2行になった時の行間 */
+    min-height: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+  /* 選択中フィルターのタグが無い時は、タグ用の帯の高さを取らない */
+  html.is-standalone .filters-bar:empty {
+    min-height: 0 !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+  }
+  html.is-standalone .search-row-keyword {
+    flex: 1 1 auto;
+    width: auto;
+    min-width: 0;
+    margin-bottom: 0;
+  }
+  html.is-standalone .search-row-controls {
+    display: flex !important; /* 縦持ち用の格子(grid)をやめ、右端まで詰めて横に並べる */
+    flex: 0 0 auto;
+    gap: 8px !important;
+    width: auto;
+    min-width: 0;
+  }
+  html.is-standalone .search-input-wrapper { flex: 1 1 auto; width: 100%; }
+  /* 検索欄・並び替え・再生リスト作成の高さを40pxで揃える（縦持ち用の min-height:42px にも勝たせる） */
+  html.is-standalone .searchbox-input,
+  html.is-standalone .search-row-controls .sort-wrapper,
+  html.is-standalone #sortSelect,
+  html.is-standalone #createPlaylistBtn {
+    height: 40px !important;
+    min-height: 40px !important;
+    max-height: 40px !important;
+    box-sizing: border-box !important;
+  }
+  html.is-standalone .search-row-controls .sort-wrapper { width: 190px !important; flex: 0 0 190px !important; }
+  html.is-standalone #createPlaylistBtn { width: 170px !important; flex: 0 0 170px !important; font-size: 14px !important; }
+  html.is-standalone #sortSelect { font-size: 14px !important; }
+  /* 検索欄の行との間を空ける（以前は1pxしかなく窮屈だった） */
+  html.is-standalone .results-count-under-bar {
+    padding-top: 7px !important;
+    padding-bottom: 0 !important;
+    font-size: 0.95em;
+  }
+
+  /* --- 本文: 左右の安全領域を避ける --- */
+  html.is-standalone .main-content {
+    padding-left: max(15px, env(safe-area-inset-left, 0px)) !important;
+    padding-right: max(15px, env(safe-area-inset-right, 0px)) !important;
+    padding-bottom: calc(46px + var(--safe-bottom)) !important;
+  }
+
+  /* --- 下部ナビ: 薄く、アイコンと文字を横並びに --- */
+  html.is-standalone .pwa-bottom-nav {
+    height: calc(46px + var(--safe-bottom, 0px));
+    padding-left: max(0px, env(safe-area-inset-left, 0px));
+    padding-right: max(0px, env(safe-area-inset-right, 0px));
+  }
+  html.is-standalone .pwa-bottom-nav .pwa-bottom-nav-btn {
+    flex-direction: row;
+    gap: 6px;
+  }
+  html.is-standalone .pwa-bottom-nav .pwa-bottom-nav-btn i {
+    font-size: 17px !important;
+    top: 0 !important;
+    left: 0 !important;
+  }
+  html.is-standalone .pwa-bottom-nav .pwa-bottom-nav-btn span {
+    font-size: 12px !important;
+    top: 0 !important;
+    left: 0 !important;
+  }
+  html.is-standalone #pwa-theme-toggle-btn {
+    top: 0;
+    width: 38px;
+    height: 38px;
+    min-width: 38px;
+    align-self: center;
+    box-shadow: none;
+  }
+  html.is-standalone .pwa-bottom-nav #pwa-theme-toggle-btn i { font-size: 18px !important; }
+
+  /* --- フィルター画面: 下端を薄くした下部ナビ(46px)の上端に合わせる（縦持ち用の60pxのままだと14pxの隙間ができる）。
+         中身はノッチ（カメラ）側の安全領域を避ける --- */
+  html.is-standalone #filterDrawer {
+    bottom: calc(46px + var(--safe-bottom, 0px)) !important;
+    padding-left: max(var(--drawer-px), env(safe-area-inset-left, 0px)) !important;
+    padding-right: max(var(--drawer-px), env(safe-area-inset-right, 0px)) !important;
+  }
+  html.is-standalone #filterDrawer .drawer-footer {
+    margin-left: calc(-1 * max(var(--drawer-px), env(safe-area-inset-left, 0px)));
+    margin-right: calc(-1 * max(var(--drawer-px), env(safe-area-inset-right, 0px)));
+    padding-left: max(var(--drawer-px), env(safe-area-inset-left, 0px));
+    padding-right: max(var(--drawer-px), env(safe-area-inset-right, 0px));
+  }
+
+  /* --- タイムスタンプモーダル: 縦に積むと一覧が34pxしか残らないため、
+         横長に広げて「左: エピソードカード ／ 右: 一覧＋編集ボタン」の2列にする --- */
+  html.is-standalone .modal-content.ts-modal {
+    display: grid !important;
+    grid-template-columns: minmax(300px, 42%) minmax(0, 1fr);
+    grid-template-rows: auto auto minmax(0, 1fr) auto;
+    grid-template-areas:
+      "head head"
+      "card body"
+      "hint body"
+      "hint foot";
+    width: min(860px, calc(100vw - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px) - 24px));
+    height: calc(100dvh - 16px);
+    max-height: calc(100dvh - 16px);
+    margin-bottom: 0;
+  }
+  html.is-standalone .ts-modal .modal-header {
+    grid-area: head;
+    min-height: 46px;
+    padding-top: 4px;
+    padding-bottom: 4px;
+  }
+  html.is-standalone .ts-modal .modal-close {
+    top: 5px;
+    width: 36px;
+    height: 36px;
+  }
+  html.is-standalone .ts-modal .ts-episode-card {
+    grid-area: card;
+    align-self: start;
+    margin: 12px 0 12px 15px;
+    padding-bottom: 0;
+    border-bottom: none;
+  }
+  html.is-standalone .ts-modal .ts-body {
+    grid-area: body;
+    padding-top: 12px;
+  }
+  /* フッターの中身（編集ボタン／削除確認／説明文）をそれぞれ別の場所に置くため、枠だけ解除する。
+     編集中は従来どおりフッターごと非表示（.ts-footer[hidden] の display:none が優先される） */
+  html.is-standalone .ts-modal .ts-footer {
+    display: contents;
+  }
+  html.is-standalone .ts-modal .ts-list-actions,
+  html.is-standalone .ts-modal .ts-clear-confirm {
+    grid-area: foot;
+    margin: 0;
+    padding: 8px 20px 10px 0;
+    border-top: 1px solid rgba(127, 127, 127, 0.18);
+    padding-top: 10px;
+  }
+  /* 説明文は左列（エピソードカードの下）に小さめに置く */
+  html.is-standalone .ts-modal .ts-hint {
+    grid-area: hint;
+    align-self: end;
+    margin: 0;
+    padding: 0 6px 12px 15px;
+    font-size: 11px;
+    line-height: 1.55;
+    text-align: left;
+  }
+  /* 左列のエピソードカード: スマホ縦と同じ大きさにして、公開日時などが省略されないようにする */
+  html.is-standalone .ts-modal .ts-episode-card .episode-item {
+    --card-pad-r: 12px;
+    padding: 12px;
+  }
+  html.is-standalone .ts-modal .ts-episode-card .thumbnail,
+  html.is-standalone .ts-modal .ts-episode-card .thumb-col { width: 120px; }
+  html.is-standalone .ts-modal .ts-episode-card .episode-item a > div:last-of-type {
+    margin-left: 10px;
+    height: auto;
+  }
+  html.is-standalone .ts-modal .ts-episode-card h5.mb-1 { font-size: 1.15rem; line-height: 1.15; }
+  html.is-standalone .ts-modal .ts-episode-card .guest-one-line { font-size: 0.9rem; }
+  html.is-standalone .ts-modal .ts-episode-card .episode-meta {
+    font-size: 0.75rem;
+    padding-right: 0 !important; /* モーダル内のカードには★/リンクボタンが無いので避ける余白は不要 */
+  }
+}
+
+/* ===================================================
+   ローディング画面: 横向きスマホ（高さ 500px 以下）
+   縦持ち用の330pxロゴのままだと、下の玉が画面外にはみ出していた。
+   ロゴを画面の高さに合わせて縮め、玉との間隔も詰める。
+   ※ PWA起動直後はモバイルUI判定より先に表示されるため、is-standalone 条件は付けない
+   =================================================== */
+@media (orientation: landscape) and (max-height: 500px) {
+  :root { --loading-logo-w: min(330px, 70vw, calc(100dvh - 110px)); }
+  #loading-logo {
+    width: var(--loading-logo-w) !important;
+    max-width: none !important;
+  }
+  #spinner {
+    margin-top: 22px !important;
+    transform: translate3d(calc(var(--loading-logo-w) * 0.007), 0, 0);
+  }
+  .loading-ball { width: 14px; height: 14px; }
+}

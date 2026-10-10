@@ -2895,7 +2895,7 @@ function setupModals() {
 
 function setupShareButtons() {
   const shareUrl = 'https://searchtheradio.com/';
-  const text = 'さーち・ざ・らじお！ - 「ぼっち・ざ・らじお！」非公式検索エンジン #さーち・ざ・らじお';
+  const text = 'さーち・ざ・らじお！|「ぼっち・ざ・らじお！」非公式検索サイト #さーち・ざ・らじお';
   const u = encodeURIComponent(shareUrl);
   const t = encodeURIComponent(text);
   document.getElementById('shareX').href = `https://x.com/intent/tweet?url=${u}&text=${t}`;
@@ -3701,8 +3701,21 @@ window.__showSplashCover = function () {
   const scrH = __deviceScreenHeight();
   __splashCoverEl.style.height = (scrH + 300) + 'px'; // 画面+300pxで変動を吸収
   const img = __splashCoverEl.querySelector('img');
-  // 物理画面の中央から28px上＝ローディング画面のロゴ中心（ロゴ＋スピナー56pxのまとまりを中央揃え）と一致させる
-  if (img) img.style.top = Math.round(scrH / 2 - 28) + 'px';
+  // 物理画面の中央から少し上＝ローディング画面のロゴ中心（ロゴ＋スピナーのまとまりを中央揃え）と一致させる。
+  // 横向きスマホ（高さ500px以下）はローディング画面と同じく、ロゴを画面の高さに合わせて縮める
+  const isShortLandscape = window.matchMedia && window.matchMedia('(orientation: landscape) and (max-height: 500px)').matches;
+  if (img) {
+    if (isShortLandscape) {
+      const w = Math.min(330, window.innerWidth * 0.7, scrH - 110);
+      img.style.width = Math.round(w) + 'px';
+      img.style.maxWidth = 'none';
+      img.style.top = Math.round(scrH / 2 - 18) + 'px'; // 玉(14px)＋間隔22px の半分だけ上
+    } else {
+      img.style.width = '330px';
+      img.style.maxWidth = '70vw';
+      img.style.top = Math.round(scrH / 2 - 28) + 'px';
+    }
+  }
   __splashCoverEl.style.display = 'block';
 };
 window.__hideSplashCover = function () {

@@ -135,11 +135,11 @@
   <link rel="preload" as="image" href="logo.png">
   <!-- ロゴは logo.png に統一（webp版は廃止） -->
 
-  <title>さーち・ざ・らじお！ - 「ぼっち・ざ・らじお！」非公式検索エンジン</title>
+  <title>さーち・ざ・らじお！|「ぼっち・ざ・らじお！」非公式検索サイト</title>
   
   <!-- color-scheme はテーマに応じて先頭のスクリプトが動的に出力する（ダーク起動時の白フラッシュ対策） -->
 
-<meta property="og:title" content="さーち・ざ・らじお！ - 「ぼっち・ざ・らじお！」非公式検索エンジン" />
+<meta property="og:title" content="さーち・ざ・らじお！|「ぼっち・ざ・らじお！」非公式検索サイト" />
 <meta property="og:description" content="『ぼっち・ざ・らじお！』のエピソードを出演者・コーナー・年でサクッと検索。お気に入り機能も対応。" />
 <meta property="og:type" content="website" />
 <meta property="og:url" content="https://searchtheradio.com/" />
@@ -147,15 +147,26 @@
 <meta property="og:image:width" content="1200" />
 <meta property="og:image:height" content="630" />
 
-<meta property="og:site_name" content="さーち・ざ・らじお！" />
+<meta property="og:site_name" content="さーち・ざ・らじお！|「ぼっち・ざ・らじお！」非公式検索サイト" />
 <meta property="og:locale" content="ja_JP" />
 
 <meta name="twitter:card" content="summary_large_image" />
-<meta name="twitter:title" content="さーち・ざ・らじお！ - 「ぼっち・ざ・らじお！」非公式検索エンジン" />
+<meta name="twitter:title" content="さーち・ざ・らじお！|「ぼっち・ざ・らじお！」非公式検索サイト" />
 <meta name="twitter:description" content="『ぼっち・ざ・らじお！』のエピソードを出演者・コーナー・年でサクッと検索。お気に入り機能も対応。" />
 <meta name="twitter:image" content="https://searchtheradio.com/ogp_img.jpg?v=1" />
 
 <link rel="canonical" href="https://searchtheradio.com/" />
+<!-- Googleの検索結果に表示される「サイト名」の指定（WebSite構造化データ）。
+     Googleはこの name を最優先で使い、使えない場合は alternateName → og:site_name → <title> の順で参照する -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": "さーち・ざ・らじお！|「ぼっち・ざ・らじお！」非公式検索サイト",
+  "alternateName": ["さーち・ざ・らじお！", "Search The Radio"],
+  "url": "https://searchtheradio.com/"
+}
+</script>
 <meta name="description" content="『ぼっち・ざ・らじお！』のエピソードを出演者・コーナー・キーワードなどでサクッと検索できる非公式サイト。" />
 
 <link rel="icon" type="image/png" sizes="32x32" href="./favicon-32.png?v=3">
