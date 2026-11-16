@@ -17,6 +17,7 @@ const CORE_ASSETS = [
   'episodes.json',
   'readings.json',
   'keywords.json',
+  'related.json',
   'lucky-button.json',
   'history.json',
   'kessokuband_watasi.json',

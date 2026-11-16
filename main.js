@@ -21,6 +21,9 @@ let READING_TO_LABEL = {}; // 読み仮名から正規表記へのマップ
 // ★性能: 検索のたびに全キーへ normalize() をかけ直さないよう、読み仮名辞書の
 // 正規化済みインデックスを起動時に1回だけ構築してキャッシュする（低速端末対策）
 let READINGS_INDEX = [];
+// 関連ワード（related.json）: { "語": ["関連する語", …] }。その語（読みでも）を打つと、関連する語も検索候補に出す。
+// 検索結果には混ぜない（候補に出すだけ）
+let RELATED_WORDS = {};
 let selectedGuests = [];
 let selectedCorners = [];
 let selectedOthers = [];
@@ -538,10 +541,11 @@ async function loadExternalData() {
     const safeFetchJson = (url, fallback) =>
       fetch(url).then(res => res.ok ? res.json() : fallback).catch(() => fallback);
 
-    const [episodesRes, readingsData, keywordsData, histData, lData, ...cornerFiles] = await Promise.all([
+    const [episodesRes, readingsData, keywordsData, relatedData, histData, lData, ...cornerFiles] = await Promise.all([
       fetch('episodes.json'),
       safeFetchJson('readings.json', {}),
       safeFetchJson('keywords.json', {}),
+      safeFetchJson('related.json', {}),
       safeFetchJson('history.json', []),
       safeFetchJson('links.json', {}),
       ...CORNER_TEXTS.map(c => safeFetchJson(c.file, {}))
@@ -556,6 +560,7 @@ async function loadExternalData() {
       cornerTextData[c.corner] = (d && typeof d === 'object' && !Array.isArray(d)) ? d : {};
     });
     linksData = (lData && typeof lData === 'object') ? lData : {};
+    RELATED_WORDS = (relatedData && typeof relatedData === 'object' && !Array.isArray(relatedData)) ? relatedData : {};
 
     data = episodesData.map(ep => {
       // ★episodes.json は「Personality」（出演者: 文字列 or 配列）で書く。内部ではこれを guest として扱う
@@ -794,6 +799,25 @@ async function initializeApp() {
  * ===================================================
  */
 
+// 検索語を、登録した読み・別名（keywords.json / readings.json）で広げる。
+// 例:「韓国」→ 別名に「韓国ライブ」を持つ「KESSOKUBAND LIVE in KOREA …」とその読みも探す
+// （2文字以下の読みは、検索語がその読みそのもののときだけ使う）
+function expandSearchTerms(normalizedQuery, keysOnly) {
+  const searchTerms = new Set([normalizedQuery]);
+  // 2文字以下の検索は、読みの頭が合うときだけ使う（「さく」が原作者の読み「げんさくしゃ」に、
+  // 「かい」が公開録音の読み「こうかいろくおん」に当たって、関係ない回が出ないように）。3文字以上は途中でも当てる
+  const short = normalizedQuery.length <= 2;
+  const readingHit = (r) => short ? r.startsWith(normalizedQuery) : r.includes(normalizedQuery);
+  // ★性能: 起動時に正規化済みの READINGS_INDEX を使う
+  for (const entry of READINGS_INDEX) {
+    if (entry.normKey.includes(normalizedQuery) || entry.normReadings.some(readingHit)) {
+      searchTerms.add(entry.normKey);
+      if (!keysOnly) entry.normReadings.forEach(r => { if (r.length > 2 || r === normalizedQuery) searchTerms.add(r); });
+    }
+  }
+  return [...searchTerms].filter(Boolean);
+}
+
 function getFilteredData(query) {
   let res = [...data];
   
@@ -829,18 +853,14 @@ function getFilteredData(query) {
     // （この後の出演者・年などのフィルターは通常どおり適用される）
   } else if (raw.length > 0) {
     const normalizedQuery = normalize(raw);
-    const searchTerms = new Set([normalizedQuery]);
-    // ★性能: 起動時に正規化済みの READINGS_INDEX を使う（挙動は従来と同一）
-    for (const entry of READINGS_INDEX) {
-        if (entry.normKey.includes(normalizedQuery) || entry.normReadings.some(r => r.includes(normalizedQuery))) {
-            searchTerms.add(entry.normKey);
-            entry.normReadings.forEach(r => { if (r.length > 2 || r === normalizedQuery) searchTerms.add(r); });
-        }
-    }
-    const searchWords = [...searchTerms].filter(Boolean);
+    const searchWords = expandSearchTerms(normalizedQuery);
+    // コーナーの中身（お題・テーマなど）は、入力した語と、読みから当たった登録済みの表記で探す
+    // （「かがやいたしゅんかん」→ 本日のテーマ「輝いた瞬間」は見つける。読みそのものは使わないので、
+    //   「LINE」の読み「ライン」がお題「友達だと思うライン」に当たることはない）
+    const cornerWords = expandSearchTerms(normalizedQuery, true);
     // サイト側キーワードに加え、ユーザーが登録したタイムスタンプのメモも検索対象にする
     res = res.filter(it => searchWords.some(word => it.searchText.includes(word)) ||
-      (it.cornerTexts || []).some(c => searchWords.some(word => c.norm.includes(word))) ||
+      (it.cornerTexts || []).some(c => cornerWords.some(word => c.norm.includes(word))) ||
       matchesUserMemo(it, searchWords));
   }
 
@@ -1269,6 +1289,8 @@ function renderResults(arr, page = 1, originalQuery = null, suggestions = [], sh
     if (!hit && suggestionQuery) {
       hit = findHitTime(it, suggestionQuery);
     }
+    // 読み・別名で見つかった回（「韓国」→ 韓国ライブの話をした回など）は、その別名の話の時刻へ飛べるようにする
+    if (!hit && timeQuery) hit = findAliasHitTime(it, timeQuery);
     if (!hit && selectedGuests.length > 0) {
         for(const guest of selectedGuests) {
             if (guest === "結束バンド" || guest === "その他") {
@@ -3154,6 +3176,26 @@ function matchesUserMemo(item, words) {
   });
 }
 
+// 検索語そのものではなく、登録した読み・別名で当たったキーワードの時刻を返す（無ければ null）。
+// 全回出演者（青山吉能など）の検索は全回を出すだけなので、時刻は付けない
+function findAliasHitTime(item, rawQuery) {
+  const qn = normalize(rawQuery || '');
+  if (!qn || ALL_EPISODES_TERMS.has(qn) || !item.kwTimes || !item.kwTimes.length) return null;
+  for (const t of expandSearchTerms(qn)) {
+    if (t === qn) continue;
+    const p = item.kwTimes.find(k => k.baseN.includes(t));
+    if (p) return p;
+  }
+  // 読みから当たった表記がコーナーの中身（本日のテーマなど）にあれば、そのコーナーの時刻
+  for (const t of expandSearchTerms(qn, true)) {
+    if (t === qn) continue;
+    const c = (item.cornerTexts || []).find(c => c.norm.includes(t));
+    const p = c && item.kwTimes.find(k => k.baseN === c.cornerN);
+    if (p) return p;
+  }
+  return null;
+}
+
 function findHitTime(item, rawQuery) {
   if (!rawQuery) return null;
   const qn = normalize(rawQuery);
@@ -3526,28 +3568,23 @@ function initializeAutocomplete() {
   });
 
   // ==========================================
-  // 出演者と関連キーワードの紐付け
+  // 関連ワード（related.json）の紐付け
+  // 「LIVE STAGE「ぼっち・ざ・ろっく！」→ 守乃まも・大竹美希…」なら、LIVE STAGE の表記・読み（ぶたいぼっち 等）を
+  // 打ったときに、守乃まもなども候補に出す。候補に出すのは、データの中にある語だけ
   // ==========================================
-  const GUEST_RELATED_KEYWORDS = {
-    "青山吉能": ["リスアニ！LIVE","大港開唱 MEGAPORT Festival","CENTRAL MUSIC & ENTERTAINMENT FESTIVAL","日清焼そばU.F.O.presents 後藤ひとり生誕記念LIVE","ワイちゃん","EAA","幼稚園","声優グランプリ","ChatGPT","ゆで卵","味噌汁","Re:Re:","二重敬語警察","たべっ子どうぶつ","お茶っ葉","自動車教習所","私の家の近所に住むヒーローへの道","心の夏バテ","心のpixiv","密着音声","熊本","運転免許","点鼻薬","口内炎ガール","慮ったの","はせみの膝","内見予約","電子音","泣いちゃった","匂わせ","おしゃべりピンク","キルミーのベイベー!","よぴえもん","よぴいく"],
-    "鈴代紗弓": ["ｵﾓｼﾛｲｯ!","豚","他力本願寺","ハッピーイエロー","車庫入れの紗弓","ツートン","冷麺","3mm","UNITE","それは違う〜","鈴代ナス弓","paypay","なにが悪い","ツボ代紗弓","ボブ代紗弓","事後しちゃうわ通販","SHINY DAYS"],
-    "水野朔": ["惑う星","Daydream café","ヒーリングブルー","愛してる","泣いちゃった","髪の毛ちょびっとしろしろ","ワイちゃん","ﾐｼﾞｭﾉｼｬｸﾃﾞｼｭ"],
-    "長谷川育美": ["NHKWORLDJAPANMusicFestival","JAPAN JAM","リスアニ！LIVE","大港開唱 MEGAPORT Festival","CENTRAL MUSIC & ENTERTAINMENT FESTIVAL","日清焼そばU.F.O.presents 後藤ひとり生誕記念LIVE","パワフルレッド","友達が減りま〜す","青椒肉絲","雨降らんかな","ぬくもりの家具イクミ","偏見撲滅委員会","黒光りマッチョ育美","もっと固執してよ私に","成人の女なんだからさ。","アメイジング声優ズ","夢小説","匂わせ","Cagayake!GIRLS","Won(*3*)Chu KissMe!","はせみの膝","優しさで言ってない","エロ女上司","よぴいく","お前それ渋谷でできんのかよ"],
-    // 他の出演者も同様に追加可能
-  };
-
-  for (const [guest, keywords] of Object.entries(GUEST_RELATED_KEYWORDS)) {
-    const guestEntry = entriesByLabel.get(guest);
-    if (guestEntry) {
-      keywords.forEach(kw => {
-        const kwEntry = entriesByLabel.get(kw);
-        if (kwEntry) {
-          // 出演者の読み（あおやまよしの・よぴ等）は「関連」として別枠に持たせる。
-          // 自分の読みと同列に扱うと、「よぴ」で熊本・幼稚園などが「よぴさゆ」より上に並んでしまう
-          guestEntry.norms.forEach(norm => { if (!kwEntry.norms.has(norm)) kwEntry.relatedNorms.add(norm); });
-        }
-      });
-    }
+  for (const [key, words] of Object.entries(RELATED_WORDS)) {
+    if (!Array.isArray(words)) continue;
+    const keyNorms = new Set();
+    const addKeyNorm = (s) => { const n = normalize(s); if (!n) return; keyNorms.add(n); const f = foldKana(n); if (f !== n) keyNorms.add(f); };
+    addKeyNorm(key);
+    (CUSTOM_READINGS[key] || []).forEach(addKeyNorm);
+    words.forEach(w => {
+      const kwEntry = entriesByLabel.get(String(w || '').trim());
+      if (!kwEntry) return;
+      // 関連する語の読み（あおやまよしの・ぶたいぼっち等）は「関連」として別枠に持たせる。
+      // 自分の読みと同列に扱うと、「よぴ」で熊本・幼稚園などが「よぴさゆ」より上に並んでしまう
+      keyNorms.forEach(norm => { if (!kwEntry.norms.has(norm)) kwEntry.relatedNorms.add(norm); });
+    });
   }
 
   return Array.from(entriesByLabel.values());
@@ -3634,13 +3671,18 @@ function initializeAutocomplete() {
         if (s !== null && (best === null || s > best)) best = s;
       }
     }
-    // 関連する出演者の読みでの一致は、直接の一致・曖昧一致(220〜400)よりも下位(200)に置く
-    if (entry.relatedNorms && entry.relatedNorms.size && best === null) {
-      outer: for (const k of entry.relatedNorms) {
+    // 関連ワード（related.json）での一致: 打った語が関連元の語・読みと同じか、その頭なら 500
+    // （打ち間違いを許す曖昧一致(220〜400)より上、本人の部分一致(600)より下）。途中に含むだけなら 200
+    if (entry.relatedNorms && entry.relatedNorms.size && (best === null || best < 500)) {
+      let rel = null;
+      for (const k of entry.relatedNorms) {
         for (const q of queries) {
-          if (k.includes(q)) { best = 200; break outer; }
+          if (k === q || k.startsWith(q)) { rel = 500; break; }
+          if (rel === null && k.includes(q)) rel = 200;
         }
+        if (rel === 500) break;
       }
+      if (rel !== null && (best === null || rel > best)) best = rel;
     }
     if (best === null) return null;
     return best + (!hasKanji(raw) && hasKanji(entry.label) ? 2 : 0) + (entry.type === '出演者' ? 1 : 0);
