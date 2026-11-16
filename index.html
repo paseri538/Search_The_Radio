@@ -123,8 +123,36 @@
             ? Math.min(screen.width, screen.height)
             : Math.max(screen.width, screen.height);
           var ih = window.innerHeight || 0;
+          /* ★ステータスバーが「default」でホーム画面に追加された場合（ライトテーマで追加した時など）、
+             アプリの表示領域はステータスバーの下（例: 393×852の機種で上から59pt）から始まる。
+             ここで画面全体の高さをそのまま使うと、中心がその分だけ下にずれていた。
+             ステータスバーの形式は追加時にiOSが固定するので今のテーマからは判断できない。
+             そこで前回の起動時に main.js が実測した「画面の高さ − 表示領域の高さ」(pwa_top_gap_v1) を使い、
+             ロゴと玉が画面（物理）の真ん中に来るよう、その2倍を高さから差し引く。
+             （横向きはステータスバーが出ないので補正しない）
+             実測値がまだない初回は、今のテーマがライト（=default）なら機種ごとの
+             セーフエリア上端（画面サイズで決まる。393×852で実測59pt）を仮に使う。 */
+          var topGap = 0;
+          if (!isLandscape) {
+            var savedGap = localStorage.getItem('pwa_top_gap_v1');
+            var savedNum = parseFloat(savedGap);
+            if (savedGap !== null && savedNum >= 0 && savedNum <= 120) {
+              topGap = savedNum;
+            } else if (statusBarStyle === 'default') {
+              var gapTable = {
+                '375x667': 20, '414x736': 20,
+                '375x812': 47, '414x896': 47, '390x844': 47, '428x926': 47,
+                '393x852': 59, '430x932': 59,
+                '402x874': 62, '440x956': 62
+              };
+              topGap = gapTable[Math.min(screen.width, screen.height) + 'x' + scrH] || 0;
+            }
+          }
           if (scrH > 0 && (ih === 0 || Math.abs(scrH - ih) <= 200)) {
-            document.write('<style id="loading-center-fix">#loading-screen { height: ' + scrH + 'px !important; min-height: 0 !important; }</style>');
+            /* 高さは画面全体のまま（表示領域より必ず大きいので下まで覆える）にし、
+               下側の余白で中身だけを上へ寄せる。高さそのものを縮めると、表示領域の下端との間に
+               隙間ができて裏の一覧が見えていた（::after の延長は contain:paint で描かれない） */
+            document.write('<style id="loading-center-fix">#loading-screen { height: ' + scrH + 'px !important; min-height: 0 !important; box-sizing: border-box !important; padding-bottom: ' + (topGap * 2) + 'px !important; }</style>');
           }
         }
       } catch (e) {
@@ -243,6 +271,13 @@
   </div>
   <span class="visually-hidden">Loading...</span>
 </div>
+<script>
+  /* ローディング画面が実際に画面へ出た時刻（main.jsの最低表示時間はここから数える）。
+     起動開始から数えると、通信が遅いとき（プレビューのトンネル経由など）は画面が見えた時点で
+     既に時間切れになっており、一瞬でフェードアウトしていた */
+  window.__loadingShownAt = performance.now();
+  requestAnimationFrame(function () { window.__loadingShownAt = performance.now(); });
+</script>
 
 
 
@@ -339,6 +374,7 @@
         <button class="btn-corner" data-corner="イキり懺悔室" aria-pressed="false">イキり懺悔室</button>
         <button class="btn-corner" data-corner="本日のテーマ" aria-pressed="false">本日のテーマ</button>
         <button class="btn-corner" data-corner="結束バンドと私" aria-pressed="false">結束バンドと私</button>
+        <button class="btn-corner" data-corner="ピックアップキャラクター" aria-pressed="false">ピックアップキャラクター</button>
       </div>
     </div>
     <div class="filter-section">

@@ -29,9 +29,30 @@ let currentPage = 1;
 const pageSize = 50;
 let lastResults = [];
 let clearAutocompleteSuggestions = () => {};
+// 検索候補を、いまのデータで作り直す（データを読み直したとき。initializeAutocomplete() が中身を入れる）
+let rebuildAutocompleteEntries = () => {};
 let isSearchTriggered = false;
-let luckyButtonData = {};
-let kessokuWatasiData = {};
+// ★コーナーで検索したとき、カードの「ゲスト」の行をそのコーナーの中身に差し替える（回 → 文字）。
+//   コーナー検索ボタンで選んだとき、または検索語がコーナー名そのもののときに効く。
+//   複数のコーナーで絞り込んだときは、その回に中身があるコーナーのうち、この並びで先のものを出す。
+//   中身のファイルは { "114": "…" } の形（編集ツールの「コーナー」の欄で入力）
+const CORNER_TEXTS = [
+  { corner: 'ラッキーボタン', file: 'lucky-button.json' },          // ゲスト
+  { corner: '結束バンドと私', file: 'kessokuband_watasi.json' },    // 曲名
+  { corner: '本日のテーマ', file: 'todays-theme.json' },           // テーマ
+  { corner: 'ぼっち予想テスト', file: 'bocchi-test.json' },         // 問題・お題
+  { corner: 'ピックアップキャラクター', file: 'pickup-character.json' } // キャラクター
+];
+let cornerTextData = {}; // コーナー名 → { 回: 文字 }
+// キーワード検索に中身を入れるコーナー
+const SEARCHABLE_CORNERS = new Set(['本日のテーマ', 'ぼっち予想テスト', '結束バンドと私', 'ピックアップキャラクター']);
+// コーナーの中身から、検索候補に出す言葉を取り出す（「…」『…』の中身。括弧が無ければ , 、 で区切る）
+//   例: "「褒められたいこと」「ぼっち・ざ・らじお！の思い出」" → ["褒められたいこと", "ぼっち・ざ・らじお！の思い出"]
+function cornerTextItems(text) {
+  const s = String(text || '');
+  const quoted = [...s.matchAll(/[「『]([^」』]+)[」』]/g)].map(m => m[1].trim()).filter(Boolean);
+  return quoted.length ? quoted : s.split(/[,、，]/).map(t => t.trim()).filter(Boolean);
+}
 let historyData = [];
 let linksData = {}; // ★追加：リンクデータの格納先
 
@@ -63,7 +84,7 @@ const guestColorMap = {
  * ★★★ ユーティリティ関数 ★★★
  * ===================================================
  */
-const normalize = (s) => (s || '').normalize('NFKC').replace(/[ァ-ン]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0x60)).toLowerCase().replace(/\s+/g, '');
+const normalize = (s) => (s || '').normalize('NFKC').replace(/[~〜]/g, '〜').replace(/[ァ-ン]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0x60)).toLowerCase().replace(/\s+/g, '');
 // 「#43」「#43 銀魂」のような回番号指定クエリを解析する（全角＃・全角数字も可）。
 // ep: 回番号 / rest: 番号の後ろのキーワード（カードの時刻リンク解決に使う）
 const parseEpisodeQuery = (s) => {
@@ -517,21 +538,23 @@ async function loadExternalData() {
     const safeFetchJson = (url, fallback) =>
       fetch(url).then(res => res.ok ? res.json() : fallback).catch(() => fallback);
 
-    const [episodesRes, readingsData, keywordsData, luckyData, histData, kwData, lData] = await Promise.all([
+    const [episodesRes, readingsData, keywordsData, histData, lData, ...cornerFiles] = await Promise.all([
       fetch('episodes.json'),
       safeFetchJson('readings.json', {}),
       safeFetchJson('keywords.json', {}),
-      safeFetchJson('lucky-button.json', {}),
       safeFetchJson('history.json', []),
-      safeFetchJson('kessokuband_watasi.json', {}),
-      safeFetchJson('links.json', {})
+      safeFetchJson('links.json', {}),
+      ...CORNER_TEXTS.map(c => safeFetchJson(c.file, {}))
     ]);
     if (!episodesRes.ok) throw new Error(`episodes.json: HTTP ${episodesRes.status}`);
     const episodesData = await episodesRes.json();
     if (!Array.isArray(episodesData)) throw new Error('episodes.json: 配列ではありません');
-    luckyButtonData = (luckyData && typeof luckyData === 'object') ? luckyData : {};
     historyData = Array.isArray(histData) ? histData : [];
-    kessokuWatasiData = (kwData && typeof kwData === 'object') ? kwData : {};
+    cornerTextData = {};
+    CORNER_TEXTS.forEach((c, i) => {
+      const d = cornerFiles[i];
+      cornerTextData[c.corner] = (d && typeof d === 'object' && !Array.isArray(d)) ? d : {};
+    });
     linksData = (lData && typeof lData === 'object') ? lData : {};
 
     data = episodesData.map(ep => {
@@ -545,8 +568,17 @@ async function loadExternalData() {
       if (!ep.title) ep.title = buildEpisodeTitle(ep);
       const keywordsWithoutTimestamp = (ep.keywords || []).map(stripTimeSuffix);
       const guestText = Array.isArray(ep.guest) ? ep.guest.join(" ") : ep.guest;
-      const combined = [ep.title, guestText, keywordsWithoutTimestamp.join(" ")].join(" ");
-      ep.searchText = normalize(combined);
+      ep.searchText = [ep.title, guestText, ...keywordsWithoutTimestamp].map(normalize).join('\u0001');
+      // ★コーナーの中身（本日のテーマ・ぼっち予想テスト・結束バンドと私・ピックアップキャラクター）も
+      //   キーワード検索に引っかかるようにする。出演者・コーナー等の絞り込みには使わないよう、searchText とは別に持つ
+      const cornerKeys = /^京まふ大作戦/.test(ep.episode) ? [ep.episode, '京まふ大作戦'] : [ep.episode];
+      ep.cornerTexts = [];
+      CORNER_TEXTS.forEach(c => {
+        if (!SEARCHABLE_CORNERS.has(c.corner)) return;   // ラッキーボタン（中身はゲスト名）は入れない
+        const box = cornerTextData[c.corner] || {};
+        const k = cornerKeys.find(key => typeof box[key] === 'string' && box[key].trim());
+        if (k) ep.cornerTexts.push({ corner: c.corner, cornerN: normalize(c.corner), text: box[k], norm: normalize(box[k]) });
+      });
       // ★性能: 検索・お気に入り判定のたびに正規表現でIDを取り直さないよう1回だけ抽出
       ep.videoId = getVideoId(ep.link);
       // ★性能: 「キーワード@時刻」の解析と正規化も起動時に済ませる（findHitTime用）
@@ -616,6 +648,7 @@ async function loadExternalData() {
           addToCorpus(cleanK, cleanK);
         });
       }
+      (ep.cornerTexts || []).forEach(c => cornerTextItems(c.text).forEach(w => addToCorpus(w, w)));
     });
 
     // ★性能: findDidYouMean（もしかして候補）が検索のたびに全コーパス語へ
@@ -714,20 +747,28 @@ async function loadExternalData() {
       document.body && document.body.appendChild(hiddenFontDiv);
     }
 
+    // 2回目以降の読み込み（編集ツールのプレビューで、ページを読み直さずにデータだけ取り直したとき）でも、
+    // 新しく入れたキーワードが検索候補に出るよう作り直す（初回は initializeAutocomplete() がまだなので何もしない）
+    rebuildAutocompleteEntries();
     console.log("All data loaded successfully.");
+    return true;
   } catch (error) {
     console.error("Failed to load external data:", error);
     const resultsEl = document.getElementById('results');
     if (resultsEl) {
       resultsEl.innerHTML = '<li class="no-results">データの読み込みに失敗しました。<br>ページを再読み込みしてください。</li>';
     }
+    // フォントの読み込み待ち（データ読込後に作られる）を待たずに、すぐ画面を出す
+    window.__fontsReady = Promise.resolve();
+    return false;
   }
 }
 
 async function initializeApp() {
-  await loadExternalData();
+  const loaded = await loadExternalData();
 
-  if (!applyStateFromURL({ replace: true })) {
+  // 読み込みに失敗したときは、上のエラー表示を「一致する回が見つかりませんでした」で上書きしない
+  if (loaded && !applyStateFromURL({ replace: true })) {
     search();
   }
 
@@ -764,7 +805,8 @@ function getFilteredData(query) {
   // 特殊回（京まふ大作戦・CENTRAL STATION等、番号を持たない回）は
   // キーワード検索時には他の回と同じく検索対象に含める。
   // 非表示にするのはクエリなしの通常一覧のときだけ（従来どおりデフォルト非表示）。
-  if (!isOtherFilterActive && !isOtherKeywordSearch && raw.length === 0) {
+  const anyFilterActive = isOtherFilterActive || selectedGuests.length > 0 || selectedCorners.length > 0 || selectedYears.length > 0;
+  if (!anyFilterActive && !isOtherKeywordSearch && raw.length === 0) {
     res = res.filter(it => getEpisodeNumber(it.episode) >= -1);
   }
 
@@ -792,12 +834,14 @@ function getFilteredData(query) {
     for (const entry of READINGS_INDEX) {
         if (entry.normKey.includes(normalizedQuery) || entry.normReadings.some(r => r.includes(normalizedQuery))) {
             searchTerms.add(entry.normKey);
-            entry.normReadings.forEach(r => searchTerms.add(r));
+            entry.normReadings.forEach(r => { if (r.length > 2 || r === normalizedQuery) searchTerms.add(r); });
         }
     }
     const searchWords = [...searchTerms].filter(Boolean);
     // サイト側キーワードに加え、ユーザーが登録したタイムスタンプのメモも検索対象にする
-    res = res.filter(it => searchWords.some(word => it.searchText.includes(word)) || matchesUserMemo(it, searchWords));
+    res = res.filter(it => searchWords.some(word => it.searchText.includes(word)) ||
+      (it.cornerTexts || []).some(c => searchWords.some(word => c.norm.includes(word))) ||
+      matchesUserMemo(it, searchWords));
   }
 
   if (selectedGuests.length) {
@@ -807,7 +851,11 @@ function getFilteredData(query) {
           const hasOthers = selectedGuests.includes("その他");
           const indivGuests = selectedGuests.filter(g => g !== "結束バンド" && g !== "その他");
           
-          let match = indivGuests.some(sel => it.searchText.includes(normalize(sel)));
+          // 「青山吉能(ソロ回)」ボタン：出演者が青山吉能だけの回に限る。
+          // （前は searchText に「青山吉能」を含む回すべて＝京まふ・CENTRAL STATION 等も拾っていた）
+          let match = indivGuests.some(sel => sel === "青山吉能"
+            ? guestArr.length === 1 && guestArr[0] === "青山吉能"
+            : it.searchText.includes(normalize(sel)));
           if (!match && hasKessoku) {
               match = ["鈴代紗弓", "水野朔", "長谷川育美"].every(m => guestArr.includes(m));
           }
@@ -1164,7 +1212,16 @@ function renderResults(arr, page = 1, originalQuery = null, suggestions = [], sh
   }
 
   if (!arr || arr.length === 0) {
+    // 0件のときは、状況に合わせた言い換えのヒントを出す
+    const hasQuery = !!document.getElementById('searchBox').value.trim();
+    // お気に入り表示のときのヒント文はなし（「いまはタイムスタンプを〜」の文言は不要のため）
+    const hint = showFavoritesOnly
+      ? ''
+      : hasQuery
+        ? '言葉を短くするか、ひらがなや別の呼び方で検索してみてください。'
+        : '絞り込みの条件を減らしてみてください。';
     let html = '<li class="no-results"><div class="no-results-content"><div class="no-results-icon"><i class="fa-solid fa-circle-exclamation"></i>一致する回が見つかりませんでした。</div>';
+    if (hint) html += `<p class="no-results-hint">${hint}</p>`;
     html += '</div></li>';
     ul.innerHTML += html; // append to existing header (if any)
     return;
@@ -1184,10 +1241,10 @@ function renderResults(arr, page = 1, originalQuery = null, suggestions = [], sh
   // コーナー判定などにはサジェストがあればそちらを使う（既存ロジック維持）
   const highlightQuery = suggestionQuery || userQuery;
   
-  const cornerTarget = selectedCorners.length === 1 ? selectedCorners[0] : null;
 
-  const isLuckyButtonSearch = (normalize(highlightQuery) === "らっきーぼたん" || selectedCorners.includes("ラッキーボタン"));
-  const isKessokuWatasiSearch = selectedCorners.includes("結束バンドと私") || normalize(highlightQuery) === normalize("結束バンドと私");
+  // カードの「ゲスト」の行を差し替えるコーナー（コーナー検索で選んだもの・検索語がコーナー名そのもののもの）
+  const highlightNorm = normalize(highlightQuery);
+  const textCorners = CORNER_TEXTS.filter(c => selectedCorners.includes(c.corner) || highlightNorm === normalize(c.corner));
 
   const fragment = document.createDocumentFragment();
 
@@ -1201,6 +1258,12 @@ function renderResults(arr, page = 1, originalQuery = null, suggestions = [], sh
 
     // ★修正: まずユーザーの入力そのものでタイムスタンプを探す
     let hit = findHitTime(it, timeQuery);
+    // 「#36 えろおんなじょうし」のように番号＋読みで探したときは、読みを正規の表記に直してからも探す
+    // （番号つきの検索では候補を使わないので、読みのままだと時刻へのリンクが付かなかった）
+    if (!hit && timeQuery) {
+      const label = READING_TO_LABEL[normalize(timeQuery)];
+      if (label) hit = findHitTime(it, label);
+    }
 
     // ★修正: ヒットせず、もしサジェストがあるなら、そちらでも探す
     if (!hit && suggestionQuery) {
@@ -1215,8 +1278,11 @@ function renderResults(arr, page = 1, originalQuery = null, suggestions = [], sh
             if(hit) break;
         }
     }
-    if (!hit && cornerTarget) {
-      hit = findHitTime(it, cornerTarget);
+    if (!hit && selectedCorners.length > 0) {
+      for (const corner of selectedCorners) {
+        hit = findHitTime(it, corner);
+        if (hit) break;
+      }
     }
     // ★その他フィルター（公開録音・京まふ大作戦等）でもタイムスタンプを探す。
     // これがないと、該当キーワードに@時刻が登録されていてもカードに時刻リンクが出ない
@@ -1230,16 +1296,14 @@ function renderResults(arr, page = 1, originalQuery = null, suggestions = [], sh
 
     let guestText = getEpisodeGuestText(it);
 
-    if (isLuckyButtonSearch) {
-      const episodeKey = it.episode === "02" && it.title.includes("京まふ") ? "京まふ" : it.episode;
-      guestText = luckyButtonData[episodeKey] || guestText;
-    }
-
-    else if (isKessokuWatasiSearch) {
-      const episodeKey = it.episode === "02" && it.title.includes("京まふ") ? "京まふ" : it.episode;
-      // データがあれば書き換え、なければ元のまま
-      if (kessokuWatasiData[episodeKey]) {
-        guestText = kessokuWatasiData[episodeKey];
+    if (textCorners.length) {
+      const keys = /^京まふ大作戦/.test(it.episode) ? [it.episode, '京まふ大作戦'] : [it.episode];
+      // その回の中身があれば書き換え、なければ元のまま
+      outer: for (const c of textCorners) {
+        for (const k of keys) {
+          const text = cornerTextData[c.corner][k];
+          if (text) { guestText = text; break outer; }
+        }
       }
     }
 
@@ -1273,7 +1337,7 @@ function renderResults(arr, page = 1, originalQuery = null, suggestions = [], sh
               ? `<span class="impact-number">${hashOnly}</span>`
               : hashOnly.replace(/([A-Za-z0-9]+)/g, '<span class="impact-number">$1</span>')
           }${/\u3000/.test(it.title) ? "<br>" : " "}
-          <span class="guest-one-line" aria-label="${guestText}" style="visibility: hidden;">${guestText}</span>
+          <span class="guest-one-line" aria-label="${escapeHtml(guestText)}" style="visibility: hidden;">${escapeHtml(guestText)}</span>
         </h5>
       </div>
       <div class="episode-meta ${hasPhotoBtn ? 'has-photo-btn' : ''}">
@@ -1339,9 +1403,9 @@ function updateActiveFilters() {
                <i class="fa fa-user"></i> <span class="tag-label">${escapeHtml(g)}</span> <i class="fa fa-xmark"></i>
              </button>`;
   });
-  selectedCorners.forEach(c => html += `<button class="filter-tag" tabindex="0" aria-label="コーナーフィルタ解除 ${escapeHtml(c)}" data-type="corner" data-value="${escapeHtml(c)}"><i class="fa fa-cubes"></i> <span class="tag-label">${escapeHtml(c)}</span> <i class="fa fa-xmark"></i></button>`);
-  selectedOthers.forEach(o => html += `<button class="filter-tag" tabindex="0" aria-label="その他フィルタ解除 ${escapeHtml(o)}" data-type="other" data-value="${escapeHtml(o)}"><i class="fa fa-star"></i> <span class="tag-label">${escapeHtml(o)}</span> <i class="fa fa-xmark"></i></button>`);
-  selectedYears.forEach(y => html += `<button class="filter-tag" tabindex="0" aria-label="年フィルタ解除 ${escapeHtml(y)}" data-type="year" data-value="${escapeHtml(y)}"><i class="fa fa-calendar"></i> <span class="impact-number tag-label">${escapeHtml(y)}</span> <i class="fa fa-xmark"></i></button>`);
+  selectedCorners.forEach(c => html += `<button class="filter-tag" tabindex="0" aria-label="コーナーフィルタ解除 ${escapeHtml(c)}" data-type="corner" data-value="${escapeHtml(c)}"><i class="fa-solid fa-radio"></i> <span class="tag-label">${escapeHtml(c)}</span> <i class="fa fa-xmark"></i></button>`);
+  selectedOthers.forEach(o => html += `<button class="filter-tag" tabindex="0" aria-label="その他フィルタ解除 ${escapeHtml(o)}" data-type="other" data-value="${escapeHtml(o)}"><i class="fa-solid fa-microphone"></i> <span class="tag-label">${escapeHtml(o)}</span> <i class="fa fa-xmark"></i></button>`);
+  selectedYears.forEach(y => html += `<button class="filter-tag" tabindex="0" aria-label="年フィルタ解除 ${escapeHtml(y)}" data-type="year" data-value="${escapeHtml(y)}"><i class="fa-solid fa-calendar-days"></i> <span class="impact-number tag-label">${escapeHtml(y)}</span> <i class="fa fa-xmark"></i></button>`);
   area.innerHTML = html;
 }
 
@@ -1568,6 +1632,43 @@ function getInkBounds(text, font, fontSizePx) {
   return result;
 }
 
+// 画面に実際に並んだ文字の位置から、インクの中心をずらす量を求める（正の値 = 右へ動かすべき）。
+// iOS Safari では画面の文字の並びが canvas で測った幅より広くなる（例: 「ピックアップキャラクター」で約5px）ため、
+// ラベル全体を canvas で測ると補正がずれて、文字が左に寄って見えていた。
+// そこで、先頭と末尾の文字の位置は画面（DOM）から取り、canvas はその1文字の字面の左右端だけに使う。
+// 変形を外した状態で呼ぶこと（fitFilterButtons のフェーズ2）。測れないときは null
+function getDomOpticalXOffset(span, font, fontSizePx) {
+  try {
+    const node = span.firstChild;
+    if (!node || node.nodeType !== 3) return null;
+    const text = node.textContent;
+    const chars = Array.from(text);
+    let first = 0, last = chars.length - 1;
+    while (first <= last && /\s/.test(chars[first])) first++;
+    while (last >= first && /\s/.test(chars[last])) last--;
+    if (first > last) return null;
+    const offsetOf = (idx) => chars.slice(0, idx).join('').length; // UTF-16 の位置（サロゲートペア対応）
+    const range = document.createRange();
+    const charLeft = (idx) => {
+      const s = offsetOf(idx);
+      range.setStart(node, s);
+      range.setEnd(node, s + chars[idx].length);
+      const rects = range.getClientRects();
+      return rects.length ? rects[0].left : null;
+    };
+    const firstLeft = charLeft(first), lastLeft = charLeft(last);
+    const a = getInkBounds(chars[first], font, fontSizePx);
+    const b = getInkBounds(chars[last], font, fontSizePx);
+    if (firstLeft == null || lastLeft == null || !a || !b) return null;
+    const box = span.getBoundingClientRect();
+    if (!box.width) return null;
+    const inkCenter = ((firstLeft + a.inkLeft) + (lastLeft + b.inkRight)) / 2;
+    let offset = (box.left + box.right) / 2 - inkCenter;
+    if (HANGING_TRAIL.test(text) && fontSizePx) offset += fontSizePx * 0.06;
+    return Math.max(-8, Math.min(8, offset)); // 異常値ガード
+  } catch (_) { return null; }
+}
+
 function getOpticalXOffset(text, font, fontSizePx) {
   const b = getInkBounds(text, font, fontSizePx);
   if (!b || !b.advance) return 0;
@@ -1614,6 +1715,7 @@ function fitFilterButtons() {
     job.need = job.span.scrollWidth;
     job.font = `${spanStyles.fontWeight} ${spanStyles.fontSize} ${spanStyles.fontFamily}`;
     job.fontSizePx = parseFloat(spanStyles.fontSize) || 0;
+    job.domOptX = getDomOpticalXOffset(job.span, job.font, job.fontSizePx);
   }
 
   // フェーズ3: 変形を一括適用（書き込みのみ。canvas計測はレイアウト非依存）
@@ -1624,8 +1726,9 @@ function fitFilterButtons() {
     // 光学補正量は圧縮前サイズで測っているため、scaleX圧縮ぶん(scale)を掛けて
     // 実際の描画サイズに合わせる（transformは translateX→scaleX の順で適用されるため、
     // インク中心を画面中央へ戻すのに必要な移動量は optX×scale になる）
-    const optX = getOpticalXOffset(job.span.textContent, job.font, job.fontSizePx) * scale;
-    if (Math.abs(optX) >= 0.5) parts.push(`translateX(${optX.toFixed(1)}px)`);
+    const baseOpt = job.domOptX != null ? job.domOptX : getOpticalXOffset(job.span.textContent, job.font, job.fontSizePx);
+    const optX = baseOpt * scale;
+    if (Math.abs(optX) >= 0.2) parts.push(`translateX(${optX.toFixed(2)}px)`);
     if (scale < 1) parts.push(`scaleX(${scale.toFixed(3)})`);
     if (parts.length) job.span.style.transform = parts.join(' ');
   }
@@ -1759,8 +1862,10 @@ function buildURLFromState({ method = 'push' } = {}) {
   const qs = params.toString();
   const url = qs ? `?${qs}` : location.pathname;
   const state = { q, selectedGuests, selectedCorners, selectedOthers, selectedYears, sort, fav: showFavoritesOnly, p: currentPage };
+  // いまと同じURLなら積まずに書き換える（初回表示や、同じ条件での検索のやり直しで履歴が重複しないように）
+  const same = (qs ? `?${qs}` : '') === location.search;
   try {
-    history[method === 'replace' ? 'replaceState' : 'pushState'](state, '', url);
+    history[(method === 'replace' || same) ? 'replaceState' : 'pushState'](state, '', url);
   } catch {}
 }
 
@@ -1771,7 +1876,7 @@ function applyDefaultStateForPopstate() {
   const searchBox = document.getElementById('searchBox');
   if (searchBox) {
     searchBox.value = '';
-    searchBox.dispatchEvent(new Event('input')); // クリアボタン表示も同期
+    syncClearButton(); // クリアボタン表示も同期（input を送ると検索候補が開くので直接）
   }
   const sortSelect = document.getElementById('sortSelect');
   if (sortSelect) sortSelect.value = 'newest';
@@ -1800,6 +1905,7 @@ function applyStateFromURL({ replace = false } = {}) {
   // （「100%」のような%を含む値でURIErrorになり復元全体が壊れるバグの修正）
   const readMulti = (key) => params.getAll(key).flatMap(v => v.includes(',') ? v.split(',') : v).map(v => v.trim()).filter(Boolean);
   document.getElementById('searchBox').value = params.get('q') || '';
+  syncClearButton();
   selectedGuests = readMulti('g');
   selectedCorners = readMulti('c');
   selectedOthers = readMulti('o');
@@ -1817,6 +1923,13 @@ function applyStateFromURL({ replace = false } = {}) {
   isRestoringURL = false;
   if (replace) buildURLFromState({ method: 'replace' });
   return true;
+}
+
+// 検索欄の×ボタンは、欄に文字があるときだけ出す（input イベントを送ると検索候補まで開いてしまうので、直接合わせる）
+function syncClearButton() {
+  const b = document.getElementById('clearSearchBtn');
+  const box = document.getElementById('searchBox');
+  if (b && box) b.hidden = !box.value;
 }
 
 function scrollToResultsTop() {
@@ -1873,6 +1986,20 @@ function setupEventListeners() {
     }
   };
   window.toggleFilterDrawer = toggleFilterDrawer;
+
+  // ★折りたたみスマホを広げた時（iPhone Duo 等）はフィルターが左のサイドバーとして常に表示される。
+  // 畳んだ状態でフィルター画面を開いたまま広げると、背景の暗幕とスクロール固定が残ってしまうため、
+  // 展開レイアウトに切り替わった瞬間に「開いている」状態を解除する（見た目はサイドバーとして残る）。
+  const duoMq = window.matchMedia && window.matchMedia('(orientation: landscape) and (pointer: coarse) and (min-width: 780px) and (max-width: 1069px) and (min-height: 501px)');
+  if (duoMq) {
+    const onDuoChange = () => {
+      if (duoMq.matches && drawer.style.display === 'block') toggleFilterDrawer(false);
+      // サイドバー化で幅が変わるので、長いラベルの圧縮を計算し直す
+      requestAnimationFrame(() => requestAnimationFrame(fitFilterButtons));
+    };
+    if (duoMq.addEventListener) duoMq.addEventListener('change', onDuoChange);
+    else if (duoMq.addListener) duoMq.addListener(onDuoChange);
+  }
 
   filterToggleBtn.addEventListener('click', () => toggleFilterDrawer());
   document.getElementById('drawerCloseBtn').addEventListener('click', () => toggleFilterDrawer(false));
@@ -1950,7 +2077,7 @@ function setupEventListeners() {
     else if (type === 'corner') selectedCorners = selectedCorners.filter(c => c !== value);
     else if (type === 'other') selectedOthers = selectedOthers.filter(o => o !== value);
     else if (type === 'year') selectedYears = selectedYears.filter(y => y !== String(value));
-    if (searchBoxEl) searchBoxEl.dispatchEvent(new Event('input'));
+    if (type === 'keyword') syncClearButton();
     updateFilterButtonStyles();
     search();
     scrollToResultsTop();
@@ -2258,7 +2385,43 @@ function setupThemeSwitcher() {
   });
 
   try { applyTheme(localStorage.getItem(THEME_KEY) || 'light'); } catch (e) { applyTheme('light'); }
+
+  // ほかのタブ（や手元の編集ツールのプレビュー）でテーマを変えたら、このタブも同じ色にする
+  window.addEventListener('storage', (e) => {
+    if (e.key === THEME_KEY && e.newValue) applyTheme(e.newValue);
+    // 別のタブでタイムスタンプを登録・削除したら読み直す。読み直さないと、このタブで次に保存したとき
+    // 古い内容で丸ごと上書きして、別のタブで登録した分が消えていた
+    if (e.key === TS_KEY) {
+      timestamps = loadTimestamps();
+      document.querySelectorAll('#results .episode-item').forEach(updateFavStar);
+      if (showFavoritesOnly) { isRestoringURL = true; search({ gotoPage: currentPage }); isRestoringURL = false; }
+    }
+  });
 }
+
+// モーダル（このサイトについて・沿革・関連リンク・タイムスタンプ）を開いている間は、後ろのページへ Tab で移れないようにし、
+// 開いたらモーダルの中へ、閉じたら開いたボタンへフォーカスを移す（キーボード・読み上げで操作したときに迷わないように）
+const modalFocus = {
+  open(modal) {
+    if (modal.__focusCtx) return;
+    const opener = document.activeElement;
+    const off = [...document.body.children].filter(el => el !== modal && !el.contains(modal) && !el.inert && !/^(SCRIPT|STYLE|LINK)$/.test(el.tagName));
+    off.forEach(el => { el.inert = true; });
+    modal.__focusCtx = { opener, off };
+    setTimeout(() => {
+      if (!modal.__focusCtx) return;
+      const f = modal.querySelector('.modal-close, [id$="CloseBtn"], button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+      if (f) f.focus({ preventScroll: true });
+    }, 60);
+  },
+  close(modal) {
+    const ctx = modal.__focusCtx;
+    if (!ctx) return;
+    modal.__focusCtx = null;
+    ctx.off.forEach(el => { el.inert = false; });
+    if (ctx.opener && ctx.opener.isConnected && typeof ctx.opener.focus === 'function') ctx.opener.focus({ preventScroll: true });
+  }
+};
 
 function setupModals() {
     const setup = (modalId, openTriggerId, closeBtnId) => {
@@ -2291,11 +2454,15 @@ function setupModals() {
                 modal.style.display = ''; // インラインスタイルを消してCSSに任せる
                 modal.style.opacity = '';
                 modal.classList.add('show');
+                // 表示が始まってから、後ろを操作できなくする（表示されないまま後ろだけ止まることがないように）
+                modalFocus.open(modal);
             });
             window.acquireBodyLock();
         };
         
         const closeModal = () => {
+            // 閉じ始めた時点で、後ろのページを操作できるように戻し、開いたボタンへフォーカスを戻す
+            modalFocus.close(modal);
             if (!modal.classList.contains('show')) return;
         
             modal.classList.add('closing');
@@ -2312,6 +2479,7 @@ function setupModals() {
                 modal.removeEventListener('animationend', onAnimationEnd);
                 
                 window.releaseBodyLock();
+                modalFocus.close(modal);
             };
         
             const onAnimationEnd = (e) => {
@@ -2640,7 +2808,7 @@ function setupModals() {
                 ? `<span class="impact-number">${hashOnly}</span>`
                 : hashOnly.replace(/([A-Za-z0-9]+)/g, '<span class="impact-number">$1</span>')
             }${/　/.test(epItem.title) ? "<br>" : " "}
-            <span class="guest-one-line" aria-label="${guestText}" style="visibility: hidden;">${guestText}</span>
+            <span class="guest-one-line" aria-label="${escapeHtml(guestText)}" style="visibility: hidden;">${escapeHtml(guestText)}</span>
           </h5>
         </div>
         <div class="episode-meta">
@@ -2882,6 +3050,11 @@ function setupModals() {
             if (document.getElementById('historyModal')?.classList.contains('show')) closeHistory();
             if (document.getElementById('photoModal')?.classList.contains('show')) closePhoto(); // ★追加
             if (document.getElementById('tsModal')?.classList.contains('show')) { resetTsKeyboard(); closeTs(); } // ★追加: タイムスタンプ
+            // スマホ・タブレットのフィルタ画面も Esc で閉じる（PCは常に出ている左の列なので対象外）
+            const drawer = document.getElementById('filterDrawer');
+            if (window.innerWidth < 1070 && drawer && getComputedStyle(drawer).display !== 'none' && typeof window.toggleFilterDrawer === 'function') {
+                window.toggleFilterDrawer(false);
+            }
         }
     });
 
@@ -2990,6 +3163,13 @@ function findHitTime(item, rawQuery) {
     if (p.baseN.includes(qn) || qn.includes(p.baseN)) {
       return p;
     }
+  }
+  // コーナーの中身（本日のテーマなど）に一致したら、そのコーナーが始まる時刻
+  // （キーワードの「本日のテーマ@39:52」など）へ飛べるようにする
+  for (const c of (item.cornerTexts || [])) {
+    if (!c.norm.includes(qn)) continue;
+    const p = (item.kwTimes || []).find(k => k.baseN === c.cornerN);
+    if (p) return p;
   }
   // ユーザー登録タイムスタンプのメモにも一致すれば、その場面へジャンプできるようにする
   for (const e of getTimestamps(item.videoId)) {
@@ -3180,6 +3360,23 @@ window.applyDidYouMean = function(word) {
                     if (window.__updateHeaderOffset) window.__updateHeaderOffset();
                 }, 100);
                 setTimeout(stopWatch, 2000);
+                // ★ホーム画面アプリ: 「画面の高さ − 表示領域の高さ」（ステータスバーが default のとき上に空く分）を
+                // 実測して覚えておく。次回起動時に index.html がこれを使い、ローディング画面を画面の真ん中に置く。
+                // 起動直後は表示領域の高さが確定していないことがあるため、少し待ってから測り、
+                // すぐアプリを閉じられても記録が残るよう早めにも測る（0 = 上に空きなし、も記録する）
+                const measureTopGap = () => {
+                    try {
+                        if (navigator.standalone !== true || navigator.maxTouchPoints <= 1) return;
+                        if (window.matchMedia('(orientation: landscape)').matches) return;
+                        const ae = document.activeElement;
+                        if (ae && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName)) return; // キーボード表示中は測らない
+                        const scrH = Math.max(screen.width, screen.height);
+                        const gap = Math.round(scrH - window.innerHeight);
+                        if (window.innerHeight > 0 && gap >= 0 && gap <= 120) localStorage.setItem('pwa_top_gap_v1', String(gap));
+                    } catch (e) {}
+                };
+                setTimeout(measureTopGap, 300);
+                setTimeout(measureTopGap, 2000);
                 loadingScreen.classList.add("fadeout");
                 loadingScreen.addEventListener('transitionend', () => loadingScreen.remove(), { once: true });
                 setTimeout(() => loadingScreen.remove(), 700); // フェード(0.45s)完了後に確実に除去する保険
@@ -3211,10 +3408,16 @@ window.applyDidYouMean = function(word) {
             const MIN_SHOW = 1500;   // タイトル最低表示時間
             const FONT_CAP = 8000;   // フォントを待つ上限（超えたら諦めて表示）
             const SW_CAP = 4500;     // SW更新チェックを待つ上限（Promise側の4秒上限の保険）
+            // 確認用サーバー（admin/serve.py）がファイルの変更で自動的に読み直したときは、タイトル画面が
+            // 出ていない（admin/live.js が html に live-reloaded を付けて隠す。公開したサイトでは付かない）ので、
+            // カードが並んだらすぐに使える状態にする（フォント・SWの決着を待つ間、下部ナビが消えたままにならないように）
+            const LIVE_RELOADED = document.documentElement.classList.contains('live-reloaded');
             const tryHide = () => {
+                // 最低表示時間は「ローディング画面が実際に画面へ出た時刻」から数える（index.html で記録）
                 const t = performance.now();
+                const shown = t - (window.__loadingShownAt || 0);
                 if (!fontsDone) hookFonts();
-                if (cardsReady() && t >= MIN_SHOW && (fontsDone || t >= FONT_CAP) && (swDone || t >= SW_CAP)) { hideLoadingScreen(); return; }
+                if (cardsReady() && (LIVE_RELOADED || (shown >= MIN_SHOW && (fontsDone || t >= FONT_CAP) && (swDone || t >= SW_CAP)))) { hideLoadingScreen(); return; }
                 requestAnimationFrame(tryHide);
             };
             tryHide();
@@ -3285,7 +3488,6 @@ function initializeAutocomplete() {
   if (!inputEl || !boxEl) return;
 
   const hasKanji = (s) => /[\u4e00-\u9faf\u3400-\u4dbf]/.test(s || '');
-  const entriesByLabel = new Map();
 
   // ★かな折りたたみ（候補マッチング専用）: 小書き文字を並字に、長音を除去して比較する。
   // 「けつそくばんど」(っ→つ の打ち間違い) や「うぃーうぃるびー」(長音の揺れ) でも
@@ -3293,6 +3495,9 @@ function initializeAutocomplete() {
   const SMALL_KANA = { 'っ':'つ','ゃ':'や','ゅ':'ゆ','ょ':'よ','ぁ':'あ','ぃ':'い','ぅ':'う','ぇ':'え','ぉ':'お','ゎ':'わ' };
   const foldKana = (s) => s.replace(/[っゃゅょぁぃぅぇぉゎ]/g, ch => SMALL_KANA[ch]).replace(/ー/g, '');
 
+  // 候補の一覧はデータから作る。データを読み直したら（編集ツールのプレビューで文字を直したとき等）作り直す
+  const buildEntries = () => {
+  const entriesByLabel = new Map();
   const ensureEntry = (label, type) => {
     if (!label) return;
     const baseLabel = stripTimeSuffix(label);
@@ -3316,6 +3521,8 @@ function initializeAutocomplete() {
   data.forEach(ep => {
     (ep.keywords || []).forEach(kw => ensureEntry(kw, 'キーワード'));
     (Array.isArray(ep.guest) ? ep.guest : [ep.guest]).filter(Boolean).forEach(g => ensureEntry(g, '出演者'));
+    // コーナーの中身（本日のテーマなど）も候補に出す
+    (ep.cornerTexts || []).forEach(c => cornerTextItems(c.text).forEach(w => ensureEntry(w, 'コーナー')));
   });
 
   // ==========================================
@@ -3343,7 +3550,10 @@ function initializeAutocomplete() {
     }
   }
 
-  const entries = Array.from(entriesByLabel.values());
+  return Array.from(entriesByLabel.values());
+  };
+  let entries = buildEntries();
+  rebuildAutocompleteEntries = () => { entries = buildEntries(); };
   let cursor = -1;
   let viewItems = [];
 
@@ -3353,6 +3563,7 @@ function initializeAutocomplete() {
   const render = (items) => {
     if (isSearchTriggered) return;
     viewItems = items;
+    cursor = -1;
     boxEl.innerHTML = '';
     
     // ★修正: 先にDOMを追加してから表示を切り替える
@@ -3873,6 +4084,8 @@ window.__hideSplashCover = function () {
 
 // キーボードの左右矢印キーでのページネーション操作
 document.addEventListener('keydown', (e) => {
+  // Alt/⌘/Ctrl/Shift と組み合わせた矢印（ブラウザの「戻る」など）は横取りしない
+  if (e.altKey || e.metaKey || e.ctrlKey || e.shiftKey) return;
   // 検索ボックス等にフォーカスが当たっている場合はスキップ
   const activeEl = document.activeElement;
   if (activeEl && ['input', 'textarea', 'select'].includes(activeEl.tagName.toLowerCase())) {

@@ -25,6 +25,7 @@
   --bg-color: #f9fafe;
   --card-bg: #fff;
   --text-color: #242943;
+  /* 補助の灰色（公開日時・動画時間・下部ナビの文字など）。本番サイト（searchtheradio.com）と同じ色 */
   --muted: #7c8798;
   --radius: 11px;
   --shadow: 0 8px 24px -10px rgba(14, 14, 24, 0.13);
@@ -185,6 +186,14 @@ body {
   top: 0;
   left: 0;
   z-index: 2;
+}
+/* 選択中のフィルタのタグが無いときは、タグ用の帯の高さを取らない
+   （空の帯が「表示数」の下に32pxの空白として残っていた。ホーム画面アプリ版と同じ扱いにする） */
+.filters-bar:empty {
+  min-height: 0 !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  box-shadow: none !important;
 }
 /* search-cardのブレークポイントと同じ幅にしてタグ位置のズレを防ぐ
    （基本ルールより後に書かないと max-width: 860px に負けるため、この位置に置く） */
@@ -658,10 +667,14 @@ body.dark-mode #aboutModalContent a {
   transform: translateZ(0); 
 }
 
-.ball1 { background-color: #ff6496; animation-delay: 0s;   }
-.ball2 { background-color: #fabe00; animation-delay: 0.15s;}
-.ball3 { background-color: #006ebe; animation-delay: 0.3s; }
-.ball4 { background-color: #e60046; animation-delay: 0.45s;}
+/* 遅れはマイナスで指定する（周期0.6sから引いた値。見た目の波は 0/0.15/0.3/0.45s 遅れと同じ）。
+   プラスの遅れだと、表示された瞬間から動き出すとき（通信が遅いときのPWA起動など）に
+   2〜4個目の玉が最大0.45秒止まったままになり、波がつっかえて「かくつく」ように見えていた。
+   マイナスなら最初のフレームから全部の玉が途中から動いている */
+.ball1 { background-color: #ff6496; animation-delay: 0s;    }
+.ball2 { background-color: #fabe00; animation-delay: -0.45s;}
+.ball3 { background-color: #006ebe; animation-delay: -0.3s; }
+.ball4 { background-color: #e60046; animation-delay: -0.15s;}
 
 @keyframes bounce {
   0%, 80%, 100% {
@@ -1759,6 +1772,8 @@ body.theme-red .theme-btn.active {
   box-shadow: 0 0 0 3px var(--btn-hover, #a6e1fa);
 }
 
+/* テーマ色（ピンク〜グリーンの5色）は本番サイト（searchtheradio.com）の値に合わせてある（2026-11-14、ぱせの指示）。
+   以前のコントラスト調整版は admin/backup/20261114-155000-テーマ色本番合わせ前/style.css に残してある */
 /* --- ピンクテーマ --- */
 body.theme-pink {
   --bg-color: #ff6496;
@@ -1937,6 +1952,9 @@ body[class*="theme-"] .searchbox-input:focus { border-color: var(--btn-main) !im
 body[class*="theme-"] .results-count-under-bar { color: var(--btn-hover) !important; background: transparent !important; }
 body[class*="theme-"] #filterDrawer { background: var(--bg-color) !important; border-color: var(--bg-color) !important; }
 body[class*="theme-"] .filter-title { color: var(--btn-hover) !important; }
+/* イエローは白い文字が読めないので、表示数・フィルタの見出しも文字の色（濃い茶色）にする */
+body.theme-yellow .results-count-under-bar,
+body.theme-yellow .filter-title { color: var(--text-color) !important; }
 body[class*="theme-"] .guest-button, body[class*="theme-"] .btn-corner, body[class*="theme-"] .btn-year { background: var(--btn-bg) !important; border-color: var(--history-card-bd) !important; color: var(--text-color) !important; }
 
 /* テーマカラーのホバーエフェクトも同様に制限します */
@@ -2697,7 +2715,8 @@ body[class*="theme-"] #createPlaylistBtn { /* ← ここに追加 */
 /* ★★★ ↓↓ このブロックを新しく追加 ↓↓ ★★★ */
 body[class*="theme-"] #createPlaylistBtn {
   background-color: #ffffff !important; /* 白 */
-  color: var(--bg-color) !important; /* テーマの背景色 */
+  /* 文字はテーマの濃いほうの色（背景色そのままだと、イエロー・ピンクで白地に読めなかった） */
+  color: var(--btn-control-text-active) !important;
   border-color: #ffffff !important;
 }
 
@@ -2722,7 +2741,7 @@ body[class*="theme-"] #favOnlyToggleBtn[aria-pressed="true"] {
   body[class*="theme-"] #createPlaylistBtn:hover {
     background-color: #f0f0f0 !important; /* 少し暗い白 */
     border-color: #f0f0f0 !important;
-    color: var(--bg-color) !important;
+    color: var(--btn-control-text-active) !important;
   }
 }
 
@@ -3981,6 +4000,37 @@ html.is-standalone #pwa-mainResetBtn {
   width: 100%;
 }
 
+/* 0件のときのヒントと「検索と絞り込みをリセット」 */
+.no-results-hint {
+  margin: -6px 0 0;
+  font-size: 0.86em;
+  line-height: 1.7;
+  color: var(--muted);
+  text-wrap: balance;
+  word-break: auto-phrase;
+}
+.no-results-reset {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 40px;
+  padding: 0 18px;
+  border: 1px solid #d5d9e2;
+  border-radius: 999px;
+  background: var(--card-bg, #fff);
+  color: var(--text-color);
+  font: inherit;
+  font-size: 0.9em;
+  font-weight: 700;
+  cursor: pointer;
+}
+.no-results-reset i { font-size: 0.92em; }
+@media (hover: hover) {
+  .no-results-reset:hover { border-color: var(--text-color); }
+}
+body.dark-mode .no-results-reset { background: #2a2f37; border-color: #394150; color: #f1f3f7; }
+body[class*="theme-"] .no-results-reset { background: var(--btn-bg) !important; border-color: var(--history-card-bd) !important; color: var(--btn-main) !important; }
+
 /* アイコン自体の微調整 */
 .no-results-icon i {
   flex-shrink: 0; /* アイコンが潰れるのを防ぐ */
@@ -4298,8 +4348,9 @@ body.dark-mode #filterDrawer .drawer-close-btn {
     position: fixed !important;
     top: calc(var(--header-offset) + 2px) !important;
     
-    /* ▼ サイドバーの幅 */
-    width: 280px !important;
+    /* ▼ サイドバーの幅。ボタンを2列（スマホと同じ並び）にしても長いコーナー名が
+       潰れすぎないよう、1列だったころの280pxから広げている（ボタン1つ約155px） */
+    width: 340px !important;
     height: calc(100vh - var(--header-offset) - 20px) !important;
     
     /* 画面中央(max-width:1300px)の左端にピタッと合わせる計算 */
@@ -4309,7 +4360,7 @@ body.dark-mode #filterDrawer .drawer-close-btn {
     background: transparent !important;
     border: none !important;
     box-shadow: none !important;
-    padding: 0 20px 20px 5px !important; /* 右側に少しゆとり */
+    padding: 0 12px 20px 5px !important; /* 右側に少しゆとり（スクロールバーの分） */
     overflow-y: auto !important;
     z-index: 100 !important;
     transform: none !important;
@@ -4348,14 +4399,21 @@ body.dark-mode #filterDrawer .drawer-close-btn {
 
   /* --- 6. メインコンテンツの配置をサイドバー拡張に合わせて調整 --- */
   .main-content {
-    padding-left: 305px !important;
+    padding-left: 365px !important; /* サイドバーの幅(340px)＋左の10px＋隙間15px */
     padding-right: 15px !important;
   }
 
-  /* --- フィルター内のすべてのボタンを縦1列にして横幅を最大化 --- */
+  /* --- フィルター内のボタンはスマホと同じく横に2つ並べる --- */
   #filterDrawer .filter-grid {
-    grid-template-columns: 1fr !important;
-    gap: 10px !important; /* ボタン間の縦の隙間。お好みで数値を調整してください */
+    grid-template-columns: 1fr 1fr !important;
+    gap: 10px !important; /* ボタン間の縦横の隙間 */
+  }
+  /* 文字の大きさもスマホと同じにする（長い名前は fitFilterButtons() が横だけ縮めて収める） */
+  #filterDrawer .guest-button,
+  #filterDrawer .btn-corner,
+  #filterDrawer .btn-year {
+    font-size: 0.95em;
+    min-height: 37px;
   }
 }
 
@@ -6784,6 +6842,33 @@ body:not([class*="theme-"]) .filter-tag[data-type="other"]  { background: #d32d4
     padding-right: max(var(--drawer-px), env(safe-area-inset-right, 0px));
   }
 
+}
+
+/* ===================================================
+   ローディング画面: 横向きスマホ（高さ 500px 以下）
+   縦持ち用の330pxロゴのままだと、下の玉が画面外にはみ出していた。
+   ロゴを画面の高さに合わせて縮め、玉との間隔も詰める。
+   ※ PWA起動直後はモバイルUI判定より先に表示されるため、is-standalone 条件は付けない
+   =================================================== */
+@media (orientation: landscape) and (max-height: 500px) {
+  :root { --loading-logo-w: min(330px, 70vw, calc(100dvh - 110px)); }
+  #loading-logo {
+    width: var(--loading-logo-w) !important;
+    max-width: none !important;
+  }
+  #spinner {
+    margin-top: 22px !important;
+    transform: translate3d(calc(var(--loading-logo-w) * 0.007), 0, 0);
+  }
+  .loading-ball { width: 14px; height: 14px; }
+}
+
+/* ===================================================
+   タイムスタンプモーダルの2列表示（左: エピソードカード / 右: 一覧）
+   ・スマホ横向き（高さ500px以下）
+   ・折りたたみスマホを広げた横長画面（iPhone Duo 等、下の「展開時レイアウト」と同じ条件）
+   =================================================== */
+@media (orientation: landscape) and (max-height: 500px), (orientation: landscape) and (pointer: coarse) and (min-width: 780px) and (max-width: 1069px) and (min-height: 501px) {
   /* --- タイムスタンプモーダル: 縦に積むと一覧が34pxしか残らないため、
          横長に広げて「左: エピソードカード ／ 右: 一覧＋編集ボタン」の2列にする --- */
   html.is-standalone .modal-content.ts-modal {
@@ -6865,20 +6950,246 @@ body:not([class*="theme-"]) .filter-tag[data-type="other"]  { background: #d32d4
 }
 
 /* ===================================================
-   ローディング画面: 横向きスマホ（高さ 500px 以下）
-   縦持ち用の330pxロゴのままだと、下の玉が画面外にはみ出していた。
-   ロゴを画面の高さに合わせて縮め、玉との間隔も詰める。
-   ※ PWA起動直後はモバイルUI判定より先に表示されるため、is-standalone 条件は付けない
+   展開時レイアウト：折りたたみスマホを広げた横長画面（iPhone Duo 約890×626 等）
+   Appleの指針「内側の画面ではiPad版をそのまま広げた画面に／タブバーは右端に縦に並べる」に合わせ、
+   純正アプリと同じ3列構成にする:
+     左: フィルター（常に表示するサイドバー） / 中央: 検索と一覧 / 右端: 縦に並ぶナビ
+   条件: 横長・タッチ操作・幅780〜1069px・高さ501px以上（スマホ横向きやPC、iPad全画面は対象外）
    =================================================== */
-@media (orientation: landscape) and (max-height: 500px) {
-  :root { --loading-logo-w: min(330px, 70vw, calc(100dvh - 110px)); }
-  #loading-logo {
-    width: var(--loading-logo-w) !important;
+@media (orientation: landscape) and (pointer: coarse) and (min-width: 780px) and (max-width: 1069px) and (min-height: 501px) {
+  :root {
+    --duo-sb-w: 268px;  /* 左サイドバーの幅 */
+    --duo-rail-w: 76px; /* 右端ナビの幅 */
+    --duo-left: calc(var(--duo-sb-w) + env(safe-area-inset-left, 0px));
+    --duo-right: calc(var(--duo-rail-w) + env(safe-area-inset-right, 0px));
+  }
+
+  /* --- 左: フィルターを常に表示するサイドバーにする --- */
+  html.is-standalone #filterDrawer {
+    display: block !important;
+    position: fixed !important;
+    top: 0 !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: auto !important;
+    width: var(--duo-left) !important;
+    height: auto !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: calc(14px + var(--safe-top, 0px)) 12px calc(16px + var(--safe-bottom, 0px)) max(12px, env(safe-area-inset-left, 0px)) !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain;
+    border: none !important;
+    border-right: 1px solid rgba(127, 127, 127, 0.18) !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    transform: none !important;
+    animation: none !important; /* リセット時の「閉じる」フェードで消えないように */
+    opacity: 1 !important;
+    z-index: 2050 !important;
+  }
+  /* サイドバー上部の大見出し（純正アプリのサイドバーと同じ見せ方） */
+  html.is-standalone #filterDrawer::before {
+    content: "フィルタ";
+    display: block;
+    font-family: fot-udkakugoc80-pro, 'Segoe UI', system-ui, -apple-system, sans-serif;
+    font-weight: 700;
+    font-size: 1.55rem;
+    letter-spacing: 0.01em;
+    margin: 2px 4px 14px;
+  }
+  html.is-standalone #filterDrawer .filter-section { padding-left: 0; padding-right: 0; }
+  html.is-standalone #filterDrawer .filter-grid {
+    grid-template-columns: 1fr !important;
+    gap: 8px !important;
+  }
+  html.is-standalone #filterDrawer .guest-button,
+  html.is-standalone #filterDrawer .btn-corner,
+  html.is-standalone #filterDrawer .btn-year {
+    min-height: 40px;
+    padding-top: 7px !important;
+    padding-bottom: 7px !important;
+  }
+  /* 常に見えているので、開閉用の部品は使わない */
+  html.is-standalone #filterDrawer .drawer-footer,
+  html.is-standalone .drawer-backdrop,
+  html.is-standalone #pwa-filterToggleBtn {
+    display: none !important;
+  }
+
+  /* --- 中央: 検索ヘッダーをサイドバーと右端ナビの間に収め、1行に詰める --- */
+  html.is-standalone .sticky-search-area {
+    left: var(--duo-left) !important;
+    right: var(--duo-right) !important;
+    width: auto !important;
+    padding: calc(8px + var(--safe-top, 0px)) 0 8px !important;
+    border-radius: 0 0 14px 14px;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+  html.is-standalone .sticky-search-area > .search-card {
+    flex: 0 0 100%;
+    max-width: none !important;
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+    padding: 0 16px !important;
+  }
+  html.is-standalone .search-row-keyword { flex: 1 1 auto; width: auto; min-width: 0; margin-bottom: 0; }
+  html.is-standalone .search-input-wrapper { flex: 1 1 auto; width: 100%; }
+  html.is-standalone .search-row-controls {
+    display: flex !important;
+    flex: 0 0 auto;
+    gap: 8px !important;
+    width: auto;
+    min-width: 0;
+  }
+  html.is-standalone .searchbox-input,
+  html.is-standalone .search-row-controls .sort-wrapper,
+  html.is-standalone #sortSelect,
+  html.is-standalone #createPlaylistBtn {
+    height: 40px !important;
+    min-height: 40px !important;
+    max-height: 40px !important;
+    box-sizing: border-box !important;
+  }
+  html.is-standalone .search-row-controls .sort-wrapper { width: 172px !important; flex: 0 0 172px !important; }
+  html.is-standalone #createPlaylistBtn { width: 150px !important; flex: 0 0 150px !important; font-size: 14px !important; }
+  html.is-standalone #sortSelect { font-size: 14px !important; }
+  /* 「表示数」とフィルタータグは同じ行に */
+  html.is-standalone .sticky-search-area > .results-count-under-bar {
+    flex: 0 0 auto;
+    width: auto !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 7px 0 0 16px !important;
+    white-space: nowrap;
+  }
+  html.is-standalone .sticky-search-area > .filters-bar {
+    flex: 1 1 0;
+    min-width: 0;
+    width: auto !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 6px 16px 0 14px !important;
+    row-gap: 8px !important;
+    min-height: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+  html.is-standalone .filters-bar:empty { padding: 0 !important; }
+
+  /* --- 中央: 一覧などの本文をサイドバーと右端ナビの間に --- */
+  html.is-standalone .main-content {
+    padding-left: calc(var(--duo-left) + 16px) !important;
+    padding-right: calc(var(--duo-right) + 16px) !important;
+    padding-bottom: calc(16px + var(--safe-bottom, 0px)) !important;
     max-width: none !important;
   }
-  #spinner {
-    margin-top: 22px !important;
-    transform: translate3d(calc(var(--loading-logo-w) * 0.007), 0, 0);
+  html.is-standalone #results { grid-template-columns: 1fr !important; }
+  html.is-standalone .site-footer {
+    padding-left: var(--duo-left);
+    padding-right: var(--duo-right);
   }
-  .loading-ball { width: 14px; height: 14px; }
+
+  /* --- 右端: 下部ナビを縦に並ぶナビにする（純正アプリのタブバーと同じ位置） --- */
+  html.is-standalone .pwa-bottom-nav {
+    top: 0 !important;
+    bottom: 0 !important;
+    left: auto !important;
+    right: 0 !important;
+    width: var(--duo-right) !important;
+    height: auto !important;
+    flex-direction: column;
+    justify-content: center;
+    align-items: stretch;
+    gap: 6px;
+    padding: var(--safe-top, 0px) env(safe-area-inset-right, 0px) var(--safe-bottom, 0px) 0 !important;
+    border-top: none !important;
+    border-left: 1px solid var(--btn-reset-border, #e5e7eb);
+    box-shadow: -2px 0 12px rgba(0, 0, 0, 0.06);
+  }
+  html.is-standalone body.dark-mode .pwa-bottom-nav { border-left-color: #394150; }
+  html.is-standalone body[class*="theme-"] .pwa-bottom-nav { border-left-color: var(--history-card-bd); }
+  html.is-standalone .pwa-bottom-nav .pwa-bottom-nav-btn {
+    flex: 0 0 auto;
+    max-width: none;
+    width: 100%;
+    height: 64px;
+    flex-direction: column;
+    gap: 5px;
+  }
+  html.is-standalone .pwa-bottom-nav .pwa-bottom-nav-btn i { font-size: 21px !important; top: 0 !important; left: 0 !important; }
+  html.is-standalone .pwa-bottom-nav .pwa-bottom-nav-btn span { font-size: 10.5px !important; top: 0 !important; left: 0 !important; }
+  html.is-standalone #pwa-theme-toggle-btn {
+    top: 0;
+    width: 52px;
+    height: 52px;
+    min-width: 52px;
+    margin: 6px auto;
+    align-self: center;
+    box-shadow: none;
+  }
+  html.is-standalone .pwa-bottom-nav #pwa-theme-toggle-btn i { font-size: 24px !important; }
+  /* 横並び用の位置補正（端のボタンを内側へ8pxずらす）は縦並びでは不要なので打ち消す */
+  html.is-standalone .pwa-bottom-nav #pwa-mainResetBtn,
+  html.is-standalone .pwa-bottom-nav #pwa-filterToggleBtn { left: 0; right: 0; }
+
+  /* カラー選択パネルは右端ナビの左隣に縦に出す */
+  html.is-standalone .floating-panel {
+    top: 50% !important;
+    bottom: auto !important;
+    left: auto !important;
+    right: calc(var(--duo-right) + 12px) !important;
+    flex-direction: column !important;
+    padding: 14px 10px !important;
+    transform: translateY(-50%) scale(0.95) !important;
+    transform-origin: right center !important;
+  }
+  html.is-standalone .floating-panel.show {
+    transform: translateY(-50%) scale(1) !important;
+  }
+}
+
+/* ======================================================================== */
+/* ===== 追加修正：フィルタ見出し・ボタンの左端を検索欄と揃える ===== */
+/* ======================================================================== */
+/* スクリーンショットで「出演者検索」の見出しがキーワード検索欄・表示数より
+   少し左に出ていた原因：ドロワー(#filterDrawer)は画面幅いっぱい(最大1400px)
+   なのに、検索カード(.search-card)と表示数(.results-count-under-bar)は
+   最大860px(900px以上は1160px)で中央寄せのため、幅900px前後で中身の左端が
+   合わなかった。PC版サイドバー(1070px以上)でもドロワーの左余白が5pxで、
+   検索カードの15pxより10px左に出ていた。
+   ドロワーの横幅と左右余白を検索エリアと同じにし、見出し・ボタンの左端を
+   検索欄の左端に合わせる。フッターの負マージンは --drawer-px を参照して
+   いるため、--drawer-px を15pxに揃えればフッターもそのまま全幅になる。 */
+@media (max-width: 899px) {
+  #filterDrawer { max-width: 860px !important; }
+  :root { --drawer-px: 15px; }
+  #filterDrawer .filter-section { padding-left: 0 !important; padding-right: 0 !important; }
+}
+@media (min-width: 900px) and (max-width: 1069px) {
+  #filterDrawer { max-width: 1160px !important; }
+  :root { --drawer-px: 15px; }
+  #filterDrawer .filter-section { padding-left: 0 !important; padding-right: 0 !important; }
+}
+@media (min-width: 1070px) {
+  #filterDrawer { padding-left: 15px !important; }
+}
+
+/* ======================================================================== */
+/* ===== 追加修正：フィルタを選んでも画面が下に動かないように ===== */
+/* ======================================================================== */
+/* 選択中タグの帯（.filters-bar）は、タグが無いとき高さを0に潰すルール
+   （.filters-bar:empty）が効いていたため、フィルタを1つ選ぶたびに帯が
+   32px伸びて、固定ヘッダー全体の高さが変わり、--header-offset 経由で
+   下の結果一覧がその分だけ下にずれていた（解除すると上に戻る）。
+   空のときも1行分の高さと上下の余白を確保して、帯の高さが選択の
+   有無で変わらないようにする。影は空のとき消えたまま（元のルール）。
+   タグが2行以上に折り返すときは、その分だけ帯が伸びるのは今まで通り。 */
+.filters-bar:empty {
+  min-height: 32px !important;
+  padding-top: 2.5px !important;
+  padding-bottom: 3px !important;
 }
