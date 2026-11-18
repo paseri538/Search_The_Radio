@@ -3115,6 +3115,9 @@ function updateHeaderOffset() {
   const sticky = document.querySelector('.sticky-search-area');
   if (!sticky) return;
   const h = sticky.offsetHeight;
+  // 見えていないとき（編集ツールのプレビューが別のタブの裏で描き直されたときなど）は高さが 0 になる。
+  // その値を使うとカードがヘッダーの下に潜り込むので、使わずに見えるようになるのを待つ（下の ResizeObserver が測り直す）
+  if (h === 0) return;
   // ★iOS対策: PWAの起動・復帰の一瞬、env(safe-area-inset-top)が異常値（0や過大値）を
   // 返すことがあり、そのタイミングで計測すると誤った余白が残り続けて
   // 「コンテンツがヘッダーに食い込む」「ヘッダー下に大きな空白ができる」原因になっていた。
@@ -3905,6 +3908,8 @@ document.addEventListener('DOMContentLoaded', () => {
   window.addEventListener('load', updateHeaderOffset);
   window.addEventListener('resize', () => setTimeout(updateHeaderOffset, 50));
   new MutationObserver(updateHeaderOffset).observe(document.querySelector('.sticky-search-area'), { childList: true, subtree: true, attributes: true });
+  // ヘッダーの高さが変わったら測り直す（隠れていた画面が見えるようになったときも。resize が来ない場合がある）
+  if (window.ResizeObserver) new ResizeObserver(() => updateHeaderOffset()).observe(document.querySelector('.sticky-search-area'));
 });
 
 /* ===================================================
