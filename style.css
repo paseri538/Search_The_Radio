@@ -7193,3 +7193,47 @@ body:not([class*="theme-"]) .filter-tag[data-type="other"]  { background: #d32d4
   padding-top: 2.5px !important;
   padding-bottom: 3px !important;
 }
+
+/* --- メンテナンス画面（maintenance.json の on が true のとき。index.html のスクリプトが出す） --- */
+#maintenance-screen {
+  position: fixed;
+  inset: 0;
+  /* ローディング画面（z-index: 2147483647 !important）と同じ最大値。後に置いてあるので上に重なる */
+  z-index: 2147483647 !important;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 24px 16px calc(24px + env(safe-area-inset-bottom));
+  /* テーマ（ブラック・レッドなど）に関係なく、いつも白地に濃い文字（ホワイトテーマと同じ色） */
+  background: #f9fafe;
+  color: #242943;
+  text-align: center;
+  font-family: fot-udkakugoc80-pro, 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+#maintenance-screen[hidden] { display: none; }
+html.is-maintenance, html.is-maintenance body { overflow: hidden; }
+/* 読み込み画面は消す（フェードの途中で上に残り、文字が薄く透けて見えていた） */
+html.is-maintenance #loading-screen { display: none !important; }
+#maintenance-screen .maint-logo {
+  width: 360px;
+  max-width: 78vw;
+  height: auto;
+  margin-bottom: 10px;
+}
+#maintenance-screen .maint-title {
+  margin: 0;
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: #242943;
+}
+#maintenance-screen .maint-msg {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  line-height: 1.8;
+  white-space: pre-line; /* maintenance.json の \n で改行 */
+  color: #242943;
+}
