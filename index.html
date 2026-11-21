@@ -170,8 +170,8 @@
 <meta property="og:title" content="さーち・ざ・らじお！|「ぼっち・ざ・らじお！」非公式検索サイト" />
 <meta property="og:description" content="『ぼっち・ざ・らじお！』のエピソードを出演者・コーナー・年でサクッと検索。お気に入り機能も対応。" />
 <meta property="og:type" content="website" />
-<meta property="og:url" content="https://searchtheradio.com/" />
-<meta property="og:image" content="https://searchtheradio.com/ogp_img.jpg?v=1" />
+<meta property="og:url" content="https://searchtheradio.com/bocchi-radio/" />
+<meta property="og:image" content="https://searchtheradio.com/bocchi-radio/ogp_img.jpg?v=1" />
 <meta property="og:image:width" content="1200" />
 <meta property="og:image:height" content="630" />
 
@@ -181,9 +181,9 @@
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:title" content="さーち・ざ・らじお！|「ぼっち・ざ・らじお！」非公式検索サイト" />
 <meta name="twitter:description" content="『ぼっち・ざ・らじお！』のエピソードを出演者・コーナー・年でサクッと検索。お気に入り機能も対応。" />
-<meta name="twitter:image" content="https://searchtheradio.com/ogp_img.jpg?v=1" />
+<meta name="twitter:image" content="https://searchtheradio.com/bocchi-radio/ogp_img.jpg?v=1" />
 
-<link rel="canonical" href="https://searchtheradio.com/" />
+<link rel="canonical" href="https://searchtheradio.com/bocchi-radio/" />
 <!-- Googleの検索結果に表示される「サイト名」の指定（WebSite構造化データ）。
      Googleはこの name を最優先で使い、使えない場合は alternateName → og:site_name → <title> の順で参照する -->
 <script type="application/ld+json">
@@ -192,7 +192,7 @@
   "@type": "WebSite",
   "name": "さーち・ざ・らじお！|「ぼっち・ざ・らじお！」非公式検索サイト",
   "alternateName": ["さーち・ざ・らじお！", "Search The Radio"],
-  "url": "https://searchtheradio.com/"
+  "url": "https://searchtheradio.com/bocchi-radio/"
 }
 </script>
 <meta name="description" content="『ぼっち・ざ・らじお！』のエピソードを出演者・コーナー・キーワードなどでサクッと検索できる非公式サイト。" />
@@ -570,7 +570,7 @@
       // 強制更新が使うバージョン付きURL(/sw.js?xxx)ともフリップフロップしない）。
       // 未登録（初回訪問）のときだけ /sw.js を登録する。
       navigator.serviceWorker.getRegistration().then(function(existing) {
-        return existing || navigator.serviceWorker.register('/sw.js');
+        return existing || navigator.serviceWorker.register('sw.js');
       }).then(function(reg) {
         return navigator.serviceWorker.ready;
       }).then(function(reg) {

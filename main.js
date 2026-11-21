@@ -1030,21 +1030,21 @@ function resetSearch() {
     // そのバージョン名のURLで再登録する（新しいURL＝確実に新SWとして
     // インストールされ、controllerchange経由でスプラッシュ付き自動リロードされる。
     // 再登録URLは新しいindex.htmlが登録するURLと同じ形式なので以後も一本化される）。
-    fetch('/sw.js?nocache=' + Date.now(), { cache: 'no-store' })
+    fetch('sw.js?nocache=' + Date.now(), { cache: 'no-store' })
       .then(res => res.ok ? res.text() : null)
       .then(async txt => {
         if (!txt || !('caches' in window)) return;
         const m = txt.match(/SW_VERSION\s*=\s*'([^']+)'/);
         if (!m || !m[1]) return;
-        // 現在稼働中のバージョンは、SWが作るキャッシュ名（radio-cache-<ver>）から判定する。
+        // 現在稼働中のバージョンは、SWが作るキャッシュ名（bocchi-radio-cache-<ver>。sw.js の CACHE_PREFIX と合わせる）から判定する。
         // （バージョン表記をsw.jsの1箇所に集約したため、ページ側には埋め込まれていない）
         const keys = await caches.keys().catch(() => []);
-        if (!keys.includes(`radio-cache-${m[1]}`)) {
+        if (!keys.includes(`bocchi-radio-cache-${m[1]}`)) {
           // ★強制反映の保険付き: 通常は新SWのactivate→controllerchangeで自動リロード
           // されるが、万一そのイベントが来ない環境でも、新SWが有効化されたのを
           // 見届けてから必ずリロードして更新を反映する（二重リロードは
           // controllerchange側が先に走れば本タイマーはページごと破棄されるため起きない）
-          navigator.serviceWorker.register('/sw.js?' + m[1]).then(reg => {
+          navigator.serviceWorker.register('sw.js?' + m[1]).then(reg => {
             const w = reg.installing || reg.waiting;
             if (!w) return;
             w.addEventListener('statechange', () => {
@@ -3089,7 +3089,7 @@ function setupModals() {
 }
 
 function setupShareButtons() {
-  const shareUrl = 'https://searchtheradio.com/';
+  const shareUrl = 'https://searchtheradio.com/bocchi-radio/';
   const text = 'さーち・ざ・らじお！|「ぼっち・ざ・らじお！」非公式検索サイト #さーち・ざ・らじお';
   const u = encodeURIComponent(shareUrl);
   const t = encodeURIComponent(text);

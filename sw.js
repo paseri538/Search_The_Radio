@@ -5,12 +5,15 @@
 // 自動リロードで新バージョンが反映される（古いキャッシュは自動削除）。
 // ※ローカル確認用の値なので、ここの文字列は何でもよい。
 const SW_VERSION = '20260906e';
-const CACHE_NAME = `radio-cache-${SW_VERSION}`;
+// searchtheradio.com の下に2つのサイト（/bocchi-radio/ と /hasegawa-ikumi/）が並ぶので、
+// キャッシュの名前をサイトごとに分け、片付けるときも自分の分だけ消す（/hasegawa-ikumi/ の分は消さない）。
+const CACHE_PREFIX = 'bocchi-radio-cache-';
+const CACHE_NAME = `${CACHE_PREFIX}${SW_VERSION}`;
 
 
 // キャッシュするファイルのリスト
 const CORE_ASSETS = [
-  '/',
+  './',
   'index.html',
   'style.css',
   'main.js',
@@ -67,7 +70,7 @@ self.addEventListener('install', (event) => {
 
     // サムネイルは内容が変わらないため、旧バージョンのキャッシュから使い回す。
     // （これがないとSW更新のたびに全サムネイル約8MBを再ダウンロードしてしまう）
-    const oldKeys = (await caches.keys()).filter(key => key !== CACHE_NAME);
+    const oldKeys = (await caches.keys()).filter(key => key !== CACHE_NAME && key.startsWith(CACHE_PREFIX));
     for (const key of oldKeys) {
       const oldCache = await caches.open(key);
       for (const url of thumbs) {
@@ -116,7 +119,8 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) => {
       return Promise.all(keys
-        .filter(key => key !== CACHE_NAME)
+        // 'radio-cache-' は、ドメイン直下にあったころの古いキャッシュ
+        .filter(key => key !== CACHE_NAME && (key.startsWith(CACHE_PREFIX) || key.startsWith('radio-cache-')))
         .map(key => caches.delete(key))
       );
     }).then(() => {
@@ -198,7 +202,7 @@ async function cacheFirstStrategy(request) {
 async function appShellStrategy(request) {
   const cache = await caches.open(CACHE_NAME);
   // ?q=... などクエリ付きURLでも同じアプリシェル(トップページ)を返す
-  const cached = await cache.match('/') || await cache.match('index.html');
+  const cached = await cache.match('./') || await cache.match('index.html');
   if (cached) return cached;
 
   try {
@@ -228,7 +232,7 @@ async function networkFirstStrategy(request) {
     // ページ自体(navigate)のリクエストが失敗した場合、トップページを返す。
     // それも無い場合は undefined ではなく必ず有効な Response を返す（respondWithのTypeError防止）
     return cachedResponse
-      || await caches.match('/')
+      || await caches.match('./')
       || new Response('オフラインのため読み込めませんでした。', {
            status: 503,
            statusText: 'Service Unavailable',
