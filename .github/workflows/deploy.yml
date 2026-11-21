@@ -1,45 +1,82 @@
+# ===================================================================
 # さーち・ざ・らじお！ 自動デプロイ
-# アップ（push）のたびに sw.js の SW_VERSION を「日付-コミットID」で自動刻印してから公開する。
-# ★初回のみ: Settings → Pages → Source を「GitHub Actions」に変更すること
+#
+# ファイルをGitHubにアップ（push）するたびに、sw.js の SW_VERSION を
+# 「日付-コミットID」で自動的に書き換えてから GitHub Pages に公開する。
+# → 手作業でのバージョン更新は不要（sw.js のバージョン文字列は触らなくてよい）。
+#
+# ★初回のみ必要な設定（1回だけ）:
+#   リポジトリの Settings → Pages → Build and deployment → Source を
+#   「Deploy from a branch」から「GitHub Actions」に変更する。
+# ===================================================================
 name: Deploy to GitHub Pages
 
 on:
   push:
     branches: [main, master]
-  workflow_dispatch:
+  workflow_dispatch: # Actionsタブから手動実行もできる
 
 permissions:
   contents: read
   pages: write
   id-token: write
 
+# 連続アップ時は最新の1回だけを公開する
 concurrency:
   group: pages
   cancel-in-progress: true
 
 jobs:
-  deploy:
+  # 1. 公開するファイルをまとめる
+  #    （GitHub の公式テンプレートと同じく「まとめる」と「公開する」を別の仕事に分ける。
+  #     同じ仕事の中で続けて公開すると、まとめたばかりのファイルを GitHub がまだ見つけられず
+  #     「No artifacts named "github-pages"」で失敗することが続いたため。2026-11-22）
+  build:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: リポジトリを取得
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: sw.js のバージョンを自動刻印
         run: |
           VERSION="$(date -u +%Y%m%d)-${GITHUB_SHA::7}"
+          # const SW_VERSION = '....'; の中身だけを置き換える
           sed -i -E "s/^(const SW_VERSION = ')[^']*(';)/\1${VERSION}\2/" sw.js
           echo "SW_VERSION -> ${VERSION}"
           grep -n "const SW_VERSION" sw.js
+          # 置換できていなければ失敗させる（sw.jsの書式が変わった時に気づけるように）
           grep -q "const SW_VERSION = '${VERSION}';" sw.js
 
+      # 編集ツール（admin/）は手元のPC専用。リポジトリに入っていても公開しない
+      # （編集画面や、保存のたびに残るバックアップ admin/backup/ がサイトに出ないように）
+      # Claude 用の設定（CLAUDE.md・.claude/）も公開しない
+      - name: 編集ツールを公開対象から外す
+        run: rm -rf admin CLAUDE.md .claude
+
       - name: Pages 用にまとめる
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v5
         with:
           path: .
 
+  # 2. まとめたものを GitHub Pages に公開する
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url || steps.retry.outputs.page_url }}
+    steps:
       - name: GitHub Pages に公開
         id: deployment
-        uses: actions/deploy-pages@v4
+        continue-on-error: true
+        uses: actions/deploy-pages@v5
+
+      # それでも見つからないと言われたときは、少し待ってからもう1回だけやり直す
+      - name: 30秒待つ（公開に失敗したときだけ）
+        if: steps.deployment.outcome == 'failure'
+        run: sleep 30
+
+      - name: GitHub Pages に公開（やり直し）
+        id: retry
+        if: steps.deployment.outcome == 'failure'
+        uses: actions/deploy-pages@v5
